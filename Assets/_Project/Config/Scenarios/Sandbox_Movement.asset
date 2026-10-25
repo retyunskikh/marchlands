@@ -18,7 +18,11 @@ MonoBehaviour:
     position: {x: -6, y: 0}
     facing: 90
     formation: 0
+    fireAtWill: 0
   - side: 0
     position: {x: 6, y: 0}
     facing: 90
     formation: 0
+    fireAtWill: 0
+  franceRetreatPoint: {x: 0, y: -35}
+  austriaRetreatPoint: {x: 0, y: 35}

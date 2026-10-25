@@ -37,3 +37,25 @@ MonoBehaviour:
       aimTime: 0.8
       reloadTime: 14
       reloadMoveSpeedMultiplier: 0.6
+    morale:
+      moraleShockFactor: 1.5
+      pointBlankMoraleMultiplier: 1.5
+      flankMoraleMultiplier: 1.5
+      frontalArcHalfAngle: 60
+      allyRoutRadius: 8
+      allyRoutPenalty: 10
+      moraleRegen: 2
+      moraleCalmTime: 10
+      calmEnemyRadius: 10
+      routThreshold: 15
+      rallyThreshold: 50
+      routSpeed: 2
+      disbandSize: 5
+    melee:
+      chargeSpeed: 2.5
+      chargeCheckDistance: 4
+      chargeMoraleThreshold: 50
+      meleeKillRate: 0.04
+      chargeBonus: 1.5
+      chargeBonusDuration: 3
+      flankMeleeMultiplier: 1.5

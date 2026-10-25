@@ -14,3 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Bootstrap::Marchlands.Bootstrap.Config.ScenarioConfig
   playerSide: 0
   squads: []
+  franceRetreatPoint: {x: 0, y: -35}
+  austriaRetreatPoint: {x: 0, y: 35}
