@@ -23,10 +23,12 @@ namespace Marchlands.Bootstrap
 
         [Header("Сцена")]
         [SerializeField] private SquadViewRegistry squadViews;
+        [SerializeField] private VillageViewRegistry villageViews;
         [SerializeField] private FireArcView fireArc;
         [SerializeField] private VolleyEffectsView volleyEffects;
         [SerializeField] private BattleInputController input;
         [SerializeField] private OrderPanel orderPanel;
+        [SerializeField] private TopBar topBar;
 
         private Match match;
         private FixedStepClock clock;
@@ -46,10 +48,12 @@ namespace Marchlands.Bootstrap
             SpawnScenario();
 
             squadViews.Initialize(match);
+            villageViews.Initialize(match);
             fireArc.Initialize(match);
             volleyEffects.Initialize(match);
             input.Initialize(match, scenario.PlayerSide);
             orderPanel.Initialize(match);
+            topBar.Initialize(match, scenario.PlayerSide);
             input.SelectionChanged += OnSelectionChanged;
             input.ChargeTargetingChanged += orderPanel.SetChargeTargeting;
             orderPanel.ChargeRequested += input.BeginChargeTargeting;
@@ -78,6 +82,7 @@ namespace Marchlands.Bootstrap
             }
 
             squadViews.Render(clock.Alpha);
+            villageViews.Render();
             fireArc.Render(clock.Alpha);
         }
 
@@ -92,6 +97,11 @@ namespace Marchlands.Bootstrap
                 {
                     match.AddController(new TacticalAi(side));
                 }
+            }
+
+            foreach (Vector2 village in scenario.Villages)
+            {
+                match.AddVillage(village);
             }
 
             foreach (ScenarioConfig.SquadSpawn spawn in scenario.Squads)

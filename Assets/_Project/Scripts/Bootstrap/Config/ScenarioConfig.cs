@@ -12,6 +12,8 @@ namespace Marchlands.Bootstrap.Config
     {
         [SerializeField] private Side playerSide = Side.France;
         [SerializeField] private List<SquadSpawn> squads = new List<SquadSpawn>();
+        [Tooltip("Положения деревень; на старте все ничьи.")]
+        [SerializeField] private List<Vector2> villages = new List<Vector2>();
 
         [Header("Кем управляется сторона")]
         [SerializeField] private bool franceAi;
@@ -24,6 +26,8 @@ namespace Marchlands.Bootstrap.Config
         public Side PlayerSide => playerSide;
 
         public IReadOnlyList<SquadSpawn> Squads => squads;
+
+        public IReadOnlyList<Vector2> Villages => villages;
 
         public bool IsAiControlled(Side side)
         {
