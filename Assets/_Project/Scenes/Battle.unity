@@ -8447,9 +8447,8 @@ MonoBehaviour:
   bankColor: {r: 0.76, g: 0.7, b: 0.5, a: 1}
   bankWidth: 0.8
   mountainBaseColor: {r: 0.42, g: 0.38, b: 0.33, a: 1}
-  peakHeightRange: {x: 0.7, y: 1}
-  peakAspect: 1.4
-  peakSpacing: 4.5
+  massifSize: {x: 5.5, y: 8}
+  massifSpacing: 5
   roadSortingOrder: -80
   forestFloorSortingOrder: -75
   borderSortingOrder: -60
@@ -10303,6 +10302,7 @@ MonoBehaviour:
     houseSprite: {fileID: 21300000, guid: 808f6ec5de73c0346bf0520834f92e14, type: 3}
     circleSprite: {fileID: 21300000, guid: b6cb92c132d19f947854d3db7c821888, type: 3}
     squareSprite: {fileID: 21300000, guid: 5f47f2ad9246ed441acf41244c86118e, type: 3}
+    discSprite: {fileID: 21300000, guid: 0c4c11c45c291d142a331ea1609b0e7c, type: 3}
     houseOffsets:
     - {x: -1.1, y: 0.6}
     - {x: 0.9, y: 0.9}
@@ -10311,12 +10311,19 @@ MonoBehaviour:
     houseSize: 1.1
     houseColor: {r: 0.72, g: 0.55, b: 0.38, a: 1}
     neutralColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
-    radiusAlpha: 0.35
+    zoneFillAlpha: 0.18
+    zoneOutlineAlpha: 0.55
+    ringSegments: 48
+    ringThickness: 0.5
+    ringSegmentFill: 0.8
+    ringEmptyColor: {r: 0, g: 0, b: 0, a: 0.35}
+    contestedColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+    contestedBlinkRate: 2.5
+    captureFlashDuration: 1.2
     flagSize: {x: 0.9, y: 0.6}
     flagOffset: {x: 1.6, y: 1.6}
-    progressBarSize: {x: 2.4, y: 0.22}
-    progressBarOffset: 2.6
-    progressBackground: {r: 0, g: 0, b: 0, a: 0.45}
+    poleSize: {x: 0.12, y: 2}
+    poleColor: {r: 0.25, g: 0.2, b: 0.15, a: 1}
     groundSortingOrder: -50
     houseSortingOrder: -40
     overlaySortingOrder: 55

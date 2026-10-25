@@ -89,6 +89,7 @@ namespace Marchlands.Tests.EditMode
             Assert.AreEqual(before, village.CaptureProgress, 1e-4f);
             Assert.IsNull(village.Owner);
             Assert.AreEqual(Side.France, village.CapturingSide);
+            Assert.IsTrue(village.IsContested, "Деревня помечена как оспариваемая");
             Assert.IsNotNull(match.FindSquad(french.Id));
         }
 

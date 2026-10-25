@@ -24,5 +24,8 @@ namespace Marchlands.Simulation.Economy
 
         /// <summary>Набранный прогресс захвата, s (до captureTime).</summary>
         public float CaptureProgress { get; internal set; }
+
+        /// <summary>В зоне обе стороны — прогресс замер.</summary>
+        public bool IsContested { get; internal set; }
     }
 }

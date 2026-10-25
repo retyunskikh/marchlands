@@ -23,7 +23,8 @@ namespace Marchlands.Simulation.Economy
             {
                 GetPresence(match, village, economy.captureRadius, out bool france, out bool austria);
 
-                if (france && austria)
+                village.IsContested = france && austria;
+                if (village.IsContested)
                 {
                     continue;
                 }
