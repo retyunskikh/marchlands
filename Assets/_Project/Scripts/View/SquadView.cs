@@ -36,6 +36,12 @@ namespace Marchlands.View
 
         private readonly List<SoldierRole> roles = new List<SoldierRole>();
 
+        // Для рукопашной: обычная фигурка, тело без оружия и руки с оружием (null — без выпада).
+        private readonly List<Sprite> fullSprites = new List<Sprite>();
+        private readonly List<Sprite> bodySprites = new List<Sprite>();
+        private readonly List<SpriteRenderer> arms = new List<SpriteRenderer>();
+        private bool showingMeleeBodies;
+
         private Formation slotsFormation;
         private Formation slotsTarget;
         private int slotsAlive = -1;
@@ -115,7 +121,10 @@ namespace Marchlands.View
                 }
 
                 soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), meleeBlend > 0f ? meleeRotation : rotation);
+                RenderArms(i, world, meleeRotation);
             }
+
+            showingMeleeBodies = meleeBlend > 0f;
 
             if (selectionMarker.enabled)
             {
@@ -261,11 +270,45 @@ namespace Marchlands.View
             float blend = math.smoothstep(0f, 1f, meleeBlend);
             float compressed = math.min(depth * (1f - style.MeleeCompress * blend), -style.MeleeGap * blend);
             float2 scatter = Scatter(index + 503) * style.MeleeScatter * blend;
-            float phase = Scatter(index + 907).x * math.PI;
-            float thrust = math.pow(math.max(0f, math.sin(Time.time * style.ThrustRate * 2f * math.PI + phase)), 4f);
-            compressed += thrust * style.ThrustLength * blend;
+            // Тело лишь чуть подаётся вперёд за выпадом — колют руки (см. RenderArms).
+            compressed += Thrust(index) * style.ThrustLength * 0.25f * blend;
 
             return meleeContact + meleeDirection * compressed + across * lateral * (1f - 0.2f * blend) + scatter;
+        }
+
+        /// <summary>Выпад солдата в [0, 1]: быстрый удар вперёд и возврат, у каждого своя фаза.</summary>
+        private float Thrust(int index)
+        {
+            float phase = Scatter(index + 907).x * math.PI;
+            return math.pow(math.max(0f, math.sin(Time.time * style.ThrustRate * 2f * math.PI + phase)), 4f);
+        }
+
+        /// <summary>
+        /// В рукопашной у солдата тело без оружия, а руки с ружьём (саблей) — отдельной фигуркой, которая
+        /// выбрасывается вперёд и возвращается. Вне схватки — обычная цельная фигурка.
+        /// </summary>
+        private void RenderArms(int index, float2 world, Quaternion meleeRotation)
+        {
+            SpriteRenderer armsRenderer = arms[index];
+            if (armsRenderer == null)
+            {
+                return;
+            }
+
+            bool melee = meleeBlend > 0f;
+            if (melee != showingMeleeBodies || soldiers[index].sprite != (melee ? bodySprites[index] : fullSprites[index]))
+            {
+                soldiers[index].sprite = melee ? bodySprites[index] : fullSprites[index];
+                armsRenderer.enabled = melee;
+            }
+
+            if (!melee)
+            {
+                return;
+            }
+
+            float2 reach = meleeDirection * (Thrust(index) * style.ThrustLength * math.smoothstep(0f, 1f, meleeBlend));
+            armsRenderer.transform.SetPositionAndRotation(new Vector3(world.x + reach.x, world.y + reach.y, 0f), meleeRotation);
         }
 
         /// <summary>Постоянное для каждого солдата смещение в [-1, 1]² — толпа не дрожит от кадра к кадру.</summary>
@@ -407,6 +450,20 @@ namespace Marchlands.View
                 soldiers.Add(drawn != null
                     ? CreateRenderer($"Soldier {index}", drawn, Color.white, order)
                     : CreateRenderer($"Soldier {index}", style.SoldierSprite, style.GetSideColor(squad.Side), order));
+
+                fullSprites.Add(soldiers[index].sprite);
+                if (drawn != null && style.TryGetMeleeSprites(squad.Side, squad.Type, role, out Sprite body, out Sprite armsSprite))
+                {
+                    bodySprites.Add(body);
+                    SpriteRenderer armsRenderer = CreateRenderer($"Arms {index}", armsSprite, Color.white, order + 1);
+                    armsRenderer.enabled = false;
+                    arms.Add(armsRenderer);
+                }
+                else
+                {
+                    bodySprites.Add(null);
+                    arms.Add(null);
+                }
             }
 
             while (soldiers.Count > alive)
@@ -414,6 +471,14 @@ namespace Marchlands.View
                 int last = soldiers.Count - 1;
                 Destroy(soldiers[last].gameObject);
                 soldiers.RemoveAt(last);
+                if (arms[last] != null)
+                {
+                    Destroy(arms[last].gameObject);
+                }
+
+                arms.RemoveAt(last);
+                bodySprites.RemoveAt(last);
+                fullSprites.RemoveAt(last);
             }
         }
 

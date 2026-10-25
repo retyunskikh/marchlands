@@ -132,6 +132,14 @@ namespace Marchlands.View
             }
         }
 
+        public bool TryGetMeleeSprites(Side side, UnitType type, SoldierRole role, out Sprite body, out Sprite arms)
+        {
+            SoldierSprites sprites = side == Side.France ? franceSoldiers : austriaSoldiers;
+            body = null;
+            arms = null;
+            return sprites != null && sprites.TryGetMelee(type, role, out body, out arms);
+        }
+
         /// <summary>Нарисованная фигурка; null — рисовать запасной, окрашенной в цвет стороны.</summary>
         public Sprite GetSoldierSprite(Side side, UnitType type, SoldierRole role)
         {

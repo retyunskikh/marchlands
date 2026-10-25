@@ -8983,6 +8983,15 @@ MonoBehaviour:
       drummer: {fileID: 21300000, guid: e0beab26bf748d04aac4a21a10fd6a03, type: 3}
       cavalry: {fileID: 21300000, guid: 5ea8bb1cc7883b346922134c5acdf252, type: 3}
       cavalryOfficer: {fileID: 21300000, guid: 6fc2d5c4517294a438e6f65461890697, type: 3}
+      grenadierBody: {fileID: 21300000, guid: d4edf462edfd9374384fe538aa66d601, type: 3}
+      grenadierArms: {fileID: 21300000, guid: fe4ddbca35b2aaf43b146a3f1e8d75b9, type: 3}
+      jaegerBody: {fileID: 21300000, guid: 3e9a9768fd163b743a5bb9878bd3061b, type: 3}
+      jaegerArms: {fileID: 21300000, guid: 0af904f899175014aad30fe2712cec85, type: 3}
+      officerBody: {fileID: 21300000, guid: 012547e674c5d7d4d941cebe7387edd5, type: 3}
+      officerArms: {fileID: 21300000, guid: b60315e04f477de44bdd0d673a7f0921, type: 3}
+      cavalryBody: {fileID: 21300000, guid: efb953f2a66869446b81d65407668a03, type: 3}
+      cavalryOfficerBody: {fileID: 21300000, guid: 0d726bf0728eedc45a527e29f42d6924, type: 3}
+      cavalryArms: {fileID: 21300000, guid: ab55e5c1960625e48881b8e245658576, type: 3}
     austriaSoldiers:
       grenadier: {fileID: 21300000, guid: 39abadc6f856f2148b5a3d105bd4f301, type: 3}
       jaeger: {fileID: 21300000, guid: 30e5c052086414846845811828cd8e4c, type: 3}
@@ -8991,9 +9000,28 @@ MonoBehaviour:
       drummer: {fileID: 21300000, guid: 199c32cc0432f094eb3d7afaf81ed6b1, type: 3}
       cavalry: {fileID: 21300000, guid: 89a7b3072efb3be4f82e14d7e42bd3f9, type: 3}
       cavalryOfficer: {fileID: 21300000, guid: 4a895c46e847afd4b90806891e6242ea, type: 3}
+      grenadierBody: {fileID: 21300000, guid: bf2042d0dda3df746891fd75ce420bde, type: 3}
+      grenadierArms: {fileID: 21300000, guid: fef1f44df693cae45a126831925a2f0c, type: 3}
+      jaegerBody: {fileID: 21300000, guid: 67640376c7bdbbc42a557df56847a4c9, type: 3}
+      jaegerArms: {fileID: 21300000, guid: e86713f2bd0e8034db7eb9bb67d9288f, type: 3}
+      officerBody: {fileID: 21300000, guid: aab3587cc217ad84e8dfadea2eeb5b70, type: 3}
+      officerArms: {fileID: 21300000, guid: 5298a40e6e690104aa730fb049787490, type: 3}
+      cavalryBody: {fileID: 21300000, guid: 4f4bbb1eaaf7a1c43acb3456f8d7535e, type: 3}
+      cavalryOfficerBody: {fileID: 21300000, guid: b6b85c0435c904e4ba9e1ef8f838cf3b, type: 3}
+      cavalryArms: {fileID: 21300000, guid: c531a82a8e7ef1943a82bd80b90cc6c6, type: 3}
     recruitSprite: {fileID: 21300000, guid: 4a0c1c9d4f62148438c3abefbdc10e43, type: 3}
     jaegerSpacing: {x: 1.6, y: 1.3}
     jaegerScatter: 0.12
+    meleeBlendTime: 0.6
+    meleeCompress: 0.6
+    meleeGap: 0.3
+    meleeScatter: 0.3
+    thrustLength: 0.16
+    thrustRate: 1.1
+    marchGait: {x: 1.8, y: 0.035}
+    runGait: {x: 3, y: 0.05}
+    gallopGait: {x: 2.4, y: 0.09}
+    gaitBlendTime: 0.25
     cavalrySpacing: {x: 1.3, y: 1.4}
     franceColor: {r: 0.2, g: 0.35, b: 0.85, a: 1}
     austriaColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
