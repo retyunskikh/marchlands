@@ -33,4 +33,8 @@
 
 ## Звуки
 
-Звуки залпа, сражения, колокола и горна (`Assets/_Project/Audio/*.wav`) сгенерированы программно для проекта.
+| Файл | Что | Источник | Лицензия |
+|---|---|---|---|
+| CaptureBugle.ogg | Сигнал горна «Mail Call» (Sgt. Codie Lynn Williams, Marine Barracks Washington), первые 4.6 с | https://commons.wikimedia.org/wiki/File:Mail_Call.ogg | общественное достояние (работа правительства США) |
+
+Звуки залпа, сражения и колокола (`Assets/_Project/Audio/*.wav`) сгенерированы программно для проекта.
