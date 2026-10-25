@@ -8,7 +8,7 @@ namespace Marchlands.View
 {
     /// <summary>
     /// Деревня: домики, зона захвата с заливкой цвета владельца, флаг на древке и кольцо захвата по границе зоны.
-    /// Кольцо заполняется по часовой стрелке цветом захватчика, мигает жёлтым, когда деревня оспаривается,
+    /// Кольцо заполняется по часовой стрелке цветом захватчика, мигает жёлтым, когда начатый захват замер из-за врага,
     /// и вспыхивает при смене владельца. Только читает состояние деревни.
     /// </summary>
     public sealed class VillageView : MonoBehaviour
@@ -99,7 +99,7 @@ namespace Marchlands.View
         }
 
         /// <summary>
-        /// Захват идёт — кольцо заполняется цветом захватчика; оспаривается — мигает жёлтым;
+        /// Захват идёт — кольцо заполняется цветом захватчика; начатый захват замер, потому что подошёл враг, — мигает жёлтым;
         /// только что захвачена — вспыхивает цветом нового владельца; иначе кольца не видно.
         /// </summary>
         private void RenderRing(Color ownerColor)
@@ -111,16 +111,17 @@ namespace Marchlands.View
                 return;
             }
 
+            // Без начатого захвата кольца нет, даже если в зоне стоят обе стороны.
             bool capturing = village.CapturingSide.HasValue && village.CaptureProgress > 0f;
-            if (!capturing && !village.IsContested)
+            if (!capturing)
             {
                 SetRingVisible(false);
                 return;
             }
 
-            float progress = capturing ? math.saturate(village.CaptureProgress / captureTime) : 0f;
+            float progress = math.saturate(village.CaptureProgress / captureTime);
             int filled = (int)math.floor(progress * ringSegments.Count);
-            Color fill = capturing ? sideStyle.GetSideColor(village.CapturingSide.Value) : style.ContestedColor;
+            Color fill = sideStyle.GetSideColor(village.CapturingSide.Value);
             Color empty = style.RingEmptyColor;
             if (village.IsContested)
             {
