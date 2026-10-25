@@ -336,7 +336,6 @@ namespace Marchlands.Simulation.Core
                 SquadMovementSystem.Update(squad, this, deltaTime);
             }
 
-            SquadSeparationSystem.Resolve(squads, Settings.squads);
             MeleeSystem.Update(this, deltaTime);
             MoraleSystem.Update(this, deltaTime);
             MeleeSystem.RemoveFinished(this);
