@@ -21,8 +21,10 @@ namespace Marchlands.Bootstrap
 
         [Header("Сцена")]
         [SerializeField] private SquadViewRegistry squadViews;
+        [SerializeField] private FireArcView fireArc;
+        [SerializeField] private VolleyEffectsView volleyEffects;
         [SerializeField] private BattleInputController input;
-        [SerializeField] private FormationToggleButton formationButton;
+        [SerializeField] private OrderPanel orderPanel;
 
         private Match match;
         private FixedStepClock clock;
@@ -42,8 +44,10 @@ namespace Marchlands.Bootstrap
             SpawnScenario();
 
             squadViews.Initialize(match);
+            fireArc.Initialize(match);
+            volleyEffects.Initialize(match);
             input.Initialize(match, scenario.PlayerSide);
-            formationButton.Initialize(match);
+            orderPanel.Initialize(match);
             input.SelectionChanged += OnSelectionChanged;
         }
 
@@ -61,9 +65,11 @@ namespace Marchlands.Bootstrap
             for (int i = 0; i < ticks; i++)
             {
                 match.Tick();
+                volleyEffects.Play(match.LastTickVolleys);
             }
 
             squadViews.Render(clock.Alpha);
+            fireArc.Render(clock.Alpha);
         }
 
         private void SpawnScenario()
@@ -77,7 +83,8 @@ namespace Marchlands.Bootstrap
         private void OnSelectionChanged(Squad squad)
         {
             squadViews.SetSelected(squad);
-            formationButton.SetSquad(squad);
+            fireArc.SetSquad(squad);
+            orderPanel.SetSquad(squad);
         }
     }
 }

@@ -18,6 +18,19 @@ namespace Marchlands.View
         [SerializeField] private int markerSortingOrder = 10;
         [SerializeField] private int soldierSortingOrder = 20;
 
+        [Header("Кольцо перезарядки")]
+        [SerializeField] private int ringSegments = 24;
+        [SerializeField] private float ringRadius = 0.6f;
+        [Tooltip("x — толщина сегмента по радиусу, y — длина по окружности, u.")]
+        [SerializeField] private Vector2 ringSegmentSize = new Vector2(0.14f, 0.13f);
+        [Tooltip("Зазор между верхним краем отряда и кольцом, u.")]
+        [SerializeField] private float ringGap = 0.4f;
+        [SerializeField] private Color ringLoadedColor = new Color(0.45f, 0.95f, 0.45f);
+        [SerializeField] private Color ringAimingColor = new Color(1f, 0.6f, 0.2f);
+        [SerializeField] private Color ringReloadingColor = new Color(1f, 1f, 1f);
+        [SerializeField] private Color ringEmptyColor = new Color(0f, 0f, 0f, 0.35f);
+        [SerializeField] private int ringSortingOrder = 50;
+
         public Sprite SoldierSprite => soldierSprite;
 
         public Sprite MarkerSprite => markerSprite;
@@ -29,6 +42,24 @@ namespace Marchlands.View
         public int MarkerSortingOrder => markerSortingOrder;
 
         public int SoldierSortingOrder => soldierSortingOrder;
+
+        public int RingSegments => ringSegments;
+
+        public float RingRadius => ringRadius;
+
+        public Vector2 RingSegmentSize => ringSegmentSize;
+
+        public float RingGap => ringGap;
+
+        public Color RingLoadedColor => ringLoadedColor;
+
+        public Color RingAimingColor => ringAimingColor;
+
+        public Color RingReloadingColor => ringReloadingColor;
+
+        public Color RingEmptyColor => ringEmptyColor;
+
+        public int RingSortingOrder => ringSortingOrder;
 
         public Color GetSideColor(Side side)
         {

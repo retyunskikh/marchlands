@@ -17,6 +17,8 @@ namespace Marchlands.View
         private Match match;
         private Squad selected;
 
+        public SquadViewStyle Style => style;
+
         public void Initialize(Match match)
         {
             this.match = match;
@@ -55,7 +57,7 @@ namespace Marchlands.View
                 var viewObject = new GameObject($"Squad {squad.Id} ({squad.Side})");
                 viewObject.transform.SetParent(transform, false);
                 var view = viewObject.AddComponent<SquadView>();
-                view.Initialize(squad, match.Settings.squads, style);
+                view.Initialize(squad, match.Settings, style);
                 view.SetSelected(squad == selected);
                 views.Add(squad.Id, view);
             }

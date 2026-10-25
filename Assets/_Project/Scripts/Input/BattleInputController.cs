@@ -83,6 +83,13 @@ namespace Marchlands.Input
                 return;
             }
 
+            // Выделенный отряд мог погибнуть.
+            if (selected != null && match.FindSquad(selected.Id) == null)
+            {
+                hasPendingTap = false;
+                Select(null);
+            }
+
             gestures.Update();
             UpdateMouseWheel();
 

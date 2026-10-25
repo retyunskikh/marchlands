@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
@@ -20,9 +21,11 @@ namespace Marchlands.View
         private readonly List<float2> fromSlots = new List<float2>();
         private readonly List<float2> toSlots = new List<float2>();
         private readonly List<int> transitionTargets = new List<int>();
+        private readonly List<SpriteRenderer> ringSegments = new List<SpriteRenderer>();
 
         private Squad squad;
         private SquadSettings settings;
+        private CombatSettings combat;
         private SquadViewStyle style;
         private SpriteRenderer selectionMarker;
 
@@ -33,14 +36,16 @@ namespace Marchlands.View
 
         public Squad Squad => squad;
 
-        internal void Initialize(Squad squad, SquadSettings settings, SquadViewStyle style)
+        internal void Initialize(Squad squad, SimulationSettings settings, SquadViewStyle style)
         {
             this.squad = squad;
-            this.settings = settings;
+            this.settings = settings.squads;
+            combat = settings.combat;
             this.style = style;
 
             selectionMarker = CreateRenderer("Selection", style.MarkerSprite, style.SelectionColor, style.MarkerSortingOrder);
             selectionMarker.enabled = false;
+            CreateRing();
         }
 
         internal void SetSelected(bool selected)
@@ -78,6 +83,64 @@ namespace Marchlands.View
                 Transform marker = selectionMarker.transform;
                 marker.SetPositionAndRotation(new Vector3(position.x, position.y, 0f), rotation);
                 marker.localScale = new Vector3((half.x + style.SelectionPadding) * 2f, (half.y + style.SelectionPadding) * 2f, 1f);
+            }
+
+            RenderRing(position, facing, alpha);
+        }
+
+        private void CreateRing()
+        {
+            float step = 360f / style.RingSegments;
+            for (int i = 0; i < style.RingSegments; i++)
+            {
+                SpriteRenderer segment = CreateRenderer($"Ring {i}", style.MarkerSprite, style.RingEmptyColor, style.RingSortingOrder);
+                // Сегменты идут по часовой стрелке от верхней точки кольца.
+                float angle = 90f - (i + 0.5f) * step;
+                segment.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
+                segment.transform.localScale = new Vector3(style.RingSegmentSize.x, style.RingSegmentSize.y, 1f);
+                ringSegments.Add(segment);
+            }
+        }
+
+        /// <summary>
+        /// Кольцо над отрядом: зелёное — заряжен, оранжевое — целится, заполняется белым — перезарядка.
+        /// Стоит над отрядом по оси Y мира независимо от его поворота.
+        /// </summary>
+        private void RenderRing(float2 position, float facing, float alpha)
+        {
+            float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings);
+            float2 forward = Angles.Direction(facing);
+            float2 right = Angles.Right(facing);
+            float topOffset = math.abs(half.x * right.y) + math.abs(half.y * forward.y);
+            var center = new Vector3(position.x, position.y + topOffset + style.RingGap + style.RingRadius, 0f);
+
+            float filled;
+            Color fillColor;
+            switch (squad.FireState)
+            {
+                case FireState.Reloading:
+                    float remaining = math.max(0f, squad.FireTimer - alpha * SimulationTime.TickDuration);
+                    filled = 1f - remaining / combat.reloadTime;
+                    fillColor = style.RingReloadingColor;
+                    break;
+                case FireState.Aiming:
+                    filled = 1f;
+                    fillColor = style.RingAimingColor;
+                    break;
+                default:
+                    filled = 1f;
+                    fillColor = style.RingLoadedColor;
+                    break;
+            }
+
+            int filledCount = (int)math.floor(filled * ringSegments.Count);
+            float step = 360f / ringSegments.Count;
+            for (int i = 0; i < ringSegments.Count; i++)
+            {
+                float angle = math.radians(90f - (i + 0.5f) * step);
+                Transform segment = ringSegments[i].transform;
+                segment.position = center + new Vector3(math.cos(angle), math.sin(angle), 0f) * style.RingRadius;
+                ringSegments[i].color = i < filledCount ? fillColor : style.RingEmptyColor;
             }
         }
 
