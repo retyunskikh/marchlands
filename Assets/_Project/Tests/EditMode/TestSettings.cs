@@ -39,6 +39,32 @@ namespace Marchlands.Tests.EditMode
                     aimTime = 0.8f,
                     reloadTime = 14f,
                     reloadMoveSpeedMultiplier = 0.6f
+                },
+                morale = new MoraleSettings
+                {
+                    moraleShockFactor = 1.5f,
+                    pointBlankMoraleMultiplier = 1.5f,
+                    flankMoraleMultiplier = 1.5f,
+                    frontalArcHalfAngle = 60f,
+                    allyRoutRadius = 8f,
+                    allyRoutPenalty = 10f,
+                    moraleRegen = 2f,
+                    moraleCalmTime = 10f,
+                    calmEnemyRadius = 10f,
+                    routThreshold = 15f,
+                    rallyThreshold = 50f,
+                    routSpeed = 2f,
+                    disbandSize = 5
+                },
+                melee = new MeleeSettings
+                {
+                    chargeSpeed = 2.5f,
+                    chargeCheckDistance = 4f,
+                    chargeMoraleThreshold = 50f,
+                    meleeKillRate = 0.04f,
+                    chargeBonus = 1.5f,
+                    chargeBonusDuration = 3f,
+                    flankMeleeMultiplier = 1.5f
                 }
             };
         }

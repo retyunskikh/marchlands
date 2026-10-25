@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
+using Marchlands.Simulation.Melee;
+using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
 
@@ -13,10 +15,15 @@ namespace Marchlands.Simulation.Core
     /// </summary>
     public sealed class Match
     {
+        private const int SideCount = 2;
+
         private readonly CommandQueue commands = new CommandQueue();
         private readonly List<ICommand> currentTickCommands = new List<ICommand>();
         private readonly List<Squad> squads = new List<Squad>();
         private readonly List<VolleyEvent> lastTickVolleys = new List<VolleyEvent>();
+        private readonly List<MeleeEngagement> engagements = new List<MeleeEngagement>();
+        private readonly float2[] retreatPoints = new float2[SideCount];
+        private readonly bool[] hasRetreatPoint = new bool[SideCount];
         private int nextSquadId = 1;
 
         public Match(ulong seed, SimulationSettings settings)
@@ -41,6 +48,12 @@ namespace Marchlands.Simulation.Core
 
         /// <summary>Залпы, произошедшие в последнем выполненном тике.</summary>
         public IReadOnlyList<VolleyEvent> LastTickVolleys => lastTickVolleys;
+
+        /// <summary>Идущие рукопашные.</summary>
+        public IReadOnlyList<MeleeEngagement> Engagements => engagements;
+
+        /// <summary>Отряды, побежавшие в этом тике; их бегство ещё не ударило по морали союзников.</summary>
+        internal Queue<Squad> PendingRouts { get; } = new Queue<Squad>();
 
         /// <summary>Добавляет полный отряд. Используется при подготовке матча, до первого тика или из команд.</summary>
         public Squad AddSquad(Side side, float2 position, float facing, Formation formation)
@@ -73,6 +86,19 @@ namespace Marchlands.Simulation.Core
             return null;
         }
 
+        /// <summary>Куда бегут разбитые отряды стороны. Пока нет штабов (этапы 5–6), задаётся сценарием.</summary>
+        public void SetRetreatPoint(Side side, float2 point)
+        {
+            retreatPoints[(int)side] = point;
+            hasRetreatPoint[(int)side] = true;
+        }
+
+        public bool TryGetRetreatPoint(Side side, out float2 point)
+        {
+            point = retreatPoints[(int)side];
+            return hasRetreatPoint[(int)side];
+        }
+
         /// <summary>Ставит команду на тик <paramref name="tick"/>. Прошедшие тики уже не изменить.</summary>
         public void Enqueue(int tick, ICommand command)
         {
@@ -92,6 +118,8 @@ namespace Marchlands.Simulation.Core
 
         public void Tick()
         {
+            float deltaTime = SimulationTime.TickDuration;
+
             foreach (Squad squad in squads)
             {
                 squad.PreviousPosition = squad.Position;
@@ -106,19 +134,31 @@ namespace Marchlands.Simulation.Core
             }
 
             lastTickVolleys.Clear();
-            FireSystem.Update(this, SimulationTime.TickDuration, lastTickVolleys);
+            FireSystem.Update(this, deltaTime, lastTickVolleys);
 
             foreach (Squad squad in squads)
             {
-                SquadMovementSystem.Update(squad, Settings.squads, Settings.combat, SimulationTime.TickDuration);
+                SquadMovementSystem.Update(squad, this, deltaTime);
             }
 
             SquadSeparationSystem.Resolve(squads, Settings.squads);
+            MeleeSystem.Update(this, deltaTime);
+            MoraleSystem.Update(this, deltaTime);
+            MeleeSystem.RemoveFinished(this);
 
-            // Отряд без солдат исчезает; распад малых отрядов и бегство — этап 3.
-            squads.RemoveAll(squad => squad.Alive <= 0);
+            squads.RemoveAll(squad => squad.Alive <= 0 || squad.IsDisbanded);
 
             CurrentTick++;
+        }
+
+        internal void AddEngagement(MeleeEngagement engagement)
+        {
+            engagements.Add(engagement);
+        }
+
+        internal void RemoveEngagementAt(int index)
+        {
+            engagements.RemoveAt(index);
         }
     }
 }

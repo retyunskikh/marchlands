@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
 
 namespace Marchlands.Simulation.Combat
@@ -138,6 +139,10 @@ namespace Marchlands.Simulation.Combat
             shooter.FireTimer = match.Settings.combat.reloadTime;
             shooter.IsFirstVolley = false;
             shooter.AimTargetId = 0;
+
+            bool pointBlank = volley.Distance <= match.Settings.combat.pointBlankRange;
+            bool flank = MoraleMath.IsFlank(target, shooter.Position, match.Settings.morale);
+            MoraleMath.ApplyLoss(target, casualties, aliveBefore, pointBlank, flank, match.Settings.morale);
 
             events.Add(new VolleyEvent(
                 match.CurrentTick, shooter.Id, shooter.Side, volley.Shooters, volley.Distance, casualties,

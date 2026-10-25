@@ -6,14 +6,27 @@ using Unity.Mathematics;
 namespace Marchlands.Simulation.Squads
 {
     /// <summary>
-    /// Перестроение и выполнение приказа движения: разворот лицом к точке → марш вперёд → разворот
-    /// в конечный фронт. Время внутри тика переносится между фазами, поэтому длительность приказа
-    /// не зависит от того, на какой тик пришлась смена фазы.
+    /// Движение отряда: перестроение; приказ движения (разворот лицом к точке → марш вперёд → разворот
+    /// в конечный фронт); бег в штыки; бегство. Время внутри тика переносится между фазами, поэтому
+    /// длительность приказа не зависит от того, на какой тик пришлась смена фазы.
     /// </summary>
     internal static class SquadMovementSystem
     {
-        public static void Update(Squad squad, SquadSettings settings, CombatSettings combat, float deltaTime)
+        public static void Update(Squad squad, Match match, float deltaTime)
         {
+            SquadSettings settings = match.Settings.squads;
+
+            if (squad.IsInMelee)
+            {
+                return;
+            }
+
+            if (squad.IsRouting)
+            {
+                UpdateRout(squad, match, deltaTime);
+                return;
+            }
+
             if (squad.IsChangingFormation)
             {
                 UpdateFormationChange(squad, settings, deltaTime);
@@ -21,28 +34,49 @@ namespace Marchlands.Simulation.Squads
                 return;
             }
 
-            // На время прицеливания отряд останавливается; приказ продолжится после залпа.
-            if (squad.Order.Type != SquadOrderType.Move || squad.FireState == FireState.Aiming)
+            switch (squad.Order.Type)
             {
-                return;
+                case SquadOrderType.Move when squad.FireState != FireState.Aiming:
+                    // На время прицеливания отряд стоит; приказ продолжится после залпа.
+                    UpdateMove(squad, match.Settings, deltaTime);
+                    break;
+                case SquadOrderType.Charge:
+                    UpdateCharge(squad, match, deltaTime);
+                    break;
             }
+        }
 
+        public static float GetSpeed(Formation formation, SquadSettings settings)
+        {
+            return formation == Formation.Line ? settings.lineSpeed : settings.columnSpeed;
+        }
+
+        /// <summary>Прерывает перестроение: отряд остаётся в прежнем строю.</summary>
+        public static void CancelFormationChange(Squad squad)
+        {
+            squad.FormationChangeRemaining = 0f;
+            squad.FormationChangeProgress = 0f;
+            squad.TargetFormation = squad.Formation;
+        }
+
+        private static void UpdateMove(Squad squad, SimulationSettings settings, float deltaTime)
+        {
             float time = deltaTime;
             float2 target = squad.Order.Target;
             float2 toTarget = target - squad.Position;
             float distance = math.length(toTarget);
 
-            if (distance > settings.arrivalTolerance)
+            if (distance > settings.squads.arrivalTolerance)
             {
-                if (!RotateTowards(squad, Angles.Of(toTarget), settings.rotationSpeed, ref time))
+                if (!RotateTowards(squad, Angles.Of(toTarget), settings.squads.rotationSpeed, ref time))
                 {
                     return;
                 }
 
-                float speed = GetSpeed(squad.Formation, settings);
+                float speed = GetSpeed(squad.Formation, settings.squads);
                 if (squad.FireState == FireState.Reloading)
                 {
-                    speed *= combat.reloadMoveSpeedMultiplier;
+                    speed *= settings.combat.reloadMoveSpeedMultiplier;
                 }
 
                 float step = speed * time;
@@ -56,15 +90,88 @@ namespace Marchlands.Simulation.Squads
                 time -= distance / speed;
             }
 
-            if (RotateTowards(squad, squad.Order.FinalFacing, settings.rotationSpeed, ref time))
+            if (RotateTowards(squad, squad.Order.FinalFacing, settings.squads.rotationSpeed, ref time))
             {
                 squad.Order = SquadOrder.None;
             }
         }
 
-        public static float GetSpeed(Formation formation, SquadSettings settings)
+        /// <summary>Разворот к центру цели и бег к ней; отряд останавливается при касании, не заходя внутрь.</summary>
+        private static void UpdateCharge(Squad squad, Match match, float deltaTime)
         {
-            return formation == Formation.Line ? settings.lineSpeed : settings.columnSpeed;
+            Squad target = match.FindSquad(squad.Order.TargetSquadId);
+            if (target == null)
+            {
+                return;
+            }
+
+            float time = deltaTime;
+            float2 toTarget = target.Position - squad.Position;
+            if (math.lengthsq(toTarget) <= 0f
+                || !RotateTowards(squad, Angles.Of(toTarget), match.Settings.squads.rotationSpeed, ref time))
+            {
+                return;
+            }
+
+            float distance = FireGeometry.Distance(squad, target, match.Settings.squads);
+            float step = math.min(match.Settings.melee.chargeSpeed * time, distance);
+            squad.Position += math.normalize(toTarget) * step;
+        }
+
+        /// <summary>Бегство: сразу лицом к точке отхода и бегом к ней; там отряд стоит и ждёт сбора.</summary>
+        private static void UpdateRout(Squad squad, Match match, float deltaTime)
+        {
+            float2 direction;
+            float distance;
+            if (match.TryGetRetreatPoint(squad.Side, out float2 retreatPoint))
+            {
+                float2 toPoint = retreatPoint - squad.Position;
+                distance = math.length(toPoint);
+                if (distance <= match.Settings.squads.arrivalTolerance)
+                {
+                    return;
+                }
+
+                direction = toPoint / distance;
+            }
+            else
+            {
+                // Точки отхода нет — бежим прочь от ближайшего врага.
+                Squad enemy = FindNearestEnemy(match, squad);
+                if (enemy == null)
+                {
+                    return;
+                }
+
+                float2 away = squad.Position - enemy.Position;
+                direction = math.lengthsq(away) > 0f ? math.normalize(away) : Angles.Direction(squad.Facing + 180f);
+                distance = float.MaxValue;
+            }
+
+            squad.Facing = Angles.Of(direction);
+            squad.Position += direction * math.min(match.Settings.morale.routSpeed * deltaTime, distance);
+        }
+
+        private static Squad FindNearestEnemy(Match match, Squad squad)
+        {
+            Squad nearest = null;
+            float best = float.MaxValue;
+            foreach (Squad other in match.Squads)
+            {
+                if (other.Side == squad.Side)
+                {
+                    continue;
+                }
+
+                float distance = math.distancesq(other.Position, squad.Position);
+                if (distance < best)
+                {
+                    best = distance;
+                    nearest = other;
+                }
+            }
+
+            return nearest;
         }
 
         private static void UpdateFormationChange(Squad squad, SquadSettings settings, float deltaTime)

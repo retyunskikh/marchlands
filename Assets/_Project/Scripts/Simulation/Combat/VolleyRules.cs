@@ -14,8 +14,11 @@ namespace Marchlands.Simulation.Combat
 
         internal static bool CanStartAiming(Squad squad)
         {
+            // Бегущие, дерущиеся в рукопашной и бегущие в штыки не стреляют.
             return squad != null
                 && squad.Alive > 0
+                && squad.CanReceiveOrders
+                && squad.Order.Type != SquadOrderType.Charge
                 && squad.FireState == FireState.Loaded
                 && !squad.IsChangingFormation;
         }

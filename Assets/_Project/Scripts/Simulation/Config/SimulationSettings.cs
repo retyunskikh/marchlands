@@ -8,5 +8,7 @@ namespace Marchlands.Simulation.Config
     {
         public SquadSettings squads = new SquadSettings();
         public CombatSettings combat = new CombatSettings();
+        public MoraleSettings morale = new MoraleSettings();
+        public MeleeSettings melee = new MeleeSettings();
     }
 }

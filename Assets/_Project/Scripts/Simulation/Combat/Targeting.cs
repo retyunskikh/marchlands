@@ -32,7 +32,8 @@ namespace Marchlands.Simulation.Combat
         public static bool IsValidTarget(Match match, Squad shooter, Squad candidate, float range, out float distance)
         {
             distance = float.MaxValue;
-            if (candidate == null || candidate.Side == shooter.Side || candidate.Alive <= 0)
+            // В свалку рукопашной не стреляют: там и свои.
+            if (candidate == null || candidate.Side == shooter.Side || candidate.Alive <= 0 || candidate.IsInMelee)
             {
                 return false;
             }

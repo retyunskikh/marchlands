@@ -1,5 +1,6 @@
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Morale;
 using Unity.Mathematics;
 
 namespace Marchlands.Simulation.Squads
@@ -69,5 +70,32 @@ namespace Marchlands.Simulation.Squads
 
         /// <summary>Цель, выбранная в начале прицеливания; 0 — нет.</summary>
         public int AimTargetId { get; internal set; }
+
+        /// <summary>Боевой дух, 0–100.</summary>
+        public float Morale { get; internal set; } = MoraleMath.MaxMorale;
+
+        public MoraleState MoraleState { get; internal set; } = MoraleState.Steady;
+
+        public bool IsRouting => MoraleState == MoraleState.Routing;
+
+        /// <summary>Сколько секунд отряд не нёс потерь.</summary>
+        public float TimeSinceLoss { get; internal set; }
+
+        /// <summary>Проверка морали защитника на текущей штыковой атаке уже прошла.</summary>
+        public bool ChargeChecked { get; internal set; }
+
+        /// <summary>Со сколькими врагами отряд сейчас в рукопашной.</summary>
+        public int MeleeOpponents { get; internal set; }
+
+        public bool IsInMelee => MeleeOpponents > 0;
+
+        /// <summary>Накопленные дробные потери в рукопашной.</summary>
+        internal float MeleeLossAccumulator { get; set; }
+
+        /// <summary>Бегущий отряд распался и будет удалён в конце тика.</summary>
+        internal bool IsDisbanded { get; set; }
+
+        /// <summary>Выполняет ли отряд приказы: не бежит и не связан рукопашной.</summary>
+        public bool CanReceiveOrders => !IsRouting && !IsInMelee;
     }
 }

@@ -23,7 +23,7 @@ namespace Marchlands.Simulation.Commands
         public void Execute(Match match)
         {
             Squad squad = match.FindSquad(SquadId);
-            if (squad == null)
+            if (squad == null || !squad.CanReceiveOrders)
             {
                 return;
             }
