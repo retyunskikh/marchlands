@@ -46,5 +46,8 @@ namespace Marchlands.Simulation.Buildings
 
         /// <summary>Сколько осталось до готовности текущего отряда, s.</summary>
         public float RecruitRemaining { get; internal set; }
+
+        /// <summary>Прогресс захвата штаба врагом, s (до hqCaptureTime).</summary>
+        public float CaptureProgress { get; internal set; }
     }
 }

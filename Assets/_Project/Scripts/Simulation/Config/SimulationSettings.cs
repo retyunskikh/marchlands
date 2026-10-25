@@ -13,5 +13,6 @@ namespace Marchlands.Simulation.Config
         public AiSettings ai = new AiSettings();
         public EconomySettings economy = new EconomySettings();
         public BuildingSettings buildings = new BuildingSettings();
+        public VictorySettings victory = new VictorySettings();
     }
 }

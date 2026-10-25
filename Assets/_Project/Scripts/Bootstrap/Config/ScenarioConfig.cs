@@ -15,6 +15,9 @@ namespace Marchlands.Bootstrap.Config
         [Tooltip("Положения деревень; на старте все ничьи.")]
         [SerializeField] private List<Vector2> villages = new List<Vector2>();
 
+        [Tooltip("Проверять условия победы (полный матч). В песочницах выключено.")]
+        [SerializeField] private bool victoryConditions;
+
         [Header("Штабы")]
         [SerializeField] private bool hasHeadquarters;
         [SerializeField] private Vector2 franceHeadquarters;
@@ -35,6 +38,8 @@ namespace Marchlands.Bootstrap.Config
         public IReadOnlyList<Vector2> Villages => villages;
 
         public bool HasHeadquarters => hasHeadquarters;
+
+        public bool VictoryConditions => victoryConditions;
 
         public Vector2 GetHeadquarters(Side side)
         {

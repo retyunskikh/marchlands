@@ -47,6 +47,7 @@ namespace Marchlands.Simulation.Economy
                     village.Owner = present;
                     village.CapturingSide = null;
                     village.CaptureProgress = 0f;
+                    match.RecordCapture(village);
                 }
             }
         }

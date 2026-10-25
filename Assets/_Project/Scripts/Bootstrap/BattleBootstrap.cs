@@ -113,6 +113,11 @@ namespace Marchlands.Bootstrap
 
         private void SpawnScenario()
         {
+            if (scenario.VictoryConditions)
+            {
+                match.EnableVictoryConditions();
+            }
+
             match.SetRetreatPoint(Side.France, scenario.GetRetreatPoint(Side.France));
             match.SetRetreatPoint(Side.Austria, scenario.GetRetreatPoint(Side.Austria));
 

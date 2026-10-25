@@ -7,6 +7,7 @@ using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Melee;
 using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
+using Marchlands.Simulation.Victory;
 using Unity.Mathematics;
 
 namespace Marchlands.Simulation.Core
@@ -29,6 +30,8 @@ namespace Marchlands.Simulation.Core
         private readonly PlayerState[] players = new PlayerState[SideCount];
         private int nextVillageId = 1;
         private readonly List<Building> buildings = new List<Building>();
+        private readonly List<Village> lastTickCaptures = new List<Village>();
+        private readonly float[] dominationTimes = new float[SideCount];
         private int nextBuildingId = 1;
         private readonly float2[] retreatPoints = new float2[SideCount];
         private readonly bool[] hasRetreatPoint = new bool[SideCount];
@@ -64,6 +67,44 @@ namespace Marchlands.Simulation.Core
         public IReadOnlyList<PlayerState> Players => players;
 
         public IReadOnlyList<Building> Buildings => buildings;
+
+        /// <summary>Деревни, сменившие владельца в последнем выполненном тике.</summary>
+        public IReadOnlyList<Village> LastTickCaptures => lastTickCaptures;
+
+        /// <summary>Проверяются ли условия победы. В песочницах выключены.</summary>
+        public bool VictoryEnabled { get; private set; }
+
+        /// <summary>Итог матча; null — матч идёт. После итога тики больше ничего не меняют.</summary>
+        public MatchResult Result { get; private set; }
+
+        public void EnableVictoryConditions()
+        {
+            VictoryEnabled = true;
+        }
+
+        /// <summary>Сколько секунд сторона непрерывно держит долю деревень для доминирования.</summary>
+        public float GetDominationTime(Side side)
+        {
+            return dominationTimes[(int)side];
+        }
+
+        /// <summary>Сколько деревень нужно держать для доминирования (0 — деревень нет).</summary>
+        public int DominationVillagesRequired => VictorySystem.RequiredVillages(this);
+
+        internal void SetDominationTime(Side side, float seconds)
+        {
+            dominationTimes[(int)side] = seconds;
+        }
+
+        internal void Finish(Side winner, VictoryReason reason)
+        {
+            Result ??= new MatchResult(winner, reason, CurrentTick);
+        }
+
+        internal void RecordCapture(Village village)
+        {
+            lastTickCaptures.Add(village);
+        }
 
         /// <summary>Идущие рукопашные.</summary>
         public IReadOnlyList<MeleeEngagement> Engagements => engagements;
@@ -261,7 +302,13 @@ namespace Marchlands.Simulation.Core
 
         public void Tick()
         {
+            if (Result != null)
+            {
+                return;
+            }
+
             float deltaTime = SimulationTime.TickDuration;
+            lastTickCaptures.Clear();
 
             foreach (Squad squad in squads)
             {
@@ -296,6 +343,7 @@ namespace Marchlands.Simulation.Core
             CaptureSystem.Update(this, deltaTime);
             IncomeSystem.Update(this);
             BuildingSystem.Update(this, deltaTime);
+            VictorySystem.Update(this, deltaTime);
 
             squads.RemoveAll(squad => squad.Alive <= 0 || squad.IsWithdrawn);
 

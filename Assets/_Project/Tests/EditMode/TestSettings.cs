@@ -98,6 +98,13 @@ namespace Marchlands.Tests.EditMode
                     recruitTime = 20f,
                     recruitQueueMax = 3,
                     spawnOffset = 4f
+                },
+                victory = new VictorySettings
+                {
+                    hqCaptureRadius = 5f,
+                    hqCaptureTime = 30f,
+                    dominationShare = 2f / 3f,
+                    dominationTime = 180f
                 }
             };
         }
