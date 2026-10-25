@@ -18,6 +18,8 @@ Unity-проект (Unity 6.3 LTS). Корень репозитория — ко
 ## Код
 
 - C#: namespace `Marchlands.*`, поля `[SerializeField] private` вместо публичных полей.
+  Исключение — классы настроек в `Simulation/Config`: это `[Serializable]`-классы с публичными полями (в симуляции нет `SerializeField`), их хранит ScriptableObject в `[SerializeField] private`-поле.
+- Имена сборок — `Game.*`, namespace — `Marchlands.*` (например, сборка `Game.Simulation`, namespace `Marchlands.Simulation`).
 - Не читать `Library/`, `Temp/`, `Logs/` — это генерируемые каталоги.
 
 ## Игра
