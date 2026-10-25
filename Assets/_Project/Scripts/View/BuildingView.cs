@@ -15,7 +15,7 @@ namespace Marchlands.View
         private readonly List<SpriteRenderer> queueDots = new List<SpriteRenderer>();
 
         private Building building;
-        private BuildingSettings settings;
+        private SimulationSettings settings;
         private BuildingViewStyle style;
         private Color sideColor;
         private Vector2 size;
@@ -28,7 +28,7 @@ namespace Marchlands.View
 
         public Building Building => building;
 
-        internal void Initialize(Building building, BuildingSettings settings, BuildingViewStyle style, Color sideColor)
+        internal void Initialize(Building building, SimulationSettings settings, BuildingViewStyle style, Color sideColor)
         {
             this.building = building;
             this.settings = settings;
@@ -77,13 +77,20 @@ namespace Marchlands.View
             inner.color = innerColor;
 
             float progress = -1f;
-            if (!building.IsBuilt)
+            Color progressColor = style.ProgressColor;
+            if (building.CaptureProgress > 0f)
+            {
+                // Враг у штаба — главная тревога, она важнее найма.
+                progress = building.CaptureProgress / settings.victory.hqCaptureTime;
+                progressColor = style.CaptureColor;
+            }
+            else if (!building.IsBuilt)
             {
                 progress = building.BuildProgress;
             }
             else if (building.RecruitQueue > 0)
             {
-                progress = 1f - building.RecruitRemaining / settings.recruitTime;
+                progress = 1f - building.RecruitRemaining / settings.buildings.recruitTime;
             }
 
             bool showProgress = progress >= 0f;
@@ -93,6 +100,7 @@ namespace Marchlands.View
             {
                 Vector2 bar = style.ProgressBarSize;
                 float width = bar.x * math.saturate(progress);
+                progressFill.color = progressColor;
                 progressFill.transform.localPosition = new Vector3(-bar.x * 0.5f + width * 0.5f, style.ProgressBarOffset, 0f);
                 progressFill.transform.localScale = new Vector3(width, bar.y, 1f);
             }

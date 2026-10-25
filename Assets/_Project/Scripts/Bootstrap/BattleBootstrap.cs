@@ -28,11 +28,13 @@ namespace Marchlands.Bootstrap
         [SerializeField] private BuildingViewRegistry buildingViews;
         [SerializeField] private FireArcView fireArc;
         [SerializeField] private VolleyEffectsView volleyEffects;
+        [SerializeField] private BattleSoundsView battleSounds;
         [SerializeField] private BattleInputController input;
         [SerializeField] private OrderPanel orderPanel;
         [SerializeField] private TopBar topBar;
         [SerializeField] private BuildPanel buildPanel;
         [SerializeField] private BuildingPanel buildingPanel;
+        [SerializeField] private GameMenu gameMenu;
 
         private Match match;
         private FixedStepClock clock;
@@ -56,11 +58,13 @@ namespace Marchlands.Bootstrap
             buildingViews.Initialize(match);
             fireArc.Initialize(match);
             volleyEffects.Initialize(match);
+            battleSounds.Initialize(match);
             input.Initialize(match, scenario.PlayerSide);
             orderPanel.Initialize(match);
             topBar.Initialize(match, scenario.PlayerSide);
             buildPanel.Initialize(match, scenario.PlayerSide);
             buildingPanel.Initialize(match);
+            gameMenu.Initialize(match, scenario.PlayerSide);
 
             input.SelectionChanged += OnSelectionChanged;
             input.BuildingSelectionChanged += OnBuildingSelectionChanged;
@@ -103,6 +107,7 @@ namespace Marchlands.Bootstrap
             {
                 match.Tick();
                 volleyEffects.Play(match.LastTickVolleys);
+                battleSounds.Play(match.LastTickCaptures);
             }
 
             squadViews.Render(clock.Alpha);

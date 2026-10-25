@@ -50,7 +50,7 @@ namespace Marchlands.View
                 var viewObject = new GameObject($"{building.Type} {building.Id} ({building.Owner})");
                 viewObject.transform.SetParent(transform, false);
                 var view = viewObject.AddComponent<BuildingView>();
-                view.Initialize(building, match.Settings.buildings, style, squadViews.Style.GetSideColor(building.Owner));
+                view.Initialize(building, match.Settings, style, squadViews.Style.GetSideColor(building.Owner));
                 view.SetSelected(building == selected);
                 views.Add(building.Id, view);
             }
