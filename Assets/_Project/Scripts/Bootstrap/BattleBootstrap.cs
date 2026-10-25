@@ -58,7 +58,7 @@ namespace Marchlands.Bootstrap
             buildingViews.Initialize(match);
             fireArc.Initialize(match);
             volleyEffects.Initialize(match);
-            battleSounds.Initialize(match);
+            battleSounds.Initialize(match, scenario.PlayerSide);
             input.Initialize(match, scenario.PlayerSide);
             orderPanel.Initialize(match);
             topBar.Initialize(match, scenario.PlayerSide);

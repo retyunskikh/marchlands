@@ -2,26 +2,36 @@ using System.Collections.Generic;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Economy;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Marchlands.View
 {
-    /// <summary>Звуки-заглушки боя кроме залпа: лязг, пока идёт рукопашная, и колокол при захвате деревни.</summary>
+    /// <summary>
+    /// Звуки-заглушки боя кроме залпа: шум сражения, пока идёт рукопашная; горн, когда деревню взял игрок,
+    /// и колокол-предупреждение, когда её взял противник.
+    /// </summary>
     public sealed class BattleSoundsView : MonoBehaviour
     {
         [SerializeField] private AudioClip meleeClip;
-        [SerializeField] private AudioClip captureClip;
+        [Tooltip("Деревню взял игрок.")]
+        [SerializeField] private AudioClip ownCaptureClip;
+        [Tooltip("Деревню взял противник.")]
+        [FormerlySerializedAs("captureClip")]
+        [SerializeField] private AudioClip enemyCaptureClip;
         [SerializeField] private float meleeVolume = 0.6f;
-        [Tooltip("Как быстро лязг нарастает и стихает, громкости в секунду.")]
+        [Tooltip("Как быстро шум сражения нарастает и стихает, громкости в секунду.")]
         [SerializeField] private float meleeFadeSpeed = 2f;
         [SerializeField] private float captureVolume = 0.8f;
 
         private Match match;
+        private Side playerSide;
         private AudioSource meleeSource;
         private AudioSource captureSource;
 
-        public void Initialize(Match match)
+        public void Initialize(Match match, Side playerSide)
         {
             this.match = match;
+            this.playerSide = playerSide;
             meleeSource = gameObject.AddComponent<AudioSource>();
             meleeSource.clip = meleeClip;
             meleeSource.loop = true;
@@ -34,9 +44,13 @@ namespace Marchlands.View
         /// <summary>Деревни, сменившие владельца в последнем тике.</summary>
         public void Play(IReadOnlyList<Village> captures)
         {
-            if (captures.Count > 0 && captureClip != null)
+            foreach (Village village in captures)
             {
-                captureSource.PlayOneShot(captureClip, captureVolume);
+                AudioClip clip = village.Owner == playerSide ? ownCaptureClip : enemyCaptureClip;
+                if (clip != null)
+                {
+                    captureSource.PlayOneShot(clip, captureVolume);
+                }
             }
         }
 
@@ -58,7 +72,7 @@ namespace Marchlands.View
                 meleeSource.Stop();
             }
 
-            // На паузе и после конца матча лязг не звучит.
+            // На паузе и после конца матча шум сражения не звучит.
             meleeSource.pitch = Time.timeScale > 0f && match.Result == null ? 1f : 0f;
         }
     }
