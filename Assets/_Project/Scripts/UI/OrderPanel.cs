@@ -41,11 +41,11 @@ namespace Marchlands.UI
         [SerializeField] private string chargeTargetingText = "Выберите врага";
         [SerializeField] private string chargingText = "В атаку!";
 
-        [Header("Огонь по готовности")]
+        [Header("Автоматический огонь")]
         [SerializeField] private Button fireAtWillButton;
         [SerializeField] private Text fireAtWillLabel;
-        [SerializeField] private string fireAtWillOnText = "Огонь по готовности: вкл";
-        [SerializeField] private string fireAtWillOffText = "Огонь по готовности: выкл";
+        [SerializeField] private string fireAtWillOnText = "Автоматический огонь: вкл";
+        [SerializeField] private string fireAtWillOffText = "Автоматический огонь: выкл";
 
         [Header("Стоп")]
         [SerializeField] private Button stopButton;
