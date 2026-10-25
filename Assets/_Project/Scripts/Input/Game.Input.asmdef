@@ -3,8 +3,10 @@
     "rootNamespace": "Marchlands.Input",
     "references": [
         "Game.Simulation",
+        "Game.View",
         "Unity.InputSystem",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
