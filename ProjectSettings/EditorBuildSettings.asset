@@ -6,6 +6,15 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/MainMenu.unity
+    guid: 52078c009f32f22469ac22cf6cdb7751
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle.unity
+    guid: f59ea353e83ffc14e9b817f2dee50f3c
+  - enabled: 1
+    path: Assets/_Project/Scenes/Sandbox_Stress.unity
+    guid: 82545afc6f74cef4d92c719666d43fe0
+  - enabled: 1
     path: Assets/_Project/Scenes/Sandbox_Economy.unity
     guid: 1eb26fa10f82f4744acb6bd239a5962d
   - enabled: 1
@@ -23,9 +32,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Sandbox_Movement.unity
     guid: c785747cab0b4c24fb99a6b194b763f8
-  - enabled: 1
-    path: Assets/_Project/Scenes/Battle.unity
-    guid: f59ea353e83ffc14e9b817f2dee50f3c
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

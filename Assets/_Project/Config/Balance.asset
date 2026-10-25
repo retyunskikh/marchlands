@@ -86,3 +86,8 @@ MonoBehaviour:
       recruitTime: 20
       recruitQueueMax: 3
       spawnOffset: 4
+    victory:
+      hqCaptureRadius: 5
+      hqCaptureTime: 30
+      dominationShare: 0.6666667
+      dominationTime: 180

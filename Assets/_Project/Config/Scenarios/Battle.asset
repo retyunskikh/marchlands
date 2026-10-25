@@ -13,8 +13,38 @@ MonoBehaviour:
   m_Name: Battle
   m_EditorClassIdentifier: Game.Bootstrap::Marchlands.Bootstrap.Config.ScenarioConfig
   playerSide: 0
-  squads: []
+  squads:
+  - side: 0
+    position: {x: -44, y: 7}
+    facing: 0
+    formation: 0
+    fireAtWill: 0
+  - side: 0
+    position: {x: -44, y: -7}
+    facing: 0
+    formation: 0
+    fireAtWill: 0
+  - side: 1
+    position: {x: 44, y: 7}
+    facing: 180
+    formation: 0
+    fireAtWill: 0
+  - side: 1
+    position: {x: 44, y: -7}
+    facing: 180
+    formation: 0
+    fireAtWill: 0
+  villages:
+  - {x: 0, y: 0}
+  - {x: -20, y: 24}
+  - {x: 20, y: 24}
+  - {x: -20, y: -24}
+  - {x: 20, y: -24}
+  victoryConditions: 1
+  hasHeadquarters: 1
+  franceHeadquarters: {x: -52, y: 0}
+  austriaHeadquarters: {x: 52, y: 0}
   franceAi: 0
-  austriaAi: 0
+  austriaAi: 1
   franceRetreatPoint: {x: 0, y: -35}
   austriaRetreatPoint: {x: 0, y: 35}
