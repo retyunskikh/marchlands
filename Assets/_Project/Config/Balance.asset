@@ -24,3 +24,16 @@ MonoBehaviour:
       rotationSpeed: 45
       formationChangeTime: 4
       arrivalTolerance: 0.05
+    combat:
+      maxRange: 12
+      effectiveRange: 7
+      pointBlankRange: 3
+      hitMax: 0.05
+      hitEffective: 0.2
+      hitPointBlank: 0.4
+      firstVolleyMultiplier: 1.5
+      columnTargetMultiplier: 1.3
+      fireArcHalfAngle: 45
+      aimTime: 0.8
+      reloadTime: 14
+      reloadMoveSpeedMultiplier: 0.6
