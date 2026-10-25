@@ -14,6 +14,17 @@ namespace Marchlands.View
         [Tooltip("Доля тёмной внутренней части штаба.")]
         [SerializeField] private float headquartersInnerScale = 0.55f;
         [SerializeField] private Color innerColor = new Color(0.15f, 0.15f, 0.18f);
+
+        [Header("Штаб")]
+        [Tooltip("Усадьба без крыш: ограда, двор, фонтан. Ворота справа.")]
+        [SerializeField] private Sprite headquartersBaseSprite;
+        [Tooltip("Крыши в оттенках серого — окрашиваются цветом стороны.")]
+        [SerializeField] private Sprite headquartersRoofSprite;
+        [Tooltip("Где во дворе стоит флаг, доля размера штаба от центра (для ворот справа).")]
+        [SerializeField] private Vector2 headquartersFlagPosition = new Vector2(0.08f, 0.15f);
+        [SerializeField] private Vector2 headquartersFlagSize = new Vector2(0.7f, 0.42f);
+        [SerializeField] private float headquartersPoleSize = 0.14f;
+        [SerializeField] private Color poleColor = new Color(0.25f, 0.2f, 0.15f);
         [Tooltip("Прозрачность строящегося здания.")]
         [SerializeField] private float constructionAlpha = 0.45f;
         [SerializeField] private Vector2 progressBarSize = new Vector2(2.6f, 0.22f);
@@ -37,6 +48,18 @@ namespace Marchlands.View
         [SerializeField] private int overlaySortingOrder = 55;
 
         public Sprite SquareSprite => squareSprite;
+
+        public Sprite HeadquartersBaseSprite => headquartersBaseSprite;
+
+        public Sprite HeadquartersRoofSprite => headquartersRoofSprite;
+
+        public Vector2 HeadquartersFlagPosition => headquartersFlagPosition;
+
+        public Vector2 HeadquartersFlagSize => headquartersFlagSize;
+
+        public float HeadquartersPoleSize => headquartersPoleSize;
+
+        public Color PoleColor => poleColor;
 
         public Sprite CircleSprite => circleSprite;
 

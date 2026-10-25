@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 2569aee02bb66e149a6d792e6c6f6db5
+guid: b61a6ef4cfacef345a8513a08da88452
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -1819830194433888264
-    second: Mountain_0
+      213: 7601674571666522496
+    second: RiverEast_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 128
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -72,10 +72,10 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 4096
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 2
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Mountain_0
+      name: RiverEast_0
       rect:
         serializedVersion: 2
-        x: 0
+        x: 7
         y: 0
-        width: 128
-        height: 127
+        width: 121
+        height: 2560
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8ffec3d741aaeb6e0800000000000000
-      internalID: -1819830194433888264
+      spriteID: 0818d4e5fb29e7960800000000000000
+      internalID: 7601674571666522496
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Mountain_0: -1819830194433888264
+      RiverEast_0: 7601674571666522496
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

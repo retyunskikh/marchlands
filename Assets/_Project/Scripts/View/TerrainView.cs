@@ -17,7 +17,11 @@ namespace Marchlands.View
         [SerializeField] private Sprite squareSprite;
         [SerializeField] private Sprite discSprite;
         [SerializeField] private Sprite treeSprite;
-        [SerializeField] private Sprite mountainSprite;
+        [Tooltip("Цельные текстуры гор (вид сверху) и рек; растягиваются на полосу между полем и краем карты.")]
+        [SerializeField] private Sprite northMountainsSprite;
+        [SerializeField] private Sprite southMountainsSprite;
+        [SerializeField] private Sprite westRiverSprite;
+        [SerializeField] private Sprite eastRiverSprite;
 
         [Header("Размер карты (как у фона)")]
         [SerializeField] private Vector2 mapSize = new Vector2(120f, 80f);
@@ -31,18 +35,6 @@ namespace Marchlands.View
         [SerializeField] private Vector2 treeSize = new Vector2(1.8f, 2.6f);
         [Tooltip("Сколько деревьев на квадратную единицу рощи.")]
         [SerializeField] private float treeDensity = 0.35f;
-
-        [Header("Реки")]
-        [SerializeField] private Color riverColor = new Color(0.25f, 0.45f, 0.66f);
-        [SerializeField] private Color riverHighlight = new Color(0.4f, 0.6f, 0.8f);
-        [SerializeField] private Color bankColor = new Color(0.76f, 0.7f, 0.5f);
-        [SerializeField] private float bankWidth = 0.8f;
-
-        [Header("Горы")]
-        [SerializeField] private Color mountainBaseColor = new Color(0.42f, 0.38f, 0.33f);
-        [Tooltip("Размер горного массива, u: от и до.")]
-        [SerializeField] private Vector2 massifSize = new Vector2(5.5f, 8f);
-        [SerializeField] private float massifSpacing = 5f;
 
         [Header("Порядок отрисовки")]
         [SerializeField] private int roadSortingOrder = -80;
@@ -64,59 +56,34 @@ namespace Marchlands.View
             DrawForests(terrain);
         }
 
+        /// <summary>Реки слева и справа: полоса от края поля до края карты; горы сверху и снизу перекрывают их концы.</summary>
         private void DrawRivers(TerrainMap terrain)
         {
             float halfMapX = mapSize.x * 0.5f;
-            float height = mapSize.y;
             foreach (float side in new[] { -1f, 1f })
             {
                 float edge = side > 0f ? terrain.BoundsMax.x : terrain.BoundsMin.x;
                 float width = halfMapX - math.abs(edge);
-                if (width <= 0f)
+                if (width > 0f)
                 {
-                    continue;
+                    Sprite sprite = side > 0f ? eastRiverSprite : westRiverSprite;
+                    CreateStretched("River", sprite, borderSortingOrder, new Vector2(edge + side * width * 0.5f, 0f), new Vector2(width, mapSize.y));
                 }
-
-                float center = edge + side * width * 0.5f;
-                Create("River", squareSprite, riverColor, borderSortingOrder, new Vector2(center, 0f), new Vector2(width, height), 0f);
-                Create("River Glint", squareSprite, riverHighlight, borderSortingOrder + 1, new Vector2(center, 0f), new Vector2(width * 0.25f, height), 0f);
-                Create("Bank", squareSprite, bankColor, borderSortingOrder + 2, new Vector2(edge + side * bankWidth * 0.5f, 0f), new Vector2(bankWidth, height), 0f);
             }
         }
 
-        /// <summary>
-        /// Горы сверху и снизу, вид сверху: тёмная подложка и два ряда перекрывающихся горных массивов.
-        /// Массивы не поворачиваются (свет на спрайте общий для всей карты) и краем не заходят на поле.
-        /// </summary>
+        /// <summary>Горы сверху и снизу: предгорья с рваным краем у поля, хребты и снежные вершины к краю карты.</summary>
         private void DrawMountains(TerrainMap terrain)
         {
             float halfMapY = mapSize.y * 0.5f;
-            float width = mapSize.x;
             foreach (float side in new[] { -1f, 1f })
             {
                 float edge = side > 0f ? terrain.BoundsMax.y : terrain.BoundsMin.y;
                 float depth = halfMapY - math.abs(edge);
-                if (depth <= 0f)
+                if (depth > 0f)
                 {
-                    continue;
-                }
-
-                Create("Mountains", squareSprite, mountainBaseColor, borderSortingOrder + 3, new Vector2(0f, edge + side * depth * 0.5f), new Vector2(width, depth), 0f);
-
-                int columns = (int)math.ceil(width / massifSpacing) + 1;
-                for (int row = 0; row < 2; row++)
-                {
-                    for (int i = 0; i < columns; i++)
-                    {
-                        float random = Hash01(i * 4 + row * 2 + (side > 0f ? 1 : 0));
-                        float size = math.lerp(massifSize.x, massifSize.y, random);
-                        float x = -width * 0.5f + (i + row * 0.5f) * massifSpacing + (random - 0.5f) * massifSpacing * 0.5f;
-                        // Ближний ряд — краем у самой границы поля, дальний — глубже в горах.
-                        float inset = size * 0.45f + row * depth * 0.45f;
-                        float y = edge + side * inset;
-                        var scale = new Vector2(size * math.lerp(0.9f, 1.25f, Hash01(i * 7 + row)), size);
-                        Create("Massif", mountainSprite, Color.white, borderSortingOrder + 5 - row, new Vector2(x, y), scale, 0f);
-                    }
+                    Sprite sprite = side > 0f ? northMountainsSprite : southMountainsSprite;
+                    CreateStretched("Mountains", sprite, borderSortingOrder + 3, new Vector2(0f, edge + side * depth * 0.5f), new Vector2(mapSize.x, depth));
                 }
             }
         }
@@ -162,6 +129,12 @@ namespace Marchlands.View
                     Create("Tree", treeSprite, Color.white, order, position, new Vector2(size, size), random * 40f - 20f);
                 }
             }
+        }
+
+        private void CreateStretched(string objectName, Sprite sprite, int sortingOrder, Vector2 position, Vector2 size)
+        {
+            Vector2 spriteSize = sprite.bounds.size;
+            Create(objectName, sprite, Color.white, sortingOrder, position, new Vector2(size.x / spriteSize.x, size.y / spriteSize.y), 0f);
         }
 
         private void Create(string objectName, Sprite sprite, Color color, int sortingOrder, Vector2 position, Vector2 size, float rotation)
