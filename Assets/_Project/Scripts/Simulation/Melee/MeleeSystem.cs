@@ -204,7 +204,7 @@ namespace Marchlands.Simulation.Melee
 
         private static bool IsOut(Squad squad)
         {
-            return squad.IsRouting || squad.Alive <= 0 || squad.IsDisbanded;
+            return squad.IsRouting || squad.Alive <= 0 || squad.IsWithdrawn;
         }
 
         private static void RemoveAt(Match match, int index)

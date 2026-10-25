@@ -202,9 +202,35 @@ namespace Marchlands.Simulation.Core
             hasRetreatPoint[(int)side] = true;
         }
 
-        /// <summary>Куда бегут разбитые отряды стороны: к своему штабу, а без него — к точке отхода из сценария.</summary>
-        public bool TryGetRetreatPoint(Side side, out float2 point)
+        /// <summary>
+        /// Куда бегут разбитые отряды стороны: к ближайшей своей построенной казарме, без неё — к штабу,
+        /// а в песочницах без зданий — к точке отхода из сценария.
+        /// </summary>
+        public bool TryGetRetreatPoint(Side side, float2 from, out float2 point)
         {
+            Building nearestBarracks = null;
+            float bestDistance = float.MaxValue;
+            foreach (Building building in buildings)
+            {
+                if (building.Owner != side || building.Type != BuildingType.Barracks || !building.IsBuilt)
+                {
+                    continue;
+                }
+
+                float distance = math.distancesq(building.Position, from);
+                if (distance < bestDistance)
+                {
+                    nearestBarracks = building;
+                    bestDistance = distance;
+                }
+            }
+
+            if (nearestBarracks != null)
+            {
+                point = nearestBarracks.Position;
+                return true;
+            }
+
             Building headquarters = GetHeadquarters(side);
             if (headquarters != null)
             {
@@ -271,7 +297,7 @@ namespace Marchlands.Simulation.Core
             IncomeSystem.Update(this);
             BuildingSystem.Update(this, deltaTime);
 
-            squads.RemoveAll(squad => squad.Alive <= 0 || squad.IsDisbanded);
+            squads.RemoveAll(squad => squad.Alive <= 0 || squad.IsWithdrawn);
 
             CurrentTick++;
         }

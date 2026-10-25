@@ -98,8 +98,8 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Накопленные дробные потери в рукопашной.</summary>
         internal float MeleeLossAccumulator { get; set; }
 
-        /// <summary>Бегущий отряд распался и будет удалён в конце тика.</summary>
-        internal bool IsDisbanded { get; set; }
+        /// <summary>Бегущий отряд добежал до своих и ушёл в резерв; будет удалён в конце тика.</summary>
+        internal bool IsWithdrawn { get; set; }
 
         /// <summary>Выполняет ли отряд приказы: не бежит и не связан рукопашной.</summary>
         public bool CanReceiveOrders => !IsRouting && !IsInMelee;

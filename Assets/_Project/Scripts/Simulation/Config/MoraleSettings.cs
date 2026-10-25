@@ -34,13 +34,7 @@ namespace Marchlands.Simulation.Config
         /// <summary>Ниже этого порога отряд бежит.</summary>
         public float routThreshold;
 
-        /// <summary>С этого порога бегущий отряд снова управляем.</summary>
-        public float rallyThreshold;
-
         /// <summary>Скорость бегства, u/s.</summary>
         public float routSpeed;
-
-        /// <summary>Бегущий отряд такой численности и меньше распадается.</summary>
-        public int disbandSize;
     }
 }

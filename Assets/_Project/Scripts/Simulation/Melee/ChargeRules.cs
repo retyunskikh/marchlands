@@ -18,7 +18,7 @@ namespace Marchlands.Simulation.Melee
 
         internal static bool IsValidTarget(Squad squad, Squad target)
         {
-            return target != null && target.Side != squad.Side && target.Alive > 0 && !target.IsRouting && !target.IsDisbanded;
+            return target != null && target.Side != squad.Side && target.Alive > 0 && !target.IsRouting && !target.IsWithdrawn;
         }
     }
 }

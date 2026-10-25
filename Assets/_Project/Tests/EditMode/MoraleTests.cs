@@ -124,7 +124,7 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void RoutingSquad_StopsAtRetreatPoint()
+        public void RoutingSquad_ReachingRetreatPoint_JoinsReserve()
         {
             var match = new Match(1, TestSettings.Create());
             match.SetRetreatPoint(Side.France, new float2(0f, -3f));
@@ -133,7 +133,8 @@ namespace Marchlands.Tests.EditMode
 
             RunTicks(match, 50);
 
-            Assert.AreEqual(-3f, squad.Position.y, 1e-3f);
+            Assert.IsNull(match.FindSquad(squad.Id), "Добежавший отряд уходит с поля");
+            Assert.AreEqual(36, match.GetPlayer(Side.France).Reserve);
         }
 
         [Test]
@@ -216,44 +217,43 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void RoutingSquad_RalliesWhenCalm_AndStops()
+        public void RoutingSquad_NeverRalliesInField()
         {
             var match = new Match(1, TestSettings.Create());
-            match.SetRetreatPoint(Side.France, new float2(0f, -100f));
+            match.SetRetreatPoint(Side.France, new float2(0f, -1000f));
             Squad squad = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
             squad.Morale = 10f;
-            match.Tick();
-            Assert.IsTrue(squad.IsRouting);
 
-            // 10 с спокойствия, затем от 10 до 50 по 2 в секунду — ещё 20 с.
-            int ticks = 0;
-            while (squad.IsRouting)
-            {
-                match.Tick();
-                ticks++;
-                Assert.Less(ticks, TicksFor(60f));
-            }
+            RunTicks(match, TicksFor(60f));
 
-            Assert.That(ticks, Is.InRange(TicksFor(30f) - 2, TicksFor(30f) + 2));
-            Assert.AreEqual(SquadOrderType.None, squad.Order.Type);
-            float2 stopped = squad.Position;
-            RunTicks(match, 10);
-            Assert.AreEqual(stopped, squad.Position, "Собравшийся отряд стоит и ждёт приказа");
+            Assert.IsTrue(squad.IsRouting, "Сбора в поле нет: бегущий бежит до своих");
         }
 
         [Test]
-        public void RoutingSquad_AtDisbandSize_IsRemoved()
+        public void SquadBelowMinSize_Routs_EvenWithFullMorale()
         {
             var match = new Match(1, TestSettings.Create());
-            Squad small = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, 5);
-            Squad bigger = match.AddSquad(Side.France, new float2(30f, 0f), 90f, Formation.Line, 6);
-            small.Morale = 5f;
-            bigger.Morale = 5f;
+            Squad small = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, 11);
+            Squad enough = match.AddSquad(Side.France, new float2(30f, 0f), 90f, Formation.Line, 12);
 
             match.Tick();
 
-            Assert.IsNull(match.FindSquad(small.Id));
-            Assert.IsNotNull(match.FindSquad(bigger.Id));
+            Assert.IsTrue(small.IsRouting, "Меньше minSquadSize — уже не отряд");
+            Assert.IsFalse(enough.IsRouting);
+        }
+
+        [Test]
+        public void SquadShotBelowMinSize_Routs()
+        {
+            var match = new Match(1, TestSettings.Create());
+            Squad squad = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, 14);
+            match.Tick();
+            Assert.IsFalse(squad.IsRouting);
+
+            squad.Alive = 11;
+            match.Tick();
+
+            Assert.IsTrue(squad.IsRouting);
         }
 
         [Test]

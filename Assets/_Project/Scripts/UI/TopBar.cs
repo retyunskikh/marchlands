@@ -5,15 +5,18 @@ using UnityEngine.UI;
 
 namespace Marchlands.UI
 {
-    /// <summary>Верхняя панель: золото и число деревень игрока (раздел 4 docs/design.md).</summary>
+    /// <summary>Верхняя панель: золото, число деревень и резерв игрока (раздел 4 docs/design.md).</summary>
     public sealed class TopBar : MonoBehaviour
     {
         [SerializeField] private Text goldLabel;
         [SerializeField] private Text villagesLabel;
+        [SerializeField] private Text reserveLabel;
         [Tooltip("{0} — золото.")]
         [SerializeField] private string goldFormat = "Золото: {0}";
         [Tooltip("{0} — свои деревни, {1} — всего.")]
         [SerializeField] private string villagesFormat = "Деревни: {0} / {1}";
+        [Tooltip("{0} — солдат в резерве.")]
+        [SerializeField] private string reserveFormat = "Резерв: {0}";
 
         // Разряды отделяются пробелом: 1 250.
         private static readonly NumberFormatInfo GroupedNumbers = new NumberFormatInfo { NumberGroupSeparator = " " };
@@ -22,6 +25,7 @@ namespace Marchlands.UI
         private Side playerSide;
         private int shownGold = -1;
         private int shownVillages = -1;
+        private int shownReserve = -1;
 
         public void Initialize(Match match, Side playerSide)
         {
@@ -53,6 +57,13 @@ namespace Marchlands.UI
             {
                 shownVillages = villages;
                 villagesLabel.text = string.Format(villagesFormat, villages, match.Villages.Count);
+            }
+
+            int reserve = match.GetPlayer(playerSide).Reserve;
+            if (reserve != shownReserve)
+            {
+                shownReserve = reserve;
+                reserveLabel.text = string.Format(reserveFormat, reserve.ToString("#,0", GroupedNumbers));
             }
         }
     }

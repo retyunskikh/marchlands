@@ -15,6 +15,7 @@ MonoBehaviour:
   simulation:
     squads:
       squadSize: 36
+      minSquadSize: 12
       lineRanks: 2
       columnFrontWidth: 6
       fileSpacing: 0.5
@@ -48,9 +49,7 @@ MonoBehaviour:
       moraleCalmTime: 10
       calmEnemyRadius: 10
       routThreshold: 15
-      rallyThreshold: 50
       routSpeed: 2
-      disbandSize: 5
     melee:
       chargeSpeed: 2.5
       chargeCheckDistance: 4

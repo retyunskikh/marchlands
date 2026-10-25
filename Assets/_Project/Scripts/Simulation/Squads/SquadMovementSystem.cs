@@ -123,7 +123,7 @@ namespace Marchlands.Simulation.Squads
         {
             float2 direction;
             float distance;
-            if (match.TryGetRetreatPoint(squad.Side, out float2 retreatPoint))
+            if (match.TryGetRetreatPoint(squad.Side, squad.Position, out float2 retreatPoint))
             {
                 float2 toPoint = retreatPoint - squad.Position;
                 distance = math.length(toPoint);

@@ -3,6 +3,7 @@ using Marchlands.Simulation.AI;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Squads;
 using NUnit.Framework;
 using Unity.Mathematics;
@@ -225,6 +226,77 @@ namespace Marchlands.Tests.EditMode
             RunTicks(match, 3);
 
             Assert.AreEqual(0f, Angles.Delta(squad.Facing, -90f), 1e-3f, "Бежит к штабу, а не к точке отхода сценария");
+        }
+
+        [Test]
+        public void RoutingSquad_RunsToNearestBuiltBarracks_AndJoinsReserveThere()
+        {
+            Match match = CreateMatch();
+            Building barracks = BuildReadyBarracks(match, Side.France, FranceHq + new float2(8f, 4f));
+            Squad squad = match.AddSquad(Side.France, new float2(8f, 0f), 90f, Formation.Line, 20);
+            squad.Morale = 5f;
+
+            for (int i = 0; i < TicksFor(30f) && match.FindSquad(squad.Id) != null; i++)
+            {
+                match.Tick();
+            }
+
+            Assert.IsNull(match.FindSquad(squad.Id));
+            Assert.AreEqual(20, match.GetPlayer(Side.France).Reserve);
+            Assert.AreEqual(barracks.Position.y, FranceHq.y + 4f, 1e-4f);
+        }
+
+        [Test]
+        public void RoutingSquad_SwitchesToBarracks_WhenItIsBuilt()
+        {
+            Match match = CreateMatch();
+            match.Enqueue(new BuildBarracksCommand(Side.France, FranceHq + new float2(8f, 0f)));
+            match.Tick();
+            Building barracks = match.Buildings.Single(b => b.Type == BuildingType.Barracks);
+            Squad squad = match.AddSquad(Side.France, new float2(20f, -10f), 90f, Formation.Line);
+            squad.Morale = 5f;
+
+            RunTicks(match, 3);
+            float2 towardHq = math.normalize(FranceHq - squad.Position);
+            Assert.AreEqual(0f, Angles.Delta(squad.Facing, Angles.Of(towardHq)), 1e-2f, "Пока казарма строится — к штабу");
+
+            barracks.BuildRemaining = 0f;
+            RunTicks(match, 2);
+            float2 towardBarracks = math.normalize(barracks.Position - squad.Position);
+            Assert.AreEqual(0f, Angles.Delta(squad.Facing, Angles.Of(towardBarracks)), 1e-2f, "Казарма построена — к ней");
+        }
+
+        [Test]
+        public void Recruit_IsFreeFromReserve_OnlyWhenFullSquadGathered()
+        {
+            Match match = CreateMatch();
+            Building barracks = BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
+            PlayerState player = match.GetPlayer(Side.France);
+            player.Gold = 100;
+            player.Reserve = 20;
+
+            match.Enqueue(new RecruitCommand(barracks.Id));
+            match.Tick();
+            Assert.AreEqual(40, player.Gold, "Пока в резерве меньше отряда — найм за золото");
+            Assert.AreEqual(20, player.Reserve);
+
+            player.Reserve = 40;
+            match.Enqueue(new RecruitCommand(barracks.Id));
+            match.Tick();
+            Assert.AreEqual(40, player.Gold, "Полный отряд в резерве — найм бесплатный");
+            Assert.AreEqual(4, player.Reserve);
+            Assert.AreEqual(2, barracks.RecruitQueue);
+        }
+
+        [Test]
+        public void Recruit_FromReserve_WorksWithoutGold()
+        {
+            Match match = CreateMatch();
+            Building barracks = BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
+            match.GetPlayer(Side.France).Gold = 0;
+            match.GetPlayer(Side.France).Reserve = 36;
+
+            Assert.IsTrue(BuildRules.CanRecruit(match, barracks));
         }
 
         [Test]

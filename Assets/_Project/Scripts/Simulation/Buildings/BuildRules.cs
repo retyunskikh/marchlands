@@ -49,11 +49,22 @@ namespace Marchlands.Simulation.Buildings
 
         public static bool CanRecruit(Match match, Building building)
         {
-            return building != null
-                && building.Type == BuildingType.Barracks
-                && building.IsBuilt
-                && building.RecruitQueue < match.Settings.buildings.recruitQueueMax
-                && match.GetPlayer(building.Owner).Gold >= match.Settings.buildings.squadCost;
+            if (building == null
+                || building.Type != BuildingType.Barracks
+                || !building.IsBuilt
+                || building.RecruitQueue >= match.Settings.buildings.recruitQueueMax)
+            {
+                return false;
+            }
+
+            return RecruitsFromReserve(match, building.Owner)
+                || match.GetPlayer(building.Owner).Gold >= match.Settings.buildings.squadCost;
+        }
+
+        /// <summary>Набрался ли в резерве полный отряд: тогда найм бесплатный и берёт людей из резерва.</summary>
+        public static bool RecruitsFromReserve(Match match, Side side)
+        {
+            return match.GetPlayer(side).Reserve >= match.Settings.squads.squadSize;
         }
     }
 }

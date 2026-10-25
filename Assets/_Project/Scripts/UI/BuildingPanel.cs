@@ -27,6 +27,7 @@ namespace Marchlands.UI
         [SerializeField] private string recruitingFormat = "Очередь {0} / {1}, найм {2}%";
         [Tooltip("{0} — цена отряда.")]
         [SerializeField] private string recruitFormat = "Нанять ({0})";
+        [SerializeField] private string recruitFromReserveText = "Нанять из резерва";
 
         private Match match;
         private Building building;
@@ -34,7 +35,6 @@ namespace Marchlands.UI
         public void Initialize(Match match)
         {
             this.match = match;
-            recruitLabel.text = string.Format(recruitFormat, match.Settings.buildings.squadCost);
             recruitButton.onClick.AddListener(OnRecruit);
             SetBuilding(null);
         }
@@ -62,6 +62,9 @@ namespace Marchlands.UI
             titleLabel.text = isBarracks ? barracksTitle : headquartersTitle;
             recruitButton.gameObject.SetActive(isBarracks);
             recruitButton.interactable = BuildRules.CanRecruit(match, building);
+            recruitLabel.text = BuildRules.RecruitsFromReserve(match, building.Owner)
+                ? recruitFromReserveText
+                : string.Format(recruitFormat, match.Settings.buildings.squadCost);
             statusLabel.text = GetStatus(isBarracks);
         }
 

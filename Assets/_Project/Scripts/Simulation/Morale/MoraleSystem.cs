@@ -8,8 +8,9 @@ using Unity.Mathematics;
 namespace Marchlands.Simulation.Morale
 {
     /// <summary>
-    /// Состояния морали в конце тика: бегство (с разовым штрафом союзникам рядом, который может вызвать
-    /// цепное бегство), восстановление в спокойствии, сбор бегущих и распад малых бегущих отрядов.
+    /// Состояния морали в конце тика: бегство при низкой морали или численности меньше minSquadSize
+    /// (с разовым штрафом союзникам рядом, который может вызвать цепное бегство), восстановление в спокойствии.
+    /// Сбора в поле нет: добежавший до своих отряд уходит в резерв стороны.
     /// </summary>
     internal static class MoraleSystem
     {
@@ -19,7 +20,8 @@ namespace Marchlands.Simulation.Morale
 
             foreach (Squad squad in match.Squads)
             {
-                if (!squad.IsRouting && squad.Morale < settings.routThreshold)
+                bool tooFew = squad.Alive < match.Settings.squads.minSquadSize;
+                if (!squad.IsRouting && (squad.Morale < settings.routThreshold || tooFew))
                 {
                     Rout(match, squad);
                 }
@@ -29,22 +31,32 @@ namespace Marchlands.Simulation.Morale
 
             foreach (Squad squad in match.Squads)
             {
+                if (squad.IsRouting)
+                {
+                    TryWithdraw(match, squad);
+                    continue;
+                }
+
                 squad.TimeSinceLoss += deltaTime;
                 if (IsCalm(match, squad))
                 {
                     squad.Morale = math.min(MoraleMath.MaxMorale, squad.Morale + settings.moraleRegen * deltaTime);
                 }
+            }
+        }
 
-                if (squad.IsRouting && squad.Morale >= settings.rallyThreshold)
-                {
-                    squad.MoraleState = MoraleState.Steady;
-                    squad.Order = SquadOrder.None;
-                }
+        /// <summary>Бегущий, добежавший до казармы (штаба, точки отхода), уходит с поля в резерв стороны.</summary>
+        private static void TryWithdraw(Match match, Squad squad)
+        {
+            if (squad.Alive <= 0 || !match.TryGetRetreatPoint(squad.Side, squad.Position, out float2 point))
+            {
+                return;
+            }
 
-                if (squad.IsRouting && squad.Alive <= settings.disbandSize)
-                {
-                    squad.IsDisbanded = true;
-                }
+            if (math.distance(squad.Position, point) <= match.Settings.squads.arrivalTolerance)
+            {
+                match.GetPlayer(squad.Side).Reserve += squad.Alive;
+                squad.IsWithdrawn = true;
             }
         }
 
@@ -74,7 +86,7 @@ namespace Marchlands.Simulation.Morale
                 Squad routed = match.PendingRouts.Dequeue();
                 foreach (Squad ally in match.Squads)
                 {
-                    if (ally == routed || ally.Side != routed.Side || ally.IsDisbanded)
+                    if (ally == routed || ally.Side != routed.Side || ally.IsWithdrawn)
                     {
                         continue;
                     }

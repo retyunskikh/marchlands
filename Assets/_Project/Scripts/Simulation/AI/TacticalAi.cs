@@ -442,7 +442,7 @@ namespace Marchlands.Simulation.AI
 
         private void KeepRetreating(Match match, Squad squad, SquadBrain brain)
         {
-            if (!match.TryGetRetreatPoint(squad.Side, out float2 point))
+            if (!match.TryGetRetreatPoint(squad.Side, squad.Position, out float2 point))
             {
                 return;
             }

@@ -15,6 +15,7 @@ namespace Marchlands.Tests.EditMode
                 squads = new SquadSettings
                 {
                     squadSize = 36,
+                    minSquadSize = 12,
                     lineRanks = 2,
                     columnFrontWidth = 6,
                     fileSpacing = 0.5f,
@@ -52,9 +53,7 @@ namespace Marchlands.Tests.EditMode
                     moraleCalmTime = 10f,
                     calmEnemyRadius = 10f,
                     routThreshold = 15f,
-                    rallyThreshold = 50f,
-                    routSpeed = 2f,
-                    disbandSize = 5
+                    routSpeed = 2f
                 },
                 melee = new MeleeSettings
                 {
