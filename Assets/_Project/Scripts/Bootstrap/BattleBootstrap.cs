@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Marchlands.Bootstrap.Config;
 using Marchlands.Input;
 using Marchlands.Simulation.AI;
@@ -5,8 +6,10 @@ using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
+using Marchlands.Simulation.Terrain;
 using Marchlands.UI;
 using Marchlands.View;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Marchlands.Bootstrap
@@ -23,6 +26,7 @@ namespace Marchlands.Bootstrap
         [SerializeField] private int targetFrameRate = 60;
 
         [Header("Сцена")]
+        [SerializeField] private TerrainView terrainView;
         [SerializeField] private SquadViewRegistry squadViews;
         [SerializeField] private VillageViewRegistry villageViews;
         [SerializeField] private BuildingViewRegistry buildingViews;
@@ -53,6 +57,7 @@ namespace Marchlands.Bootstrap
             clock = new FixedStepClock(SimulationTime.TicksPerSecond, SimulationTime.MaxTicksPerAdvance);
             SpawnScenario();
 
+            terrainView.Initialize(match);
             squadViews.Initialize(match);
             villageViews.Initialize(match);
             buildingViews.Initialize(match);
@@ -118,6 +123,11 @@ namespace Marchlands.Bootstrap
 
         private void SpawnScenario()
         {
+            if (scenario.HasTerrain)
+            {
+                match.SetTerrain(BuildTerrain());
+            }
+
             if (scenario.VictoryConditions)
             {
                 match.EnableVictoryConditions();
@@ -153,6 +163,29 @@ namespace Marchlands.Bootstrap
                     match.Enqueue(new SetFireAtWillCommand(squad.Id, true));
                 }
             }
+        }
+
+        private TerrainMap BuildTerrain()
+        {
+            var terrain = new TerrainMap(scenario.TerrainMin, scenario.TerrainMax);
+            foreach (ScenarioConfig.ForestSpawn forest in scenario.Forests)
+            {
+                terrain.AddForest(forest.Center, forest.Radius);
+            }
+
+            var points = new List<float2>();
+            foreach (ScenarioConfig.RoadSpawn road in scenario.Roads)
+            {
+                points.Clear();
+                foreach (Vector2 point in road.Points)
+                {
+                    points.Add(point);
+                }
+
+                terrain.AddRoad(points);
+            }
+
+            return terrain;
         }
 
         private void OnBuildingSelectionChanged(Building building)

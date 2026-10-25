@@ -27,6 +27,14 @@ namespace Marchlands.Bootstrap.Config
         [SerializeField] private bool franceAi;
         [SerializeField] private bool austriaAi = true;
 
+        [Header("Местность (полная карта)")]
+        [SerializeField] private bool hasTerrain;
+        [Tooltip("Проходимая зона; за ней горы (сверху и снизу) и реки (слева и справа).")]
+        [SerializeField] private Vector2 terrainMin;
+        [SerializeField] private Vector2 terrainMax;
+        [SerializeField] private List<ForestSpawn> forests = new List<ForestSpawn>();
+        [SerializeField] private List<RoadSpawn> roads = new List<RoadSpawn>();
+
         [Header("Точки отхода (для песочниц без штабов)")]
         [SerializeField] private Vector2 franceRetreatPoint;
         [SerializeField] private Vector2 austriaRetreatPoint;
@@ -38,6 +46,16 @@ namespace Marchlands.Bootstrap.Config
         public IReadOnlyList<Vector2> Villages => villages;
 
         public bool HasHeadquarters => hasHeadquarters;
+
+        public bool HasTerrain => hasTerrain;
+
+        public Vector2 TerrainMin => terrainMin;
+
+        public Vector2 TerrainMax => terrainMax;
+
+        public IReadOnlyList<ForestSpawn> Forests => forests;
+
+        public IReadOnlyList<RoadSpawn> Roads => roads;
 
         public bool VictoryConditions => victoryConditions;
 
@@ -54,6 +72,26 @@ namespace Marchlands.Bootstrap.Config
         public Vector2 GetRetreatPoint(Side side)
         {
             return side == Side.France ? franceRetreatPoint : austriaRetreatPoint;
+        }
+
+        [Serializable]
+        public sealed class ForestSpawn
+        {
+            [SerializeField] private Vector2 center;
+            [SerializeField] private float radius;
+
+            public Vector2 Center => center;
+
+            public float Radius => radius;
+        }
+
+        [Serializable]
+        public sealed class RoadSpawn
+        {
+            [Tooltip("Точки ломаной дороги по порядку.")]
+            [SerializeField] private List<Vector2> points = new List<Vector2>();
+
+            public IReadOnlyList<Vector2> Points => points;
         }
 
         [Serializable]

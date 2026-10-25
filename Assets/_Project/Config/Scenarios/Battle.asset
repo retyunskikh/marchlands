@@ -46,5 +46,54 @@ MonoBehaviour:
   austriaHeadquarters: {x: 52, y: 0}
   franceAi: 0
   austriaAi: 1
+  hasTerrain: 1
+  terrainMin: {x: -56, y: -34}
+  terrainMax: {x: 56, y: 34}
+  forests:
+  - center: {x: -9, y: 13}
+    radius: 4.5
+  - center: {x: 9, y: -13}
+    radius: 4.5
+  - center: {x: -5, y: 15.5}
+    radius: 3.5
+  - center: {x: 5, y: -15.5}
+    radius: 3.5
+  - center: {x: 9, y: 12}
+    radius: 4
+  - center: {x: -9, y: -12}
+    radius: 4
+  - center: {x: -40, y: 18}
+    radius: 5
+  - center: {x: 40, y: -18}
+    radius: 5
+  - center: {x: -40, y: -16}
+    radius: 4
+  - center: {x: 40, y: 16}
+    radius: 4
+  roads:
+  - points:
+    - {x: -52, y: 0}
+    - {x: -34, y: 0}
+    - {x: -16, y: -2}
+    - {x: 0, y: 0}
+    - {x: 16, y: 2}
+    - {x: 34, y: 0}
+    - {x: 52, y: 0}
+  - points:
+    - {x: -34, y: 0}
+    - {x: -26, y: 13}
+    - {x: -20, y: 24}
+    - {x: 0, y: 27}
+    - {x: 20, y: 24}
+    - {x: 26, y: 13}
+    - {x: 34, y: 0}
+  - points:
+    - {x: -34, y: 0}
+    - {x: -26, y: -13}
+    - {x: -20, y: -24}
+    - {x: 0, y: -27}
+    - {x: 20, y: -24}
+    - {x: 26, y: -13}
+    - {x: 34, y: 0}
   franceRetreatPoint: {x: 0, y: -35}
   austriaRetreatPoint: {x: 0, y: 35}

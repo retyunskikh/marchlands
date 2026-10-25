@@ -5,6 +5,7 @@ using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Squads;
+using Marchlands.Simulation.Terrain;
 using Marchlands.Simulation.Victory;
 using NUnit.Framework;
 using Unity.Mathematics;
@@ -216,6 +217,59 @@ namespace Marchlands.Tests.EditMode
 
             Assert.AreEqual(tick, match.CurrentTick);
             Assert.AreEqual(float2.zero, squad.Position);
+        }
+
+        [Test]
+        public void AiVsAi_FullMapWithTerrain_EndsWithin20000Ticks([Values(1, 2)] int seed)
+        {
+            Match match = CreateFullMap((ulong)seed);
+            var terrain = new TerrainMap(new float2(-56f, -34f), new float2(56f, 34f));
+            terrain.AddRoad(new[] { new float2(-52f, 0f), new float2(-34f, 0f), new float2(0f, 0f), new float2(34f, 0f), new float2(52f, 0f) });
+            terrain.AddRoad(new[] { new float2(-34f, 0f), new float2(-20f, 24f), new float2(20f, 24f), new float2(34f, 0f) });
+            terrain.AddRoad(new[] { new float2(-34f, 0f), new float2(-20f, -24f), new float2(20f, -24f), new float2(34f, 0f) });
+            foreach (float sign in new[] { -1f, 1f })
+            {
+                terrain.AddForest(new float2(-9f, 13f) * sign, 4.5f);
+                terrain.AddForest(new float2(9f, 12f) * sign, 4f);
+                terrain.AddForest(new float2(-40f, 18f) * sign, 5f);
+            }
+
+            match.SetTerrain(terrain);
+
+            for (int tick = 0; tick < 20000 && match.Result == null; tick++)
+            {
+                match.Tick();
+                foreach (Squad squad in match.Squads)
+                {
+                    Assert.IsTrue(terrain.Contains(squad.Position), $"Отряд вышел за границу на тике {tick}");
+                }
+            }
+
+            Assert.IsNotNull(match.Result, $"seed {seed}: матч ИИ против ИИ с местностью не закончился за 20 000 тиков");
+        }
+
+        private static Match CreateFullMap(ulong seed)
+        {
+            var match = new Match(seed, TestSettings.Create());
+            match.EnableVictoryConditions();
+            match.AddHeadquarters(Side.France, FranceHq);
+            match.AddHeadquarters(Side.Austria, AustriaHq);
+            match.AddVillage(new float2(0f, 0f));
+            match.AddVillage(new float2(-20f, 24f));
+            match.AddVillage(new float2(20f, 24f));
+            match.AddVillage(new float2(-20f, -24f));
+            match.AddVillage(new float2(20f, -24f));
+            foreach (Side side in new[] { Side.France, Side.Austria })
+            {
+                float x = side == Side.France ? -44f : 44f;
+                float facing = side == Side.France ? 0f : 180f;
+                match.AddSquad(side, new float2(x, 7f), facing, Formation.Line);
+                match.AddSquad(side, new float2(x, -7f), facing, Formation.Line);
+                match.AddController(new TacticalAi(side));
+                match.AddController(new StrategicAi(side));
+            }
+
+            return match;
         }
 
         [Test]

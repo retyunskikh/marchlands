@@ -69,6 +69,7 @@ MonoBehaviour:
       repathDistance: 1
       engageRadius: 15
       defenseRadius: 20
+      directApproachDistance: 12
     economy:
       captureRadius: 4
       captureTime: 15
@@ -91,3 +92,9 @@ MonoBehaviour:
       hqCaptureTime: 30
       dominationShare: 0.6666667
       dominationTime: 180
+    terrain:
+      roadSpeedMultiplier: 1.25
+      roadHalfWidth: 1.5
+      forestSpeedMultiplier: 0.6
+      forestCoverMultiplier: 0.7
+      pathCellSize: 2
