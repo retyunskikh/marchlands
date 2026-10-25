@@ -88,6 +88,33 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void TransitionSlots_AreAPermutation_AndKeepLeftToRightOrder(
+            [Values(Formation.Line, Formation.Column)] Formation from,
+            [Values(36, 35, 17, 7, 1)] int alive)
+        {
+            Formation to = from == Formation.Line ? Formation.Column : Formation.Line;
+            var fromSlots = new List<float2>();
+            var toSlots = new List<float2>();
+            var targets = new List<int>();
+            FormationLayout.GetLocalSlots(from, alive, settings, fromSlots);
+            FormationLayout.GetLocalSlots(to, alive, settings, toSlots);
+
+            FormationLayout.MatchTransitionSlots(fromSlots, toSlots, targets);
+
+            CollectionAssert.AreEquivalent(System.Linq.Enumerable.Range(0, alive), targets, "Каждый слот нового строя занят ровно одним солдатом");
+            for (int i = 0; i < alive; i++)
+            {
+                for (int j = 0; j < alive; j++)
+                {
+                    if (fromSlots[i].x < fromSlots[j].x)
+                    {
+                        Assert.LessOrEqual(toSlots[targets[i]].x, toSlots[targets[j]].x, $"Солдаты {i} и {j} меняются местами слева направо");
+                    }
+                }
+            }
+        }
+
+        [Test]
         public void LocalToWorld_RotatesWithFacing()
         {
             // Фронт смотрит вверх (90°): «вправо по фронту» — это +X мира, «вперёд» — +Y.

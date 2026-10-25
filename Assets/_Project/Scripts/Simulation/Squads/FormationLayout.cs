@@ -54,9 +54,59 @@ namespace Marchlands.Simulation.Squads
             }
         }
 
+        /// <summary>
+        /// Сопоставляет слоты двух строёв для перестроения: <paramref name="targetForSource"/>[i] — слот
+        /// в <paramref name="toSlots"/>, куда идёт солдат из <paramref name="fromSlots"/>[i]. Оба строя
+        /// упорядочиваются слева направо (а внутри ряда — от фронта к тылу) и сопоставляются по порядку,
+        /// поэтому строй сжимается или раздаётся вбок без пересечения путей.
+        /// </summary>
+        public static void MatchTransitionSlots(List<float2> fromSlots, List<float2> toSlots, List<int> targetForSource)
+        {
+            if (fromSlots.Count != toSlots.Count)
+            {
+                throw new System.ArgumentException("Число слотов в обоих строях должно совпадать.");
+            }
+
+            List<int> fromOrder = SortLeftToRight(fromSlots);
+            List<int> toOrder = SortLeftToRight(toSlots);
+
+            targetForSource.Clear();
+            for (int i = 0; i < fromSlots.Count; i++)
+            {
+                targetForSource.Add(0);
+            }
+
+            for (int k = 0; k < fromOrder.Count; k++)
+            {
+                targetForSource[fromOrder[k]] = toOrder[k];
+            }
+        }
+
         public static float2 LocalToWorld(float2 local, float2 position, float facing)
         {
             return position + Angles.Right(facing) * local.x + Angles.Direction(facing) * local.y;
+        }
+
+        private static List<int> SortLeftToRight(List<float2> slots)
+        {
+            var order = new List<int>(slots.Count);
+            for (int i = 0; i < slots.Count; i++)
+            {
+                order.Add(i);
+            }
+
+            order.Sort((a, b) =>
+            {
+                int byX = slots[a].x.CompareTo(slots[b].x);
+                if (byX != 0)
+                {
+                    return byX;
+                }
+
+                int byFront = slots[b].y.CompareTo(slots[a].y);
+                return byFront != 0 ? byFront : a.CompareTo(b);
+            });
+            return order;
         }
 
         private static int CeilDiv(int value, int divisor)

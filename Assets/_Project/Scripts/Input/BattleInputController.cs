@@ -44,13 +44,11 @@ namespace Marchlands.Input
             cameraController.Initialize(config);
         }
 
-        private void Awake()
-        {
-            gestures = new TouchGestures(config);
-        }
-
         private void OnEnable()
         {
+            // Создаём здесь, а не в Awake: после перекомпиляции в Play Mode Unity вызывает OnEnable без Awake.
+            gestures ??= new TouchGestures(config);
+
             EnhancedTouchSupport.Enable();
 #if UNITY_EDITOR
             // В редакторе мышь изображает палец.

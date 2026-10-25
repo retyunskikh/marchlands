@@ -19,11 +19,17 @@ namespace Marchlands.View
         private readonly List<SpriteRenderer> soldiers = new List<SpriteRenderer>();
         private readonly List<float2> fromSlots = new List<float2>();
         private readonly List<float2> toSlots = new List<float2>();
+        private readonly List<int> transitionTargets = new List<int>();
 
         private Squad squad;
         private SquadSettings settings;
         private SquadViewStyle style;
         private SpriteRenderer selectionMarker;
+
+        private Formation slotsFormation;
+        private Formation slotsTarget;
+        private int slotsAlive = -1;
+        private bool slotsChanging;
 
         public Squad Squad => squad;
 
@@ -48,18 +54,15 @@ namespace Marchlands.View
             float facing = squad.PreviousFacing + Angles.Delta(squad.PreviousFacing, squad.Facing) * alpha;
 
             SyncSoldierCount(squad.Alive);
+            UpdateSlots();
 
-            FormationLayout.GetLocalSlots(squad.Formation, squad.Alive, settings, fromSlots);
-            float change = squad.IsChangingFormation ? squad.FormationChangeProgress : 0f;
-            if (squad.IsChangingFormation)
-            {
-                FormationLayout.GetLocalSlots(squad.TargetFormation, squad.Alive, settings, toSlots);
-            }
+            bool changing = squad.IsChangingFormation;
+            float change = changing ? GetSmoothedChangeProgress(alpha) : 0f;
 
             Quaternion rotation = Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset);
             for (int i = 0; i < soldiers.Count; i++)
             {
-                float2 local = squad.IsChangingFormation ? math.lerp(fromSlots[i], toSlots[i], change) : fromSlots[i];
+                float2 local = changing ? math.lerp(fromSlots[i], toSlots[transitionTargets[i]], change) : fromSlots[i];
                 float2 world = FormationLayout.LocalToWorld(local, position, facing);
                 soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), rotation);
             }
@@ -76,6 +79,43 @@ namespace Marchlands.View
                 marker.SetPositionAndRotation(new Vector3(position.x, position.y, 0f), rotation);
                 marker.localScale = new Vector3((half.x + style.SelectionPadding) * 2f, (half.y + style.SelectionPadding) * 2f, 1f);
             }
+        }
+
+        /// <summary>
+        /// Пересчитывает слоты только при смене строя, численности или начале перестроения:
+        /// сопоставление мест для перестроения должно оставаться одним и тем же до его конца.
+        /// </summary>
+        private void UpdateSlots()
+        {
+            bool changing = squad.IsChangingFormation;
+            if (slotsFormation == squad.Formation && slotsTarget == squad.TargetFormation
+                && slotsAlive == squad.Alive && slotsChanging == changing && fromSlots.Count == squad.Alive)
+            {
+                return;
+            }
+
+            slotsFormation = squad.Formation;
+            slotsTarget = squad.TargetFormation;
+            slotsAlive = squad.Alive;
+            slotsChanging = changing;
+
+            FormationLayout.GetLocalSlots(squad.Formation, squad.Alive, settings, fromSlots);
+            if (changing)
+            {
+                FormationLayout.GetLocalSlots(squad.TargetFormation, squad.Alive, settings, toSlots);
+                FormationLayout.MatchTransitionSlots(fromSlots, toSlots, transitionTargets);
+            }
+        }
+
+        /// <summary>
+        /// Прогресс перестроения симуляция обновляет раз в тик; между тиками досчитываем его по alpha
+        /// и сглаживаем разгон и торможение.
+        /// </summary>
+        private float GetSmoothedChangeProgress(float alpha)
+        {
+            float perTick = SimulationTime.TickDuration / settings.formationChangeTime;
+            float progress = math.saturate(squad.FormationChangeProgress + alpha * perTick);
+            return math.smoothstep(0f, 1f, progress);
         }
 
         private void SyncSoldierCount(int alive)
