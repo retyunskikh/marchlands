@@ -38,5 +38,11 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Сколько отрядов егерей ИИ держит на поле; остальных людей собирает в гренадёров.</summary>
         public int jaegerSquads;
+
+        /// <summary>Сколько отрядов конницы держит ИИ.</summary>
+        public int cavalrySquads;
+
+        /// <summary>Конница ИИ бросается в атаку на врага ближе этой дистанции (от фронта), u.</summary>
+        public float cavalryChargeDistance;
     }
 }

@@ -36,14 +36,15 @@ namespace Marchlands.View
             transform.position = new Vector3(building.Position.x, building.Position.y, 0f);
 
             bool isHeadquarters = building.Type == BuildingType.Headquarters;
-            size = isHeadquarters ? style.HeadquartersSize : style.BarracksSize;
+            bool isStable = building.Type == BuildingType.Stable;
+            size = isHeadquarters ? style.HeadquartersSize : isStable ? style.StableSize : style.BarracksSize;
 
             selection = CreateRenderer("Selection", style.BodySortingOrder - 1, style.SelectionColor);
             selection.transform.localScale = new Vector3(size.x + style.SelectionPadding * 2f, size.y + style.SelectionPadding * 2f, 1f);
             selection.enabled = false;
 
-            Sprite baseSprite = isHeadquarters ? style.HeadquartersBaseSprite : style.BarracksBaseSprite;
-            Sprite roofSprite = isHeadquarters ? style.HeadquartersRoofSprite : style.BarracksRoofSprite;
+            Sprite baseSprite = isHeadquarters ? style.HeadquartersBaseSprite : isStable ? style.StableBaseSprite : style.BarracksBaseSprite;
+            Sprite roofSprite = isHeadquarters ? style.HeadquartersRoofSprite : isStable ? style.StableRoofSprite : style.BarracksRoofSprite;
             if (baseSprite != null && roofSprite != null)
             {
                 CreateEstate(baseSprite, roofSprite, isHeadquarters);
@@ -143,9 +144,10 @@ namespace Marchlands.View
             {
                 progress = building.BuildProgress;
             }
-            else if (building.IsHiring && settings.buildings.hireInterval > 0f)
+            else if (building.IsHiring)
             {
-                progress = 1f - building.HireRemaining / settings.buildings.hireInterval;
+                float interval = BuildRules.GetHireInterval(building, settings.buildings);
+                progress = interval > 0f ? 1f - building.HireRemaining / interval : -1f;
             }
 
             bool showProgress = progress >= 0f;

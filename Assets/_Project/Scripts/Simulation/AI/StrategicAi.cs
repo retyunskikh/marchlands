@@ -10,7 +10,8 @@ namespace Marchlands.Simulation.AI
     /// <summary>
     /// Стратегический ИИ одной стороны (этап 6 docs/design.md): в начале строит казарму в радиусе штаба на стороне,
     /// обращённой к противнику, затем держит в казармах найм и формирует отряды: егерей (они быстрее берут деревни) —
-    /// до jaegerSquads и не больше, чем гренадёров, остальных людей собирает в гренадёров. Отрядами управляет <see cref="TacticalAi"/>.
+    /// до jaegerSquads и не больше, чем гренадёров, остальных людей собирает в гренадёров. Когда золота хватает,
+    /// строит конюшню и держит cavalrySquads отрядов конницы. Отрядами управляет <see cref="TacticalAi"/>.
     /// Приказы — только командами, с той же задержкой реакции.
     /// </summary>
     public sealed class StrategicAi : IMatchController
@@ -49,13 +50,23 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
-            if (!HasBarracks(match))
+            if (!HasBuilding(match, BuildingType.Barracks))
             {
                 if (BuildRules.CanAffordBarracks(match, Side) && TryFindBarracksSite(match, headquarters, out float2 site))
                 {
                     Issue(match, new BuildBarracksCommand(Side, site));
                 }
 
+                return;
+            }
+
+            // Конюшню — когда золота хватает и на неё, и на отряд гренадёров: пехота важнее.
+            int reserveGold = match.Settings.grenadiers.squadSize * match.Settings.buildings.hireCost;
+            if (ai.cavalrySquads > 0 && !HasBuilding(match, BuildingType.Stable)
+                && match.GetPlayer(Side).Gold >= match.Settings.buildings.stableCost + reserveGold
+                && TryFindBarracksSite(match, headquarters, out float2 stableSite))
+            {
+                Issue(match, new BuildStableCommand(Side, stableSite));
                 return;
             }
 
@@ -75,6 +86,12 @@ namespace Marchlands.Simulation.AI
             if (BuildRules.CanFormSquad(match, Side, type))
             {
                 Issue(match, new FormSquadCommand(Side, type));
+                return;
+            }
+
+            if (CountSquads(match, UnitType.Cavalry) < ai.cavalrySquads && BuildRules.CanFormSquad(match, Side, UnitType.Cavalry))
+            {
+                Issue(match, new FormSquadCommand(Side, UnitType.Cavalry));
             }
         }
 
@@ -92,11 +109,11 @@ namespace Marchlands.Simulation.AI
             return count;
         }
 
-        private bool HasBarracks(Match match)
+        private bool HasBuilding(Match match, BuildingType type)
         {
             foreach (Building building in match.Buildings)
             {
-                if (building.Owner == Side && building.Type == BuildingType.Barracks)
+                if (building.Owner == Side && building.Type == type)
                 {
                     return true;
                 }

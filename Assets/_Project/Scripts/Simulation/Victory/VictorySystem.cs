@@ -131,28 +131,35 @@ namespace Marchlands.Simulation.Victory
             return !CanStillRecruit(match, side);
         }
 
-        /// <summary>Есть казарма (хотя бы строящаяся), а ждущих людей вместе с теми, кого можно нанять, хватит на отряд.</summary>
+        /// <summary>
+        /// Есть казарма (хотя бы строящаяся), а ждущих людей вместе с теми, кого можно нанять, хватит на пехотный отряд,
+        /// или то же для конюшни и конницы.
+        /// </summary>
         private static bool CanStillRecruit(Match match, Side side)
         {
             bool hasBarracks = false;
+            bool hasStable = false;
             foreach (Building building in match.Buildings)
             {
-                if (building.Owner == side && building.Type == BuildingType.Barracks)
+                if (building.Owner != side)
                 {
-                    hasBarracks = true;
-                    break;
+                    continue;
                 }
-            }
 
-            if (!hasBarracks)
-            {
-                return false;
+                hasBarracks |= building.Type == BuildingType.Barracks;
+                hasStable |= building.Type == BuildingType.Stable;
             }
 
             PlayerState player = match.GetPlayer(side);
-            int hireCost = match.Settings.buildings.hireCost;
-            long recruitable = hireCost > 0 ? player.Gold / hireCost : int.MaxValue;
-            return player.Reserve + recruitable >= UnitStats.SmallestSquadSize(match.Settings);
+            BuildingSettings settings = match.Settings.buildings;
+            return hasBarracks && CanGather(player.Reserve, player.Gold, settings.hireCost, UnitStats.SmallestInfantrySquadSize(match.Settings))
+                || hasStable && CanGather(player.CavalryReserve, player.Gold, settings.cavalryHireCost, match.Settings.cavalry.squadSize);
+        }
+
+        private static bool CanGather(int reserve, int gold, int hireCost, int squadSize)
+        {
+            long hireable = hireCost > 0 ? gold / hireCost : int.MaxValue;
+            return reserve + hireable >= squadSize;
         }
 
         private static void GetPresence(Match match, float2 point, float radius, out bool ownerPresent, out bool enemyPresent, Side owner)

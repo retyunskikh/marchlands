@@ -8,14 +8,15 @@ namespace Marchlands.Simulation.Combat
     {
         public static bool CanVolley(Match match, Squad squad)
         {
-            return CanStartAiming(squad)
+            return CanStartAiming(match, squad)
                 && Targeting.FindTarget(match, squad, UnitStats.MaxRange(squad, match.Settings)) != null;
         }
 
-        internal static bool CanStartAiming(Squad squad)
+        internal static bool CanStartAiming(Match match, Squad squad)
         {
-            // Бегущие, дерущиеся в рукопашной и бегущие в штыки не стреляют.
+            // Конница, бегущие, дерущиеся в рукопашной и бегущие в штыки не стреляют.
             return squad != null
+                && UnitStats.CanFire(squad, match.Settings)
                 && squad.Alive > 0
                 && squad.CanReceiveOrders
                 && squad.Order.Type != SquadOrderType.Charge

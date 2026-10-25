@@ -31,6 +31,9 @@ MonoBehaviour:
       rangeMultiplier: 1
       moraleLossMultiplier: 0.8
       meleeMultiplier: 1.25
+      canFire: 1
+      chargeBonusMultiplier: 1
+      targetHitMultiplier: 1
     jaegers:
       squadSize: 16
       minSquadSize: 6
@@ -39,6 +42,20 @@ MonoBehaviour:
       rangeMultiplier: 1.25
       moraleLossMultiplier: 1
       meleeMultiplier: 0.7
+      canFire: 1
+      chargeBonusMultiplier: 1
+      targetHitMultiplier: 1
+    cavalry:
+      squadSize: 24
+      minSquadSize: 8
+      speedMultiplier: 2.2
+      accuracyMultiplier: 1
+      rangeMultiplier: 1
+      moraleLossMultiplier: 1
+      meleeMultiplier: 2
+      canFire: 0
+      chargeBonusMultiplier: 2
+      targetHitMultiplier: 1.3
     combat:
       maxRange: 12
       effectiveRange: 7
@@ -87,6 +104,8 @@ MonoBehaviour:
       defenseRadius: 20
       directApproachDistance: 12
       jaegerSquads: 2
+      cavalrySquads: 1
+      cavalryChargeDistance: 12
     economy:
       captureRadius: 4
       captureTime: 15
@@ -95,6 +114,7 @@ MonoBehaviour:
       villageIncome: 3
       hqIncome: 2
       startGold: 150
+      reinforceInterval: 6
     buildings:
       barracksCost: 120
       barracksBuildTime: 30
@@ -103,6 +123,11 @@ MonoBehaviour:
       hireCost: 2
       hireInterval: 2
       maxWaitingRecruits: 96
+      stableCost: 200
+      stableBuildTime: 40
+      cavalryHireCost: 6
+      cavalryHireInterval: 3
+      maxWaitingCavalry: 48
       spawnOffset: 4
     victory:
       hqCaptureRadius: 5

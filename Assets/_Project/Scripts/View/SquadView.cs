@@ -251,6 +251,7 @@ namespace Marchlands.View
                 roles.Add(SoldierRole.Private);
             }
 
+            // У конницы — только офицер в центре первой шеренги.
             SetRole(files / 2, SoldierRole.Officer);
             if (squad.Type == UnitType.Grenadiers && ranks > 1)
             {

@@ -1,4 +1,5 @@
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
 
 namespace Marchlands.Simulation.Buildings
@@ -6,7 +7,8 @@ namespace Marchlands.Simulation.Buildings
     public enum BuildingType
     {
         Headquarters,
-        Barracks
+        Barracks,
+        Stable
     }
 
     /// <summary>Здание стороны: штаб или казарма. Снаружи сборки только для чтения.</summary>
@@ -41,8 +43,11 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Доля выполненной постройки, в [0, 1].</summary>
         public float BuildProgress => BuildTime > 0f ? math.saturate(1f - BuildRemaining / BuildTime) : 1f;
 
-        /// <summary>Идёт ли в казарме найм рекрутов.</summary>
+        /// <summary>Идёт ли в казарме или конюшне найм.</summary>
         public bool IsHiring { get; internal set; }
+
+        /// <summary>Найм приостанавливается, когда людей хватает на отряд этого рода войск; null — найм без остановки.</summary>
+        public UnitType? HireUntil { get; internal set; }
 
         /// <summary>Сколько осталось до прихода следующего рекрута, s.</summary>
         public float HireRemaining { get; internal set; }

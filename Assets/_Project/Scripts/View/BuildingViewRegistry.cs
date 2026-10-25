@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -17,6 +18,7 @@ namespace Marchlands.View
 
         private readonly Dictionary<int, BuildingView> views = new Dictionary<int, BuildingView>();
         private readonly List<SpriteRenderer>[] recruits = { new List<SpriteRenderer>(), new List<SpriteRenderer>() };
+        private readonly List<SpriteRenderer>[] riders = { new List<SpriteRenderer>(), new List<SpriteRenderer>() };
 
         private Match match;
         private Building selected;
@@ -65,21 +67,27 @@ namespace Marchlands.View
                 view.Render();
             }
 
-            RenderRecruits(Side.France);
-            RenderRecruits(Side.Austria);
+            foreach (Side side in new[] { Side.France, Side.Austria })
+            {
+                RenderWaiting(side, UnitType.Grenadiers, recruits[(int)side], squadViews.Style.RecruitSprite, 1f);
+                RenderWaiting(side, UnitType.Cavalry, riders[(int)side],
+                    squadViews.Style.GetSoldierSprite(side, UnitType.Cavalry, SoldierRole.Private), 1.8f);
+            }
         }
 
-        /// <summary>Ждущие люди стоят толпой перед воротами казармы, лицом к фронту; рисуется не больше recruitsShownMax.</summary>
-        private void RenderRecruits(Side side)
+        /// <summary>
+        /// Ждущие люди резерва стоят толпой перед воротами здания, где формируется их род войск, лицом к фронту;
+        /// рисуется не больше recruitsShownMax. <paramref name="spread"/> — во сколько раз реже стоят (всадники крупнее).
+        /// </summary>
+        private void RenderWaiting(Side side, UnitType type, List<SpriteRenderer> crowd, Sprite sprite, float spread)
         {
-            List<SpriteRenderer> crowd = recruits[(int)side];
-            Building barracks = BuildRules.GetFormingBarracks(match, side);
-            int shown = barracks == null || squadViews.Style.RecruitSprite == null
+            Building barracks = BuildRules.GetFormingBuilding(match, side, type);
+            int shown = barracks == null || sprite == null
                 ? 0
-                : math.min(match.GetPlayer(side).Reserve, style.RecruitsShownMax);
+                : math.min(match.GetPlayer(side).GetReserve(type), style.RecruitsShownMax);
             while (crowd.Count < shown)
             {
-                crowd.Add(CreatePreview($"Recruit {side} {crowd.Count}", squadViews.Style.RecruitSprite, style.BodySortingOrder + 5));
+                crowd.Add(CreatePreview($"Waiting {type} {side} {crowd.Count}", sprite, style.BodySortingOrder + 5));
             }
 
             for (int i = 0; i < crowd.Count; i++)
@@ -95,7 +103,8 @@ namespace Marchlands.View
             // Фронт — как у появляющегося отряда: к центру карты, то есть ворота отражённой по горизонтали казармы.
             float2 front = new float2(barracks.Position.x > 0f ? -1f : 1f, 0f);
             float2 right = new float2(front.y, -front.x);
-            float2 start = barracks.Position + front * (style.BarracksSize.x * 0.5f + style.RecruitsOffset);
+            Vector2 buildingSize = barracks.Type == BuildingType.Stable ? style.StableSize : style.BarracksSize;
+            float2 start = barracks.Position + front * (buildingSize.x * 0.5f + style.RecruitsOffset);
             Quaternion rotation = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(front.y, front.x)) - 90f);
             int perRow = math.max(1, style.RecruitsPerRow);
             for (int i = 0; i < shown; i++)
@@ -107,7 +116,7 @@ namespace Marchlands.View
                 float jitterY = Hash01(i * 2 + 1 + (int)side * 977) - 0.5f;
                 float2 local = new float2(
                     (column - (perRow - 1) * 0.5f + jitterX * 0.6f) * style.RecruitsSpacing.x,
-                    (row + jitterY * 0.5f) * style.RecruitsSpacing.y);
+                    (row + jitterY * 0.5f) * style.RecruitsSpacing.y) * spread;
                 float2 world = start + right * local.x + front * local.y;
                 crowd[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), rotation);
             }
@@ -122,9 +131,11 @@ namespace Marchlands.View
             return (hash & 0xFFFFFF) / (float)0x1000000;
         }
 
-        /// <summary>Круг допустимого радиуса вокруг штаба и, если место выбрано, силуэт казармы зелёным или красным.</summary>
-        public void ShowPlacement(Vector2 headquarters, Vector2? site, bool valid)
+        /// <summary>Круг допустимого радиуса вокруг штаба и, если место выбрано, силуэт здания зелёным или красным.</summary>
+        public void ShowPlacement(Vector2 headquarters, Vector2? site, bool valid, BuildingType type)
         {
+            Vector2 size = type == BuildingType.Stable ? style.StableSize : style.BarracksSize;
+            sitePreview.transform.localScale = new Vector3(size.x, size.y, 1f);
             radiusPreview.enabled = true;
             radiusPreview.transform.position = headquarters;
             radiusPreview.transform.localScale = Vector3.one * (match.Settings.buildings.buildRadiusFromHQ * 2f);

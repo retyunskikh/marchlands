@@ -143,7 +143,7 @@ namespace Marchlands.Simulation.Squads
             }
 
             float distance = FireGeometry.Distance(squad, target, match.Settings.squads);
-            float speed = match.Settings.melee.chargeSpeed * match.TerrainSpeedMultiplier(squad.Position);
+            float speed = UnitStats.ChargeSpeed(squad, match.Settings) * match.TerrainSpeedMultiplier(squad.Position);
             float step = math.min(speed * time, distance);
             squad.Position += math.normalize(toTarget) * step;
         }
@@ -153,7 +153,7 @@ namespace Marchlands.Simulation.Squads
         {
             float2 direction;
             float distance;
-            if (match.TryGetRetreatPoint(squad.Side, squad.Position, out float2 retreatPoint))
+            if (match.TryGetRetreatPoint(squad, out float2 retreatPoint))
             {
                 float2 toPoint = retreatPoint - squad.Position;
                 distance = math.length(toPoint);

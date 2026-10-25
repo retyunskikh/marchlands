@@ -11,6 +11,7 @@ namespace Marchlands.View
         [SerializeField] private Sprite circleSprite;
         [SerializeField] private Vector2 headquartersSize = new Vector2(3.2f, 3.2f);
         [SerializeField] private Vector2 barracksSize = new Vector2(3.4f, 2.2f);
+        [SerializeField] private Vector2 stableSize = new Vector2(3.6f, 2.6f);
         [Tooltip("Доля тёмной внутренней части штаба.")]
         [SerializeField] private float headquartersInnerScale = 0.55f;
         [SerializeField] private Color innerColor = new Color(0.15f, 0.15f, 0.18f);
@@ -31,6 +32,12 @@ namespace Marchlands.View
         [SerializeField] private Sprite barracksBaseSprite;
         [Tooltip("Крыши казармы и караульни в оттенках серого — окрашиваются цветом стороны.")]
         [SerializeField] private Sprite barracksRoofSprite;
+
+        [Header("Конюшня")]
+        [Tooltip("Левада с изгородью, коновязь, сено. Ворота справа.")]
+        [SerializeField] private Sprite stableBaseSprite;
+        [Tooltip("Крыши конюшни в оттенках серого — окрашиваются цветом стороны.")]
+        [SerializeField] private Sprite stableRoofSprite;
         [Tooltip("Прозрачность строящегося здания.")]
         [SerializeField] private float constructionAlpha = 0.45f;
         [SerializeField] private Vector2 progressBarSize = new Vector2(2.6f, 0.22f);
@@ -74,6 +81,12 @@ namespace Marchlands.View
         public Color PoleColor => poleColor;
 
         public Sprite BarracksBaseSprite => barracksBaseSprite;
+
+        public Sprite StableBaseSprite => stableBaseSprite;
+
+        public Sprite StableRoofSprite => stableRoofSprite;
+
+        public Vector2 StableSize => stableSize;
 
         public int RecruitsShownMax => recruitsShownMax;
 

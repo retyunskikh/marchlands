@@ -7,8 +7,9 @@ using Unity.Mathematics;
 namespace Marchlands.Simulation.Buildings
 {
     /// <summary>
-    /// Постройка казарм и найм: казарма с включённым наймом раз в hireInterval за hireCost получает рекрута
-    /// в общий резерв стороны, пока у казарм ждут меньше maxWaitingRecruits человек.
+    /// Постройка зданий и найм. Казарма с включённым наймом раз в hireInterval за hireCost получает рекрута
+    /// в резерв стороны, конюшня — всадника в резерв конницы. Найм ждёт, если не хватает золота, если у зданий
+    /// ждёт предельное число людей или если их уже хватает на отряд цели найма.
     /// </summary>
     internal static class BuildingSystem
     {
@@ -40,27 +41,23 @@ namespace Marchlands.Simulation.Buildings
             }
         }
 
-        /// <summary>Рекрут приходит, когда истёк таймер, хватает золота и у казарм ещё есть место; иначе ждёт.</summary>
-        private static void Hire(Match match, Building barracks, BuildingSettings settings, float deltaTime)
+        /// <summary>Рекрут приходит, когда истёк таймер и найм не ждёт (см. <see cref="BuildRules.IsWaiting"/>).</summary>
+        private static void Hire(Match match, Building building, BuildingSettings settings, float deltaTime)
         {
-            barracks.HireRemaining = math.max(0f, barracks.HireRemaining - deltaTime);
-            if (barracks.HireRemaining > TimerEpsilon)
+            building.HireRemaining = math.max(0f, building.HireRemaining - deltaTime);
+            if (building.HireRemaining > TimerEpsilon || BuildRules.IsWaiting(match, building) != HireWait.None)
             {
                 return;
             }
 
-            PlayerState player = match.GetPlayer(barracks.Owner);
-            if (player.Gold < settings.hireCost || player.Reserve >= settings.maxWaitingRecruits)
-            {
-                return;
-            }
-
-            player.Gold -= settings.hireCost;
-            player.Reserve++;
-            barracks.HireRemaining = settings.hireInterval;
+            bool stable = building.Type == BuildingType.Stable;
+            PlayerState player = match.GetPlayer(building.Owner);
+            player.Gold -= stable ? settings.cavalryHireCost : settings.hireCost;
+            player.AddReserve(stable ? UnitType.Cavalry : UnitType.Grenadiers, 1);
+            building.HireRemaining = BuildRules.GetHireInterval(building, settings);
         }
 
-        /// <summary>Отряд появляется в spawnOffset от казармы со стороны вражеского штаба, фронтом к нему.</summary>
+        /// <summary>Отряд появляется в spawnOffset от здания со стороны вражеского штаба, фронтом к нему.</summary>
         internal static Squad SpawnSquad(Match match, Building barracks, UnitType type)
         {
             float2 direction = GetFrontDirection(match, barracks);

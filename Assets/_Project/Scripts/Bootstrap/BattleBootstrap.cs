@@ -117,6 +117,7 @@ namespace Marchlands.Bootstrap
                 match.Tick();
                 volleyEffects.Play(match.LastTickVolleys);
                 battleSounds.Play(match.LastTickCaptures);
+                villageViews.Play(match.LastTickReinforcements);
             }
 
             squadViews.Render(clock.Alpha);

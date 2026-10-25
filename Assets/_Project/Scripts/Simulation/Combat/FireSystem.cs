@@ -61,7 +61,7 @@ namespace Marchlands.Simulation.Combat
                     continue;
                 }
 
-                if (squad.FireState == FireState.Loaded && squad.FireAtWill && VolleyRules.CanStartAiming(squad))
+                if (squad.FireState == FireState.Loaded && squad.FireAtWill && VolleyRules.CanStartAiming(match, squad))
                 {
                     Squad target = Targeting.FindTarget(match, squad, UnitStats.EffectiveRange(squad, match.Settings));
                     if (target != null)
@@ -132,6 +132,7 @@ namespace Marchlands.Simulation.Combat
             // Дальнобойность рода войск растягивает всю кривую попадания: егерь на 1.25 × d бьёт, как гренадёр на d.
             UnitTypeSettings unit = UnitStats.Of(shooter, match.Settings);
             float scaledDistance = distance / unit.rangeMultiplier;
+            cover *= UnitStats.Of(target, match.Settings).targetHitMultiplier;
             float probability = VolleyMath.HitProbability(scaledDistance, shooter.IsFirstVolley, target.Formation, combat, cover, unit.accuracyMultiplier);
             int casualties = VolleyMath.RollCasualties(match.Random, shooters, probability, target.Alive);
             bool pointBlank = scaledDistance <= combat.pointBlankRange;

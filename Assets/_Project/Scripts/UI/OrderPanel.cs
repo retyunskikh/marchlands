@@ -109,6 +109,10 @@ namespace Marchlands.UI
 
             bool obeys = squad.CanReceiveOrders;
 
+            // Конница не стреляет — кнопок огня у неё нет.
+            bool canFire = UnitStats.CanFire(squad, match.Settings);
+            volleyButton.gameObject.SetActive(canFire);
+            fireAtWillButton.gameObject.SetActive(canFire);
             volleyButton.interactable = VolleyRules.CanVolley(match, squad);
             volleyLabel.text = GetVolleyText();
 

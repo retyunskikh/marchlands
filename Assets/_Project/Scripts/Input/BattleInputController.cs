@@ -39,6 +39,7 @@ namespace Marchlands.Input
 
         private Building selectedBuilding;
         private bool isPlacing;
+        private BuildingType placementType;
         private float2? placementSite;
         private bool lastPlacementConfirmable;
 
@@ -48,7 +49,7 @@ namespace Marchlands.Input
         /// <summary>Выделенное здание изменилось; null — выделение снято.</summary>
         public event Action<Building> BuildingSelectionChanged;
 
-        /// <summary>Режим постановки казармы: включён ли он, выбрано ли место и можно ли там поставить казарму.</summary>
+        /// <summary>Режим постановки здания: включён ли он, выбрано ли место и можно ли там поставить здание.</summary>
         public event Action<bool, bool, bool> PlacementChanged;
 
         /// <summary>Включился или выключился выбор цели для «В штыки».</summary>
@@ -63,8 +64,8 @@ namespace Marchlands.Input
             cameraController.Initialize(config);
         }
 
-        /// <summary>«Казарма» нажата: тап по земле выбирает место, затем «Поставить» или «Отмена».</summary>
-        public void BeginPlacement()
+        /// <summary>«Казарма» или «Конюшня» нажата: тап по земле выбирает место, затем «Поставить» или «Отмена».</summary>
+        public void BeginPlacement(BuildingType type)
         {
             if (match.GetHeadquarters(playerSide) == null)
             {
@@ -74,15 +75,18 @@ namespace Marchlands.Input
             Select(null);
             SelectBuilding(null);
             isPlacing = true;
+            placementType = type;
             placementSite = null;
             RefreshPlacement(force: true);
         }
 
         public void ConfirmPlacement()
         {
-            if (isPlacing && placementSite.HasValue && BuildRules.CanBuildBarracks(match, playerSide, placementSite.Value))
+            if (isPlacing && placementSite.HasValue && BuildRules.CanBuild(match, playerSide, placementType, placementSite.Value))
             {
-                match.Enqueue(new BuildBarracksCommand(playerSide, placementSite.Value));
+                match.Enqueue(placementType == BuildingType.Stable
+                    ? new BuildStableCommand(playerSide, placementSite.Value)
+                    : (ICommand)new BuildBarracksCommand(playerSide, placementSite.Value));
             }
 
             CancelPlacement();
@@ -332,12 +336,12 @@ namespace Marchlands.Input
         private void RefreshPlacement(bool force)
         {
             bool confirmable = isPlacing && placementSite.HasValue
-                && BuildRules.CanBuildBarracks(match, playerSide, placementSite.Value);
+                && BuildRules.CanBuild(match, playerSide, placementType, placementSite.Value);
             if (isPlacing)
             {
                 Building headquarters = match.GetHeadquarters(playerSide);
                 Vector2? site = placementSite.HasValue ? (Vector2)placementSite.Value : (Vector2?)null;
-                buildingViews.ShowPlacement(headquarters.Position, site, confirmable);
+                buildingViews.ShowPlacement(headquarters.Position, site, confirmable, placementType);
             }
 
             if (force || confirmable != lastPlacementConfirmable)

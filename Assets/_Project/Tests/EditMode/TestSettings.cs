@@ -78,7 +78,9 @@ namespace Marchlands.Tests.EditMode
                     engageRadius = 15f,
                     defenseRadius = 20f,
                     directApproachDistance = 12f,
-                    jaegerSquads = 2
+                    jaegerSquads = 2,
+                    cavalrySquads = 1,
+                    cavalryChargeDistance = 12f
                 },
                 grenadiers = new UnitTypeSettings
                 {
@@ -88,7 +90,10 @@ namespace Marchlands.Tests.EditMode
                     accuracyMultiplier = 1f,
                     rangeMultiplier = 1f,
                     moraleLossMultiplier = 1f,
-                    meleeMultiplier = 1f
+                    meleeMultiplier = 1f,
+                    canFire = true,
+                    chargeBonusMultiplier = 1f,
+                    targetHitMultiplier = 1f
                 },
                 jaegers = new UnitTypeSettings
                 {
@@ -98,7 +103,23 @@ namespace Marchlands.Tests.EditMode
                     accuracyMultiplier = 1.4f,
                     rangeMultiplier = 1.25f,
                     moraleLossMultiplier = 1f,
-                    meleeMultiplier = 0.7f
+                    meleeMultiplier = 0.7f,
+                    canFire = true,
+                    chargeBonusMultiplier = 1f,
+                    targetHitMultiplier = 1f
+                },
+                cavalry = new UnitTypeSettings
+                {
+                    squadSize = 24,
+                    minSquadSize = 8,
+                    speedMultiplier = 2.2f,
+                    accuracyMultiplier = 1f,
+                    rangeMultiplier = 1f,
+                    moraleLossMultiplier = 1f,
+                    meleeMultiplier = 2f,
+                    canFire = false,
+                    chargeBonusMultiplier = 2f,
+                    targetHitMultiplier = 1.3f
                 },
                 economy = new EconomySettings
                 {
@@ -108,7 +129,8 @@ namespace Marchlands.Tests.EditMode
                     incomeInterval = 5f,
                     villageIncome = 3,
                     hqIncome = 2,
-                    startGold = 150
+                    startGold = 150,
+                    reinforceInterval = 6f
                 },
                 buildings = new BuildingSettings
                 {
@@ -119,6 +141,11 @@ namespace Marchlands.Tests.EditMode
                     hireCost = 2,
                     hireInterval = 2f,
                     maxWaitingRecruits = 96,
+                    stableCost = 200,
+                    stableBuildTime = 40f,
+                    cavalryHireCost = 6,
+                    cavalryHireInterval = 3f,
+                    maxWaitingCavalry = 48,
                     spawnOffset = 4f
                 },
                 victory = new VictorySettings

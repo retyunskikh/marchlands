@@ -26,5 +26,8 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Золото на старте.</summary>
         public int startGold;
+
+        /// <summary>Раз в столько секунд пехотный отряд в своей деревне получает одного человека, s.</summary>
+        public float reinforceInterval;
     }
 }

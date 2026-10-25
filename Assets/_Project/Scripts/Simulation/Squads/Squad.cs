@@ -101,6 +101,9 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Накопленные дробные потери в рукопашной.</summary>
         internal float MeleeLossAccumulator { get; set; }
 
+        /// <summary>Сколько секунд отряд стоит в своей деревне с момента последнего пополнения.</summary>
+        internal float ReinforceTimer { get; set; }
+
         /// <summary>Бегущий отряд добежал до своих и ушёл в резерв; будет удалён в конце тика.</summary>
         internal bool IsWithdrawn { get; set; }
 

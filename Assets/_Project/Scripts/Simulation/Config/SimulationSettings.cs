@@ -10,6 +10,7 @@ namespace Marchlands.Simulation.Config
         public SquadSettings squads = new SquadSettings();
         public UnitTypeSettings grenadiers = new UnitTypeSettings();
         public UnitTypeSettings jaegers = new UnitTypeSettings();
+        public UnitTypeSettings cavalry = new UnitTypeSettings();
         public CombatSettings combat = new CombatSettings();
         public MoraleSettings morale = new MoraleSettings();
         public MeleeSettings melee = new MeleeSettings();
@@ -21,7 +22,15 @@ namespace Marchlands.Simulation.Config
 
         public UnitTypeSettings Unit(UnitType type)
         {
-            return type == UnitType.Jaegers ? jaegers : grenadiers;
+            switch (type)
+            {
+                case UnitType.Jaegers:
+                    return jaegers;
+                case UnitType.Cavalry:
+                    return cavalry;
+                default:
+                    return grenadiers;
+            }
         }
     }
 }

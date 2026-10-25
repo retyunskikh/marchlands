@@ -70,14 +70,14 @@ namespace Marchlands.Simulation.Morale
         /// <summary>Бегущий, добежавший до казармы (штаба, точки отхода), уходит с поля в резерв стороны.</summary>
         private static void TryWithdraw(Match match, Squad squad)
         {
-            if (squad.Alive <= 0 || !match.TryGetRetreatPoint(squad.Side, squad.Position, out float2 point))
+            if (squad.Alive <= 0 || !match.TryGetRetreatPoint(squad, out float2 point))
             {
                 return;
             }
 
             if (math.distance(squad.Position, point) <= match.Settings.squads.arrivalTolerance)
             {
-                match.GetPlayer(squad.Side).Reserve += squad.Alive;
+                match.GetPlayer(squad.Side).AddReserve(squad.Type, squad.Alive);
                 squad.IsWithdrawn = true;
             }
         }

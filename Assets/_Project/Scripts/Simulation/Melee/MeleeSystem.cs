@@ -151,7 +151,9 @@ namespace Marchlands.Simulation.Melee
                 float defenderStrength = (float)defender.Alive / defender.MeleeOpponents;
 
                 float elapsed = (match.CurrentTick - engagement.StartTick) * elapsedPerTick;
-                float attackerMultiplier = elapsed < melee.chargeBonusDuration ? melee.chargeBonus : 1f;
+                // Бонус атаки (сверх 1) у конницы больше: удар в сабли с разгона.
+                float chargeBonus = 1f + (melee.chargeBonus - 1f) * UnitStats.Of(attacker, match.Settings).chargeBonusMultiplier;
+                float attackerMultiplier = elapsed < melee.chargeBonusDuration ? chargeBonus : 1f;
                 if (engagement.IsFlank)
                 {
                     attackerMultiplier *= melee.flankMeleeMultiplier;

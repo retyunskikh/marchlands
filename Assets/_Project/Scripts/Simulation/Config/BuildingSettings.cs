@@ -26,6 +26,20 @@ namespace Marchlands.Simulation.Config
         /// <summary>Пока у казарм ждут столько людей, найм приостановлен.</summary>
         public int maxWaitingRecruits;
 
+        public int stableCost;
+
+        /// <summary>Время постройки конюшни, s.</summary>
+        public float stableBuildTime;
+
+        /// <summary>Цена одного всадника.</summary>
+        public int cavalryHireCost;
+
+        /// <summary>Раз в столько секунд конюшня с включённым наймом получает всадника, s.</summary>
+        public float cavalryHireInterval;
+
+        /// <summary>Пока у конюшен ждут столько всадников, найм приостановлен.</summary>
+        public int maxWaitingCavalry;
+
         /// <summary>На каком расстоянии от казармы появляется нанятый отряд, u.</summary>
         public float spawnOffset;
     }

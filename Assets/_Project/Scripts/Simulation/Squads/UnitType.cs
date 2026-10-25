@@ -7,6 +7,9 @@ namespace Marchlands.Simulation.Squads
         Grenadiers,
 
         /// <summary>Лёгкая пехота: малочисленна, быстра, метко бьёт издалека, слаба в рукопашной.</summary>
-        Jaegers
+        Jaegers,
+
+        /// <summary>Конница: дорогая, быстрая, сильна в рукопашной, не стреляет. Нанимается в конюшне.</summary>
+        Cavalry
     }
 }

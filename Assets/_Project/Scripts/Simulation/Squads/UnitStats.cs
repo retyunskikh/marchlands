@@ -34,13 +34,24 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Самый большой множитель скорости среди родов войск.</summary>
         public static float FastestSpeedMultiplier(SimulationSettings settings)
         {
-            return System.Math.Max(settings.grenadiers.speedMultiplier, settings.jaegers.speedMultiplier);
+            return System.Math.Max(System.Math.Max(settings.grenadiers.speedMultiplier, settings.jaegers.speedMultiplier), settings.cavalry.speedMultiplier);
         }
 
-        /// <summary>Сколько людей нужно на самый малочисленный отряд.</summary>
-        public static int SmallestSquadSize(SimulationSettings settings)
+        /// <summary>Сколько людей нужно на самый малочисленный пехотный отряд.</summary>
+        public static int SmallestInfantrySquadSize(SimulationSettings settings)
         {
             return System.Math.Min(settings.grenadiers.squadSize, settings.jaegers.squadSize);
+        }
+
+        public static bool CanFire(Squad squad, SimulationSettings settings)
+        {
+            return Of(squad, settings).canFire;
+        }
+
+        /// <summary>Скорость штыковой атаки (у конницы — атаки в сабли), u/s.</summary>
+        public static float ChargeSpeed(Squad squad, SimulationSettings settings)
+        {
+            return settings.melee.chargeSpeed * Of(squad, settings).speedMultiplier;
         }
     }
 }

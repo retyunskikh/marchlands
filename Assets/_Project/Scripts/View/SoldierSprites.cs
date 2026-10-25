@@ -22,11 +22,19 @@ namespace Marchlands.View
         [SerializeField] private Sprite officer;
         [SerializeField] private Sprite flagBearer;
         [SerializeField] private Sprite drummer;
+        [SerializeField] private Sprite cavalry;
+        [SerializeField] private Sprite cavalryOfficer;
 
-        public bool IsComplete => grenadier != null && jaeger != null && officer != null && flagBearer != null && drummer != null;
+        public bool IsComplete => grenadier != null && jaeger != null && officer != null && flagBearer != null && drummer != null
+            && cavalry != null && cavalryOfficer != null;
 
         public Sprite Get(UnitType type, SoldierRole role)
         {
+            if (type == UnitType.Cavalry)
+            {
+                return role == SoldierRole.Officer ? cavalryOfficer : cavalry;
+            }
+
             switch (role)
             {
                 case SoldierRole.Officer:

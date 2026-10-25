@@ -152,8 +152,10 @@ namespace Marchlands.Simulation.AI
 
             float distance = FireGeometry.Distance(squad, target, match.Settings.squads);
 
-            if (target.FireState == FireState.Reloading
-                && distance < ai.chargeDistance
+            // Пехота идёт в штыки на перезаряжающегося врага; конница бросается в сабли на любого, кто близко.
+            bool cavalry = squad.Type == UnitType.Cavalry;
+            bool chargeWindow = cavalry ? distance < ai.cavalryChargeDistance : target.FireState == FireState.Reloading && distance < ai.chargeDistance;
+            if (chargeWindow
                 && squad.Morale > ai.chargeMinMorale
                 && ChargeRules.CanCharge(squad, target))
             {
@@ -310,6 +312,12 @@ namespace Marchlands.Simulation.AI
         private static float RollFireDistance(Match match, Squad squad)
         {
             // Верхняя граница чуть меньше эффективной дальности: с допуском подхода залп всё равно в ней.
+            if (!UnitStats.CanFire(squad, match.Settings))
+            {
+                // Конница подходит вплотную и атакует.
+                return UnitStats.PointBlankRange(squad, match.Settings);
+            }
+
             float maxDistance = UnitStats.EffectiveRange(squad, match.Settings) - match.Settings.squads.arrivalTolerance;
             return match.Random.Range(UnitStats.PointBlankRange(squad, match.Settings), maxDistance);
         }
@@ -442,7 +450,7 @@ namespace Marchlands.Simulation.AI
 
         private void KeepRetreating(Match match, Squad squad, SquadBrain brain)
         {
-            if (!match.TryGetRetreatPoint(squad.Side, squad.Position, out float2 point))
+            if (!match.TryGetRetreatPoint(squad, out float2 point))
             {
                 return;
             }

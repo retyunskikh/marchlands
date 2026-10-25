@@ -33,6 +33,7 @@ namespace Marchlands.Simulation.Core
         private int nextVillageId = 1;
         private readonly List<Building> buildings = new List<Building>();
         private readonly List<Village> lastTickCaptures = new List<Village>();
+        private readonly List<Reinforcement> lastTickReinforcements = new List<Reinforcement>();
         private readonly float[] dominationTimes = new float[SideCount];
         private int nextBuildingId = 1;
         private readonly float2[] retreatPoints = new float2[SideCount];
@@ -72,6 +73,14 @@ namespace Marchlands.Simulation.Core
 
         /// <summary>Деревни, сменившие владельца в последнем выполненном тике.</summary>
         public IReadOnlyList<Village> LastTickCaptures => lastTickCaptures;
+
+        /// <summary>Пополнения из деревень за последний тик — для отображения идущих к отряду людей.</summary>
+        public IReadOnlyList<Reinforcement> LastTickReinforcements => lastTickReinforcements;
+
+        internal void ReportReinforcement(Squad squad, Village village)
+        {
+            lastTickReinforcements.Add(new Reinforcement(squad.Id, village.Id));
+        }
 
         /// <summary>Местность полной карты; null — ровное поле без границ (песочницы).</summary>
         public TerrainMap Terrain { get; private set; }
@@ -187,9 +196,22 @@ namespace Marchlands.Simulation.Core
         /// <summary>Закладывает казарму. Проверки места и золота — в <see cref="BuildRules"/> и командах.</summary>
         internal Building AddBarracks(Side side, float2 position)
         {
-            var barracks = new Building(nextBuildingId++, BuildingType.Barracks, side, position, Settings.buildings.barracksBuildTime);
+            var barracks = new Building(nextBuildingId++, BuildingType.Barracks, side, position, Settings.buildings.barracksBuildTime)
+            {
+                HireUntil = UnitType.Grenadiers
+            };
             buildings.Add(barracks);
             return barracks;
+        }
+
+        internal Building AddStable(Side side, float2 position)
+        {
+            var stable = new Building(nextBuildingId++, BuildingType.Stable, side, position, Settings.buildings.stableBuildTime)
+            {
+                HireUntil = UnitType.Cavalry
+            };
+            buildings.Add(stable);
+            return stable;
         }
 
         public Building GetHeadquarters(Side side)
@@ -283,11 +305,23 @@ namespace Marchlands.Simulation.Core
         /// </summary>
         public bool TryGetRetreatPoint(Side side, float2 from, out float2 point)
         {
+            return TryGetRetreatPoint(side, from, BuildingType.Barracks, out point);
+        }
+
+        /// <summary>Куда бежит разбитый отряд: пехота — к казарме, конница — к конюшне.</summary>
+        public bool TryGetRetreatPoint(Squad squad, out float2 point)
+        {
+            BuildingType home = squad.Type == UnitType.Cavalry ? BuildingType.Stable : BuildingType.Barracks;
+            return TryGetRetreatPoint(squad.Side, squad.Position, home, out point);
+        }
+
+        private bool TryGetRetreatPoint(Side side, float2 from, BuildingType home, out float2 point)
+        {
             Building nearestBarracks = null;
             float bestDistance = float.MaxValue;
             foreach (Building building in buildings)
             {
-                if (building.Owner != side || building.Type != BuildingType.Barracks || !building.IsBuilt)
+                if (building.Owner != side || building.Type != home || !building.IsBuilt)
                 {
                     continue;
                 }
@@ -343,6 +377,7 @@ namespace Marchlands.Simulation.Core
 
             float deltaTime = SimulationTime.TickDuration;
             lastTickCaptures.Clear();
+            lastTickReinforcements.Clear();
 
             foreach (Squad squad in squads)
             {
@@ -374,6 +409,7 @@ namespace Marchlands.Simulation.Core
             MoraleSystem.Update(this, deltaTime);
             MeleeSystem.RemoveFinished(this);
             CaptureSystem.Update(this, deltaTime);
+            ReinforcementSystem.Update(this, deltaTime);
             IncomeSystem.Update(this);
             BuildingSystem.Update(this, deltaTime);
             VictorySystem.Update(this, deltaTime);

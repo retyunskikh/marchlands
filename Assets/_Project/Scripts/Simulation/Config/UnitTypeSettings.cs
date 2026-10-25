@@ -26,5 +26,14 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Множитель потерь, которые отряд наносит в рукопашной.</summary>
         public float meleeMultiplier;
+
+        /// <summary>Может ли отряд стрелять.</summary>
+        public bool canFire;
+
+        /// <summary>Во сколько раз больше обычного бонус атаки (сверх 1): 2 — бонус 1.5 становится 2.0.</summary>
+        public float chargeBonusMultiplier;
+
+        /// <summary>Множитель вероятности попадания по этому отряду.</summary>
+        public float targetHitMultiplier;
     }
 }

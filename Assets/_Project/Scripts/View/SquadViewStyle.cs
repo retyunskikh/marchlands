@@ -20,6 +20,8 @@ namespace Marchlands.View
         [SerializeField] private Vector2 jaegerSpacing = new Vector2(1.6f, 1.3f);
         [Tooltip("Насколько егерь сбивается со своего места в рассыпном строю, u.")]
         [SerializeField] private float jaegerScatter = 0.12f;
+        [Tooltip("Строй конницы: лошади шире и длиннее пехотинца (только вид).")]
+        [SerializeField] private Vector2 cavalrySpacing = new Vector2(1.3f, 1.4f);
         [SerializeField] private Color franceColor = new Color(0.2f, 0.35f, 0.85f);
         [SerializeField] private Color austriaColor = new Color(0.95f, 0.95f, 0.95f);
         [SerializeField] private Color selectionColor = new Color(1f, 0.9f, 0.3f, 0.3f);
@@ -67,7 +69,15 @@ namespace Marchlands.View
         /// <summary>Множитель раскладки строя по осям (поперёк фронта, вдоль) для рода войск.</summary>
         public Vector2 GetSpacing(UnitType type)
         {
-            return type == UnitType.Jaegers ? jaegerSpacing : Vector2.one;
+            switch (type)
+            {
+                case UnitType.Jaegers:
+                    return jaegerSpacing;
+                case UnitType.Cavalry:
+                    return cavalrySpacing;
+                default:
+                    return Vector2.one;
+            }
         }
 
         /// <summary>Нарисованная фигурка; null — рисовать запасной, окрашенной в цвет стороны.</summary>

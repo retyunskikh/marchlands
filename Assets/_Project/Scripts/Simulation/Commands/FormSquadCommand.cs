@@ -4,7 +4,9 @@ using Marchlands.Simulation.Squads;
 
 namespace Marchlands.Simulation.Commands
 {
-    /// <summary>Построить из людей, ждущих у казарм, новый отряд выбранного рода войск; он встаёт у казармы.</summary>
+    /// <summary>
+    /// Построить из людей резерва новый отряд выбранного рода войск: пехоту — у казармы, конницу — у конюшни.
+    /// </summary>
     public sealed class FormSquadCommand : ICommand
     {
         public FormSquadCommand(Side side, UnitType type)
@@ -24,8 +26,8 @@ namespace Marchlands.Simulation.Commands
                 return;
             }
 
-            match.GetPlayer(Side).Reserve -= match.Settings.Unit(Type).squadSize;
-            BuildingSystem.SpawnSquad(match, BuildRules.GetFormingBarracks(match, Side), Type);
+            match.GetPlayer(Side).AddReserve(Type, -match.Settings.Unit(Type).squadSize);
+            BuildingSystem.SpawnSquad(match, BuildRules.GetFormingBuilding(match, Side, Type), Type);
         }
     }
 }
