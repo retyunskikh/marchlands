@@ -24,5 +24,7 @@ MonoBehaviour:
     facing: 90
     formation: 0
     fireAtWill: 0
+  franceAi: 0
+  austriaAi: 0
   franceRetreatPoint: {x: 0, y: -35}
   austriaRetreatPoint: {x: 0, y: 35}

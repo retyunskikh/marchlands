@@ -59,3 +59,12 @@ MonoBehaviour:
       chargeBonus: 1.5
       chargeBonusDuration: 3
       flankMeleeMultiplier: 1.5
+      chargeMaxDuration: 10
+    ai:
+      reactionDelay: 0.8
+      thinkInterval: 0.5
+      chargeDistance: 8
+      chargeMinMorale: 60
+      retreatMorale: 40
+      returnMorale: 70
+      repathDistance: 1
