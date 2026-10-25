@@ -1,6 +1,7 @@
 using System;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Melee;
 using Marchlands.Simulation.Squads;
 using Marchlands.View;
 using Unity.Mathematics;
@@ -32,8 +33,13 @@ namespace Marchlands.Input
         private double pendingTapTime;
         private Vector2 pendingTapPosition;
 
+        private bool isChargeTargeting;
+
         /// <summary>Выделенный отряд изменился; null — выделение снято.</summary>
         public event Action<Squad> SelectionChanged;
+
+        /// <summary>Включился или выключился выбор цели для «В штыки».</summary>
+        public event Action<bool> ChargeTargetingChanged;
 
         public Squad Selected => selected;
 
@@ -42,6 +48,12 @@ namespace Marchlands.Input
             this.match = match;
             this.playerSide = playerSide;
             cameraController.Initialize(config);
+        }
+
+        /// <summary>«В штыки» нажата: следующий тап по вражескому отряду отдаст приказ, тап мимо — отменит.</summary>
+        public void BeginChargeTargeting()
+        {
+            SetChargeTargeting(selected != null && ChargeRules.CanCharge(selected));
         }
 
         private void OnEnable()
@@ -90,6 +102,11 @@ namespace Marchlands.Input
                 Select(null);
             }
 
+            if (isChargeTargeting && !ChargeRules.CanCharge(selected))
+            {
+                SetChargeTargeting(false);
+            }
+
             gestures.Update();
             UpdateMouseWheel();
 
@@ -104,7 +121,13 @@ namespace Marchlands.Input
         private void OnTapped(Vector2 screenPosition)
         {
             float2 world = cameraController.ScreenToWorld(screenPosition);
-            Squad hit = FindOwnSquadAt(world);
+            if (isChargeTargeting)
+            {
+                HandleChargeTargetTap(world);
+                return;
+            }
+
+            Squad hit = FindSquadAt(world, own: true);
             if (hit != null)
             {
                 hasPendingTap = false;
@@ -138,7 +161,7 @@ namespace Marchlands.Input
 
         private void OnDragStarted(Vector2 startScreen)
         {
-            isDraggingOrder = selected != null && FindOwnSquadAt(cameraController.ScreenToWorld(startScreen)) == selected;
+            isDraggingOrder = selected != null && FindSquadAt(cameraController.ScreenToWorld(startScreen), own: true) == selected;
             lastDragPosition = startScreen;
             if (isDraggingOrder)
             {
@@ -203,7 +226,36 @@ namespace Marchlands.Input
             }
         }
 
-        private Squad FindOwnSquadAt(float2 world)
+        private void HandleChargeTargetTap(float2 world)
+        {
+            SetChargeTargeting(false);
+            Squad enemy = FindSquadAt(world, own: false);
+            if (enemy != null)
+            {
+                match.Enqueue(new ChargeCommand(selected.Id, enemy.Id));
+                return;
+            }
+
+            // Тап по своему отряду выделяет его, тап по земле просто отменяет выбор цели.
+            Squad own = FindSquadAt(world, own: true);
+            if (own != null)
+            {
+                Select(own);
+            }
+        }
+
+        private void SetChargeTargeting(bool enabled)
+        {
+            if (isChargeTargeting == enabled)
+            {
+                return;
+            }
+
+            isChargeTargeting = enabled;
+            ChargeTargetingChanged?.Invoke(enabled);
+        }
+
+        private Squad FindSquadAt(float2 world, bool own)
         {
             float minHalfExtent = cameraController.PixelsToWorld(ScreenUnits.DpToPixels(config.MinTouchTarget)) * 0.5f;
             Squad best = null;
@@ -211,7 +263,7 @@ namespace Marchlands.Input
 
             foreach (Squad squad in match.Squads)
             {
-                if (squad.Side != playerSide)
+                if ((squad.Side == playerSide) != own)
                 {
                     continue;
                 }
@@ -240,6 +292,7 @@ namespace Marchlands.Input
             }
 
             selected = squad;
+            SetChargeTargeting(false);
             SelectionChanged?.Invoke(squad);
         }
     }

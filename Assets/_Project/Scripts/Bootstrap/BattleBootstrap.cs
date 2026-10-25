@@ -1,5 +1,6 @@
 using Marchlands.Bootstrap.Config;
 using Marchlands.Input;
+using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
 using Marchlands.UI;
@@ -49,6 +50,8 @@ namespace Marchlands.Bootstrap
             input.Initialize(match, scenario.PlayerSide);
             orderPanel.Initialize(match);
             input.SelectionChanged += OnSelectionChanged;
+            input.ChargeTargetingChanged += orderPanel.SetChargeTargeting;
+            orderPanel.ChargeRequested += input.BeginChargeTargeting;
         }
 
         private void OnDestroy()
@@ -56,6 +59,11 @@ namespace Marchlands.Bootstrap
             if (input != null)
             {
                 input.SelectionChanged -= OnSelectionChanged;
+                if (orderPanel != null)
+                {
+                    input.ChargeTargetingChanged -= orderPanel.SetChargeTargeting;
+                    orderPanel.ChargeRequested -= input.BeginChargeTargeting;
+                }
             }
         }
 
@@ -74,9 +82,16 @@ namespace Marchlands.Bootstrap
 
         private void SpawnScenario()
         {
+            match.SetRetreatPoint(Side.France, scenario.GetRetreatPoint(Side.France));
+            match.SetRetreatPoint(Side.Austria, scenario.GetRetreatPoint(Side.Austria));
+
             foreach (ScenarioConfig.SquadSpawn spawn in scenario.Squads)
             {
-                match.AddSquad(spawn.Side, spawn.Position, spawn.Facing, spawn.Formation);
+                Squad squad = match.AddSquad(spawn.Side, spawn.Position, spawn.Facing, spawn.Formation);
+                if (spawn.FireAtWill)
+                {
+                    match.Enqueue(new SetFireAtWillCommand(squad.Id, true));
+                }
             }
         }
 

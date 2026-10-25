@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
 using UnityEngine;
@@ -28,6 +29,8 @@ namespace Marchlands.View
         private CombatSettings combat;
         private SquadViewStyle style;
         private SpriteRenderer selectionMarker;
+        private SpriteRenderer moraleBackground;
+        private SpriteRenderer moraleFill;
 
         private Formation slotsFormation;
         private Formation slotsTarget;
@@ -45,6 +48,8 @@ namespace Marchlands.View
 
             selectionMarker = CreateRenderer("Selection", style.MarkerSprite, style.SelectionColor, style.MarkerSortingOrder);
             selectionMarker.enabled = false;
+            moraleBackground = CreateRenderer("Morale", style.MarkerSprite, style.MoraleBarBackground, style.RingSortingOrder);
+            moraleFill = CreateRenderer("Morale Fill", style.MarkerSprite, style.MoraleRoutingColor, style.RingSortingOrder + 1);
             CreateRing();
         }
 
@@ -68,6 +73,11 @@ namespace Marchlands.View
             for (int i = 0; i < soldiers.Count; i++)
             {
                 float2 local = changing ? math.lerp(fromSlots[i], toSlots[transitionTargets[i]], change) : fromSlots[i];
+                if (squad.IsRouting)
+                {
+                    local = local * style.RoutSpread + Scatter(i) * style.RoutScatter;
+                }
+
                 float2 world = FormationLayout.LocalToWorld(local, position, facing);
                 soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), rotation);
             }
@@ -85,7 +95,47 @@ namespace Marchlands.View
                 marker.localScale = new Vector3((half.x + style.SelectionPadding) * 2f, (half.y + style.SelectionPadding) * 2f, 1f);
             }
 
-            RenderRing(position, facing, alpha);
+            // Индикаторы стоят за тылом отряда: у сошедшихся в бою отрядов они не налезают на врага.
+            float2 back = -Angles.Direction(facing);
+            Vector2 barSize = style.MoraleBarSize;
+            float barExtent = math.abs(back.x) * barSize.x * 0.5f + math.abs(back.y) * barSize.y * 0.5f;
+            float2 barCenter = position + back * (GetRearDistance() + style.MoraleBarGap + barExtent);
+            float2 ringCenter = barCenter + back * (barExtent + style.RingGap + style.RingRadius);
+
+            RenderMoraleBar(barCenter);
+            RenderRing(ringCenter, alpha);
+        }
+
+        /// <summary>Расстояние от центра отряда до его тыла.</summary>
+        private float GetRearDistance()
+        {
+            float halfDepth = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings).y;
+            return squad.IsRouting ? halfDepth * style.RoutSpread + style.RoutScatter : halfDepth;
+        }
+
+        /// <summary>Горизонтальная полоска морали: заполнение слева направо, цвет по состоянию.</summary>
+        private void RenderMoraleBar(float2 center)
+        {
+            Vector2 size = style.MoraleBarSize;
+            moraleBackground.transform.SetPositionAndRotation(new Vector3(center.x, center.y, 0f), Quaternion.identity);
+            moraleBackground.transform.localScale = new Vector3(size.x, size.y, 1f);
+
+            float morale01 = math.saturate(squad.Morale / MoraleMath.MaxMorale);
+            float width = size.x * morale01;
+            moraleFill.enabled = width > 0f;
+            moraleFill.color = squad.IsRouting ? style.MoraleRoutingColor : style.GetSteadyMoraleColor(morale01);
+            moraleFill.transform.SetPositionAndRotation(
+                new Vector3(center.x - size.x * 0.5f + width * 0.5f, center.y, 0f), Quaternion.identity);
+            moraleFill.transform.localScale = new Vector3(width, size.y, 1f);
+        }
+
+        /// <summary>Постоянное для каждого солдата смещение в [-1, 1]² — толпа не дрожит от кадра к кадру.</summary>
+        private static float2 Scatter(int index)
+        {
+            uint hash = (uint)index * 2654435761u;
+            float x = ((hash >> 8) & 0xFFFF) / 32767.5f - 1f;
+            float y = ((hash >> 16) * 2246822519u >> 16) / 32767.5f - 1f;
+            return new float2(x, y);
         }
 
         private void CreateRing()
@@ -103,16 +153,11 @@ namespace Marchlands.View
         }
 
         /// <summary>
-        /// Кольцо над отрядом: зелёное — заряжен, оранжевое — целится, заполняется белым — перезарядка.
-        /// Стоит над отрядом по оси Y мира независимо от его поворота.
+        /// Кольцо за полоской морали: зелёное — заряжен, оранжевое — целится, заполняется белым — перезарядка.
         /// </summary>
-        private void RenderRing(float2 position, float facing, float alpha)
+        private void RenderRing(float2 ringCenter, float alpha)
         {
-            float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings);
-            float2 forward = Angles.Direction(facing);
-            float2 right = Angles.Right(facing);
-            float topOffset = math.abs(half.x * right.y) + math.abs(half.y * forward.y);
-            var center = new Vector3(position.x, position.y + topOffset + style.RingGap + style.RingRadius, 0f);
+            var center = new Vector3(ringCenter.x, ringCenter.y, 0f);
 
             float filled;
             Color fillColor;

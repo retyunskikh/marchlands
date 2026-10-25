@@ -23,13 +23,28 @@ namespace Marchlands.View
         [SerializeField] private float ringRadius = 0.6f;
         [Tooltip("x — толщина сегмента по радиусу, y — длина по окружности, u.")]
         [SerializeField] private Vector2 ringSegmentSize = new Vector2(0.14f, 0.13f);
-        [Tooltip("Зазор между верхним краем отряда и кольцом, u.")]
+        [Tooltip("Зазор между полоской морали и кольцом, u.")]
         [SerializeField] private float ringGap = 0.4f;
         [SerializeField] private Color ringLoadedColor = new Color(0.45f, 0.95f, 0.45f);
         [SerializeField] private Color ringAimingColor = new Color(1f, 0.6f, 0.2f);
         [SerializeField] private Color ringReloadingColor = new Color(1f, 1f, 1f);
         [SerializeField] private Color ringEmptyColor = new Color(0f, 0f, 0f, 0.35f);
         [SerializeField] private int ringSortingOrder = 50;
+
+        [Header("Полоска морали")]
+        [SerializeField] private Vector2 moraleBarSize = new Vector2(1.6f, 0.16f);
+        [Tooltip("Зазор между тылом отряда и полоской, u.")]
+        [SerializeField] private float moraleBarGap = 0.3f;
+        [SerializeField] private Color moraleBarBackground = new Color(0f, 0f, 0f, 0.45f);
+        [SerializeField] private Color moraleHighColor = new Color(0.45f, 0.95f, 0.45f);
+        [SerializeField] private Color moraleLowColor = new Color(1f, 0.8f, 0.2f);
+        [SerializeField] private Color moraleRoutingColor = new Color(0.95f, 0.25f, 0.2f);
+
+        [Header("Бегство")]
+        [Tooltip("Во сколько раз раздвигается строй бегущего отряда.")]
+        [SerializeField] private float routSpread = 1.5f;
+        [Tooltip("Насколько каждый бегущий сбивается со своего места, u.")]
+        [SerializeField] private float routScatter = 0.35f;
 
         public Sprite SoldierSprite => soldierSprite;
 
@@ -60,6 +75,24 @@ namespace Marchlands.View
         public Color RingEmptyColor => ringEmptyColor;
 
         public int RingSortingOrder => ringSortingOrder;
+
+        public Vector2 MoraleBarSize => moraleBarSize;
+
+        public float MoraleBarGap => moraleBarGap;
+
+        public Color MoraleBarBackground => moraleBarBackground;
+
+        public Color MoraleRoutingColor => moraleRoutingColor;
+
+        public float RoutSpread => routSpread;
+
+        public float RoutScatter => routScatter;
+
+        /// <summary>Цвет полоски держащегося отряда: от жёлтого при низкой морали к зелёному при высокой.</summary>
+        public Color GetSteadyMoraleColor(float morale01)
+        {
+            return Color.Lerp(moraleLowColor, moraleHighColor, morale01);
+        }
 
         public Color GetSideColor(Side side)
         {
