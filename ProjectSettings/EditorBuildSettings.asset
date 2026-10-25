@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/Sandbox_Villages.unity
+    guid: 437f209a734105f458a7c63898178320
+  - enabled: 1
     path: Assets/_Project/Scenes/Sandbox_Skirmish.unity
     guid: a5d724549aa57344d86e34ca0c0dc3ac
   - enabled: 1

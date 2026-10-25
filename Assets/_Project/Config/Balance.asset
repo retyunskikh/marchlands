@@ -68,3 +68,12 @@ MonoBehaviour:
       retreatMorale: 40
       returnMorale: 70
       repathDistance: 1
+      engageRadius: 15
+    economy:
+      captureRadius: 4
+      captureTime: 15
+      captureDecayRate: 1
+      incomeInterval: 5
+      villageIncome: 3
+      hqIncome: 2
+      startGold: 150
