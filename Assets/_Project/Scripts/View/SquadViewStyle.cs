@@ -1,5 +1,6 @@
 using System;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Squads;
 using UnityEngine;
 
 namespace Marchlands.View
@@ -8,8 +9,17 @@ namespace Marchlands.View
     [Serializable]
     public sealed class SquadViewStyle
     {
+        [Tooltip("Запасная фигурка, окрашиваемая цветом стороны, — если нарисованных нет.")]
         [SerializeField] private Sprite soldierSprite;
         [SerializeField] private Sprite markerSprite;
+        [SerializeField] private SoldierSprites franceSoldiers = new SoldierSprites();
+        [SerializeField] private SoldierSprites austriaSoldiers = new SoldierSprites();
+        [Tooltip("Рекрут, ждущий у казармы.")]
+        [SerializeField] private Sprite recruitSprite;
+        [Tooltip("Рассыпной строй егерей: во сколько раз шире интервалы и дистанции (только вид).")]
+        [SerializeField] private Vector2 jaegerSpacing = new Vector2(1.6f, 1.3f);
+        [Tooltip("Насколько егерь сбивается со своего места в рассыпном строю, u.")]
+        [SerializeField] private float jaegerScatter = 0.12f;
         [SerializeField] private Color franceColor = new Color(0.2f, 0.35f, 0.85f);
         [SerializeField] private Color austriaColor = new Color(0.95f, 0.95f, 0.95f);
         [SerializeField] private Color selectionColor = new Color(1f, 0.9f, 0.3f, 0.3f);
@@ -49,6 +59,23 @@ namespace Marchlands.View
         public Sprite SoldierSprite => soldierSprite;
 
         public Sprite MarkerSprite => markerSprite;
+
+        public Sprite RecruitSprite => recruitSprite;
+
+        public float JaegerScatter => jaegerScatter;
+
+        /// <summary>Множитель раскладки строя по осям (поперёк фронта, вдоль) для рода войск.</summary>
+        public Vector2 GetSpacing(UnitType type)
+        {
+            return type == UnitType.Jaegers ? jaegerSpacing : Vector2.one;
+        }
+
+        /// <summary>Нарисованная фигурка; null — рисовать запасной, окрашенной в цвет стороны.</summary>
+        public Sprite GetSoldierSprite(Side side, UnitType type, SoldierRole role)
+        {
+            SoldierSprites sprites = side == Side.France ? franceSoldiers : austriaSoldiers;
+            return sprites != null && sprites.IsComplete ? sprites.Get(type, role) : null;
+        }
 
         public Color SelectionColor => selectionColor;
 

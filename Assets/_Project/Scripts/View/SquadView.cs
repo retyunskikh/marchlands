@@ -32,6 +32,8 @@ namespace Marchlands.View
         private SpriteRenderer moraleBackground;
         private SpriteRenderer moraleFill;
 
+        private readonly List<SoldierRole> roles = new List<SoldierRole>();
+
         private Formation slotsFormation;
         private Formation slotsTarget;
         private int slotsAlive = -1;
@@ -45,6 +47,7 @@ namespace Marchlands.View
             this.settings = settings.squads;
             combat = settings.combat;
             this.style = style;
+            AssignRoles();
 
             selectionMarker = CreateRenderer("Selection", style.MarkerSprite, style.SelectionColor, style.MarkerSortingOrder);
             selectionMarker.enabled = false;
@@ -70,12 +73,19 @@ namespace Marchlands.View
             float change = changing ? GetSmoothedChangeProgress(alpha) : 0f;
 
             Quaternion rotation = Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset);
+            float2 spacing = style.GetSpacing(squad.Type);
+            bool openOrder = squad.Type == UnitType.Jaegers;
             for (int i = 0; i < soldiers.Count; i++)
             {
                 float2 local = changing ? math.lerp(fromSlots[i], toSlots[transitionTargets[i]], change) : fromSlots[i];
+                local *= spacing;
                 if (squad.IsRouting)
                 {
                     local = local * style.RoutSpread + Scatter(i) * style.RoutScatter;
+                }
+                else if (openOrder)
+                {
+                    local += Scatter(i + 101) * style.JaegerScatter;
                 }
 
                 float2 world = FormationLayout.LocalToWorld(local, position, facing);
@@ -89,6 +99,8 @@ namespace Marchlands.View
                 {
                     half = math.lerp(half, FormationLayout.GetHalfExtents(squad.TargetFormation, squad.Alive, settings), change);
                 }
+
+                half *= (float2)style.GetSpacing(squad.Type);
 
                 Transform marker = selectionMarker.transform;
                 marker.SetPositionAndRotation(new Vector3(position.x, position.y, 0f), rotation);
@@ -109,7 +121,7 @@ namespace Marchlands.View
         /// <summary>Расстояние от центра отряда до его тыла.</summary>
         private float GetRearDistance()
         {
-            float halfDepth = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings).y;
+            float halfDepth = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings).y * style.GetSpacing(squad.Type).y;
             return squad.IsRouting ? halfDepth * style.RoutSpread + style.RoutScatter : halfDepth;
         }
 
@@ -226,12 +238,47 @@ namespace Marchlands.View
             return math.smoothstep(0f, 1f, progress);
         }
 
+        /// <summary>
+        /// Роли по слотам полного отряда в линии: офицер — в центре первой шеренги, у гренадёров ещё знаменосец
+        /// в центре второй и барабанщик на её левом краю. Слот 0 — левый край первой шеренги.
+        /// </summary>
+        private void AssignRoles()
+        {
+            FormationLayout.GetGrid(Formation.Line, squad.Alive, settings, out int files, out int ranks);
+            roles.Clear();
+            for (int i = 0; i < squad.Alive; i++)
+            {
+                roles.Add(SoldierRole.Private);
+            }
+
+            SetRole(files / 2, SoldierRole.Officer);
+            if (squad.Type == UnitType.Grenadiers && ranks > 1)
+            {
+                SetRole(files + files / 2, SoldierRole.FlagBearer);
+                SetRole(files, SoldierRole.Drummer);
+            }
+        }
+
+        private void SetRole(int index, SoldierRole role)
+        {
+            if (index >= 0 && index < roles.Count)
+            {
+                roles[index] = role;
+            }
+        }
+
         private void SyncSoldierCount(int alive)
         {
-            Color color = style.GetSideColor(squad.Side);
             while (soldiers.Count < alive)
             {
-                soldiers.Add(CreateRenderer($"Soldier {soldiers.Count}", style.SoldierSprite, color, style.SoldierSortingOrder));
+                int index = soldiers.Count;
+                SoldierRole role = index < roles.Count ? roles[index] : SoldierRole.Private;
+                Sprite drawn = style.GetSoldierSprite(squad.Side, squad.Type, role);
+                // Знаменосец поверх соседей: знамя накрывает их.
+                int order = style.SoldierSortingOrder + (role == SoldierRole.FlagBearer ? 1 : 0);
+                soldiers.Add(drawn != null
+                    ? CreateRenderer($"Soldier {index}", drawn, Color.white, order)
+                    : CreateRenderer($"Soldier {index}", style.SoldierSprite, style.GetSideColor(squad.Side), order));
             }
 
             while (soldiers.Count > alive)

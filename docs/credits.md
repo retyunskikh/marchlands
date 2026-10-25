@@ -36,5 +36,7 @@
 | Файл | Что | Источник | Лицензия |
 |---|---|---|---|
 | CaptureBugle.ogg | Сигнал горна «Mail Call» (Sgt. Codie Lynn Williams, Marine Barracks Washington), первые 4.6 с | https://commons.wikimedia.org/wiki/File:Mail_Call.ogg | общественное достояние (работа правительства США) |
+| FormSquadBugle.ogg | Сигнал горна «Band Call» (тот же исполнитель), целиком | https://commons.wikimedia.org/wiki/File:Band_Call.ogg | общественное достояние (работа правительства США) |
+| SquadReadyDrum.ogg | «Drum Cadence (2-4 time)», United States Air Force Heritage of America Band, фрагмент 1.37–3.67 с | https://commons.wikimedia.org/wiki/File:Drum_Cadence_(2-4_time)_-_Concert_Band_-_United_States_Air_Force_Heritage_of_America_Band.mp3 | общественное достояние (работа правительства США) |
 
 Звуки залпа, сражения и колокола (`Assets/_Project/Audio/*.wav`) сгенерированы программно для проекта.

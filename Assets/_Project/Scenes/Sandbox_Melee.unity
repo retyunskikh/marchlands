@@ -837,7 +837,7 @@ MonoBehaviour:
   jaegersButton: {fileID: 1669314491}
   grenadiersButton: {fileID: 1676805140}
   audioSource: {fileID: 283045202}
-  appearClip: {fileID: 0}
+  appearClip: {fileID: 8300000, guid: e515c2c3106056c4eb5f6284f37ccd4f, type: 3}
   formClip: {fileID: 8300000, guid: 068320c8a47615d4c824c17eefe4eb1c, type: 3}
   appearVolume: 0.7
   formVolume: 0.9
@@ -1044,7 +1044,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 374926428}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -1057,7 +1057,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -9088498474649144508, guid: 3c0ae16929c21194a8042ed284f75b88, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -3001,7 +3001,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 840210347}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -3014,7 +3014,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 6473455033931735948, guid: 8fe4628a02732bb47b5c924da08745be, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -8817,6 +8817,21 @@ MonoBehaviour:
   style:
     soldierSprite: {fileID: 21300000, guid: d7d8d5e9c5d5d4b4ebc70378f66e9fff, type: 3}
     markerSprite: {fileID: 21300000, guid: 5f47f2ad9246ed441acf41244c86118e, type: 3}
+    franceSoldiers:
+      grenadier: {fileID: 21300000, guid: 7e1fe3843a6ec84428e3b928fd92b87e, type: 3}
+      jaeger: {fileID: 21300000, guid: 999dc76b038d51840935aa8ee657efa9, type: 3}
+      officer: {fileID: 21300000, guid: 470997009a83df5409368fc3ff3979ca, type: 3}
+      flagBearer: {fileID: 21300000, guid: 04c4df2e691f2ec45a218d23724955f7, type: 3}
+      drummer: {fileID: 21300000, guid: e0beab26bf748d04aac4a21a10fd6a03, type: 3}
+    austriaSoldiers:
+      grenadier: {fileID: 21300000, guid: 39abadc6f856f2148b5a3d105bd4f301, type: 3}
+      jaeger: {fileID: 21300000, guid: 30e5c052086414846845811828cd8e4c, type: 3}
+      officer: {fileID: 21300000, guid: e23957445f254364a85e1320ea78ba4e, type: 3}
+      flagBearer: {fileID: 21300000, guid: 3f3b348f8321a114aa7f3e9855c2c556, type: 3}
+      drummer: {fileID: 21300000, guid: 199c32cc0432f094eb3d7afaf81ed6b1, type: 3}
+    recruitSprite: {fileID: 21300000, guid: 4a0c1c9d4f62148438c3abefbdc10e43, type: 3}
+    jaegerSpacing: {x: 1.6, y: 1.3}
+    jaegerScatter: 0.12
     franceColor: {r: 0.2, g: 0.35, b: 0.85, a: 1}
     austriaColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
     selectionColor: {r: 1, g: 0.9, b: 0.3, a: 0.3}
@@ -11441,6 +11456,8 @@ MonoBehaviour:
     headquartersFlagSize: {x: 0.9, y: 0.55}
     headquartersPoleSize: 0.14
     poleColor: {r: 0.25, g: 0.2, b: 0.15, a: 1}
+    barracksBaseSprite: {fileID: 21300000, guid: 383fa761e0e3369489715081e93e62af, type: 3}
+    barracksRoofSprite: {fileID: 21300000, guid: 45f55e9492a9db444b92443694ed4d53, type: 3}
     constructionAlpha: 0.45
     progressBarSize: {x: 2.6, y: 0.22}
     progressBarOffset: 2
@@ -11449,6 +11466,10 @@ MonoBehaviour:
     captureColor: {r: 0.95, g: 0.25, b: 0.2, a: 1}
     selectionColor: {r: 1, g: 0.9, b: 0.3, a: 0.35}
     selectionPadding: 0.4
+    recruitsShownMax: 32
+    recruitsOffset: 0.9
+    recruitsSpacing: {x: 0.45, y: 0.45}
+    recruitsPerRow: 8
     buildRadiusColor: {r: 1, g: 1, b: 1, a: 0.35}
     validSiteColor: {r: 0.4, g: 1, b: 0.4, a: 0.6}
     invalidSiteColor: {r: 1, g: 0.3, b: 0.3, a: 0.6}

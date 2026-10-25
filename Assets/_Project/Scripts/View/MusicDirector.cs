@@ -52,19 +52,19 @@ namespace Marchlands.View
         private float sinceCheck;
 
         private const string EnabledKey = "music.enabled";
-        private static bool? enabled;
+        private static bool? musicEnabled;
 
         /// <summary>Включена ли музыка; выбор игрока хранится в PlayerPrefs.</summary>
         public static bool Enabled
         {
             get
             {
-                enabled ??= PlayerPrefs.GetInt(EnabledKey, 1) == 1;
-                return enabled.Value;
+                musicEnabled ??= PlayerPrefs.GetInt(EnabledKey, 1) == 1;
+                return musicEnabled.Value;
             }
             set
             {
-                enabled = value;
+                musicEnabled = value;
                 PlayerPrefs.SetInt(EnabledKey, value ? 1 : 0);
                 PlayerPrefs.Save();
             }

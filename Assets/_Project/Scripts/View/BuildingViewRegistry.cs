@@ -1,17 +1,22 @@
 using System.Collections.Generic;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Marchlands.View
 {
-    /// <summary>Держит по одному <see cref="BuildingView"/> на каждое здание матча; рисует предпросмотр постройки.</summary>
+    /// <summary>
+    /// Держит по одному <see cref="BuildingView"/> на каждое здание матча; рисует предпросмотр постройки
+    /// и людей резерва, ждущих у казармы, где встанет новый отряд.
+    /// </summary>
     public sealed class BuildingViewRegistry : MonoBehaviour
     {
         [SerializeField] private BuildingViewStyle style = new BuildingViewStyle();
         [SerializeField] private SquadViewRegistry squadViews;
 
         private readonly Dictionary<int, BuildingView> views = new Dictionary<int, BuildingView>();
+        private readonly List<SpriteRenderer>[] recruits = { new List<SpriteRenderer>(), new List<SpriteRenderer>() };
 
         private Match match;
         private Building selected;
@@ -59,6 +64,62 @@ namespace Marchlands.View
             {
                 view.Render();
             }
+
+            RenderRecruits(Side.France);
+            RenderRecruits(Side.Austria);
+        }
+
+        /// <summary>Ждущие люди стоят толпой перед воротами казармы, лицом к фронту; рисуется не больше recruitsShownMax.</summary>
+        private void RenderRecruits(Side side)
+        {
+            List<SpriteRenderer> crowd = recruits[(int)side];
+            Building barracks = BuildRules.GetFormingBarracks(match, side);
+            int shown = barracks == null || squadViews.Style.RecruitSprite == null
+                ? 0
+                : math.min(match.GetPlayer(side).Reserve, style.RecruitsShownMax);
+            while (crowd.Count < shown)
+            {
+                crowd.Add(CreatePreview($"Recruit {side} {crowd.Count}", squadViews.Style.RecruitSprite, style.BodySortingOrder + 5));
+            }
+
+            for (int i = 0; i < crowd.Count; i++)
+            {
+                crowd[i].enabled = i < shown;
+            }
+
+            if (shown == 0)
+            {
+                return;
+            }
+
+            // Фронт — как у появляющегося отряда: к центру карты, то есть ворота отражённой по горизонтали казармы.
+            float2 front = new float2(barracks.Position.x > 0f ? -1f : 1f, 0f);
+            float2 right = new float2(front.y, -front.x);
+            float2 start = barracks.Position + front * (style.BarracksSize.x * 0.5f + style.RecruitsOffset);
+            Quaternion rotation = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(front.y, front.x)) - 90f);
+            int perRow = math.max(1, style.RecruitsPerRow);
+            for (int i = 0; i < shown; i++)
+            {
+                int row = i / perRow;
+                int column = i % perRow;
+                // Толпа, а не строй: каждый чуть сбит со своего места.
+                float jitterX = Hash01(i * 2 + (int)side * 977) - 0.5f;
+                float jitterY = Hash01(i * 2 + 1 + (int)side * 977) - 0.5f;
+                float2 local = new float2(
+                    (column - (perRow - 1) * 0.5f + jitterX * 0.6f) * style.RecruitsSpacing.x,
+                    (row + jitterY * 0.5f) * style.RecruitsSpacing.y);
+                float2 world = start + right * local.x + front * local.y;
+                crowd[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), rotation);
+            }
+        }
+
+        private static float Hash01(int value)
+        {
+            uint hash = (uint)value * 2654435761u;
+            hash ^= hash >> 16;
+            hash *= 2246822519u;
+            hash ^= hash >> 13;
+            return (hash & 0xFFFFFF) / (float)0x1000000;
         }
 
         /// <summary>Круг допустимого радиуса вокруг штаба и, если место выбрано, силуэт казармы зелёным или красным.</summary>

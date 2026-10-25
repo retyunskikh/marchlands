@@ -25,6 +25,12 @@ namespace Marchlands.View
         [SerializeField] private Vector2 headquartersFlagSize = new Vector2(0.7f, 0.42f);
         [SerializeField] private float headquartersPoleSize = 0.14f;
         [SerializeField] private Color poleColor = new Color(0.25f, 0.2f, 0.15f);
+
+        [Header("Казарма")]
+        [Tooltip("Плац с оградой, колодцем и козлами с ружьями. Ворота справа.")]
+        [SerializeField] private Sprite barracksBaseSprite;
+        [Tooltip("Крыши казармы и караульни в оттенках серого — окрашиваются цветом стороны.")]
+        [SerializeField] private Sprite barracksRoofSprite;
         [Tooltip("Прозрачность строящегося здания.")]
         [SerializeField] private float constructionAlpha = 0.45f;
         [SerializeField] private Vector2 progressBarSize = new Vector2(2.6f, 0.22f);
@@ -36,6 +42,14 @@ namespace Marchlands.View
         [SerializeField] private Color captureColor = new Color(0.95f, 0.25f, 0.2f);
         [SerializeField] private Color selectionColor = new Color(1f, 0.9f, 0.3f, 0.35f);
         [SerializeField] private float selectionPadding = 0.4f;
+
+        [Header("Рекруты у казармы")]
+        [Tooltip("Больше этого ждущих людей не рисуется.")]
+        [SerializeField] private int recruitsShownMax = 32;
+        [Tooltip("Где стоит толпа: на сколько дальше края казармы в сторону фронта, u.")]
+        [SerializeField] private float recruitsOffset = 0.9f;
+        [SerializeField] private Vector2 recruitsSpacing = new Vector2(0.45f, 0.45f);
+        [SerializeField] private int recruitsPerRow = 8;
 
         [Header("Предпросмотр постройки")]
         [SerializeField] private Color buildRadiusColor = new Color(1f, 1f, 1f, 0.35f);
@@ -58,6 +72,18 @@ namespace Marchlands.View
         public float HeadquartersPoleSize => headquartersPoleSize;
 
         public Color PoleColor => poleColor;
+
+        public Sprite BarracksBaseSprite => barracksBaseSprite;
+
+        public int RecruitsShownMax => recruitsShownMax;
+
+        public float RecruitsOffset => recruitsOffset;
+
+        public Vector2 RecruitsSpacing => recruitsSpacing;
+
+        public int RecruitsPerRow => recruitsPerRow;
+
+        public Sprite BarracksRoofSprite => barracksRoofSprite;
 
         public Sprite CircleSprite => circleSprite;
 

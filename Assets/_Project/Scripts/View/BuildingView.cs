@@ -42,9 +42,11 @@ namespace Marchlands.View
             selection.transform.localScale = new Vector3(size.x + style.SelectionPadding * 2f, size.y + style.SelectionPadding * 2f, 1f);
             selection.enabled = false;
 
-            if (isHeadquarters && style.HeadquartersBaseSprite != null && style.HeadquartersRoofSprite != null)
+            Sprite baseSprite = isHeadquarters ? style.HeadquartersBaseSprite : style.BarracksBaseSprite;
+            Sprite roofSprite = isHeadquarters ? style.HeadquartersRoofSprite : style.BarracksRoofSprite;
+            if (baseSprite != null && roofSprite != null)
             {
-                CreateHeadquarters();
+                CreateEstate(baseSprite, roofSprite, isHeadquarters);
             }
             else
             {
@@ -66,24 +68,28 @@ namespace Marchlands.View
         }
 
         /// <summary>
-        /// Штаб-усадьба: ограда и двор (inner), крыши цвета стороны (body) и флаг во дворе.
-        /// Ворота смотрят к центру карты: штаб справа отражается по горизонтали.
+        /// Усадьба вид сверху: двор или плац с оградой (inner), крыши цвета стороны (body), у штаба — флаг во дворе.
+        /// Ворота смотрят к центру карты: здание справа отражается по горизонтали.
         /// </summary>
-        private void CreateHeadquarters()
+        private void CreateEstate(Sprite baseSprite, Sprite roofSprite, bool withFlag)
         {
             bool flip = building.Position.x > 0f;
             float direction = flip ? -1f : 1f;
 
             inner = CreateRenderer("Grounds", style.BodySortingOrder, Color.white);
-            inner.sprite = style.HeadquartersBaseSprite;
+            inner.sprite = baseSprite;
             inner.flipX = flip;
-            inner.transform.localScale = new Vector3(size.x, size.y, 1f);
+            inner.transform.localScale = FitScale(baseSprite);
             innerColor = Color.white;
 
             body = CreateRenderer("Roofs", style.BodySortingOrder + 1, sideColor);
-            body.sprite = style.HeadquartersRoofSprite;
+            body.sprite = roofSprite;
             body.flipX = flip;
-            body.transform.localScale = new Vector3(size.x, size.y, 1f);
+            body.transform.localScale = FitScale(roofSprite);
+            if (!withFlag)
+            {
+                return;
+            }
 
             Vector2 polePosition = Vector2.Scale(style.HeadquartersFlagPosition, size);
             polePosition.x *= direction;
@@ -94,6 +100,13 @@ namespace Marchlands.View
             SpriteRenderer pole = CreateRenderer("Pole", style.BodySortingOrder + 3, style.PoleColor);
             pole.transform.localPosition = polePosition;
             pole.transform.localScale = new Vector3(style.HeadquartersPoleSize, style.HeadquartersPoleSize, 1f);
+        }
+
+        /// <summary>Масштаб, при котором спрайт занимает габариты здания.</summary>
+        private Vector3 FitScale(Sprite sprite)
+        {
+            Vector2 bounds = sprite.bounds.size;
+            return new Vector3(size.x / bounds.x, size.y / bounds.y, 1f);
         }
 
         internal void SetSelected(bool selected)
