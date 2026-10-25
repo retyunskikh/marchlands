@@ -125,7 +125,7 @@ MonoBehaviour:
       maxWaitingRecruits: 96
       stableCost: 200
       stableBuildTime: 40
-      cavalryHireCost: 6
+      cavalryHireCost: 4
       cavalryHireInterval: 3
       maxWaitingCavalry: 48
       spawnOffset: 4

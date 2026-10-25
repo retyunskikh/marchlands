@@ -243,7 +243,7 @@ moraleLoss = lossFraction * 100 * moraleShockFactor
 | hireCost / hireInterval | 2 / 2 s | цена рекрута / как часто казарма с включённым наймом получает рекрута |
 | maxWaitingRecruits | 96 | пока у казарм ждут столько людей, найм приостановлен |
 | stableCost / stableBuildTime | 200 / 40 s | |
-| cavalryHireCost / cavalryHireInterval / maxWaitingCavalry | 6 / 3 s / 48 | |
+| cavalryHireCost / cavalryHireInterval / maxWaitingCavalry | 4 / 3 s / 48 | отряд из 24 всадников — 96 золота |
 | reinforceInterval | 6 s | пополнение пехотного отряда в своей деревне |
 | aiCavalrySquads / aiCavalryChargeDistance | 1 / 12 u | сколько отрядов конницы держит ИИ / с какой дистанции конница ИИ атакует |
 | aiJaegerSquads | 2 | сколько отрядов егерей держит ИИ |
