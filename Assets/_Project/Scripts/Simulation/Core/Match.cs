@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
+using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Melee;
 using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
@@ -23,6 +24,9 @@ namespace Marchlands.Simulation.Core
         private readonly List<VolleyEvent> lastTickVolleys = new List<VolleyEvent>();
         private readonly List<MeleeEngagement> engagements = new List<MeleeEngagement>();
         private readonly List<IMatchController> controllers = new List<IMatchController>();
+        private readonly List<Village> villages = new List<Village>();
+        private readonly PlayerState[] players = new PlayerState[SideCount];
+        private int nextVillageId = 1;
         private readonly float2[] retreatPoints = new float2[SideCount];
         private readonly bool[] hasRetreatPoint = new bool[SideCount];
         private int nextSquadId = 1;
@@ -32,6 +36,8 @@ namespace Marchlands.Simulation.Core
             Seed = seed;
             Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             Random = new GameRandom(seed);
+            players[(int)Side.France] = new PlayerState(Side.France, settings.economy.startGold);
+            players[(int)Side.Austria] = new PlayerState(Side.Austria, settings.economy.startGold);
         }
 
         public ulong Seed { get; }
@@ -49,6 +55,10 @@ namespace Marchlands.Simulation.Core
 
         /// <summary>Залпы, произошедшие в последнем выполненном тике.</summary>
         public IReadOnlyList<VolleyEvent> LastTickVolleys => lastTickVolleys;
+
+        public IReadOnlyList<Village> Villages => villages;
+
+        public IReadOnlyList<PlayerState> Players => players;
 
         /// <summary>Идущие рукопашные.</summary>
         public IReadOnlyList<MeleeEngagement> Engagements => engagements;
@@ -72,6 +82,32 @@ namespace Marchlands.Simulation.Core
             var squad = new Squad(nextSquadId++, side, alive, position, facing, formation);
             squads.Add(squad);
             return squad;
+        }
+
+        public Village AddVillage(float2 position)
+        {
+            var village = new Village(nextVillageId++, position);
+            villages.Add(village);
+            return village;
+        }
+
+        public PlayerState GetPlayer(Side side)
+        {
+            return players[(int)side];
+        }
+
+        public int CountVillages(Side side)
+        {
+            int count = 0;
+            foreach (Village village in villages)
+            {
+                if (village.Owner == side)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         public Squad FindSquad(int id)
@@ -171,6 +207,8 @@ namespace Marchlands.Simulation.Core
             MeleeSystem.Update(this, deltaTime);
             MoraleSystem.Update(this, deltaTime);
             MeleeSystem.RemoveFinished(this);
+            CaptureSystem.Update(this, deltaTime);
+            IncomeSystem.Update(this);
 
             squads.RemoveAll(squad => squad.Alive <= 0 || squad.IsDisbanded);
 

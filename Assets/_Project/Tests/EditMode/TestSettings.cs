@@ -75,7 +75,18 @@ namespace Marchlands.Tests.EditMode
                     chargeMinMorale = 60f,
                     retreatMorale = 40f,
                     returnMorale = 70f,
-                    repathDistance = 1f
+                    repathDistance = 1f,
+                    engageRadius = 15f
+                },
+                economy = new EconomySettings
+                {
+                    captureRadius = 4f,
+                    captureTime = 15f,
+                    captureDecayRate = 1f,
+                    incomeInterval = 5f,
+                    villageIncome = 3,
+                    hqIncome = 2,
+                    startGold = 150
                 }
             };
         }
