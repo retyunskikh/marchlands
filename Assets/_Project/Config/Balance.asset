@@ -69,6 +69,7 @@ MonoBehaviour:
       returnMorale: 70
       repathDistance: 1
       engageRadius: 15
+      defenseRadius: 20
     economy:
       captureRadius: 4
       captureTime: 15
@@ -77,3 +78,12 @@ MonoBehaviour:
       villageIncome: 3
       hqIncome: 2
       startGold: 150
+    buildings:
+      barracksCost: 120
+      barracksBuildTime: 30
+      buildRadiusFromHQ: 10
+      buildingSpacing: 3
+      squadCost: 60
+      recruitTime: 20
+      recruitQueueMax: 3
+      spawnOffset: 4

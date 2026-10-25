@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/Sandbox_Economy.unity
+    guid: 1eb26fa10f82f4744acb6bd239a5962d
+  - enabled: 1
     path: Assets/_Project/Scenes/Sandbox_Villages.unity
     guid: 437f209a734105f458a7c63898178320
   - enabled: 1
