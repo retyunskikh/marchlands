@@ -13,6 +13,10 @@ namespace Marchlands.Bootstrap.Config
         [SerializeField] private Side playerSide = Side.France;
         [SerializeField] private List<SquadSpawn> squads = new List<SquadSpawn>();
 
+        [Header("Кем управляется сторона")]
+        [SerializeField] private bool franceAi;
+        [SerializeField] private bool austriaAi = true;
+
         [Header("Точки отхода (до появления штабов)")]
         [SerializeField] private Vector2 franceRetreatPoint;
         [SerializeField] private Vector2 austriaRetreatPoint;
@@ -20,6 +24,11 @@ namespace Marchlands.Bootstrap.Config
         public Side PlayerSide => playerSide;
 
         public IReadOnlyList<SquadSpawn> Squads => squads;
+
+        public bool IsAiControlled(Side side)
+        {
+            return side == Side.France ? franceAi : austriaAi;
+        }
 
         public Vector2 GetRetreatPoint(Side side)
         {

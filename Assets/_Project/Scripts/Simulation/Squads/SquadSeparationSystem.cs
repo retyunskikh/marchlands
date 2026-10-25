@@ -5,7 +5,8 @@ using Unity.Mathematics;
 namespace Marchlands.Simulation.Squads
 {
     /// <summary>
-    /// Простое отталкивание: пересекающиеся отряды расталкиваются поровну по оси наименьшего перекрытия.
+    /// Простое отталкивание: пересекающиеся отряды расталкиваются по оси наименьшего перекрытия.
+    /// Бегущие проходят сквозь своих (через интервалы порядков), отряд в рукопашной не сдвигается с места.
     /// Пары обходятся в порядке списка, поэтому результат детерминирован.
     /// </summary>
     internal static class SquadSeparationSystem
@@ -18,11 +19,27 @@ namespace Marchlands.Simulation.Squads
                 {
                     Squad a = squads[i];
                     Squad b = squads[j];
-                    if (SquadFootprint.TryGetPenetration(SquadFootprint.Of(a, settings), SquadFootprint.Of(b, settings), out float2 push))
+                    if (a.Side == b.Side && (a.IsRouting || b.IsRouting))
                     {
-                        a.Position -= push * 0.5f;
-                        b.Position += push * 0.5f;
+                        continue;
                     }
+
+                    if (!SquadFootprint.TryGetPenetration(SquadFootprint.Of(a, settings), SquadFootprint.Of(b, settings), out float2 push))
+                    {
+                        continue;
+                    }
+
+                    float weightA = a.IsInMelee ? 0f : 1f;
+                    float weightB = b.IsInMelee ? 0f : 1f;
+                    if (weightA + weightB <= 0f)
+                    {
+                        weightA = 1f;
+                        weightB = 1f;
+                    }
+
+                    float total = weightA + weightB;
+                    a.Position -= push * (weightA / total);
+                    b.Position += push * (weightB / total);
                 }
             }
         }

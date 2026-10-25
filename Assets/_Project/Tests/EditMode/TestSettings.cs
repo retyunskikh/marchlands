@@ -64,7 +64,18 @@ namespace Marchlands.Tests.EditMode
                     meleeKillRate = 0.04f,
                     chargeBonus = 1.5f,
                     chargeBonusDuration = 3f,
-                    flankMeleeMultiplier = 1.5f
+                    flankMeleeMultiplier = 1.5f,
+                    chargeMaxDuration = 10f
+                },
+                ai = new AiSettings
+                {
+                    reactionDelay = 0.8f,
+                    thinkInterval = 0.5f,
+                    chargeDistance = 8f,
+                    chargeMinMorale = 60f,
+                    retreatMorale = 40f,
+                    returnMorale = 70f,
+                    repathDistance = 1f
                 }
             };
         }

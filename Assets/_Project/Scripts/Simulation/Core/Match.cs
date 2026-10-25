@@ -22,6 +22,7 @@ namespace Marchlands.Simulation.Core
         private readonly List<Squad> squads = new List<Squad>();
         private readonly List<VolleyEvent> lastTickVolleys = new List<VolleyEvent>();
         private readonly List<MeleeEngagement> engagements = new List<MeleeEngagement>();
+        private readonly List<IMatchController> controllers = new List<IMatchController>();
         private readonly float2[] retreatPoints = new float2[SideCount];
         private readonly bool[] hasRetreatPoint = new bool[SideCount];
         private int nextSquadId = 1;
@@ -86,6 +87,26 @@ namespace Marchlands.Simulation.Core
             return null;
         }
 
+        /// <summary>Подключает ИИ: он будет вызываться в начале каждого тика в порядке подключения.</summary>
+        public void AddController(IMatchController controller)
+        {
+            controllers.Add(controller ?? throw new ArgumentNullException(nameof(controller)));
+        }
+
+        /// <summary>Разгромлена ли сторона: все её отряды бегут или погибли. Сторона без отрядов тоже разгромлена.</summary>
+        public bool IsSideBroken(Side side)
+        {
+            foreach (Squad squad in squads)
+            {
+                if (squad.Side == side && !squad.IsRouting)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         /// <summary>Куда бегут разбитые отряды стороны. Пока нет штабов (этапы 5–6), задаётся сценарием.</summary>
         public void SetRetreatPoint(Side side, float2 point)
         {
@@ -124,6 +145,11 @@ namespace Marchlands.Simulation.Core
             {
                 squad.PreviousPosition = squad.Position;
                 squad.PreviousFacing = squad.Facing;
+            }
+
+            foreach (IMatchController controller in controllers)
+            {
+                controller.Update(this);
             }
 
             currentTickCommands.Clear();

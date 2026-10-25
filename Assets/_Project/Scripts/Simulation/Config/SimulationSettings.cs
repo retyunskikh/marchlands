@@ -10,5 +10,6 @@ namespace Marchlands.Simulation.Config
         public CombatSettings combat = new CombatSettings();
         public MoraleSettings morale = new MoraleSettings();
         public MeleeSettings melee = new MeleeSettings();
+        public AiSettings ai = new AiSettings();
     }
 }

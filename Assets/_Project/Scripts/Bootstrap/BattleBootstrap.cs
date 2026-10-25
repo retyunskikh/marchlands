@@ -1,5 +1,6 @@
 using Marchlands.Bootstrap.Config;
 using Marchlands.Input;
+using Marchlands.Simulation.AI;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
@@ -84,6 +85,14 @@ namespace Marchlands.Bootstrap
         {
             match.SetRetreatPoint(Side.France, scenario.GetRetreatPoint(Side.France));
             match.SetRetreatPoint(Side.Austria, scenario.GetRetreatPoint(Side.Austria));
+
+            foreach (Side side in new[] { Side.France, Side.Austria })
+            {
+                if (scenario.IsAiControlled(side))
+                {
+                    match.AddController(new TacticalAi(side));
+                }
+            }
 
             foreach (ScenarioConfig.SquadSpawn spawn in scenario.Squads)
             {

@@ -71,6 +71,9 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Цель, выбранная в начале прицеливания; 0 — нет.</summary>
         public int AimTargetId { get; internal set; }
 
+        /// <summary>Дальше этого залп текущего прицеливания не пойдёт (ИИ держит огонь до эффективной дальности), u.</summary>
+        internal float AimMaxDistance { get; set; } = float.MaxValue;
+
         /// <summary>Боевой дух, 0–100.</summary>
         public float Morale { get; internal set; } = MoraleMath.MaxMorale;
 
@@ -83,6 +86,9 @@ namespace Marchlands.Simulation.Squads
 
         /// <summary>Проверка морали защитника на текущей штыковой атаке уже прошла.</summary>
         public bool ChargeChecked { get; internal set; }
+
+        /// <summary>Сколько секунд длится текущая штыковая атака.</summary>
+        internal float ChargeTime { get; set; }
 
         /// <summary>Со сколькими врагами отряд сейчас в рукопашной.</summary>
         public int MeleeOpponents { get; internal set; }

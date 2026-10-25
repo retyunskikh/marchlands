@@ -24,5 +24,8 @@ namespace Marchlands.Simulation.Config
         public float chargeBonusDuration;
 
         public float flankMeleeMultiplier;
+
+        /// <summary>Если за это время атака не дошла до контакта (путь перекрыт), отряд останавливается, s.</summary>
+        public float chargeMaxDuration;
     }
 }

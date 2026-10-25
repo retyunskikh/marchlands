@@ -30,6 +30,7 @@ namespace Marchlands.Simulation.Commands
             FireSystem.CancelAiming(squad);
             squad.Order = SquadOrder.Charge(target.Id);
             squad.ChargeChecked = false;
+            squad.ChargeTime = 0f;
         }
     }
 }

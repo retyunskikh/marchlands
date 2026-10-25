@@ -16,7 +16,7 @@ namespace Marchlands.Simulation.Melee
     {
         public static void Update(Match match, float deltaTime)
         {
-            UpdateCharges(match);
+            UpdateCharges(match, deltaTime);
             ApplyMeleeLosses(match, deltaTime);
         }
 
@@ -45,7 +45,7 @@ namespace Marchlands.Simulation.Melee
             }
         }
 
-        private static void UpdateCharges(Match match)
+        private static void UpdateCharges(Match match, float deltaTime)
         {
             MeleeSettings melee = match.Settings.melee;
             float contactDistance = match.Settings.squads.arrivalTolerance;
@@ -80,8 +80,38 @@ namespace Marchlands.Simulation.Melee
                 if (distance <= contactDistance)
                 {
                     Engage(match, attacker, target);
+                    continue;
+                }
+
+                // Атака, упёршаяся в другого врага, превращается в рукопашную с ним.
+                Squad blocker = FindEnemyInContact(match, attacker, contactDistance);
+                if (blocker != null)
+                {
+                    Engage(match, attacker, blocker);
+                    continue;
+                }
+
+                attacker.ChargeTime += deltaTime;
+                if (attacker.ChargeTime >= melee.chargeMaxDuration)
+                {
+                    // Путь перекрыт (например, своим отрядом) — атака выдыхается.
+                    StopCharge(attacker);
                 }
             }
+        }
+
+        private static Squad FindEnemyInContact(Match match, Squad attacker, float contactDistance)
+        {
+            foreach (Squad other in match.Squads)
+            {
+                if (ChargeRules.IsValidTarget(attacker, other)
+                    && FireGeometry.Distance(attacker, other, match.Settings.squads) <= contactDistance)
+                {
+                    return other;
+                }
+            }
+
+            return null;
         }
 
         private static void Engage(Match match, Squad attacker, Squad defender)
@@ -169,6 +199,7 @@ namespace Marchlands.Simulation.Melee
         {
             attacker.Order = SquadOrder.None;
             attacker.ChargeChecked = false;
+            attacker.ChargeTime = 0f;
         }
 
         private static bool IsOut(Squad squad)
