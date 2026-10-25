@@ -29,5 +29,8 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Ближе этого (от центра до центра) ИИ вступает в бой; иначе отряд свободен для захвата деревень, u.</summary>
         public float engageRadius;
+
+        /// <summary>Враг ближе этого к своему штабу или деревне — угроза, на которую идёт свободный отряд, u.</summary>
+        public float defenseRadius;
     }
 }

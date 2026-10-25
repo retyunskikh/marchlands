@@ -76,7 +76,8 @@ namespace Marchlands.Tests.EditMode
                     retreatMorale = 40f,
                     returnMorale = 70f,
                     repathDistance = 1f,
-                    engageRadius = 15f
+                    engageRadius = 15f,
+                    defenseRadius = 20f
                 },
                 economy = new EconomySettings
                 {
@@ -87,6 +88,17 @@ namespace Marchlands.Tests.EditMode
                     villageIncome = 3,
                     hqIncome = 2,
                     startGold = 150
+                },
+                buildings = new BuildingSettings
+                {
+                    barracksCost = 120,
+                    barracksBuildTime = 30f,
+                    buildRadiusFromHQ = 10f,
+                    buildingSpacing = 3f,
+                    squadCost = 60,
+                    recruitTime = 20f,
+                    recruitQueueMax = 3,
+                    spawnOffset = 4f
                 }
             };
         }

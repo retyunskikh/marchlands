@@ -93,9 +93,15 @@ namespace Marchlands.Bootstrap
 
             foreach (Side side in new[] { Side.France, Side.Austria })
             {
+                if (scenario.HasHeadquarters)
+                {
+                    match.AddHeadquarters(side, scenario.GetHeadquarters(side));
+                }
+
                 if (scenario.IsAiControlled(side))
                 {
                     match.AddController(new TacticalAi(side));
+                    match.AddController(new StrategicAi(side));
                 }
             }
 

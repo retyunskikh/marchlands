@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Config;
@@ -15,11 +16,13 @@ namespace Marchlands.Simulation.AI
     /// не бегущего врага, держа огонь до случайной дистанции между pointBlankRange и effectiveRange →
     /// залп → штыки, если враг перезаряжается рядом, а своя мораль высока → отход при низкой морали.
     /// Отряд без врагов ближе aiEngageRadius свободен и идёт захватывать ближайшую ничью или вражескую деревню;
-    /// если захватывать нечего, наступает на ближайшего врага. Приказы отдаёт только командами, с задержкой реакции.
+    /// если захватывать нечего, наступает на ближайшего врага. На врага у своего штаба или деревни (угроза) идёт
+    /// ближайший свободный отряд. Приказы отдаёт только командами, с задержкой реакции.
     /// </summary>
     public sealed class TacticalAi : IMatchController
     {
         private readonly Dictionary<int, SquadBrain> brains = new Dictionary<int, SquadBrain>();
+        private readonly Dictionary<int, int> defenders = new Dictionary<int, int>();
         private int nextThinkTick;
 
         public TacticalAi(Side side)
@@ -55,6 +58,7 @@ namespace Marchlands.Simulation.AI
 
             AiSettings ai = match.Settings.ai;
             nextThinkTick = match.CurrentTick + math.max(1, SecondsToTicks(ai.thinkInterval));
+            AssignDefenders(match);
 
             foreach (Squad squad in match.Squads)
             {
@@ -114,7 +118,9 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
-            Squad target = SelectTarget(match, squad, brain, ai.engageRadius);
+            Squad target = defenders.TryGetValue(squad.Id, out int threatId)
+                ? ForceTarget(match, brain, match.FindSquad(threatId))
+                : SelectTarget(match, squad, brain, ai.engageRadius);
             if (target == null)
             {
                 Village village = SelectVillage(match, squad, brain);
@@ -197,13 +203,110 @@ namespace Marchlands.Simulation.AI
             brain.TargetId = best.Id;
             if (changed)
             {
-                // Верхняя граница чуть меньше effectiveRange: с допуском подхода залп всё равно в эффективной дальности.
-                CombatSettings combat = match.Settings.combat;
-                float maxDistance = combat.effectiveRange - match.Settings.squads.arrivalTolerance;
-                brain.FireDistance = match.Random.Range(combat.pointBlankRange, maxDistance);
+                brain.FireDistance = RollFireDistance(match);
             }
 
             return best;
+        }
+
+        /// <summary>
+        /// Угроза — не бегущий враг ближе aiDefenseRadius к своему штабу или своей деревне. На каждую угрозу
+        /// назначается ближайший свободный отряд: не связанный боем с другим врагом, не отходящий и выполняющий приказы.
+        /// </summary>
+        private void AssignDefenders(Match match)
+        {
+            defenders.Clear();
+            foreach (Squad threat in match.Squads)
+            {
+                if (threat.Side == Side || threat.IsRouting || !IsThreat(match, threat))
+                {
+                    continue;
+                }
+
+                Squad best = null;
+                float bestDistance = float.MaxValue;
+                foreach (Squad own in match.Squads)
+                {
+                    if (own.Side != Side || !own.CanReceiveOrders || defenders.ContainsKey(own.Id)
+                        || (brains.TryGetValue(own.Id, out SquadBrain brain) && brain.Stance == Stance.Retreat)
+                        || IsEngagedWithOther(match, own, threat))
+                    {
+                        continue;
+                    }
+
+                    float distance = math.distancesq(own.Position, threat.Position);
+                    if (distance < bestDistance)
+                    {
+                        best = own;
+                        bestDistance = distance;
+                    }
+                }
+
+                if (best != null)
+                {
+                    defenders.Add(best.Id, threat.Id);
+                }
+            }
+        }
+
+        private bool IsThreat(Match match, Squad enemy)
+        {
+            float radius = match.Settings.ai.defenseRadius;
+            Building headquarters = match.GetHeadquarters(Side);
+            if (headquarters != null && math.distance(enemy.Position, headquarters.Position) <= radius)
+            {
+                return true;
+            }
+
+            foreach (Village village in match.Villages)
+            {
+                if (village.Owner == Side && math.distance(enemy.Position, village.Position) <= radius)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Есть ли у отряда в радиусе боя другой не бегущий враг, кроме <paramref name="threat"/>.</summary>
+        private static bool IsEngagedWithOther(Match match, Squad own, Squad threat)
+        {
+            foreach (Squad other in match.Squads)
+            {
+                if (other != threat && other.Side != own.Side && !other.IsRouting
+                    && math.distance(other.Position, own.Position) <= match.Settings.ai.engageRadius)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Делает <paramref name="target"/> целью отряда; дистанция огня выбирается заново при смене цели.</summary>
+        private static Squad ForceTarget(Match match, SquadBrain brain, Squad target)
+        {
+            if (target == null)
+            {
+                return null;
+            }
+
+            if (target.Id != brain.TargetId)
+            {
+                brain.TargetId = target.Id;
+                brain.FireDistance = RollFireDistance(match);
+            }
+
+            return target;
+        }
+
+        private static float RollFireDistance(Match match)
+        {
+            // Верхняя граница чуть меньше effectiveRange: с допуском подхода залп всё равно в эффективной дальности.
+            CombatSettings combat = match.Settings.combat;
+            float maxDistance = combat.effectiveRange - match.Settings.squads.arrivalTolerance;
+            return match.Random.Range(combat.pointBlankRange, maxDistance);
         }
 
         /// <summary>

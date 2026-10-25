@@ -21,7 +21,7 @@ namespace Marchlands.Simulation.Config
         /// <summary>Доход за каждую деревню за период.</summary>
         public int villageIncome;
 
-        /// <summary>Доход за штаб за период (с этапа 6).</summary>
+        /// <summary>Доход за штаб за период.</summary>
         public int hqIncome;
 
         /// <summary>Золото на старте.</summary>

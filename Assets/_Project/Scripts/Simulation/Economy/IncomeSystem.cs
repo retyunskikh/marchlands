@@ -4,7 +4,7 @@ using Unity.Mathematics;
 
 namespace Marchlands.Simulation.Economy
 {
-    /// <summary>Доход: каждые incomeInterval секунд — villageIncome за каждую деревню стороны.</summary>
+    /// <summary>Доход: каждые incomeInterval секунд — villageIncome за каждую деревню стороны и hqIncome за штаб.</summary>
     internal static class IncomeSystem
     {
         public static void Update(Match match)
@@ -20,7 +20,8 @@ namespace Marchlands.Simulation.Economy
 
             foreach (PlayerState player in match.Players)
             {
-                player.Gold += economy.villageIncome * match.CountVillages(player.Side);
+                int headquarters = match.GetHeadquarters(player.Side) != null ? 1 : 0;
+                player.Gold += economy.villageIncome * match.CountVillages(player.Side) + economy.hqIncome * headquarters;
             }
         }
     }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Economy;
@@ -27,6 +28,8 @@ namespace Marchlands.Simulation.Core
         private readonly List<Village> villages = new List<Village>();
         private readonly PlayerState[] players = new PlayerState[SideCount];
         private int nextVillageId = 1;
+        private readonly List<Building> buildings = new List<Building>();
+        private int nextBuildingId = 1;
         private readonly float2[] retreatPoints = new float2[SideCount];
         private readonly bool[] hasRetreatPoint = new bool[SideCount];
         private int nextSquadId = 1;
@@ -60,6 +63,8 @@ namespace Marchlands.Simulation.Core
 
         public IReadOnlyList<PlayerState> Players => players;
 
+        public IReadOnlyList<Building> Buildings => buildings;
+
         /// <summary>Идущие рукопашные.</summary>
         public IReadOnlyList<MeleeEngagement> Engagements => engagements;
 
@@ -89,6 +94,53 @@ namespace Marchlands.Simulation.Core
             var village = new Village(nextVillageId++, position);
             villages.Add(village);
             return village;
+        }
+
+        /// <summary>Ставит штаб стороны (он есть с начала матча и уже построен).</summary>
+        public Building AddHeadquarters(Side side, float2 position)
+        {
+            if (GetHeadquarters(side) != null)
+            {
+                throw new InvalidOperationException($"У стороны {side} уже есть штаб.");
+            }
+
+            var headquarters = new Building(nextBuildingId++, BuildingType.Headquarters, side, position, 0f);
+            buildings.Add(headquarters);
+            return headquarters;
+        }
+
+        /// <summary>Закладывает казарму. Проверки места и золота — в <see cref="BuildRules"/> и командах.</summary>
+        internal Building AddBarracks(Side side, float2 position)
+        {
+            var barracks = new Building(nextBuildingId++, BuildingType.Barracks, side, position, Settings.buildings.barracksBuildTime);
+            buildings.Add(barracks);
+            return barracks;
+        }
+
+        public Building GetHeadquarters(Side side)
+        {
+            foreach (Building building in buildings)
+            {
+                if (building.Owner == side && building.Type == BuildingType.Headquarters)
+                {
+                    return building;
+                }
+            }
+
+            return null;
+        }
+
+        public Building FindBuilding(int id)
+        {
+            foreach (Building building in buildings)
+            {
+                if (building.Id == id)
+                {
+                    return building;
+                }
+            }
+
+            return null;
         }
 
         public PlayerState GetPlayer(Side side)
@@ -143,15 +195,23 @@ namespace Marchlands.Simulation.Core
             return true;
         }
 
-        /// <summary>Куда бегут разбитые отряды стороны. Пока нет штабов (этапы 5–6), задаётся сценарием.</summary>
+        /// <summary>Куда бегут разбитые отряды стороны, если у неё нет штаба (песочницы).</summary>
         public void SetRetreatPoint(Side side, float2 point)
         {
             retreatPoints[(int)side] = point;
             hasRetreatPoint[(int)side] = true;
         }
 
+        /// <summary>Куда бегут разбитые отряды стороны: к своему штабу, а без него — к точке отхода из сценария.</summary>
         public bool TryGetRetreatPoint(Side side, out float2 point)
         {
+            Building headquarters = GetHeadquarters(side);
+            if (headquarters != null)
+            {
+                point = headquarters.Position;
+                return true;
+            }
+
             point = retreatPoints[(int)side];
             return hasRetreatPoint[(int)side];
         }
@@ -209,6 +269,7 @@ namespace Marchlands.Simulation.Core
             MeleeSystem.RemoveFinished(this);
             CaptureSystem.Update(this, deltaTime);
             IncomeSystem.Update(this);
+            BuildingSystem.Update(this, deltaTime);
 
             squads.RemoveAll(squad => squad.Alive <= 0 || squad.IsDisbanded);
 

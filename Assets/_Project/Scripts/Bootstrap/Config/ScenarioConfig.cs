@@ -15,11 +15,16 @@ namespace Marchlands.Bootstrap.Config
         [Tooltip("Положения деревень; на старте все ничьи.")]
         [SerializeField] private List<Vector2> villages = new List<Vector2>();
 
+        [Header("Штабы")]
+        [SerializeField] private bool hasHeadquarters;
+        [SerializeField] private Vector2 franceHeadquarters;
+        [SerializeField] private Vector2 austriaHeadquarters;
+
         [Header("Кем управляется сторона")]
         [SerializeField] private bool franceAi;
         [SerializeField] private bool austriaAi = true;
 
-        [Header("Точки отхода (до появления штабов)")]
+        [Header("Точки отхода (для песочниц без штабов)")]
         [SerializeField] private Vector2 franceRetreatPoint;
         [SerializeField] private Vector2 austriaRetreatPoint;
 
@@ -28,6 +33,13 @@ namespace Marchlands.Bootstrap.Config
         public IReadOnlyList<SquadSpawn> Squads => squads;
 
         public IReadOnlyList<Vector2> Villages => villages;
+
+        public bool HasHeadquarters => hasHeadquarters;
+
+        public Vector2 GetHeadquarters(Side side)
+        {
+            return side == Side.France ? franceHeadquarters : austriaHeadquarters;
+        }
 
         public bool IsAiControlled(Side side)
         {

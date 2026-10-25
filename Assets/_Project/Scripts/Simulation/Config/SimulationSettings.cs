@@ -12,5 +12,6 @@ namespace Marchlands.Simulation.Config
         public MeleeSettings melee = new MeleeSettings();
         public AiSettings ai = new AiSettings();
         public EconomySettings economy = new EconomySettings();
+        public BuildingSettings buildings = new BuildingSettings();
     }
 }
