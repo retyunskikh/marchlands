@@ -32,5 +32,8 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Враг ближе этого к своему штабу или деревне — угроза, на которую идёт свободный отряд, u.</summary>
         public float defenseRadius;
+
+        /// <summary>Ближе этого к цели ИИ идёт напрямую, дальше — по пути с учётом местности, u.</summary>
+        public float directApproachDistance;
     }
 }

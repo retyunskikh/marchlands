@@ -31,10 +31,13 @@ namespace Marchlands.Simulation.Combat
             return 0f;
         }
 
-        /// <summary>Итоговая вероятность попадания с множителями первого залпа и колонны-цели.</summary>
-        public static float HitProbability(float distance, bool isFirstVolley, Formation targetFormation, CombatSettings settings)
+        /// <summary>
+        /// Итоговая вероятность попадания с множителями первого залпа, колонны-цели и укрытия
+        /// (<paramref name="coverMultiplier"/> — например, лес вокруг цели).
+        /// </summary>
+        public static float HitProbability(float distance, bool isFirstVolley, Formation targetFormation, CombatSettings settings, float coverMultiplier = 1f)
         {
-            float p = HitChance(distance, settings);
+            float p = HitChance(distance, settings) * coverMultiplier;
             if (isFirstVolley)
             {
                 p *= settings.firstVolleyMultiplier;

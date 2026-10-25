@@ -38,12 +38,34 @@ namespace Marchlands.Simulation.Squads
             {
                 case SquadOrderType.Move when squad.FireState != FireState.Aiming:
                     // На время прицеливания отряд стоит; приказ продолжится после залпа.
-                    UpdateMove(squad, match.Settings, deltaTime);
+                    UpdateMove(squad, match, deltaTime);
                     break;
                 case SquadOrderType.Charge:
                     UpdateCharge(squad, match, deltaTime);
                     break;
             }
+
+            KeepInsideTerrain(squad, match);
+        }
+
+        /// <summary>Не даёт отряду выйти за непроходимую границу (горы и реки) с учётом его габаритов.</summary>
+        public static void KeepInsideTerrain(Squad squad, Match match)
+        {
+            if (match.Terrain != null)
+            {
+                squad.Position = match.Terrain.Clamp(squad.Position, ProjectedHalfExtents(squad, squad.Facing, match.Settings.squads));
+            }
+        }
+
+        /// <summary>Полуразмеры повёрнутого прямоугольника отряда по осям мира.</summary>
+        public static float2 ProjectedHalfExtents(Squad squad, float facing, SquadSettings settings)
+        {
+            float2 half = FormationLayout.GetHalfExtents(squad.TargetFormation, squad.Alive, settings);
+            float2 forward = Angles.Direction(facing);
+            float2 right = Angles.Right(facing);
+            return new float2(
+                math.abs(half.x * right.x) + math.abs(half.y * forward.x),
+                math.abs(half.x * right.y) + math.abs(half.y * forward.y));
         }
 
         public static float GetSpeed(Formation formation, SquadSettings settings)
@@ -59,8 +81,9 @@ namespace Marchlands.Simulation.Squads
             squad.TargetFormation = squad.Formation;
         }
 
-        private static void UpdateMove(Squad squad, SimulationSettings settings, float deltaTime)
+        private static void UpdateMove(Squad squad, Match match, float deltaTime)
         {
+            SimulationSettings settings = match.Settings;
             float time = deltaTime;
             float2 target = squad.Order.Target;
             float2 toTarget = target - squad.Position;
@@ -77,6 +100,12 @@ namespace Marchlands.Simulation.Squads
                 if (squad.FireState == FireState.Reloading)
                 {
                     speed *= settings.combat.reloadMoveSpeedMultiplier;
+                }
+
+                speed *= match.TerrainSpeedMultiplier(squad.Position);
+                if (speed <= 0f)
+                {
+                    return;
                 }
 
                 float step = speed * time;
@@ -114,7 +143,8 @@ namespace Marchlands.Simulation.Squads
             }
 
             float distance = FireGeometry.Distance(squad, target, match.Settings.squads);
-            float step = math.min(match.Settings.melee.chargeSpeed * time, distance);
+            float speed = match.Settings.melee.chargeSpeed * match.TerrainSpeedMultiplier(squad.Position);
+            float step = math.min(speed * time, distance);
             squad.Position += math.normalize(toTarget) * step;
         }
 
@@ -149,7 +179,8 @@ namespace Marchlands.Simulation.Squads
             }
 
             squad.Facing = Angles.Of(direction);
-            squad.Position += direction * math.min(match.Settings.morale.routSpeed * deltaTime, distance);
+            float speed = match.Settings.morale.routSpeed * match.TerrainSpeedMultiplier(squad.Position);
+            squad.Position += direction * math.min(speed * deltaTime, distance);
         }
 
         private static Squad FindNearestEnemy(Match match, Squad squad)

@@ -14,5 +14,6 @@ namespace Marchlands.Simulation.Config
         public EconomySettings economy = new EconomySettings();
         public BuildingSettings buildings = new BuildingSettings();
         public VictorySettings victory = new VictorySettings();
+        public TerrainSettings terrain = new TerrainSettings();
     }
 }

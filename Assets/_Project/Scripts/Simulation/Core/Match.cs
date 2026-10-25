@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Marchlands.Simulation.AI;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
@@ -7,6 +8,7 @@ using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Melee;
 using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
+using Marchlands.Simulation.Terrain;
 using Marchlands.Simulation.Victory;
 using Unity.Mathematics;
 
@@ -70,6 +72,27 @@ namespace Marchlands.Simulation.Core
 
         /// <summary>Деревни, сменившие владельца в последнем выполненном тике.</summary>
         public IReadOnlyList<Village> LastTickCaptures => lastTickCaptures;
+
+        /// <summary>Местность полной карты; null — ровное поле без границ (песочницы).</summary>
+        public TerrainMap Terrain { get; private set; }
+
+        /// <summary>Поиск пути для ИИ по местности; null, если местности нет.</summary>
+        public TerrainPathfinder Pathfinder { get; private set; }
+
+        /// <summary>Задаёт местность до начала матча.</summary>
+        public void SetTerrain(TerrainMap terrain)
+        {
+            Terrain = terrain;
+            Pathfinder = terrain != null
+                ? new TerrainPathfinder(terrain, Settings.terrain, TacticalAi.WaypointReach(Settings))
+                : null;
+        }
+
+        /// <summary>Множитель скорости местности в точке; на ровном поле — 1.</summary>
+        public float TerrainSpeedMultiplier(float2 point)
+        {
+            return Terrain == null ? 1f : math.max(0f, Terrain.SpeedMultiplier(point, Settings.terrain));
+        }
 
         /// <summary>Проверяются ли условия победы. В песочницах выключены.</summary>
         public bool VictoryEnabled { get; private set; }

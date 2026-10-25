@@ -17,7 +17,8 @@ namespace Marchlands.Simulation.AI
     /// залп → штыки, если враг перезаряжается рядом, а своя мораль высока → отход при низкой морали.
     /// Отряд без врагов ближе aiEngageRadius свободен и идёт захватывать ближайшую ничью или вражескую деревню;
     /// если захватывать нечего, наступает на ближайшего врага. На врага у своего штаба или деревни (угроза) идёт
-    /// ближайший свободный отряд. Приказы отдаёт только командами, с задержкой реакции.
+    /// ближайший свободный отряд. Дальние переходы прокладывает по местности (дороги, обход лесов), ближе
+    /// aiDirectApproachDistance идёт напрямую. Приказы отдаёт только командами, с задержкой реакции.
     /// </summary>
     public sealed class TacticalAi : IMatchController
     {
@@ -47,6 +48,11 @@ namespace Marchlands.Simulation.AI
 
             /// <summary>До этого тика отряд ждёт исполнения прошлого приказа и не получает новых.</summary>
             public int BusyUntilTick = -1;
+
+            /// <summary>Точки текущего пути по местности и цель, к которой он проложен.</summary>
+            public readonly List<float2> Path = new List<float2>();
+            public float2 PathGoal;
+            public int PathIndex;
         }
 
         public void Update(Match match)
@@ -376,7 +382,7 @@ namespace Marchlands.Simulation.AI
 
             float2 toVillage = village.Position - squad.Position;
             float facing = math.lengthsq(toVillage) > 0f ? Angles.Of(toVillage) : squad.Facing;
-            Issue(match, brain, new MoveCommand(squad.Id, village.Position, facing));
+            GoTo(match, squad, brain, village.Position, facing);
         }
 
         private static Village FindVillage(Match match, int id)
@@ -432,12 +438,7 @@ namespace Marchlands.Simulation.AI
             float targetHalfDepth = FormationLayout.GetHalfExtents(target.Formation, target.Alive, settings).y;
             float2 point = target.Position - direction * (brain.FireDistance + ownHalfDepth + targetHalfDepth);
 
-            bool alreadyGoing = squad.Order.Type == SquadOrderType.Move
-                && math.distance(squad.Order.Target, point) <= match.Settings.ai.repathDistance;
-            if (!alreadyGoing)
-            {
-                Issue(match, brain, new MoveCommand(squad.Id, point, Angles.Of(direction)));
-            }
+            GoTo(match, squad, brain, point, Angles.Of(direction));
         }
 
         private void KeepRetreating(Match match, Squad squad, SquadBrain brain)
@@ -447,16 +448,73 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
-            bool arrived = math.distance(squad.Position, point) <= match.Settings.squads.arrivalTolerance;
-            bool alreadyGoing = squad.Order.Type == SquadOrderType.Move
-                && math.distance(squad.Order.Target, point) <= match.Settings.ai.repathDistance;
-            if (arrived || alreadyGoing)
+            if (math.distance(squad.Position, point) <= match.Settings.squads.arrivalTolerance)
             {
                 return;
             }
 
-            float facing = Angles.Of(point - squad.Position);
-            Issue(match, brain, new MoveCommand(squad.Id, point, facing));
+            GoTo(match, squad, brain, point, Angles.Of(point - squad.Position));
+        }
+
+        /// <summary>
+        /// Ведёт отряд к <paramref name="goal"/>: вблизи (или без местности) — напрямую, издалека — по пути
+        /// с учётом местности, точка за точкой. Приказ отдаётся, только если отряд ещё не идёт к нужной точке.
+        /// </summary>
+        private static void GoTo(Match match, Squad squad, SquadBrain brain, float2 goal, float finalFacing)
+        {
+            AiSettings ai = match.Settings.ai;
+            float2 next = goal;
+            float facing = finalFacing;
+
+            if (match.Pathfinder != null && math.distance(squad.Position, goal) > ai.directApproachDistance)
+            {
+                if (brain.Path.Count == 0 || math.distance(brain.PathGoal, goal) > ai.repathDistance)
+                {
+                    brain.PathGoal = goal;
+                    brain.PathIndex = 0;
+                    if (!match.Pathfinder.FindPath(squad.Position, goal, brain.Path))
+                    {
+                        brain.Path.Clear();
+                    }
+                }
+
+                float reach = WaypointReach(match.Settings);
+                while (brain.PathIndex < brain.Path.Count - 1 && math.distance(squad.Position, brain.Path[brain.PathIndex]) <= reach)
+                {
+                    brain.PathIndex++;
+                }
+
+                if (brain.Path.Count > 0)
+                {
+                    next = brain.Path[brain.PathIndex];
+                    if (brain.PathIndex < brain.Path.Count - 1)
+                    {
+                        // На промежуточной точке встаём фронтом к следующей, чтобы не разворачиваться дважды.
+                        facing = Angles.Of(brain.Path[brain.PathIndex + 1] - next);
+                    }
+                }
+            }
+            else
+            {
+                brain.Path.Clear();
+            }
+
+            bool alreadyGoing = squad.Order.Type == SquadOrderType.Move
+                && math.distance(squad.Order.Target, next) <= ai.repathDistance;
+            if (!alreadyGoing)
+            {
+                Issue(match, brain, new MoveCommand(squad.Id, next, facing));
+            }
+        }
+
+        /// <summary>
+        /// С какого расстояния переходить к следующей точке пути: отряд должен получить новый приказ до того,
+        /// как дойдёт до текущей точки, несмотря на задержку реакции. На столько же путь обходит опушки.
+        /// </summary>
+        public static float WaypointReach(SimulationSettings settings)
+        {
+            float fastest = settings.squads.columnSpeed * math.max(1f, settings.terrain.roadSpeedMultiplier);
+            return fastest * settings.ai.reactionDelay + settings.ai.repathDistance;
         }
 
         /// <summary>Ставит приказ с задержкой реакции; до его исполнения отряд новых приказов не получает.</summary>

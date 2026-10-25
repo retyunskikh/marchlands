@@ -76,7 +76,8 @@ namespace Marchlands.Tests.EditMode
                     returnMorale = 70f,
                     repathDistance = 1f,
                     engageRadius = 15f,
-                    defenseRadius = 20f
+                    defenseRadius = 20f,
+                    directApproachDistance = 12f
                 },
                 economy = new EconomySettings
                 {
@@ -105,6 +106,14 @@ namespace Marchlands.Tests.EditMode
                     hqCaptureTime = 30f,
                     dominationShare = 2f / 3f,
                     dominationTime = 180f
+                },
+                terrain = new TerrainSettings
+                {
+                    roadSpeedMultiplier = 1.25f,
+                    roadHalfWidth = 1.5f,
+                    forestSpeedMultiplier = 0.6f,
+                    forestCoverMultiplier = 0.7f,
+                    pathCellSize = 2f
                 }
             };
         }

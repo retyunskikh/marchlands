@@ -124,7 +124,9 @@ namespace Marchlands.Simulation.Combat
             }
 
             int shooters = VolleyMath.Shooters(shooter.Formation, shooter.Alive, match.Settings.squads);
-            float probability = VolleyMath.HitProbability(distance, shooter.IsFirstVolley, target.Formation, combat);
+            bool inCover = match.Terrain != null && match.Terrain.IsInForest(target.Position);
+            float cover = inCover ? match.Settings.terrain.forestCoverMultiplier : 1f;
+            float probability = VolleyMath.HitProbability(distance, shooter.IsFirstVolley, target.Formation, combat, cover);
             int casualties = VolleyMath.RollCasualties(match.Random, shooters, probability, target.Alive);
             Pending.Add(new PendingVolley(shooter, target, shooters, distance, casualties));
         }

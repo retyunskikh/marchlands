@@ -28,7 +28,15 @@ namespace Marchlands.Simulation.Commands
                 return;
             }
 
-            squad.Order = SquadOrder.Move(Target, Angles.Normalize(FinalFacing));
+            // Точка за горами или рекой прижимается к границе так, чтобы отряд в ней поместился.
+            float facing = Angles.Normalize(FinalFacing);
+            float2 target = Target;
+            if (match.Terrain != null)
+            {
+                target = match.Terrain.Clamp(target, SquadMovementSystem.ProjectedHalfExtents(squad, facing, match.Settings.squads));
+            }
+
+            squad.Order = SquadOrder.Move(target, facing);
         }
     }
 }
