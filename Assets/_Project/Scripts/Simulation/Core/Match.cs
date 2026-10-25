@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
@@ -15,6 +16,7 @@ namespace Marchlands.Simulation.Core
         private readonly CommandQueue commands = new CommandQueue();
         private readonly List<ICommand> currentTickCommands = new List<ICommand>();
         private readonly List<Squad> squads = new List<Squad>();
+        private readonly List<VolleyEvent> lastTickVolleys = new List<VolleyEvent>();
         private int nextSquadId = 1;
 
         public Match(ulong seed, SimulationSettings settings)
@@ -36,6 +38,9 @@ namespace Marchlands.Simulation.Core
         public int PendingCommandCount => commands.Count;
 
         public IReadOnlyList<Squad> Squads => squads;
+
+        /// <summary>Залпы, произошедшие в последнем выполненном тике.</summary>
+        public IReadOnlyList<VolleyEvent> LastTickVolleys => lastTickVolleys;
 
         /// <summary>Добавляет полный отряд. Используется при подготовке матча, до первого тика или из команд.</summary>
         public Squad AddSquad(Side side, float2 position, float facing, Formation formation)
@@ -100,12 +105,18 @@ namespace Marchlands.Simulation.Core
                 command.Execute(this);
             }
 
+            lastTickVolleys.Clear();
+            FireSystem.Update(this, SimulationTime.TickDuration, lastTickVolleys);
+
             foreach (Squad squad in squads)
             {
-                SquadMovementSystem.Update(squad, Settings.squads, SimulationTime.TickDuration);
+                SquadMovementSystem.Update(squad, Settings.squads, Settings.combat, SimulationTime.TickDuration);
             }
 
             SquadSeparationSystem.Resolve(squads, Settings.squads);
+
+            // Отряд без солдат исчезает; распад малых отрядов и бегство — этап 3.
+            squads.RemoveAll(squad => squad.Alive <= 0);
 
             CurrentTick++;
         }

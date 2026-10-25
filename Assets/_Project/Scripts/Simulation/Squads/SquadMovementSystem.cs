@@ -1,3 +1,4 @@
+using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
 using Unity.Mathematics;
@@ -11,7 +12,7 @@ namespace Marchlands.Simulation.Squads
     /// </summary>
     internal static class SquadMovementSystem
     {
-        public static void Update(Squad squad, SquadSettings settings, float deltaTime)
+        public static void Update(Squad squad, SquadSettings settings, CombatSettings combat, float deltaTime)
         {
             if (squad.IsChangingFormation)
             {
@@ -20,7 +21,8 @@ namespace Marchlands.Simulation.Squads
                 return;
             }
 
-            if (squad.Order.Type != SquadOrderType.Move)
+            // На время прицеливания отряд останавливается; приказ продолжится после залпа.
+            if (squad.Order.Type != SquadOrderType.Move || squad.FireState == FireState.Aiming)
             {
                 return;
             }
@@ -38,6 +40,11 @@ namespace Marchlands.Simulation.Squads
                 }
 
                 float speed = GetSpeed(squad.Formation, settings);
+                if (squad.FireState == FireState.Reloading)
+                {
+                    speed *= combat.reloadMoveSpeedMultiplier;
+                }
+
                 float step = speed * time;
                 if (step < distance)
                 {

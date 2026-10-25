@@ -1,3 +1,4 @@
+using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Core;
 using Unity.Mathematics;
 
@@ -54,5 +55,19 @@ namespace Marchlands.Simulation.Squads
         public bool IsChangingFormation => FormationChangeRemaining > 0f;
 
         public SquadOrder Order { get; internal set; }
+
+        public FireState FireState { get; internal set; } = FireState.Loaded;
+
+        /// <summary>Сколько осталось до конца прицеливания или перезарядки, s.</summary>
+        public float FireTimer { get; internal set; }
+
+        /// <summary>Отряд ещё не стрелял в этом бою — следующий залп получит бонус первого.</summary>
+        public bool IsFirstVolley { get; internal set; } = true;
+
+        /// <summary>Залп сам, как только цель войдёт в эффективную дальность.</summary>
+        public bool FireAtWill { get; internal set; }
+
+        /// <summary>Цель, выбранная в начале прицеливания; 0 — нет.</summary>
+        public int AimTargetId { get; internal set; }
     }
 }

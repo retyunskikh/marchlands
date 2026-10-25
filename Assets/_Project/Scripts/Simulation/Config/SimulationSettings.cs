@@ -7,5 +7,6 @@ namespace Marchlands.Simulation.Config
     public sealed class SimulationSettings
     {
         public SquadSettings squads = new SquadSettings();
+        public CombatSettings combat = new CombatSettings();
     }
 }

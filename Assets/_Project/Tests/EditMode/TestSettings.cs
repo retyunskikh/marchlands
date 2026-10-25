@@ -24,6 +24,21 @@ namespace Marchlands.Tests.EditMode
                     rotationSpeed = 45f,
                     formationChangeTime = 4f,
                     arrivalTolerance = 0.05f
+                },
+                combat = new CombatSettings
+                {
+                    maxRange = 12f,
+                    effectiveRange = 7f,
+                    pointBlankRange = 3f,
+                    hitMax = 0.05f,
+                    hitEffective = 0.20f,
+                    hitPointBlank = 0.40f,
+                    firstVolleyMultiplier = 1.5f,
+                    columnTargetMultiplier = 1.3f,
+                    fireArcHalfAngle = 45f,
+                    aimTime = 0.8f,
+                    reloadTime = 14f,
+                    reloadMoveSpeedMultiplier = 0.6f
                 }
             };
         }

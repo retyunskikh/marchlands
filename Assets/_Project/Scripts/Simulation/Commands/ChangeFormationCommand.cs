@@ -1,3 +1,4 @@
+using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
 
@@ -25,6 +26,9 @@ namespace Marchlands.Simulation.Commands
             {
                 return;
             }
+
+            // Перестроение сбивает прицеливание; отряд остаётся заряженным.
+            FireSystem.CancelAiming(squad);
 
             float duration = match.Settings.squads.formationChangeTime;
             if (duration <= 0f)
