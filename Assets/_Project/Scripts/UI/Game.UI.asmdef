@@ -3,6 +3,7 @@
     "rootNamespace": "Marchlands.UI",
     "references": [
         "Game.Simulation",
+        "Game.View",
         "UnityEngine.UI"
     ],
     "includePlatforms": [],

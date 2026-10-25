@@ -7,10 +7,11 @@ using Random = UnityEngine.Random;
 namespace Marchlands.View
 {
     /// <summary>
-    /// Фоновая музыка: спокойный плейлист и марши. Марш включается, когда не бегущий враг подходит к любому
-    /// не бегущему отряду игрока ближе tensionRadius; спокойная музыка возвращается, если такой угрозы нет
-    /// calmDelay секунд. Смена — перекрёстным затуханием; внутри плейлиста треки идут по кругу.
-    /// Без матча (главное меню) играет спокойная музыка.
+    /// Фоновая музыка: спокойный плейлист и марши. Композиция звучит не дольше maxPlayTime, затихает, и наступает
+    /// тишина на случайное время из silenceTime; затем — следующая композиция того же плейлиста (по кругу).
+    /// Марш вступает сразу, когда не бегущий враг подходит к не бегущему отряду игрока ближе tensionRadius;
+    /// если угрозы нет calmDelay секунд, марш затихает, а после паузы играет спокойная музыка.
+    /// Без матча (главное меню) играет только спокойная музыка.
     /// </summary>
     public sealed class MusicDirector : MonoBehaviour
     {
@@ -23,25 +24,51 @@ namespace Marchlands.View
         [SerializeField] private AudioClip[] calmTracks;
         [SerializeField] private AudioClip[] marchTracks;
         [SerializeField] private float volume = 0.45f;
-        [Tooltip("Длительность перекрёстного затухания, s.")]
+        [Tooltip("Длительность нарастания и затухания, s.")]
         [SerializeField] private float crossfadeTime = 3f;
+        [Tooltip("Сколько максимум звучит одна композиция, s.")]
+        [SerializeField] private float maxPlayTime = 90f;
+        [Tooltip("Тишина между композициями, s: от и до.")]
+        [SerializeField] private Vector2 silenceTime = new Vector2(15f, 40f);
         [Tooltip("Враг ближе этого к отряду игрока — пора играть марш, u.")]
         [SerializeField] private float tensionRadius = 25f;
-        [Tooltip("Сколько секунд без угрозы нужно, чтобы вернулась спокойная музыка.")]
+        [Tooltip("Сколько секунд без угрозы нужно, чтобы марш затих.")]
         [SerializeField] private float calmDelay = 20f;
         [Tooltip("Как часто проверять обстановку, s.")]
         [SerializeField] private float checkInterval = 0.5f;
 
         private readonly AudioSource[] sources = new AudioSource[2];
+        private readonly float[] targetVolumes = new float[2];
         private readonly int[] nextTrack = new int[2];
 
         private Match match;
         private Side playerSide;
         private Mood mood = Mood.Calm;
         private int activeSource;
-        private float fade = 1f;
+        private bool silent;
+        private float playTimer;
+        private float silenceTimer;
         private float sinceThreat = float.MaxValue;
         private float sinceCheck;
+
+        private const string EnabledKey = "music.enabled";
+        private static bool? enabled;
+
+        /// <summary>Включена ли музыка; выбор игрока хранится в PlayerPrefs.</summary>
+        public static bool Enabled
+        {
+            get
+            {
+                enabled ??= PlayerPrefs.GetInt(EnabledKey, 1) == 1;
+                return enabled.Value;
+            }
+            set
+            {
+                enabled = value;
+                PlayerPrefs.SetInt(EnabledKey, value ? 1 : 0);
+                PlayerPrefs.Save();
+            }
+        }
 
         /// <summary>В бою: следить за обстановкой. Без вызова (меню) — только спокойная музыка.</summary>
         public void Initialize(Match match, Side playerSide)
@@ -69,24 +96,33 @@ namespace Marchlands.View
         private void Update()
         {
             float delta = Time.unscaledDeltaTime;
+            foreach (AudioSource source in sources)
+            {
+                source.mute = !Enabled;
+            }
+
             UpdateMood(delta);
 
-            // Перекрёстное затухание: активный источник нарастает, другой стихает.
-            fade = crossfadeTime > 0f ? math.saturate(fade + delta / crossfadeTime) : 1f;
-            sources[activeSource].volume = volume * fade;
-            AudioSource previous = sources[1 - activeSource];
-            previous.volume = volume * (1f - fade);
-            if (fade >= 1f && previous.isPlaying)
+            if (silent)
             {
-                previous.Stop();
+                silenceTimer -= delta;
+                if (silenceTimer <= 0f)
+                {
+                    PlayNext(mood, instant: false);
+                }
+            }
+            else
+            {
+                playTimer += delta;
+                AudioSource current = sources[activeSource];
+                bool ended = !current.isPlaying && Application.isFocused;
+                if (ended || playTimer >= maxPlayTime - crossfadeTime)
+                {
+                    FadeOutToSilence();
+                }
             }
 
-            AudioSource current = sources[activeSource];
-            if (!current.isPlaying && current.clip != null && Application.isFocused)
-            {
-                // Трек кончился — следующий из того же плейлиста.
-                PlayNext(mood, instant: false);
-            }
+            UpdateVolumes(delta);
         }
 
         private void UpdateMood(float delta)
@@ -110,9 +146,20 @@ namespace Marchlands.View
             }
 
             Mood wanted = sinceThreat <= calmDelay ? Mood.March : Mood.Calm;
-            if (wanted != mood)
+            if (wanted == mood)
             {
-                PlayNext(wanted, instant: false);
+                return;
+            }
+
+            if (wanted == Mood.March)
+            {
+                // Бой близко — марш сразу, даже посреди паузы.
+                PlayNext(Mood.March, instant: false);
+            }
+            else
+            {
+                mood = Mood.Calm;
+                FadeOutToSilence();
             }
         }
 
@@ -138,6 +185,28 @@ namespace Marchlands.View
             return false;
         }
 
+        /// <summary>Громкость каждого источника плавно идёт к целевой; затихший источник останавливается.</summary>
+        private void UpdateVolumes(float delta)
+        {
+            float step = crossfadeTime > 0f ? volume * delta / crossfadeTime : volume;
+            for (int i = 0; i < sources.Length; i++)
+            {
+                AudioSource source = sources[i];
+                source.volume = Mathf.MoveTowards(source.volume, targetVolumes[i], step);
+                if (targetVolumes[i] <= 0f && source.volume <= 0f && source.isPlaying)
+                {
+                    source.Stop();
+                }
+            }
+        }
+
+        private void FadeOutToSilence()
+        {
+            targetVolumes[activeSource] = 0f;
+            silent = true;
+            silenceTimer = Random.Range(silenceTime.x, silenceTime.y);
+        }
+
         private void PlayNext(Mood newMood, bool instant)
         {
             AudioClip[] playlist = newMood == Mood.Calm ? calmTracks : marchTracks;
@@ -150,12 +219,16 @@ namespace Marchlands.View
             nextTrack[(int)newMood] = (index + 1) % playlist.Length;
             mood = newMood;
 
+            // Прежняя композиция затихает, новая нарастает на другом источнике.
+            targetVolumes[activeSource] = 0f;
             activeSource = 1 - activeSource;
             AudioSource source = sources[activeSource];
             source.clip = playlist[index];
             source.volume = instant ? volume : 0f;
+            targetVolumes[activeSource] = volume;
             source.Play();
-            fade = instant ? 1f : 0f;
+            silent = false;
+            playTimer = 0f;
         }
 
         private static int RandomStart(AudioClip[] playlist)
