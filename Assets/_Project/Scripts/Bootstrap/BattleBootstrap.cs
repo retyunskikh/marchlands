@@ -33,6 +33,7 @@ namespace Marchlands.Bootstrap
         [SerializeField] private FireArcView fireArc;
         [SerializeField] private VolleyEffectsView volleyEffects;
         [SerializeField] private BattleSoundsView battleSounds;
+        [SerializeField] private MusicDirector music;
         [SerializeField] private BattleInputController input;
         [SerializeField] private OrderPanel orderPanel;
         [SerializeField] private TopBar topBar;
@@ -64,6 +65,7 @@ namespace Marchlands.Bootstrap
             fireArc.Initialize(match);
             volleyEffects.Initialize(match);
             battleSounds.Initialize(match, scenario.PlayerSide);
+            music.Initialize(match, scenario.PlayerSide);
             input.Initialize(match, scenario.PlayerSide);
             orderPanel.Initialize(match);
             topBar.Initialize(match, scenario.PlayerSide);

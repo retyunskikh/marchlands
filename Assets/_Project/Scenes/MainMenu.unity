@@ -361,6 +361,87 @@ RectTransform:
   m_AnchoredPosition: {x: 380, y: -320}
   m_SizeDelta: {x: 520, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &553735669
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 553735670}
+  - component: {fileID: 553735672}
+  - component: {fileID: 553735671}
+  m_Layer: 0
+  m_Name: Credits
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &553735670
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 553735669}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1918966612}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 20}
+  m_SizeDelta: {x: 1800, y: 60}
+  m_Pivot: {x: 0.5, y: 0}
+--- !u!114 &553735671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 553735669}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.75, g: 0.75, b: 0.7, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FontData:
+    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    m_FontSize: 26
+    m_FontStyle: 0
+    m_BestFit: 0
+    m_MinSize: 10
+    m_MaxSize: 40
+    m_Alignment: 4
+    m_AlignByGeometry: 0
+    m_RichText: 1
+    m_HorizontalOverflow: 0
+    m_VerticalOverflow: 0
+    m_LineSpacing: 1
+  m_Text: "\u041C\u0443\u0437\u044B\u043A\u0430: \xABThe President's Own\xBB United
+    States Marine Band, United States Navy Band, Musopen (musopen.org) \u2014 \u043E\u0431\u0449\u0435\u0441\u0442\u0432\u0435\u043D\u043D\u043E\u0435
+    \u0434\u043E\u0441\u0442\u043E\u044F\u043D\u0438\u0435"
+--- !u!222 &553735672
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 553735669}
+  m_CullTransparentMesh: 1
 --- !u!1 &590380168
 GameObject:
   m_ObjectHideFlags: 0
@@ -598,6 +679,69 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 991290775}
   m_CullTransparentMesh: 1
+--- !u!1 &1002012852
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1002012854}
+  - component: {fileID: 1002012853}
+  m_Layer: 0
+  m_Name: Music
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1002012853
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1002012852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab596590692be2a4b9f72d8abd717250, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.View::Marchlands.View.MusicDirector
+  calmTracks:
+  - {fileID: 8300000, guid: 7e42276c225fbd74c90e31b059243d0e, type: 3}
+  - {fileID: 8300000, guid: 289290de52e2697409e090f3002f6a09, type: 3}
+  - {fileID: 8300000, guid: 08a9f2fca4d105b459faec0adfd21c6d, type: 3}
+  - {fileID: 8300000, guid: fd3feac862ef8824ca13b39426208f4c, type: 3}
+  - {fileID: 8300000, guid: 5c73f284df6daed49a94b3075fae5395, type: 3}
+  - {fileID: 8300000, guid: 4c09d92931b178d4da1842d3950b928c, type: 3}
+  marchTracks:
+  - {fileID: 8300000, guid: 87ae81d64ee340f4aa336cdaa9648ead, type: 3}
+  - {fileID: 8300000, guid: f0f1b23b809151f49816762d6772da0f, type: 3}
+  - {fileID: 8300000, guid: 356ac046170afef48baee74d0929e9dd, type: 3}
+  - {fileID: 8300000, guid: 2848f83629954e04f95c71eeeb019c01, type: 3}
+  - {fileID: 8300000, guid: 5c9bc98e1310db94cbec6191ef5ecc2d, type: 3}
+  - {fileID: 8300000, guid: f37f1c84e562e5545a12597595ec54b9, type: 3}
+  volume: 0.45
+  crossfadeTime: 3
+  tensionRadius: 25
+  calmDelay: 20
+  checkInterval: 0.5
+--- !u!4 &1002012854
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1002012852}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1267242203
 GameObject:
   m_ObjectHideFlags: 0
@@ -1084,6 +1228,7 @@ RectTransform:
   - {fileID: 1267242204}
   - {fileID: 34592138}
   - {fileID: 482213342}
+  - {fileID: 553735670}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1098,3 +1243,4 @@ SceneRoots:
   - {fileID: 1648597989}
   - {fileID: 1835201757}
   - {fileID: 1918966612}
+  - {fileID: 1002012854}
