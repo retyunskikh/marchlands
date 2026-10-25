@@ -20,6 +20,8 @@ namespace Marchlands.Input
         [SerializeField] private float zoomMin;
         [Tooltip("Максимальный ортографический размер камеры.")]
         [SerializeField] private float zoomMax;
+        [Tooltip("Радиус попадания тапом по зданию, u.")]
+        [SerializeField] private float buildingTapRadius;
         [Tooltip("Множитель масштаба за одно деление колеса мыши (для редактора).")]
         [SerializeField] private float wheelZoomFactor;
 
@@ -36,6 +38,8 @@ namespace Marchlands.Input
         public float ZoomMin => zoomMin;
 
         public float ZoomMax => zoomMax;
+
+        public float BuildingTapRadius => buildingTapRadius;
 
         public float WheelZoomFactor => wheelZoomFactor;
     }

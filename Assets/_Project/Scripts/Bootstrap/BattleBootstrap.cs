@@ -1,6 +1,7 @@
 using Marchlands.Bootstrap.Config;
 using Marchlands.Input;
 using Marchlands.Simulation.AI;
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
@@ -24,11 +25,14 @@ namespace Marchlands.Bootstrap
         [Header("Сцена")]
         [SerializeField] private SquadViewRegistry squadViews;
         [SerializeField] private VillageViewRegistry villageViews;
+        [SerializeField] private BuildingViewRegistry buildingViews;
         [SerializeField] private FireArcView fireArc;
         [SerializeField] private VolleyEffectsView volleyEffects;
         [SerializeField] private BattleInputController input;
         [SerializeField] private OrderPanel orderPanel;
         [SerializeField] private TopBar topBar;
+        [SerializeField] private BuildPanel buildPanel;
+        [SerializeField] private BuildingPanel buildingPanel;
 
         private Match match;
         private FixedStepClock clock;
@@ -49,26 +53,46 @@ namespace Marchlands.Bootstrap
 
             squadViews.Initialize(match);
             villageViews.Initialize(match);
+            buildingViews.Initialize(match);
             fireArc.Initialize(match);
             volleyEffects.Initialize(match);
             input.Initialize(match, scenario.PlayerSide);
             orderPanel.Initialize(match);
             topBar.Initialize(match, scenario.PlayerSide);
+            buildPanel.Initialize(match, scenario.PlayerSide);
+            buildingPanel.Initialize(match);
+
             input.SelectionChanged += OnSelectionChanged;
+            input.BuildingSelectionChanged += OnBuildingSelectionChanged;
             input.ChargeTargetingChanged += orderPanel.SetChargeTargeting;
+            input.PlacementChanged += buildPanel.SetPlacementState;
             orderPanel.ChargeRequested += input.BeginChargeTargeting;
+            buildPanel.BuildRequested += input.BeginPlacement;
+            buildPanel.ConfirmRequested += input.ConfirmPlacement;
+            buildPanel.CancelRequested += input.CancelPlacement;
         }
 
         private void OnDestroy()
         {
-            if (input != null)
+            if (input == null)
             {
-                input.SelectionChanged -= OnSelectionChanged;
-                if (orderPanel != null)
-                {
-                    input.ChargeTargetingChanged -= orderPanel.SetChargeTargeting;
-                    orderPanel.ChargeRequested -= input.BeginChargeTargeting;
-                }
+                return;
+            }
+
+            input.SelectionChanged -= OnSelectionChanged;
+            input.BuildingSelectionChanged -= OnBuildingSelectionChanged;
+            if (orderPanel != null)
+            {
+                input.ChargeTargetingChanged -= orderPanel.SetChargeTargeting;
+                orderPanel.ChargeRequested -= input.BeginChargeTargeting;
+            }
+
+            if (buildPanel != null)
+            {
+                input.PlacementChanged -= buildPanel.SetPlacementState;
+                buildPanel.BuildRequested -= input.BeginPlacement;
+                buildPanel.ConfirmRequested -= input.ConfirmPlacement;
+                buildPanel.CancelRequested -= input.CancelPlacement;
             }
         }
 
@@ -83,6 +107,7 @@ namespace Marchlands.Bootstrap
 
             squadViews.Render(clock.Alpha);
             villageViews.Render();
+            buildingViews.Render();
             fireArc.Render(clock.Alpha);
         }
 
@@ -118,6 +143,12 @@ namespace Marchlands.Bootstrap
                     match.Enqueue(new SetFireAtWillCommand(squad.Id, true));
                 }
             }
+        }
+
+        private void OnBuildingSelectionChanged(Building building)
+        {
+            buildingViews.SetSelected(building);
+            buildingPanel.SetBuilding(building);
         }
 
         private void OnSelectionChanged(Squad squad)

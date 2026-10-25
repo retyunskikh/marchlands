@@ -1,4 +1,5 @@
 using System;
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Melee;
@@ -12,14 +13,15 @@ using UnityEngine.InputSystem.EnhancedTouch;
 namespace Marchlands.Input
 {
     /// <summary>
-    /// Тач-управление боем (раздел 4 docs/design.md): выделение, приказы движения, камера.
-    /// Состояние симуляции только читает, приказы отдаёт командами.
+    /// Тач-управление боем (раздел 4 docs/design.md): выделение отрядов и зданий, приказы движения, постановка
+    /// казармы, камера. Состояние симуляции только читает, приказы отдаёт командами.
     /// </summary>
     public sealed class BattleInputController : MonoBehaviour
     {
         [SerializeField] private InputConfig config;
         [SerializeField] private CameraController cameraController;
         [SerializeField] private OrderPreviewView orderPreview;
+        [SerializeField] private BuildingViewRegistry buildingViews;
 
         private Match match;
         private Side playerSide;
@@ -35,8 +37,19 @@ namespace Marchlands.Input
 
         private bool isChargeTargeting;
 
+        private Building selectedBuilding;
+        private bool isPlacing;
+        private float2? placementSite;
+        private bool lastPlacementConfirmable;
+
         /// <summary>Выделенный отряд изменился; null — выделение снято.</summary>
         public event Action<Squad> SelectionChanged;
+
+        /// <summary>Выделенное здание изменилось; null — выделение снято.</summary>
+        public event Action<Building> BuildingSelectionChanged;
+
+        /// <summary>Режим постановки казармы: включён ли он, выбрано ли место и можно ли там поставить казарму.</summary>
+        public event Action<bool, bool, bool> PlacementChanged;
 
         /// <summary>Включился или выключился выбор цели для «В штыки».</summary>
         public event Action<bool> ChargeTargetingChanged;
@@ -48,6 +61,44 @@ namespace Marchlands.Input
             this.match = match;
             this.playerSide = playerSide;
             cameraController.Initialize(config);
+        }
+
+        /// <summary>«Казарма» нажата: тап по земле выбирает место, затем «Поставить» или «Отмена».</summary>
+        public void BeginPlacement()
+        {
+            if (match.GetHeadquarters(playerSide) == null)
+            {
+                return;
+            }
+
+            Select(null);
+            SelectBuilding(null);
+            isPlacing = true;
+            placementSite = null;
+            RefreshPlacement(force: true);
+        }
+
+        public void ConfirmPlacement()
+        {
+            if (isPlacing && placementSite.HasValue && BuildRules.CanBuildBarracks(match, playerSide, placementSite.Value))
+            {
+                match.Enqueue(new BuildBarracksCommand(playerSide, placementSite.Value));
+            }
+
+            CancelPlacement();
+        }
+
+        public void CancelPlacement()
+        {
+            if (!isPlacing)
+            {
+                return;
+            }
+
+            isPlacing = false;
+            placementSite = null;
+            buildingViews.HidePlacement();
+            RefreshPlacement(force: true);
         }
 
         /// <summary>«В штыки» нажата: следующий тап по вражескому отряду отдаст приказ, тап мимо — отменит.</summary>
@@ -109,6 +160,7 @@ namespace Marchlands.Input
 
             gestures.Update();
             UpdateMouseWheel();
+            RefreshPlacement(force: false);
 
             // Одиночный тап по земле снимает выделение, только если за ним не последовал второй тап.
             if (hasPendingTap && Time.realtimeSinceStartupAsDouble - pendingTapTime > config.DoubleTapMaxInterval)
@@ -121,6 +173,13 @@ namespace Marchlands.Input
         private void OnTapped(Vector2 screenPosition)
         {
             float2 world = cameraController.ScreenToWorld(screenPosition);
+            if (isPlacing)
+            {
+                placementSite = world;
+                RefreshPlacement(force: true);
+                return;
+            }
+
             if (isChargeTargeting)
             {
                 HandleChargeTargetTap(world);
@@ -132,6 +191,20 @@ namespace Marchlands.Input
             {
                 hasPendingTap = false;
                 Select(hit);
+                return;
+            }
+
+            Building building = FindOwnBuildingAt(world);
+            if (building != null)
+            {
+                hasPendingTap = false;
+                SelectBuilding(building);
+                return;
+            }
+
+            if (selectedBuilding != null)
+            {
+                SelectBuilding(null);
                 return;
             }
 
@@ -255,6 +328,58 @@ namespace Marchlands.Input
             ChargeTargetingChanged?.Invoke(enabled);
         }
 
+        /// <summary>Перерисовывает предпросмотр и сообщает, если изменилось, можно ли ставить (золото тоже может измениться).</summary>
+        private void RefreshPlacement(bool force)
+        {
+            bool confirmable = isPlacing && placementSite.HasValue
+                && BuildRules.CanBuildBarracks(match, playerSide, placementSite.Value);
+            if (isPlacing)
+            {
+                Building headquarters = match.GetHeadquarters(playerSide);
+                Vector2? site = placementSite.HasValue ? (Vector2)placementSite.Value : (Vector2?)null;
+                buildingViews.ShowPlacement(headquarters.Position, site, confirmable);
+            }
+
+            if (force || confirmable != lastPlacementConfirmable)
+            {
+                lastPlacementConfirmable = confirmable;
+                PlacementChanged?.Invoke(isPlacing, placementSite.HasValue, confirmable);
+            }
+        }
+
+        private Building FindOwnBuildingAt(float2 world)
+        {
+            Building best = null;
+            float bestDistance = config.BuildingTapRadius;
+            foreach (Building building in match.Buildings)
+            {
+                float distance = math.distance(world, building.Position);
+                if (building.Owner == playerSide && distance <= bestDistance)
+                {
+                    best = building;
+                    bestDistance = distance;
+                }
+            }
+
+            return best;
+        }
+
+        private void SelectBuilding(Building building)
+        {
+            if (building == selectedBuilding)
+            {
+                return;
+            }
+
+            if (building != null)
+            {
+                Select(null);
+            }
+
+            selectedBuilding = building;
+            BuildingSelectionChanged?.Invoke(building);
+        }
+
         private Squad FindSquadAt(float2 world, bool own)
         {
             float minHalfExtent = cameraController.PixelsToWorld(ScreenUnits.DpToPixels(config.MinTouchTarget)) * 0.5f;
@@ -289,6 +414,11 @@ namespace Marchlands.Input
             if (squad == selected)
             {
                 return;
+            }
+
+            if (squad != null)
+            {
+                SelectBuilding(null);
             }
 
             selected = squad;
