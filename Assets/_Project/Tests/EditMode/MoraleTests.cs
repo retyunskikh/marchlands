@@ -203,6 +203,57 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void EnemyRout_EncouragesEnemiesWithinRadiusOnce()
+        {
+            var match = new Match(1, TestSettings.Create());
+            Squad routing = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
+            Squad close = match.AddSquad(Side.Austria, new float2(0f, 10f), -90f, Formation.Line);
+            Squad far = match.AddSquad(Side.Austria, new float2(0f, 14f), -90f, Formation.Line);
+            routing.Morale = 5f;
+            close.Morale = 50f;
+            far.Morale = 50f;
+
+            match.Tick();
+            Assert.AreEqual(65f, close.Morale, 1e-3f);
+            Assert.AreEqual(50f, far.Morale, 1e-3f);
+
+            RunTicks(match, 20);
+            Assert.AreEqual(65f, close.Morale, 1e-3f, "Прибавка разовая");
+        }
+
+        [Test]
+        public void BothSidesBreakingInOneTick_MoreShakenRoutsFirst_AndOtherHolds()
+        {
+            var match = new Match(1, TestSettings.Create());
+            Squad shaken = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
+            Squad holding = match.AddSquad(Side.Austria, new float2(0f, 8f), -90f, Formation.Line);
+            shaken.Morale = 8f;
+            holding.Morale = 12f;
+
+            match.Tick();
+
+            Assert.IsTrue(shaken.IsRouting);
+            Assert.IsFalse(holding.IsRouting, "Бегство врага ободрило отряд, и он устоял");
+            Assert.AreEqual(27f, holding.Morale, 1e-3f);
+        }
+
+        [Test]
+        public void EnemyRout_DoesNotSaveSquadWithTooFewMen()
+        {
+            var match = new Match(1, TestSettings.Create());
+            Squad shaken = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
+            Squad depleted = match.AddSquad(Side.Austria, new float2(0f, 8f), -90f, Formation.Line);
+            shaken.Morale = 5f;
+            depleted.Morale = 10f;
+            depleted.Alive = match.Settings.squads.minSquadSize - 1;
+
+            match.Tick();
+
+            Assert.IsTrue(shaken.IsRouting);
+            Assert.IsTrue(depleted.IsRouting, "Слишком малочисленный отряд бежит в любом случае");
+        }
+
+        [Test]
         public void AllyRout_CanCascade()
         {
             var match = new Match(1, TestSettings.Create());

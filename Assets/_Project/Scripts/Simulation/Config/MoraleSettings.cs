@@ -22,6 +22,12 @@ namespace Marchlands.Simulation.Config
 
         public float allyRoutPenalty;
 
+        /// <summary>Радиус, в котором бегство врага ободряет отряд, u (от центра до центра).</summary>
+        public float enemyRoutRadius;
+
+        /// <summary>Разовая прибавка морали, когда рядом обратился в бегство враг.</summary>
+        public float enemyRoutBonus;
+
         /// <summary>Восстановление морали, в секунду.</summary>
         public float moraleRegen;
 

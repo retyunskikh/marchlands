@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
@@ -9,25 +10,41 @@ namespace Marchlands.Simulation.Morale
 {
     /// <summary>
     /// Состояния морали в конце тика: бегство при низкой морали или численности меньше minSquadSize
-    /// (с разовым штрафом союзникам рядом, который может вызвать цепное бегство), восстановление в спокойствии.
+    /// (с разовым штрафом союзникам рядом, который может вызвать цепное бегство, и разовым ободрением врагов рядом),
+    /// восстановление в спокойствии. Отряды на грани ломаются по очереди, начиная с самого деморализованного:
+    /// бегство первого ободряет его противников, и те могут устоять, даже если в том же тике тоже были на грани.
     /// Сбора в поле нет: добежавший до своих отряд уходит в резерв стороны.
     /// </summary>
     internal static class MoraleSystem
     {
+        private static readonly List<Squad> Breaking = new List<Squad>();
+
         public static void Update(Match match, float deltaTime)
         {
             MoraleSettings settings = match.Settings.morale;
+            ApplyRoutEffects(match);
 
+            Breaking.Clear();
             foreach (Squad squad in match.Squads)
             {
-                bool tooFew = squad.Alive < match.Settings.squads.minSquadSize;
-                if (!squad.IsRouting && (squad.Morale < settings.routThreshold || tooFew))
+                if (!squad.IsRouting && ShouldRout(match, squad))
                 {
-                    Rout(match, squad);
+                    Breaking.Add(squad);
                 }
             }
 
-            ApplyAllyRoutPenalties(match);
+            Breaking.Sort((a, b) => a.Morale != b.Morale ? a.Morale.CompareTo(b.Morale) : a.Id.CompareTo(b.Id));
+            foreach (Squad squad in Breaking)
+            {
+                // Бегство предыдущих могло ободрить этот отряд — проверяем заново.
+                if (!squad.IsRouting && ShouldRout(match, squad))
+                {
+                    Rout(match, squad);
+                    ApplyRoutEffects(match);
+                }
+            }
+
+            Breaking.Clear();
 
             foreach (Squad squad in match.Squads)
             {
@@ -43,6 +60,11 @@ namespace Marchlands.Simulation.Morale
                     squad.Morale = math.min(MoraleMath.MaxMorale, squad.Morale + settings.moraleRegen * deltaTime);
                 }
             }
+        }
+
+        private static bool ShouldRout(Match match, Squad squad)
+        {
+            return squad.Morale < match.Settings.morale.routThreshold || squad.Alive < match.Settings.squads.minSquadSize;
         }
 
         /// <summary>Бегущий, добежавший до казармы (штаба, точки отхода), уходит с поля в резерв стороны.</summary>
@@ -77,29 +99,43 @@ namespace Marchlands.Simulation.Morale
             match.PendingRouts.Enqueue(squad);
         }
 
-        /// <summary>Каждый новый беглец один раз бьёт по морали союзников рядом; это может обратить в бегство и их.</summary>
-        private static void ApplyAllyRoutPenalties(Match match)
+        /// <summary>
+        /// Каждый новый беглец один раз бьёт по морали союзников рядом (это может обратить в бегство и их)
+        /// и один раз ободряет врагов рядом.
+        /// </summary>
+        private static void ApplyRoutEffects(Match match)
         {
             MoraleSettings settings = match.Settings.morale;
             while (match.PendingRouts.Count > 0)
             {
                 Squad routed = match.PendingRouts.Dequeue();
-                foreach (Squad ally in match.Squads)
+                foreach (Squad other in match.Squads)
                 {
-                    if (ally == routed || ally.Side != routed.Side || ally.IsWithdrawn)
+                    if (other == routed || other.IsWithdrawn || other.IsRouting && other.Side != routed.Side)
                     {
                         continue;
                     }
 
-                    if (math.distance(ally.Position, routed.Position) > settings.allyRoutRadius)
+                    float distance = math.distance(other.Position, routed.Position);
+                    if (other.Side != routed.Side)
+                    {
+                        if (distance <= settings.enemyRoutRadius)
+                        {
+                            other.Morale = math.min(MoraleMath.MaxMorale, other.Morale + settings.enemyRoutBonus);
+                        }
+
+                        continue;
+                    }
+
+                    if (distance > settings.allyRoutRadius)
                     {
                         continue;
                     }
 
-                    ally.Morale = math.max(0f, ally.Morale - settings.allyRoutPenalty);
-                    if (!ally.IsRouting && ally.Morale < settings.routThreshold)
+                    other.Morale = math.max(0f, other.Morale - settings.allyRoutPenalty);
+                    if (!other.IsRouting && other.Morale < settings.routThreshold)
                     {
-                        Rout(match, ally);
+                        Rout(match, other);
                     }
                 }
             }

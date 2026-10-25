@@ -49,6 +49,8 @@ namespace Marchlands.Tests.EditMode
                     frontalArcHalfAngle = 60f,
                     allyRoutRadius = 8f,
                     allyRoutPenalty = 10f,
+                    enemyRoutRadius = 12f,
+                    enemyRoutBonus = 15f,
                     moraleRegen = 2f,
                     moraleCalmTime = 10f,
                     calmEnemyRadius = 10f,

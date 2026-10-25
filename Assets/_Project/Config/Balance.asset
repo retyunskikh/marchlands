@@ -45,6 +45,8 @@ MonoBehaviour:
       frontalArcHalfAngle: 60
       allyRoutRadius: 8
       allyRoutPenalty: 10
+      enemyRoutRadius: 12
+      enemyRoutBonus: 15
       moraleRegen: 2
       moraleCalmTime: 10
       calmEnemyRadius: 10
