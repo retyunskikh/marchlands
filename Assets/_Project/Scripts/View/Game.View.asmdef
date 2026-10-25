@@ -1,0 +1,17 @@
+{
+    "name": "Game.View",
+    "rootNamespace": "Marchlands.View",
+    "references": [
+        "Game.Simulation",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

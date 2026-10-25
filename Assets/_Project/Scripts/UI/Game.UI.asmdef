@@ -1,0 +1,17 @@
+{
+    "name": "Game.UI",
+    "rootNamespace": "Marchlands.UI",
+    "references": [
+        "Game.Simulation",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,19 @@
+{
+    "name": "Game.Bootstrap",
+    "rootNamespace": "Marchlands.Bootstrap",
+    "references": [
+        "Game.Simulation",
+        "Game.View",
+        "Game.Input",
+        "Game.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
