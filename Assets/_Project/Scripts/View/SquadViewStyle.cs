@@ -20,6 +20,30 @@ namespace Marchlands.View
         [SerializeField] private Vector2 jaegerSpacing = new Vector2(1.6f, 1.3f);
         [Tooltip("Насколько егерь сбивается со своего места в рассыпном строю, u.")]
         [SerializeField] private float jaegerScatter = 0.12f;
+        [Header("Рукопашная (только вид)")]
+        [Tooltip("За сколько секунд строй сходится в свалку и расходится обратно.")]
+        [SerializeField] private float meleeBlendTime = 0.6f;
+        [Tooltip("Насколько сжимается строй к линии схватки: 0 — не сжимается, 1 — все на линии.")]
+        [SerializeField] private float meleeCompress = 0.6f;
+        [Tooltip("На каком расстоянии от линии схватки стоит первый ряд, u.")]
+        [SerializeField] private float meleeGap = 0.3f;
+        [Tooltip("Насколько каждый сбивается со своего места в свалке, u.")]
+        [SerializeField] private float meleeScatter = 0.3f;
+        [Tooltip("Длина выпада штыком или саблей, u.")]
+        [SerializeField] private float thrustLength = 0.16f;
+        [Tooltip("Выпадов в секунду у каждого солдата.")]
+        [SerializeField] private float thrustRate = 1.1f;
+
+        [Header("Походка (только вид)")]
+        [Tooltip("Гренадёры маршируют в ногу: шагов в секунду, покачивание вбок, u.")]
+        [SerializeField] private Vector2 marchGait = new Vector2(1.8f, 0.035f);
+        [Tooltip("Егеря бегут вразнобой: шагов в секунду, покачивание, u.")]
+        [SerializeField] private Vector2 runGait = new Vector2(3f, 0.05f);
+        [Tooltip("Конница скачет: скачков в секунду, рывок вперёд-назад, u.")]
+        [SerializeField] private Vector2 gallopGait = new Vector2(2.4f, 0.09f);
+        [Tooltip("За сколько секунд походка появляется и стихает.")]
+        [SerializeField] private float gaitBlendTime = 0.25f;
+
         [Tooltip("Строй конницы: лошади шире и длиннее пехотинца (только вид).")]
         [SerializeField] private Vector2 cavalrySpacing = new Vector2(1.3f, 1.4f);
         [SerializeField] private Color franceColor = new Color(0.2f, 0.35f, 0.85f);
@@ -65,6 +89,34 @@ namespace Marchlands.View
         public Sprite RecruitSprite => recruitSprite;
 
         public float JaegerScatter => jaegerScatter;
+
+        public float MeleeBlendTime => meleeBlendTime;
+
+        public float GaitBlendTime => gaitBlendTime;
+
+        /// <summary>Частота шага (в секунду) и размах покачивания (u) для рода войск.</summary>
+        public Vector2 GetGait(UnitType type)
+        {
+            switch (type)
+            {
+                case UnitType.Jaegers:
+                    return runGait;
+                case UnitType.Cavalry:
+                    return gallopGait;
+                default:
+                    return marchGait;
+            }
+        }
+
+        public float MeleeCompress => meleeCompress;
+
+        public float MeleeGap => meleeGap;
+
+        public float MeleeScatter => meleeScatter;
+
+        public float ThrustLength => thrustLength;
+
+        public float ThrustRate => thrustRate;
 
         /// <summary>Множитель раскладки строя по осям (поперёк фронта, вдоль) для рода войск.</summary>
         public Vector2 GetSpacing(UnitType type)

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Melee;
 using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
@@ -25,6 +26,7 @@ namespace Marchlands.View
         private readonly List<SpriteRenderer> ringSegments = new List<SpriteRenderer>();
 
         private Squad squad;
+        private Match match;
         private SquadSettings settings;
         private CombatSettings combat;
         private SquadViewStyle style;
@@ -39,13 +41,22 @@ namespace Marchlands.View
         private int slotsAlive = -1;
         private bool slotsChanging;
 
+        // 0 — стоит, 1 — идёт; меняется плавно, чтобы походка не обрывалась.
+        private float gaitBlend;
+
+        // 0 — обычный строй, 1 — полная свалка рукопашной; меняется плавно.
+        private float meleeBlend;
+        private float2 meleeContact;
+        private float2 meleeDirection = new float2(0f, 1f);
+
         public Squad Squad => squad;
 
-        internal void Initialize(Squad squad, SimulationSettings settings, SquadViewStyle style)
+        internal void Initialize(Squad squad, Match match, SquadViewStyle style)
         {
             this.squad = squad;
-            this.settings = settings.squads;
-            combat = settings.combat;
+            this.match = match;
+            settings = match.Settings.squads;
+            combat = match.Settings.combat;
             this.style = style;
             AssignRoles();
 
@@ -73,6 +84,10 @@ namespace Marchlands.View
             float change = changing ? GetSmoothedChangeProgress(alpha) : 0f;
 
             Quaternion rotation = Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset);
+            UpdateMelee(alpha, position);
+            UpdateGait();
+            Quaternion meleeRotation = Quaternion.Slerp(rotation,
+                Quaternion.Euler(0f, 0f, Angles.Of(meleeDirection) + SpriteFacingOffset), meleeBlend);
             float2 spacing = style.GetSpacing(squad.Type);
             bool openOrder = squad.Type == UnitType.Jaegers;
             for (int i = 0; i < soldiers.Count; i++)
@@ -88,8 +103,18 @@ namespace Marchlands.View
                     local += Scatter(i + 101) * style.JaegerScatter;
                 }
 
+                if (gaitBlend > 0f)
+                {
+                    local += GaitOffset(i, local);
+                }
+
                 float2 world = FormationLayout.LocalToWorld(local, position, facing);
-                soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), rotation);
+                if (meleeBlend > 0f)
+                {
+                    world = ToMeleePosition(world, i);
+                }
+
+                soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), meleeBlend > 0f ? meleeRotation : rotation);
             }
 
             if (selectionMarker.enabled)
@@ -139,6 +164,108 @@ namespace Marchlands.View
             moraleFill.transform.SetPositionAndRotation(
                 new Vector3(center.x - size.x * 0.5f + width * 0.5f, center.y, 0f), Quaternion.identity);
             moraleFill.transform.localScale = new Vector3(width, size.y, 1f);
+        }
+
+        /// <summary>Идёт ли отряд: сдвинулся за последний тик (бегущие и атакующие тоже идут).</summary>
+        private void UpdateGait()
+        {
+            bool moving = math.distancesq(squad.PreviousPosition, squad.Position) > 1e-6f && !squad.IsInMelee;
+            float step = style.GaitBlendTime > 0f ? Time.deltaTime / style.GaitBlendTime : 1f;
+            gaitBlend = moving ? math.min(1f, gaitBlend + step) : math.max(0f, gaitBlend - step);
+        }
+
+        /// <summary>
+        /// Смещение солдата в строю от походки (вид сверху: покачивание с ноги на ногу и рывки вперёд).
+        /// Гренадёры маршируют в ногу — у всех одна фаза; егеря бегут вразнобой; конница скачет —
+        /// рывками вперёд-назад, по шеренгам с запаздыванием.
+        /// </summary>
+        private float2 GaitOffset(int index, float2 local)
+        {
+            Vector2 gait = style.GetGait(squad.Type);
+            float time = Time.time * gait.x * 2f * math.PI;
+            float amplitude = gait.y * math.smoothstep(0f, 1f, gaitBlend);
+            switch (squad.Type)
+            {
+                case UnitType.Jaegers:
+                {
+                    float phase = Scatter(index + 311).x * math.PI;
+                    return new float2(math.sin(time + phase) * amplitude, math.abs(math.sin(time + phase)) * amplitude);
+                }
+
+                case UnitType.Cavalry:
+                {
+                    // Шеренга сзади отстаёт по фазе — волна скачков.
+                    float phase = -local.y * 1.3f + Scatter(index + 613).x * 0.4f;
+                    return new float2(0f, math.sin(time + phase) * amplitude);
+                }
+
+                default:
+                    return new float2(math.sin(time) * amplitude, math.abs(math.cos(time)) * amplitude * 0.5f);
+            }
+        }
+
+        /// <summary>
+        /// Линия схватки — середина между отрядом и ближайшим противником по рукопашной. Пока отряд дерётся,
+        /// строй плавно сходится в свалку, а после — расходится обратно.
+        /// </summary>
+        private void UpdateMelee(float alpha, float2 position)
+        {
+            Squad opponent = null;
+            float best = float.MaxValue;
+            foreach (MeleeEngagement engagement in match.Engagements)
+            {
+                if (!engagement.Involves(squad))
+                {
+                    continue;
+                }
+
+                Squad other = engagement.Attacker == squad ? engagement.Defender : engagement.Attacker;
+                float distance = math.distancesq(other.Position, squad.Position);
+                if (distance < best)
+                {
+                    best = distance;
+                    opponent = other;
+                }
+            }
+
+            float step = style.MeleeBlendTime > 0f ? Time.deltaTime / style.MeleeBlendTime : 1f;
+            if (opponent != null && !squad.IsRouting)
+            {
+                float2 opponentPosition = math.lerp(opponent.PreviousPosition, opponent.Position, alpha);
+                float2 toOpponent = opponentPosition - position;
+                if (math.lengthsq(toOpponent) > 1e-6f)
+                {
+                    meleeDirection = math.normalize(toOpponent);
+                }
+
+                meleeContact = (position + opponentPosition) * 0.5f;
+                meleeBlend = math.min(1f, meleeBlend + step);
+            }
+            else
+            {
+                meleeBlend = math.max(0f, meleeBlend - step);
+            }
+        }
+
+        /// <summary>
+        /// Свалка: строй сжимается к линии схватки, солдаты сбиваются с мест и по очереди делают выпады к врагу.
+        /// Сторону линии солдат не меняет — свои остаются со своей стороны.
+        /// </summary>
+        private float2 ToMeleePosition(float2 world, int index)
+        {
+            float2 across = new float2(-meleeDirection.y, meleeDirection.x);
+            float2 offset = world - meleeContact;
+            float depth = math.dot(offset, meleeDirection);
+            float lateral = math.dot(offset, across);
+
+            float blend = math.smoothstep(0f, 1f, meleeBlend);
+            float compressed = math.min(depth * (1f - style.MeleeCompress * blend), -style.MeleeGap * blend);
+            float2 scatter = Scatter(index + 503) * style.MeleeScatter * blend;
+            float phase = Scatter(index + 907).x * math.PI;
+            float thrust = math.pow(math.max(0f, math.sin(Time.time * style.ThrustRate * 2f * math.PI + phase)), 4f);
+            compressed += thrust * style.ThrustLength * blend;
+
+            return meleeContact + meleeDirection * compressed + across * lateral * (1f - 0.2f * blend) + scatter;
         }
 
         /// <summary>Постоянное для каждого солдата смещение в [-1, 1]² — толпа не дрожит от кадра к кадру.</summary>

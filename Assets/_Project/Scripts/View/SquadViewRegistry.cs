@@ -57,7 +57,7 @@ namespace Marchlands.View
                 var viewObject = new GameObject($"Squad {squad.Id} ({squad.Side})");
                 viewObject.transform.SetParent(transform, false);
                 var view = viewObject.AddComponent<SquadView>();
-                view.Initialize(squad, match.Settings, style);
+                view.Initialize(squad, match, style);
                 view.SetSelected(squad == selected);
                 views.Add(squad.Id, view);
             }
