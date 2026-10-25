@@ -210,7 +210,7 @@ namespace Marchlands.View
                 pan = math.clamp((viewport.x - 0.5f) * 2f, -1f, 1f) * stereoWidth;
             }
 
-            float strength = math.saturate((float)shooters / match.Settings.squads.squadSize);
+            float strength = math.saturate((float)shooters / match.Settings.grenadiers.squadSize);
             source.clip = volleyClip;
             source.volume = math.lerp(volumeRange.x, volumeRange.y, strength);
             source.pitch = Random.Range(pitchRange.x, pitchRange.y);

@@ -1,11 +1,12 @@
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Economy;
+using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
 
 namespace Marchlands.Simulation.Buildings
 {
-    /// <summary>Правила постройки и найма. По ним включаются кнопки и подсвечивается силуэт казармы.</summary>
+    /// <summary>Правила постройки, найма и формирования отрядов. По ним включаются кнопки и подсвечивается силуэт казармы.</summary>
     public static class BuildRules
     {
         public static bool CanAffordBarracks(Match match, Side side)
@@ -47,24 +48,31 @@ namespace Marchlands.Simulation.Buildings
             return CanAffordBarracks(match, side) && IsValidBarracksSite(match, side, point);
         }
 
-        public static bool CanRecruit(Match match, Building building)
+        /// <summary>Найм включается в построенной казарме.</summary>
+        public static bool CanHire(Building building)
         {
-            if (building == null
-                || building.Type != BuildingType.Barracks
-                || !building.IsBuilt
-                || building.RecruitQueue >= match.Settings.buildings.recruitQueueMax)
-            {
-                return false;
-            }
-
-            return RecruitsFromReserve(match, building.Owner)
-                || match.GetPlayer(building.Owner).Gold >= match.Settings.buildings.squadCost;
+            return building != null && building.Type == BuildingType.Barracks && building.IsBuilt;
         }
 
-        /// <summary>Набрался ли в резерве полный отряд: тогда найм бесплатный и берёт людей из резерва.</summary>
-        public static bool RecruitsFromReserve(Match match, Side side)
+        /// <summary>Казарма, у которой встаёт новый отряд: первая построенная казарма стороны; null — нет ни одной.</summary>
+        public static Building GetFormingBarracks(Match match, Side side)
         {
-            return match.GetPlayer(side).Reserve >= match.Settings.squads.squadSize;
+            foreach (Building building in match.Buildings)
+            {
+                if (building.Owner == side && building.Type == BuildingType.Barracks && building.IsBuilt)
+                {
+                    return building;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>Ждут ли у казарм люди на отряд этого рода войск и есть ли где его построить.</summary>
+        public static bool CanFormSquad(Match match, Side side, UnitType type)
+        {
+            return match.GetPlayer(side).Reserve >= match.Settings.Unit(type).squadSize
+                && GetFormingBarracks(match, side) != null;
         }
     }
 }

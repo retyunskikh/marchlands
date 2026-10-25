@@ -9,12 +9,6 @@ namespace Marchlands.Simulation.Config
     [Serializable]
     public sealed class SquadSettings
     {
-        /// <summary>Численность нового отряда.</summary>
-        public int squadSize;
-
-        /// <summary>Меньше этого — уже не отряд: бежит и уходит в резерв.</summary>
-        public int minSquadSize;
-
         /// <summary>Число шеренг в линии.</summary>
         public int lineRanks;
 

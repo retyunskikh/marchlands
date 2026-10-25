@@ -245,7 +245,7 @@ namespace Marchlands.Tests.EditMode
             Squad depleted = match.AddSquad(Side.Austria, new float2(0f, 8f), -90f, Formation.Line);
             shaken.Morale = 5f;
             depleted.Morale = 10f;
-            depleted.Alive = match.Settings.squads.minSquadSize - 1;
+            depleted.Alive = match.Settings.grenadiers.minSquadSize - 1;
 
             match.Tick();
 

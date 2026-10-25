@@ -34,7 +34,7 @@ namespace Marchlands.Simulation.Commands
                 return;
             }
 
-            float range = System.Math.Min(MaxDistance, match.Settings.combat.maxRange);
+            float range = System.Math.Min(MaxDistance, UnitStats.MaxRange(squad, match.Settings));
             Squad target = Targeting.FindTarget(match, squad, range);
             if (target != null)
             {

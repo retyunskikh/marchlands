@@ -157,8 +157,10 @@ namespace Marchlands.Simulation.Melee
                     attackerMultiplier *= melee.flankMeleeMultiplier;
                 }
 
+                attackerMultiplier *= UnitStats.Of(attacker, match.Settings).meleeMultiplier;
+                float defenderMultiplier = UnitStats.Of(defender, match.Settings).meleeMultiplier;
                 defender.MeleeLossAccumulator += attackerStrength * melee.meleeKillRate * attackerMultiplier * deltaTime;
-                attacker.MeleeLossAccumulator += defenderStrength * melee.meleeKillRate * deltaTime;
+                attacker.MeleeLossAccumulator += defenderStrength * melee.meleeKillRate * defenderMultiplier * deltaTime;
             }
 
             foreach (Squad squad in match.Squads)
@@ -178,7 +180,7 @@ namespace Marchlands.Simulation.Melee
                 int aliveBefore = squad.Alive;
                 casualties = math.min(casualties, aliveBefore);
                 squad.Alive = aliveBefore - casualties;
-                MoraleMath.ApplyLoss(squad, casualties, aliveBefore, false, IsHitInFlank(match, squad), match.Settings.morale);
+                MoraleMath.ApplyLoss(squad, casualties, aliveBefore, false, IsHitInFlank(match, squad), match.Settings);
             }
         }
 

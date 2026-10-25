@@ -167,14 +167,14 @@ namespace Marchlands.Tests.EditMode
             Assert.IsNull(match.Result, "Есть казарма и золото на отряд");
 
             match.GetPlayer(Side.Austria).Gold = 0;
-            match.GetPlayer(Side.Austria).Reserve = 36;
+            match.GetPlayer(Side.Austria).Reserve = 16;
             RunTicks(match, 10);
-            Assert.IsNull(match.Result, "Полный резерв — можно нанять бесплатно");
+            Assert.IsNull(match.Result, "У казарм ждут люди на отряд егерей");
 
-            match.GetPlayer(Side.Austria).Reserve = 0;
-            match.Buildings.First(b => b.Owner == Side.Austria && b.Type == BuildingType.Barracks).RecruitQueue = 1;
+            match.GetPlayer(Side.Austria).Reserve = 10;
+            match.GetPlayer(Side.Austria).Gold = 12;
             RunTicks(match, 1);
-            Assert.IsNull(match.Result, "Отряд уже в очереди найма");
+            Assert.IsNull(match.Result, "Ждущих вместе с теми, кого можно нанять, хватит на отряд");
         }
 
         [Test]
@@ -182,7 +182,8 @@ namespace Marchlands.Tests.EditMode
         {
             Match match = CreateMatch();
             match.AddSquad(Side.France, float2.zero, 0f, Formation.Line);
-            match.GetPlayer(Side.Austria).Gold = 59;
+            // 31 золото — 15 рекрутов, а самый малый отряд — 16 егерей.
+            match.GetPlayer(Side.Austria).Gold = 31;
 
             match.Tick();
 

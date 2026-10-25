@@ -11,10 +11,11 @@ namespace Marchlands.Simulation.Squads
     /// </summary>
     public sealed class Squad
     {
-        internal Squad(int id, Side side, int alive, float2 position, float facing, Formation formation)
+        internal Squad(int id, Side side, UnitType type, int alive, float2 position, float facing, Formation formation)
         {
             Id = id;
             Side = side;
+            Type = type;
             Alive = alive;
             Position = position;
             PreviousPosition = position;
@@ -28,6 +29,8 @@ namespace Marchlands.Simulation.Squads
         public int Id { get; }
 
         public Side Side { get; }
+
+        public UnitType Type { get; }
 
         public int Alive { get; internal set; }
 

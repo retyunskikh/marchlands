@@ -125,7 +125,7 @@ namespace Marchlands.Simulation.AI
             }
 
             Squad target = defenders.TryGetValue(squad.Id, out int threatId)
-                ? ForceTarget(match, brain, match.FindSquad(threatId))
+                ? ForceTarget(match, squad, brain, match.FindSquad(threatId))
                 : SelectTarget(match, squad, brain, ai.engageRadius);
             if (target == null)
             {
@@ -209,7 +209,7 @@ namespace Marchlands.Simulation.AI
             brain.TargetId = best.Id;
             if (changed)
             {
-                brain.FireDistance = RollFireDistance(match);
+                brain.FireDistance = RollFireDistance(match, squad);
             }
 
             return best;
@@ -291,7 +291,7 @@ namespace Marchlands.Simulation.AI
         }
 
         /// <summary>Делает <paramref name="target"/> целью отряда; дистанция огня выбирается заново при смене цели.</summary>
-        private static Squad ForceTarget(Match match, SquadBrain brain, Squad target)
+        private static Squad ForceTarget(Match match, Squad squad, SquadBrain brain, Squad target)
         {
             if (target == null)
             {
@@ -301,18 +301,17 @@ namespace Marchlands.Simulation.AI
             if (target.Id != brain.TargetId)
             {
                 brain.TargetId = target.Id;
-                brain.FireDistance = RollFireDistance(match);
+                brain.FireDistance = RollFireDistance(match, squad);
             }
 
             return target;
         }
 
-        private static float RollFireDistance(Match match)
+        private static float RollFireDistance(Match match, Squad squad)
         {
-            // Верхняя граница чуть меньше effectiveRange: с допуском подхода залп всё равно в эффективной дальности.
-            CombatSettings combat = match.Settings.combat;
-            float maxDistance = combat.effectiveRange - match.Settings.squads.arrivalTolerance;
-            return match.Random.Range(combat.pointBlankRange, maxDistance);
+            // Верхняя граница чуть меньше эффективной дальности: с допуском подхода залп всё равно в ней.
+            float maxDistance = UnitStats.EffectiveRange(squad, match.Settings) - match.Settings.squads.arrivalTolerance;
+            return match.Random.Range(UnitStats.PointBlankRange(squad, match.Settings), maxDistance);
         }
 
         /// <summary>
@@ -416,7 +415,7 @@ namespace Marchlands.Simulation.AI
 
             if (VolleyRules.CanVolley(match, squad))
             {
-                Issue(match, brain, new VolleyCommand(squad.Id, match.Settings.combat.effectiveRange));
+                Issue(match, brain, new VolleyCommand(squad.Id, UnitStats.EffectiveRange(squad, match.Settings)));
             }
         }
 
@@ -513,7 +512,8 @@ namespace Marchlands.Simulation.AI
         /// </summary>
         public static float WaypointReach(SimulationSettings settings)
         {
-            float fastest = settings.squads.columnSpeed * math.max(1f, settings.terrain.roadSpeedMultiplier);
+            float fastest = settings.squads.columnSpeed * UnitStats.FastestSpeedMultiplier(settings)
+                * math.max(1f, settings.terrain.roadSpeedMultiplier);
             return fastest * settings.ai.reactionDelay + settings.ai.repathDistance;
         }
 

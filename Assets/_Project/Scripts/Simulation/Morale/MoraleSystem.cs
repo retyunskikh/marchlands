@@ -64,7 +64,7 @@ namespace Marchlands.Simulation.Morale
 
         private static bool ShouldRout(Match match, Squad squad)
         {
-            return squad.Morale < match.Settings.morale.routThreshold || squad.Alive < match.Settings.squads.minSquadSize;
+            return squad.Morale < match.Settings.morale.routThreshold || squad.Alive < UnitStats.Of(squad, match.Settings).minSquadSize;
         }
 
         /// <summary>Бегущий, добежавший до казармы (штаба, точки отхода), уходит с поля в резерв стороны.</summary>

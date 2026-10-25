@@ -48,15 +48,17 @@ namespace Marchlands.Simulation.Morale
             return loss;
         }
 
-        internal static void ApplyLoss(Squad squad, int casualties, int aliveBefore, bool pointBlank, bool flank, MoraleSettings settings)
+        /// <summary>Снимает мораль за потери с учётом рода войск (гренадёры крепче).</summary>
+        internal static void ApplyLoss(Squad squad, int casualties, int aliveBefore, bool pointBlank, bool flank, SimulationSettings settings)
         {
             if (casualties <= 0)
             {
                 return;
             }
 
+            float loss = Loss(casualties, aliveBefore, pointBlank, flank, settings.morale) * UnitStats.Of(squad, settings).moraleLossMultiplier;
             squad.TimeSinceLoss = 0f;
-            squad.Morale = math.max(0f, squad.Morale - Loss(casualties, aliveBefore, pointBlank, flank, settings));
+            squad.Morale = math.max(0f, squad.Morale - loss);
         }
     }
 }

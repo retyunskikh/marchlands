@@ -9,7 +9,7 @@ namespace Marchlands.Simulation.Combat
         public static bool CanVolley(Match match, Squad squad)
         {
             return CanStartAiming(squad)
-                && Targeting.FindTarget(match, squad, match.Settings.combat.maxRange) != null;
+                && Targeting.FindTarget(match, squad, UnitStats.MaxRange(squad, match.Settings)) != null;
         }
 
         internal static bool CanStartAiming(Squad squad)

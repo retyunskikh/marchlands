@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace Marchlands.UI
 {
     /// <summary>
-    /// Панель выделенного здания: название, состояние постройки или найма и кнопка «Нанять (цена)» у казармы.
+    /// Панель выделенного здания: название, состояние постройки или найма и у казармы — кнопка «Начать / Остановить найм».
     /// Видна только при выделении здания.
     /// </summary>
     public sealed class BuildingPanel : MonoBehaviour
@@ -22,12 +22,13 @@ namespace Marchlands.UI
         [SerializeField] private string headquartersStatus = "Здесь не нанимают";
         [Tooltip("{0} — процент постройки.")]
         [SerializeField] private string constructionFormat = "Строится… {0}%";
-        [SerializeField] private string idleStatus = "Готова к найму";
-        [Tooltip("{0} — в очереди, {1} — максимум, {2} — процент текущего найма.")]
-        [SerializeField] private string recruitingFormat = "Очередь {0} / {1}, найм {2}%";
-        [Tooltip("{0} — цена отряда.")]
-        [SerializeField] private string recruitFormat = "Нанять ({0})";
-        [SerializeField] private string recruitFromReserveText = "Нанять из резерва";
+        [SerializeField] private string idleStatus = "Найм остановлен";
+        [SerializeField] private string hiringStatus = "Идёт найм";
+        [SerializeField] private string noGoldStatus = "Найм: не хватает золота";
+        [SerializeField] private string fullStatus = "Найм: у казарм нет места";
+        [Tooltip("{0} — цена одного рекрута.")]
+        [SerializeField] private string startHiringFormat = "Начать найм ({0} за чел.)";
+        [SerializeField] private string stopHiringText = "Остановить найм";
 
         private Match match;
         private Building building;
@@ -35,7 +36,7 @@ namespace Marchlands.UI
         public void Initialize(Match match)
         {
             this.match = match;
-            recruitButton.onClick.AddListener(OnRecruit);
+            recruitButton.onClick.AddListener(OnToggleHiring);
             SetBuilding(null);
         }
 
@@ -61,10 +62,10 @@ namespace Marchlands.UI
             bool isBarracks = building.Type == BuildingType.Barracks;
             titleLabel.text = isBarracks ? barracksTitle : headquartersTitle;
             recruitButton.gameObject.SetActive(isBarracks);
-            recruitButton.interactable = BuildRules.CanRecruit(match, building);
-            recruitLabel.text = BuildRules.RecruitsFromReserve(match, building.Owner)
-                ? recruitFromReserveText
-                : string.Format(recruitFormat, match.Settings.buildings.squadCost);
+            recruitButton.interactable = BuildRules.CanHire(building);
+            recruitLabel.text = building.IsHiring
+                ? stopHiringText
+                : string.Format(startHiringFormat, match.Settings.buildings.hireCost);
             statusLabel.text = GetStatus(isBarracks);
         }
 
@@ -80,21 +81,25 @@ namespace Marchlands.UI
                 return string.Format(constructionFormat, Mathf.FloorToInt(building.BuildProgress * 100f));
             }
 
-            if (building.RecruitQueue == 0)
+            if (!building.IsHiring)
             {
                 return idleStatus;
             }
 
-            float recruitTime = match.Settings.buildings.recruitTime;
-            int percent = Mathf.FloorToInt((1f - building.RecruitRemaining / recruitTime) * 100f);
-            return string.Format(recruitingFormat, building.RecruitQueue, match.Settings.buildings.recruitQueueMax, percent);
+            var player = match.GetPlayer(building.Owner);
+            if (player.Reserve >= match.Settings.buildings.maxWaitingRecruits)
+            {
+                return fullStatus;
+            }
+
+            return player.Gold < match.Settings.buildings.hireCost ? noGoldStatus : hiringStatus;
         }
 
-        private void OnRecruit()
+        private void OnToggleHiring()
         {
             if (building != null)
             {
-                match.Enqueue(new RecruitCommand(building.Id));
+                match.Enqueue(new SetHiringCommand(building.Id, !building.IsHiring));
             }
         }
     }

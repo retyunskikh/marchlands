@@ -102,6 +102,7 @@ namespace Marchlands.Bootstrap.Config
             [Tooltip("Направление фронта в градусах против часовой от +X: 0 — вправо, 90 — вверх.")]
             [SerializeField] private float facing;
             [SerializeField] private Formation formation;
+            [SerializeField] private UnitType type;
             [Tooltip("Огонь по готовности с начала боя — так манекен стреляет сам при каждой готовности.")]
             [SerializeField] private bool fireAtWill;
 
@@ -112,6 +113,8 @@ namespace Marchlands.Bootstrap.Config
             public float Facing => facing;
 
             public Formation Formation => formation;
+
+            public UnitType Type => type;
 
             public bool FireAtWill => fireAtWill;
         }

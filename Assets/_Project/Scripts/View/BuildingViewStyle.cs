@@ -34,8 +34,6 @@ namespace Marchlands.View
         [SerializeField] private Color progressColor = new Color(1f, 0.85f, 0.45f);
         [Tooltip("Цвет полоски захвата штаба врагом.")]
         [SerializeField] private Color captureColor = new Color(0.95f, 0.25f, 0.2f);
-        [SerializeField] private Vector2 queueDotSize = new Vector2(0.3f, 0.3f);
-        [SerializeField] private float queueDotSpacing = 0.45f;
         [SerializeField] private Color selectionColor = new Color(1f, 0.9f, 0.3f, 0.35f);
         [SerializeField] private float selectionPadding = 0.4f;
 
@@ -82,10 +80,6 @@ namespace Marchlands.View
         public Color ProgressColor => progressColor;
 
         public Color CaptureColor => captureColor;
-
-        public Vector2 QueueDotSize => queueDotSize;
-
-        public float QueueDotSpacing => queueDotSpacing;
 
         public Color SelectionColor => selectionColor;
 

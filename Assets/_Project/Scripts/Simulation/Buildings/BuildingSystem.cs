@@ -1,11 +1,15 @@
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
 
 namespace Marchlands.Simulation.Buildings
 {
-    /// <summary>Постройка казарм и найм: отряды очереди нанимаются по одному и появляются рядом с казармой.</summary>
+    /// <summary>
+    /// Постройка казарм и найм: казарма с включённым наймом раз в hireInterval за hireCost получает рекрута
+    /// в общий резерв стороны, пока у казарм ждут меньше maxWaitingRecruits человек.
+    /// </summary>
     internal static class BuildingSystem
     {
         // Таймеры складываются из шагов 0.1 с во float; допуск не даёт лишнего тика из-за ошибки округления.
@@ -29,29 +33,39 @@ namespace Marchlands.Simulation.Buildings
                     continue;
                 }
 
-                if (building.RecruitQueue <= 0)
+                if (building.IsHiring)
                 {
-                    continue;
+                    Hire(match, building, settings, deltaTime);
                 }
-
-                building.RecruitRemaining -= deltaTime;
-                if (building.RecruitRemaining > TimerEpsilon)
-                {
-                    continue;
-                }
-
-                SpawnSquad(match, building, settings);
-                building.RecruitQueue--;
-                building.RecruitRemaining = building.RecruitQueue > 0 ? settings.recruitTime : 0f;
             }
         }
 
+        /// <summary>Рекрут приходит, когда истёк таймер, хватает золота и у казарм ещё есть место; иначе ждёт.</summary>
+        private static void Hire(Match match, Building barracks, BuildingSettings settings, float deltaTime)
+        {
+            barracks.HireRemaining = math.max(0f, barracks.HireRemaining - deltaTime);
+            if (barracks.HireRemaining > TimerEpsilon)
+            {
+                return;
+            }
+
+            PlayerState player = match.GetPlayer(barracks.Owner);
+            if (player.Gold < settings.hireCost || player.Reserve >= settings.maxWaitingRecruits)
+            {
+                return;
+            }
+
+            player.Gold -= settings.hireCost;
+            player.Reserve++;
+            barracks.HireRemaining = settings.hireInterval;
+        }
+
         /// <summary>Отряд появляется в spawnOffset от казармы со стороны вражеского штаба, фронтом к нему.</summary>
-        private static void SpawnSquad(Match match, Building barracks, BuildingSettings settings)
+        internal static Squad SpawnSquad(Match match, Building barracks, UnitType type)
         {
             float2 direction = GetFrontDirection(match, barracks);
-            float2 position = barracks.Position + direction * settings.spawnOffset;
-            match.AddSquad(barracks.Owner, position, Angles.Of(direction), Formation.Line);
+            float2 position = barracks.Position + direction * match.Settings.buildings.spawnOffset;
+            return match.AddSquad(barracks.Owner, position, Angles.Of(direction), Formation.Line, type);
         }
 
         private static float2 GetFrontDirection(Match match, Building barracks)

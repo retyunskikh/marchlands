@@ -17,14 +17,14 @@ namespace Marchlands.Simulation.Config
         /// <summary>…и не ближе этого к другим зданиям и деревням, u.</summary>
         public float buildingSpacing;
 
-        /// <summary>Цена найма отряда.</summary>
-        public int squadCost;
+        /// <summary>Цена одного рекрута.</summary>
+        public int hireCost;
 
-        /// <summary>Время найма одного отряда, s.</summary>
-        public float recruitTime;
+        /// <summary>Раз в столько секунд казарма с включённым наймом получает рекрута, s.</summary>
+        public float hireInterval;
 
-        /// <summary>Сколько отрядов можно поставить в очередь казармы.</summary>
-        public int recruitQueueMax;
+        /// <summary>Пока у казарм ждут столько людей, найм приостановлен.</summary>
+        public int maxWaitingRecruits;
 
         /// <summary>На каком расстоянии от казармы появляется нанятый отряд, u.</summary>
         public float spawnOffset;

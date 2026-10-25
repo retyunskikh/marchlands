@@ -14,8 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Bootstrap::Marchlands.Bootstrap.Config.BalanceConfig
   simulation:
     squads:
-      squadSize: 36
-      minSquadSize: 12
       lineRanks: 2
       columnFrontWidth: 6
       fileSpacing: 0.5
@@ -25,6 +23,22 @@ MonoBehaviour:
       rotationSpeed: 45
       formationChangeTime: 4
       arrivalTolerance: 0.05
+    grenadiers:
+      squadSize: 48
+      minSquadSize: 16
+      speedMultiplier: 0.9
+      accuracyMultiplier: 1
+      rangeMultiplier: 1
+      moraleLossMultiplier: 0.8
+      meleeMultiplier: 1.25
+    jaegers:
+      squadSize: 16
+      minSquadSize: 6
+      speedMultiplier: 1.5
+      accuracyMultiplier: 1.4
+      rangeMultiplier: 1.25
+      moraleLossMultiplier: 1
+      meleeMultiplier: 0.7
     combat:
       maxRange: 12
       effectiveRange: 7
@@ -72,6 +86,7 @@ MonoBehaviour:
       engageRadius: 15
       defenseRadius: 20
       directApproachDistance: 12
+      jaegerSquads: 2
     economy:
       captureRadius: 4
       captureTime: 15
@@ -85,9 +100,9 @@ MonoBehaviour:
       barracksBuildTime: 30
       buildRadiusFromHQ: 10
       buildingSpacing: 3
-      squadCost: 60
-      recruitTime: 20
-      recruitQueueMax: 3
+      hireCost: 2
+      hireInterval: 2
+      maxWaitingRecruits: 96
       spawnOffset: 4
     victory:
       hqCaptureRadius: 5

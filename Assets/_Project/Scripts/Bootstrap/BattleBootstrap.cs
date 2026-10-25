@@ -39,6 +39,7 @@ namespace Marchlands.Bootstrap
         [SerializeField] private TopBar topBar;
         [SerializeField] private BuildPanel buildPanel;
         [SerializeField] private BuildingPanel buildingPanel;
+        [SerializeField] private FormSquadPanel formSquadPanel;
         [SerializeField] private GameMenu gameMenu;
 
         private Match match;
@@ -71,6 +72,7 @@ namespace Marchlands.Bootstrap
             topBar.Initialize(match, scenario.PlayerSide);
             buildPanel.Initialize(match, scenario.PlayerSide);
             buildingPanel.Initialize(match);
+            formSquadPanel.Initialize(match, scenario.PlayerSide);
             gameMenu.Initialize(match, scenario.PlayerSide);
 
             input.SelectionChanged += OnSelectionChanged;
@@ -159,7 +161,7 @@ namespace Marchlands.Bootstrap
 
             foreach (ScenarioConfig.SquadSpawn spawn in scenario.Squads)
             {
-                Squad squad = match.AddSquad(spawn.Side, spawn.Position, spawn.Facing, spawn.Formation);
+                Squad squad = match.AddSquad(spawn.Side, spawn.Position, spawn.Facing, spawn.Formation, spawn.Type);
                 if (spawn.FireAtWill)
                 {
                     match.Enqueue(new SetFireAtWillCommand(squad.Id, true));

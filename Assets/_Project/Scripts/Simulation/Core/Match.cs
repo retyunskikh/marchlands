@@ -135,20 +135,31 @@ namespace Marchlands.Simulation.Core
         /// <summary>Отряды, побежавшие в этом тике; их бегство ещё не ударило по морали союзников.</summary>
         internal Queue<Squad> PendingRouts { get; } = new Queue<Squad>();
 
-        /// <summary>Добавляет полный отряд. Используется при подготовке матча, до первого тика или из команд.</summary>
+        /// <summary>Добавляет полный отряд гренадёров. Используется при подготовке матча, до первого тика или из команд.</summary>
         public Squad AddSquad(Side side, float2 position, float facing, Formation formation)
         {
-            return AddSquad(side, position, facing, formation, Settings.squads.squadSize);
+            return AddSquad(side, position, facing, formation, UnitType.Grenadiers);
         }
 
         public Squad AddSquad(Side side, float2 position, float facing, Formation formation, int alive)
+        {
+            return AddSquad(side, position, facing, formation, UnitType.Grenadiers, alive);
+        }
+
+        /// <summary>Добавляет полный отряд выбранного рода войск.</summary>
+        public Squad AddSquad(Side side, float2 position, float facing, Formation formation, UnitType type)
+        {
+            return AddSquad(side, position, facing, formation, type, Settings.Unit(type).squadSize);
+        }
+
+        public Squad AddSquad(Side side, float2 position, float facing, Formation formation, UnitType type, int alive)
         {
             if (alive <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(alive));
             }
 
-            var squad = new Squad(nextSquadId++, side, alive, position, facing, formation);
+            var squad = new Squad(nextSquadId++, side, type, alive, position, facing, formation);
             squads.Add(squad);
             return squad;
         }

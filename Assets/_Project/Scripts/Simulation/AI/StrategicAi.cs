@@ -2,13 +2,15 @@ using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
 
 namespace Marchlands.Simulation.AI
 {
     /// <summary>
     /// Стратегический ИИ одной стороны (этап 6 docs/design.md): в начале строит казарму в радиусе штаба на стороне,
-    /// обращённой к противнику, затем нанимает, когда хватает золота. Отрядами управляет <see cref="TacticalAi"/>.
+    /// обращённой к противнику, затем держит в казармах найм и формирует отряды: егерей (они быстрее берут деревни) —
+    /// до jaegerSquads и не больше, чем гренадёров, остальных людей собирает в гренадёров. Отрядами управляет <see cref="TacticalAi"/>.
     /// Приказы — только командами, с той же задержкой реакции.
     /// </summary>
     public sealed class StrategicAi : IMatchController
@@ -59,12 +61,35 @@ namespace Marchlands.Simulation.AI
 
             foreach (Building building in match.Buildings)
             {
-                if (building.Owner == Side && BuildRules.CanRecruit(match, building))
+                if (building.Owner == Side && BuildRules.CanHire(building) && !building.IsHiring)
                 {
-                    Issue(match, new RecruitCommand(building.Id));
+                    Issue(match, new SetHiringCommand(building.Id, true));
                     return;
                 }
             }
+
+            // Егерей — не больше jaegerSquads и не больше, чем гренадёров: иначе быстро гибнущие егеря съедают всех рекрутов.
+            int jaegers = CountSquads(match, UnitType.Jaegers);
+            bool wantJaegers = jaegers < ai.jaegerSquads && jaegers <= CountSquads(match, UnitType.Grenadiers);
+            UnitType type = wantJaegers ? UnitType.Jaegers : UnitType.Grenadiers;
+            if (BuildRules.CanFormSquad(match, Side, type))
+            {
+                Issue(match, new FormSquadCommand(Side, type));
+            }
+        }
+
+        private int CountSquads(Match match, UnitType type)
+        {
+            int count = 0;
+            foreach (Squad squad in match.Squads)
+            {
+                if (squad.Side == Side && squad.Type == type && !squad.IsRouting)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private bool HasBarracks(Match match)

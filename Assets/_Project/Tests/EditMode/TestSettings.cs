@@ -14,8 +14,6 @@ namespace Marchlands.Tests.EditMode
             {
                 squads = new SquadSettings
                 {
-                    squadSize = 36,
-                    minSquadSize = 12,
                     lineRanks = 2,
                     columnFrontWidth = 6,
                     fileSpacing = 0.5f,
@@ -79,7 +77,28 @@ namespace Marchlands.Tests.EditMode
                     repathDistance = 1f,
                     engageRadius = 15f,
                     defenseRadius = 20f,
-                    directApproachDistance = 12f
+                    directApproachDistance = 12f,
+                    jaegerSquads = 2
+                },
+                grenadiers = new UnitTypeSettings
+                {
+                    squadSize = 36,
+                    minSquadSize = 12,
+                    speedMultiplier = 1f,
+                    accuracyMultiplier = 1f,
+                    rangeMultiplier = 1f,
+                    moraleLossMultiplier = 1f,
+                    meleeMultiplier = 1f
+                },
+                jaegers = new UnitTypeSettings
+                {
+                    squadSize = 16,
+                    minSquadSize = 6,
+                    speedMultiplier = 1.5f,
+                    accuracyMultiplier = 1.4f,
+                    rangeMultiplier = 1.25f,
+                    moraleLossMultiplier = 1f,
+                    meleeMultiplier = 0.7f
                 },
                 economy = new EconomySettings
                 {
@@ -97,9 +116,9 @@ namespace Marchlands.Tests.EditMode
                     barracksBuildTime = 30f,
                     buildRadiusFromHQ = 10f,
                     buildingSpacing = 3f,
-                    squadCost = 60,
-                    recruitTime = 20f,
-                    recruitQueueMax = 3,
+                    hireCost = 2,
+                    hireInterval = 2f,
+                    maxWaitingRecruits = 96,
                     spawnOffset = 4f
                 },
                 victory = new VictorySettings

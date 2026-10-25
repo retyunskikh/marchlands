@@ -96,7 +96,7 @@ namespace Marchlands.Simulation.Squads
                     return;
                 }
 
-                float speed = GetSpeed(squad.Formation, settings.squads);
+                float speed = UnitStats.Speed(squad, squad.Formation, settings);
                 if (squad.FireState == FireState.Reloading)
                 {
                     speed *= settings.combat.reloadMoveSpeedMultiplier;

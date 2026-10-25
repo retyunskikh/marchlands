@@ -131,27 +131,28 @@ namespace Marchlands.Simulation.Victory
             return !CanStillRecruit(match, side);
         }
 
-        /// <summary>Есть отряд в очереди найма либо казарма (хотя бы строящаяся) и золото на отряд или полный резерв.</summary>
+        /// <summary>Есть казарма (хотя бы строящаяся), а ждущих людей вместе с теми, кого можно нанять, хватит на отряд.</summary>
         private static bool CanStillRecruit(Match match, Side side)
         {
             bool hasBarracks = false;
             foreach (Building building in match.Buildings)
             {
-                if (building.Owner != side || building.Type != BuildingType.Barracks)
+                if (building.Owner == side && building.Type == BuildingType.Barracks)
                 {
-                    continue;
+                    hasBarracks = true;
+                    break;
                 }
+            }
 
-                if (building.RecruitQueue > 0)
-                {
-                    return true;
-                }
-
-                hasBarracks = true;
+            if (!hasBarracks)
+            {
+                return false;
             }
 
             PlayerState player = match.GetPlayer(side);
-            return hasBarracks && (player.Gold >= match.Settings.buildings.squadCost || BuildRules.RecruitsFromReserve(match, side));
+            int hireCost = match.Settings.buildings.hireCost;
+            long recruitable = hireCost > 0 ? player.Gold / hireCost : int.MaxValue;
+            return player.Reserve + recruitable >= UnitStats.SmallestSquadSize(match.Settings);
         }
 
         private static void GetPresence(Match match, float2 point, float radius, out bool ownerPresent, out bool enemyPresent, Side owner)

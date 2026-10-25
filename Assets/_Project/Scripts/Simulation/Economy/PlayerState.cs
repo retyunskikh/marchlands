@@ -15,7 +15,7 @@ namespace Marchlands.Simulation.Economy
 
         public int Gold { get; internal set; }
 
-        /// <summary>Солдаты разбитых отрядов, добежавшие до своих; из них бесплатно собирается новый отряд.</summary>
+        /// <summary>Люди, ждущие у казарм: рекруты и солдаты разбитых отрядов, добежавшие до своих. Из них формируются отряды.</summary>
         public int Reserve { get; internal set; }
     }
 }
