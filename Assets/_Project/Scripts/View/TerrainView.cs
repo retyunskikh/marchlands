@@ -40,11 +40,9 @@ namespace Marchlands.View
 
         [Header("Горы")]
         [SerializeField] private Color mountainBaseColor = new Color(0.42f, 0.38f, 0.33f);
-        [Tooltip("Высота вершин как доля глубины полосы гор: от и до.")]
-        [SerializeField] private Vector2 peakHeightRange = new Vector2(0.7f, 1f);
-        [Tooltip("Ширина вершины к её высоте.")]
-        [SerializeField] private float peakAspect = 1.4f;
-        [SerializeField] private float peakSpacing = 4.5f;
+        [Tooltip("Размер горного массива, u: от и до.")]
+        [SerializeField] private Vector2 massifSize = new Vector2(5.5f, 8f);
+        [SerializeField] private float massifSpacing = 5f;
 
         [Header("Порядок отрисовки")]
         [SerializeField] private int roadSortingOrder = -80;
@@ -87,9 +85,8 @@ namespace Marchlands.View
         }
 
         /// <summary>
-        /// Горы сверху и снизу: тёмная подложка и ряд стоящих вершин (у спрайта точка опоры внизу).
-        /// Сверху вершины растут от границы поля наружу, снизу — от края карты до границы поля;
-        /// высота не больше глубины полосы, чтобы вершины не залезали на поле.
+        /// Горы сверху и снизу, вид сверху: тёмная подложка и два ряда перекрывающихся горных массивов.
+        /// Массивы не поворачиваются (свет на спрайте общий для всей карты) и краем не заходят на поле.
         /// </summary>
         private void DrawMountains(TerrainMap terrain)
         {
@@ -106,15 +103,20 @@ namespace Marchlands.View
 
                 Create("Mountains", squareSprite, mountainBaseColor, borderSortingOrder + 3, new Vector2(0f, edge + side * depth * 0.5f), new Vector2(width, depth), 0f);
 
-                float baseY = side > 0f ? edge : -halfMapY;
-                int peaks = (int)math.ceil(width / peakSpacing) + 1;
-                for (int i = 0; i < peaks; i++)
+                int columns = (int)math.ceil(width / massifSpacing) + 1;
+                for (int row = 0; row < 2; row++)
                 {
-                    float random = Hash01(i * 2 + (side > 0f ? 1 : 0));
-                    float x = -width * 0.5f + i * peakSpacing + (random - 0.5f) * peakSpacing * 0.6f;
-                    float height = depth * math.lerp(peakHeightRange.x, peakHeightRange.y, random);
-                    var size = new Vector2(height * peakAspect, height);
-                    Create("Peak", mountainSprite, Color.white, borderSortingOrder + 4 + (int)(random * 3f), new Vector2(x, baseY), size, 0f);
+                    for (int i = 0; i < columns; i++)
+                    {
+                        float random = Hash01(i * 4 + row * 2 + (side > 0f ? 1 : 0));
+                        float size = math.lerp(massifSize.x, massifSize.y, random);
+                        float x = -width * 0.5f + (i + row * 0.5f) * massifSpacing + (random - 0.5f) * massifSpacing * 0.5f;
+                        // Ближний ряд — краем у самой границы поля, дальний — глубже в горах.
+                        float inset = size * 0.45f + row * depth * 0.45f;
+                        float y = edge + side * inset;
+                        var scale = new Vector2(size * math.lerp(0.9f, 1.25f, Hash01(i * 7 + row)), size);
+                        Create("Massif", mountainSprite, Color.white, borderSortingOrder + 5 - row, new Vector2(x, y), scale, 0f);
+                    }
                 }
             }
         }
