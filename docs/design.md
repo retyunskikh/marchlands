@@ -66,7 +66,6 @@ hitChance(d):
 p = hitChance(d)
   * (isFirstVolley       ? firstVolleyMultiplier   : 1)
   * (target.IsColumn     ? columnTargetMultiplier  : 1)
-  * (shooter.IsWavering  ? waverAccuracyMultiplier : 1)
 
 casualties = Binomial(shooters, p) через GameRandom, не больше target.alive
 ```
@@ -95,17 +94,19 @@ moraleLoss = lossFraction * 100 * moraleShockFactor
 - Бегство союзника в радиусе `allyRoutRadius` даёт разовый штраф `allyRoutPenalty`.
 - Восстановление: +`moraleRegen` в секунду, если отряд `moraleCalmTime` секунд не нёс потерь и в радиусе `calmEnemyRadius` нет врагов.
 - Состояния:
-  - **Steady** — мораль ≥ `waverThreshold`;
-  - **Wavering** — ниже `waverThreshold`: не выполняет приказы наступления (только отход и стоп), перезарядка ×`waverReloadMultiplier`, точность ×`waverAccuracyMultiplier`;
-  - **Routing** — ниже `routThreshold`: не слушается, бежит к своему штабу со скоростью `routSpeed`.
-- Сбор: бегущий отряд восстанавливает мораль, только если рядом нет врагов. При морали ≥ `rallyThreshold` он снова управляем. Бегущий отряд с численностью ≤ `disbandSize` удаляется.
+  - **Steady** — мораль ≥ `routThreshold`: отряд выполняет любые приказы, промежуточных состояний нет;
+  - **Routing** — ниже `routThreshold`: не слушается, бежит к своему штабу со скоростью `routSpeed`. Пока штабов нет (до этапов 5–6), бежит к точке отхода своей стороны из сценария; дойдя, стоит и ждёт сбора. Разворачивается к цели бегства сразу, без ограничения `rotationSpeed`.
+- Сбор: бегущий отряд восстанавливает мораль по тому же правилу, что и обычный (без потерь `moraleCalmTime` и нет врагов в `calmEnemyRadius`). При морали ≥ `rallyThreshold` он снова управляем и останавливается на месте. Бегущий отряд с численностью ≤ `disbandSize` удаляется.
+- Радиусы `allyRoutRadius` и `calmEnemyRadius` меряются от центра до центра отрядов.
 
 ### 3.4 Штыковая атака и рукопашная
 
 - Приказ «В штыки» с выбором вражеского отряда. Атакующий бежит со скоростью `chargeSpeed` и не может стрелять.
 - На дистанции `chargeCheckDistance`: если мораль защитника < `chargeMoraleThreshold`, он бежит, не принимая боя. Если защитник заряжен, игрок (или ИИ) успевает дать встречный залп — это и есть ключевой момент механики.
 - Рукопашная: каждую секунду каждая сторона теряет `enemyAlive × meleeKillRate × модификаторы` солдат (дробные потери накапливаются). Модификаторы: атакующий получает ×`chargeBonus` первые `chargeBonusDuration` секунд, атака во фланг или тыл даёт ×`flankMeleeMultiplier`. Потери в рукопашной бьют по морали по той же формуле, что и потери от залпа (без множителя «в упор»).
-- Рукопашная длится, пока одна сторона не побежит или не погибнет.
+- Рукопашная длится, пока одна сторона не побежит или не погибнет. Отряды в рукопашной не принимают приказов.
+- Атакующий бежит к центру цели, разворачиваясь к ней с `rotationSpeed`; проверка морали на `chargeCheckDistance` — однократная, дистанция от фронта атакующего (как для стрельбы). Рукопашная начинается при касании прямоугольников; атака во фланг или тыл — если в момент касания атакующий вне сектора ±`frontalArcHalfAngle` от фронта защитника.
+- Отряд в рукопашной с несколькими врагами делит свою силу между ними поровну.
 
 ### 3.5 Деревни и ресурсы
 
@@ -174,8 +175,7 @@ moraleLoss = lossFraction * 100 * moraleShockFactor
 | allyRoutRadius / allyRoutPenalty | 8 u / 10 | |
 | moraleRegen | 2 /s | |
 | moraleCalmTime / calmEnemyRadius | 10 s / 10 u | |
-| waverThreshold / routThreshold / rallyThreshold | 40 / 15 / 50 | |
-| waverReloadMultiplier / waverAccuracyMultiplier | 1.5 / 0.7 | |
+| routThreshold / rallyThreshold | 15 / 50 | |
 | routSpeed | 2.0 u/s | |
 | disbandSize | 5 | |
 | chargeSpeed | 2.5 u/s | |
