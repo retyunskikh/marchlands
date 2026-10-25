@@ -27,7 +27,7 @@ namespace Marchlands.Tests.EditMode
         [Test]
         public void Tick_AdvancesCounter()
         {
-            var match = new Match(1);
+            var match = new Match(1, TestSettings.Create());
 
             match.Tick();
             match.Tick();
@@ -38,7 +38,7 @@ namespace Marchlands.Tests.EditMode
         [Test]
         public void Command_RunsExactlyOnItsTick()
         {
-            var match = new Match(1);
+            var match = new Match(1, TestSettings.Create());
             var log = new List<string>();
             match.Enqueue(3, new RecordingCommand("A", log));
 
@@ -54,7 +54,7 @@ namespace Marchlands.Tests.EditMode
         [Test]
         public void CommandsOfOneTick_RunInEnqueueOrder()
         {
-            var match = new Match(1);
+            var match = new Match(1, TestSettings.Create());
             var log = new List<string>();
             match.Enqueue(1, new RecordingCommand("B", log));
             match.Enqueue(0, new RecordingCommand("A", log));
@@ -69,7 +69,7 @@ namespace Marchlands.Tests.EditMode
         [Test]
         public void EnqueueWithoutTick_RunsOnNextTick()
         {
-            var match = new Match(1);
+            var match = new Match(1, TestSettings.Create());
             var log = new List<string>();
             match.Tick();
 
@@ -82,7 +82,7 @@ namespace Marchlands.Tests.EditMode
         [Test]
         public void EnqueueForPastTick_Throws()
         {
-            var match = new Match(1);
+            var match = new Match(1, TestSettings.Create());
             match.Tick();
             match.Tick();
 
@@ -92,8 +92,8 @@ namespace Marchlands.Tests.EditMode
         [Test]
         public void SameSeed_GivesSameMatchRandom()
         {
-            var first = new Match(77);
-            var second = new Match(77);
+            var first = new Match(77, TestSettings.Create());
+            var second = new Match(77, TestSettings.Create());
 
             for (int i = 0; i < 100; i++)
             {
