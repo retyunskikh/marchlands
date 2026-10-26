@@ -8,14 +8,16 @@ using UnityEngine.UI;
 namespace Marchlands.UI
 {
     /// <summary>
-    /// Карточка выделенного отряда слева внизу: воин рода войск в полный рост, название, численность,
-    /// боевой дух полоской и словом и что отряд сейчас делает. Видна только при выделении.
+    /// Карточка выделенного отряда слева внизу: воин рода войск в полный рост, название, численность (значок
+    /// человечка и число), боевой дух полоской и числом и что отряд сейчас делает. Видна только при выделении.
     /// </summary>
     public sealed class SquadCard : MonoBehaviour
     {
         [SerializeField] private GameObject panel;
         [SerializeField] private Image portrait;
         [SerializeField] private Text titleLabel;
+        [Tooltip("Число людей рядом со значком человечка.")]
+        [SerializeField] private Text strengthLabel;
         [SerializeField] private Text detailsLabel;
         [SerializeField] private Image moraleFill;
         [Tooltip("Портреты по порядку: гренадёр, фузилёр, всадник.")]
@@ -25,13 +27,9 @@ namespace Marchlands.UI
         [SerializeField] private string fusiliersTitle = "Фузилёры";
         [SerializeField] private string cavalryTitle = "Конница";
         [Tooltip("{0} — живых, {1} — полная численность.")]
-        [SerializeField] private string strengthFormat = "Численность: {0}/{1}";
-        [Tooltip("{0} — дух числом, {1} — словом.")]
-        [SerializeField] private string moraleFormat = "Дух: {0} — {1}";
-        [Tooltip("Слова для духа: от высокого к низкому; пороги — в moraleWordThresholds.")]
-        [SerializeField] private string[] moraleWords = { "твёрд", "держится", "колеблется", "на грани" };
-        [SerializeField] private float[] moraleWordThresholds = { 75f, 50f, 30f };
-        [SerializeField] private string routingWord = "бегут!";
+        [SerializeField] private string strengthFormat = "{0}/{1}";
+        [Tooltip("{0} — дух числом.")]
+        [SerializeField] private string moraleFormat = "Дух: {0}";
         [SerializeField] private Color moraleHigh = new Color(0.35f, 0.8f, 0.3f);
         [SerializeField] private Color moraleLow = new Color(0.9f, 0.25f, 0.2f);
         [SerializeField] private string standingText = "Стоят";
@@ -42,7 +40,7 @@ namespace Marchlands.UI
         [SerializeField] private string formingText = "Перестраиваются";
         [SerializeField] private string aimingText = "Целься!";
         [Tooltip("{0} — секунд до готовности.")]
-        [SerializeField] private string reloadingFormat = "Заряжают — {0} с";
+        [SerializeField] private string reloadingFormat = "Заряжают {0} с";
         [SerializeField] private string loadedText = "Заряжены";
         [SerializeField] private string reinforcingText = "Пополняются в деревне";
 
@@ -97,9 +95,8 @@ namespace Marchlands.UI
                 moraleFill.color = Color.Lerp(moraleLow, moraleHigh, share);
             }
 
-            string details = string.Format(strengthFormat, squad.Alive, UnitStats.Of(squad, match.Settings).squadSize)
-                + "\n" + string.Format(moraleFormat, Mathf.RoundToInt(morale), GetMoraleWord(morale))
-                + "\n" + GetActivity();
+            strengthLabel.text = string.Format(strengthFormat, squad.Alive, UnitStats.Of(squad, match.Settings).squadSize);
+            string details = string.Format(moraleFormat, Mathf.RoundToInt(morale)) + "\n" + GetActivity();
             string fire = GetFireState();
             if (fire.Length > 0)
             {
@@ -107,24 +104,6 @@ namespace Marchlands.UI
             }
 
             detailsLabel.text = details;
-        }
-
-        private string GetMoraleWord(float morale)
-        {
-            if (squad.IsRouting)
-            {
-                return routingWord;
-            }
-
-            for (int i = 0; i < moraleWordThresholds.Length && i < moraleWords.Length; i++)
-            {
-                if (morale >= moraleWordThresholds[i])
-                {
-                    return moraleWords[i];
-                }
-            }
-
-            return moraleWords.Length > 0 ? moraleWords[moraleWords.Length - 1] : string.Empty;
         }
 
         private string GetActivity()
