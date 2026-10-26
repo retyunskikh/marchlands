@@ -23,6 +23,19 @@ namespace Marchlands.View
         [SerializeField] private Sprite westRiverSprite;
         [SerializeField] private Sprite eastRiverSprite;
 
+        [Header("За краем карты")]
+        [Tooltip("Бесшовный полог леса за реками — игрок не видит пустоты.")]
+        [SerializeField] private Sprite outerForestSprite;
+        [Tooltip("Вертикальный градиент тумана (прозрачный внизу), в который уходят горы.")]
+        [SerializeField] private Sprite fogSprite;
+        [SerializeField] private Color fogColor = new Color(0.78f, 0.81f, 0.84f);
+        [Tooltip("Насколько за край карты тянутся лес и туман, u.")]
+        [SerializeField] private float outerExtent = 40f;
+        [Tooltip("За сколько до края карты начинается туман над горами, u.")]
+        [SerializeField] private float fogInset = 2.5f;
+        [Tooltip("Глубина перехода тумана от прозрачного к плотному, u.")]
+        [SerializeField] private float fogDepth = 6f;
+
         [Header("Размер карты (как у фона)")]
         [SerializeField] private Vector2 mapSize = new Vector2(120f, 80f);
 
@@ -50,8 +63,10 @@ namespace Marchlands.View
                 return;
             }
 
+            DrawOuterForest();
             DrawRivers(terrain);
             DrawMountains(terrain);
+            DrawFog();
             DrawRoads(terrain);
             DrawForests(terrain);
         }
@@ -85,6 +100,50 @@ namespace Marchlands.View
                     Sprite sprite = side > 0f ? northMountainsSprite : southMountainsSprite;
                     CreateStretched("Mountains", sprite, borderSortingOrder + 3, new Vector2(0f, edge + side * depth * 0.5f), new Vector2(mapSize.x, depth));
                 }
+            }
+        }
+
+        /// <summary>За реками слева и справа — сплошной лес до края видимого.</summary>
+        private void DrawOuterForest()
+        {
+            if (outerForestSprite == null)
+            {
+                return;
+            }
+
+            float halfX = mapSize.x * 0.5f;
+            float height = mapSize.y + outerExtent * 2f;
+            foreach (float side in new[] { -1f, 1f })
+            {
+                var forest = new GameObject("Outer Forest");
+                forest.transform.SetParent(transform, false);
+                forest.transform.position = new Vector3(side * (halfX + outerExtent * 0.5f), 0f, 0f);
+                var spriteRenderer = forest.AddComponent<SpriteRenderer>();
+                spriteRenderer.sprite = outerForestSprite;
+                spriteRenderer.drawMode = SpriteDrawMode.Tiled;
+                spriteRenderer.size = new Vector2(outerExtent, height);
+                spriteRenderer.sortingOrder = borderSortingOrder - 1;
+            }
+        }
+
+        /// <summary>Горы сверху и снизу уходят в туман: градиент от середины гор и сплошной туман дальше.</summary>
+        private void DrawFog()
+        {
+            if (fogSprite == null)
+            {
+                return;
+            }
+
+            float halfY = mapSize.y * 0.5f;
+            float width = mapSize.x + outerExtent * 2f;
+            foreach (float side in new[] { -1f, 1f })
+            {
+                float start = halfY - fogInset;
+                CreateStretched("Fog", fogSprite, borderSortingOrder + 10,
+                    new Vector2(0f, side * (start + fogDepth * 0.5f)), new Vector2(width, fogDepth), side > 0f ? 0f : 180f, Color.white);
+                float solid = outerExtent;
+                Create("Fog Solid", squareSprite, fogColor, borderSortingOrder + 10,
+                    new Vector2(0f, side * (start + fogDepth + solid * 0.5f)), new Vector2(width, solid), 0f);
             }
         }
 
@@ -133,8 +192,13 @@ namespace Marchlands.View
 
         private void CreateStretched(string objectName, Sprite sprite, int sortingOrder, Vector2 position, Vector2 size)
         {
+            CreateStretched(objectName, sprite, sortingOrder, position, size, 0f, Color.white);
+        }
+
+        private void CreateStretched(string objectName, Sprite sprite, int sortingOrder, Vector2 position, Vector2 size, float rotation, Color color)
+        {
             Vector2 spriteSize = sprite.bounds.size;
-            Create(objectName, sprite, Color.white, sortingOrder, position, new Vector2(size.x / spriteSize.x, size.y / spriteSize.y), 0f);
+            Create(objectName, sprite, color, sortingOrder, position, new Vector2(size.x / spriteSize.x, size.y / spriteSize.y), rotation);
         }
 
         private void Create(string objectName, Sprite sprite, Color color, int sortingOrder, Vector2 position, Vector2 size, float rotation)

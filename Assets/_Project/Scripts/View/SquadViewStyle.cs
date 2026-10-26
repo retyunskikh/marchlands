@@ -132,6 +132,12 @@ namespace Marchlands.View
             }
         }
 
+        public Sprite GetWalkSprite(Side side, UnitType type, SoldierRole role, int frame)
+        {
+            SoldierSprites sprites = side == Side.France ? franceSoldiers : austriaSoldiers;
+            return sprites?.GetWalk(type, role, frame);
+        }
+
         public bool TryGetMeleeSprites(Side side, UnitType type, SoldierRole role, out Sprite body, out Sprite arms)
         {
             SoldierSprites sprites = side == Side.France ? franceSoldiers : austriaSoldiers;

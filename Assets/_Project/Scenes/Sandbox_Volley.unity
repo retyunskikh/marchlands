@@ -3608,6 +3608,12 @@ MonoBehaviour:
   southMountainsSprite: {fileID: 21300000, guid: f79f6e6bd3bf22b49a12d4d02b086e17, type: 3}
   westRiverSprite: {fileID: 21300000, guid: 4e3de2fd258661743a548216e62b9ecd, type: 3}
   eastRiverSprite: {fileID: 21300000, guid: b61a6ef4cfacef345a8513a08da88452, type: 3}
+  outerForestSprite: {fileID: 21300000, guid: 25f26a19fe9f0ef49b8ae043d958efd1, type: 3}
+  fogSprite: {fileID: 21300000, guid: 59fccc4cf2bd69541b74d7fbffec853c, type: 3}
+  fogColor: {r: 0.78, g: 0.81, b: 0.84, a: 1}
+  outerExtent: 40
+  fogInset: 2.5
+  fogDepth: 6
   mapSize: {x: 120, y: 80}
   roadWidth: 2.6
   roadColor: {r: 0.66, g: 0.56, b: 0.38, a: 1}
@@ -10302,6 +10308,27 @@ MonoBehaviour:
       drummer: {fileID: 21300000, guid: e0beab26bf748d04aac4a21a10fd6a03, type: 3}
       cavalry: {fileID: 21300000, guid: 5ea8bb1cc7883b346922134c5acdf252, type: 3}
       cavalryOfficer: {fileID: 21300000, guid: 6fc2d5c4517294a438e6f65461890697, type: 3}
+      grenadierWalk:
+      - {fileID: 21300000, guid: 57a18ff038ded87498a56b32a9450113, type: 3}
+      - {fileID: 21300000, guid: 750d9021ea37ee74b9b4c0e5422482f5, type: 3}
+      jaegerWalk:
+      - {fileID: 21300000, guid: 7f2634031364de340a52c4a9c2e5a531, type: 3}
+      - {fileID: 21300000, guid: 7ab2a6cc89b90104195a07cfead95085, type: 3}
+      officerWalk:
+      - {fileID: 21300000, guid: ab5942142a7687f4cbb635960874bff4, type: 3}
+      - {fileID: 21300000, guid: 5f41488d1b1c9f14b98fed2182cb0e6a, type: 3}
+      flagBearerWalk:
+      - {fileID: 21300000, guid: 8edd29368d49ca644992c362c072acc3, type: 3}
+      - {fileID: 21300000, guid: a0dfc773232b5ec468261fcb88a85a72, type: 3}
+      drummerWalk:
+      - {fileID: 21300000, guid: 505f6841499f9dc4688b16702dbe68af, type: 3}
+      - {fileID: 21300000, guid: 749ac3ba0cd976e429b8a0d43a50bab8, type: 3}
+      cavalryWalk:
+      - {fileID: 21300000, guid: adc6cb7862ecf8c4396625e7a9b9c787, type: 3}
+      - {fileID: 21300000, guid: 2a4114bcfe63a84429487ac286a92544, type: 3}
+      cavalryOfficerWalk:
+      - {fileID: 21300000, guid: edaf86fba00bc2a46b4fc8dd1ab96b17, type: 3}
+      - {fileID: 21300000, guid: ec8a85470d9a8a0468b1255d02b25635, type: 3}
       grenadierBody: {fileID: 21300000, guid: d4edf462edfd9374384fe538aa66d601, type: 3}
       grenadierArms: {fileID: 21300000, guid: fe4ddbca35b2aaf43b146a3f1e8d75b9, type: 3}
       jaegerBody: {fileID: 21300000, guid: 3e9a9768fd163b743a5bb9878bd3061b, type: 3}
@@ -10319,6 +10346,27 @@ MonoBehaviour:
       drummer: {fileID: 21300000, guid: 199c32cc0432f094eb3d7afaf81ed6b1, type: 3}
       cavalry: {fileID: 21300000, guid: 89a7b3072efb3be4f82e14d7e42bd3f9, type: 3}
       cavalryOfficer: {fileID: 21300000, guid: 4a895c46e847afd4b90806891e6242ea, type: 3}
+      grenadierWalk:
+      - {fileID: 21300000, guid: aded55a15966f944aab84f94565f7815, type: 3}
+      - {fileID: 21300000, guid: b2a7cf3b0f509994abe62e1c7eb18a89, type: 3}
+      jaegerWalk:
+      - {fileID: 21300000, guid: f65df24573fa9bb40b3ee29053bdb3ef, type: 3}
+      - {fileID: 21300000, guid: 34f96173f218031409c602f93e572621, type: 3}
+      officerWalk:
+      - {fileID: 21300000, guid: 437375b1069135a4fb138ca03ad2a0a5, type: 3}
+      - {fileID: 21300000, guid: effca943452f21e4dba70039f2d04f39, type: 3}
+      flagBearerWalk:
+      - {fileID: 21300000, guid: 70c21599fc98c204fbb0dbd32dc5643c, type: 3}
+      - {fileID: 21300000, guid: 854e5d0b1c31ff249b7dc1ae1bd8a163, type: 3}
+      drummerWalk:
+      - {fileID: 21300000, guid: 77403a1563313d348aa0da5639753052, type: 3}
+      - {fileID: 21300000, guid: a773a20801bb1524183b917dfe989af0, type: 3}
+      cavalryWalk:
+      - {fileID: 21300000, guid: 25ed4ba2cae3e224d8ea84d54d2e28f4, type: 3}
+      - {fileID: 21300000, guid: d703a67d30e1e1c419b8ee8acd220850, type: 3}
+      cavalryOfficerWalk:
+      - {fileID: 21300000, guid: 50c5349e955d4c04e847efd9a8eefdee, type: 3}
+      - {fileID: 21300000, guid: 700294ec421b51b4494b8c7034d0fe0d, type: 3}
       grenadierBody: {fileID: 21300000, guid: bf2042d0dda3df746891fd75ce420bde, type: 3}
       grenadierArms: {fileID: 21300000, guid: fef1f44df693cae45a126831925a2f0c, type: 3}
       jaegerBody: {fileID: 21300000, guid: 67640376c7bdbbc42a557df56847a4c9, type: 3}
@@ -13169,6 +13217,7 @@ MonoBehaviour:
   meleeVolume: 0.6
   meleeFadeSpeed: 2
   captureVolume: 0.8
+  ownCaptureVolume: 0.45
 --- !u!4 &1725097817
 Transform:
   m_ObjectHideFlags: 0

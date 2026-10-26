@@ -39,6 +39,7 @@ namespace Marchlands.View
         // Для рукопашной: обычная фигурка, тело без оружия и руки с оружием (null — без выпада).
         private readonly List<Sprite> fullSprites = new List<Sprite>();
         private readonly List<Sprite> bodySprites = new List<Sprite>();
+        private readonly List<SoldierRole> soldierRoles = new List<SoldierRole>();
         private readonly List<SpriteRenderer> arms = new List<SpriteRenderer>();
         private bool showingMeleeBodies;
 
@@ -122,6 +123,10 @@ namespace Marchlands.View
 
                 soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), meleeBlend > 0f ? meleeRotation : rotation);
                 RenderArms(i, world, meleeRotation);
+                if (meleeBlend <= 0f)
+                {
+                    RenderStep(i, local);
+                }
             }
 
             showingMeleeBodies = meleeBlend > 0f;
@@ -276,6 +281,50 @@ namespace Marchlands.View
             return meleeContact + meleeDirection * compressed + across * lateral * (1f - 0.2f * blend) + scatter;
         }
 
+        /// <summary>
+        /// Кадр шага: на ходу фигурка чередует «левой» и «правой» (у конницы — галоп), стоя — обычная.
+        /// Гренадёры шагают в ногу, егеря — вразнобой, конница — волной по шеренгам (та же фаза, что у походки).
+        /// </summary>
+        private void RenderStep(int index, float2 local)
+        {
+            Sprite stand = fullSprites[index];
+            if (stand == null)
+            {
+                return;
+            }
+
+            Sprite target = stand;
+            if (gaitBlend > 0.3f)
+            {
+                Vector2 gait = style.GetGait(squad.Type);
+                float phase = GaitPhase(index, local);
+                int frame = math.sin(Time.time * gait.x * 2f * math.PI + phase) >= 0f ? 0 : 1;
+                Sprite walk = style.GetWalkSprite(squad.Side, squad.Type, soldierRoles[index], frame);
+                if (walk != null)
+                {
+                    target = walk;
+                }
+            }
+
+            if (soldiers[index].sprite != target)
+            {
+                soldiers[index].sprite = target;
+            }
+        }
+
+        private float GaitPhase(int index, float2 local)
+        {
+            switch (squad.Type)
+            {
+                case UnitType.Jaegers:
+                    return Scatter(index + 311).x * math.PI;
+                case UnitType.Cavalry:
+                    return -local.y * 1.3f + Scatter(index + 613).x * 0.4f;
+                default:
+                    return 0f;
+            }
+        }
+
         /// <summary>Выпад солдата в [0, 1]: быстрый удар вперёд и возврат, у каждого своя фаза.</summary>
         private float Thrust(int index)
         {
@@ -296,7 +345,8 @@ namespace Marchlands.View
             }
 
             bool melee = meleeBlend > 0f;
-            if (melee != showingMeleeBodies || soldiers[index].sprite != (melee ? bodySprites[index] : fullSprites[index]))
+            // Вне схватки кадр выбирает шаг (RenderStep) — здесь только переключение тело/цельная фигурка.
+            if (melee != showingMeleeBodies || (melee && soldiers[index].sprite != bodySprites[index]))
             {
                 soldiers[index].sprite = melee ? bodySprites[index] : fullSprites[index];
                 armsRenderer.enabled = melee;
@@ -451,7 +501,8 @@ namespace Marchlands.View
                     ? CreateRenderer($"Soldier {index}", drawn, Color.white, order)
                     : CreateRenderer($"Soldier {index}", style.SoldierSprite, style.GetSideColor(squad.Side), order));
 
-                fullSprites.Add(soldiers[index].sprite);
+                fullSprites.Add(drawn);
+                soldierRoles.Add(role);
                 if (drawn != null && style.TryGetMeleeSprites(squad.Side, squad.Type, role, out Sprite body, out Sprite armsSprite))
                 {
                     bodySprites.Add(body);
@@ -479,6 +530,7 @@ namespace Marchlands.View
                 arms.RemoveAt(last);
                 bodySprites.RemoveAt(last);
                 fullSprites.RemoveAt(last);
+                soldierRoles.RemoveAt(last);
             }
         }
 

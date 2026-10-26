@@ -25,6 +25,15 @@ namespace Marchlands.View
         [SerializeField] private Sprite cavalry;
         [SerializeField] private Sprite cavalryOfficer;
 
+        [Header("Шаг: два кадра — левой и правой (у конницы — галоп)")]
+        [SerializeField] private Sprite[] grenadierWalk = new Sprite[2];
+        [SerializeField] private Sprite[] jaegerWalk = new Sprite[2];
+        [SerializeField] private Sprite[] officerWalk = new Sprite[2];
+        [SerializeField] private Sprite[] flagBearerWalk = new Sprite[2];
+        [SerializeField] private Sprite[] drummerWalk = new Sprite[2];
+        [SerializeField] private Sprite[] cavalryWalk = new Sprite[2];
+        [SerializeField] private Sprite[] cavalryOfficerWalk = new Sprite[2];
+
         [Header("Рукопашная: тело без оружия и руки с оружием отдельно")]
         [SerializeField] private Sprite grenadierBody;
         [SerializeField] private Sprite grenadierArms;
@@ -64,6 +73,36 @@ namespace Marchlands.View
             }
 
             return body != null && arms != null;
+        }
+
+        /// <summary>Кадр шага (0 или 1); null — кадров нет, рисовать стоящую фигурку.</summary>
+        public Sprite GetWalk(UnitType type, SoldierRole role, int frame)
+        {
+            Sprite[] frames;
+            if (type == UnitType.Cavalry)
+            {
+                frames = role == SoldierRole.Officer ? cavalryOfficerWalk : cavalryWalk;
+            }
+            else
+            {
+                switch (role)
+                {
+                    case SoldierRole.Officer:
+                        frames = officerWalk;
+                        break;
+                    case SoldierRole.FlagBearer:
+                        frames = flagBearerWalk;
+                        break;
+                    case SoldierRole.Drummer:
+                        frames = drummerWalk;
+                        break;
+                    default:
+                        frames = type == UnitType.Jaegers ? jaegerWalk : grenadierWalk;
+                        break;
+                }
+            }
+
+            return frames != null && frame >= 0 && frame < frames.Length ? frames[frame] : null;
         }
 
         public Sprite Get(UnitType type, SoldierRole role)
