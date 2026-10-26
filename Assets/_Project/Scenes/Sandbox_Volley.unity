@@ -1939,7 +1939,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
-  followSafeArea: 1
+  followSafeArea: 0
 --- !u!1 &309758623
 GameObject:
   m_ObjectHideFlags: 0
@@ -2585,7 +2585,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
-  followSafeArea: 1
+  followSafeArea: 0
 --- !u!1 &426565802
 GameObject:
   m_ObjectHideFlags: 0
@@ -3571,7 +3571,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
-  followSafeArea: 1
+  followSafeArea: 0
 --- !u!1 &533905311
 GameObject:
   m_ObjectHideFlags: 0
@@ -5071,7 +5071,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
-  followSafeArea: 1
+  followSafeArea: 0
 --- !u!1 &820522555
 GameObject:
   m_ObjectHideFlags: 0
@@ -13568,8 +13568,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
-  cornerPadding: {x: 36, y: 0}
-  followSafeArea: 1
+  cornerPadding: {x: 32, y: 0}
+  followSafeArea: 0
 --- !u!1 &1492640964
 GameObject:
   m_ObjectHideFlags: 0
@@ -14808,7 +14808,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 24, y: 24}
+  m_AnchoredPosition: {x: 30, y: 30}
   m_SizeDelta: {x: 370, y: 260}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &1738620287
@@ -14876,7 +14876,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
-  cornerPadding: {x: 0, y: 0}
+  cornerPadding: {x: 24, y: 0}
   followSafeArea: 0
 --- !u!1 &1743920310
 GameObject:
