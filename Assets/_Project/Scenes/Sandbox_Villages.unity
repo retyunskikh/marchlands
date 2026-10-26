@@ -5180,6 +5180,10 @@ MonoBehaviour:
   southMountainsSprite: {fileID: 21300000, guid: f79f6e6bd3bf22b49a12d4d02b086e17, type: 3}
   westRiverSprite: {fileID: 21300000, guid: 4e3de2fd258661743a548216e62b9ecd, type: 3}
   eastRiverSprite: {fileID: 21300000, guid: b61a6ef4cfacef345a8513a08da88452, type: 3}
+  westRiverWaterMask: {fileID: 21300000, guid: 59288dbee676e6542b0ff22baf90dbc7, type: 3}
+  eastRiverWaterMask: {fileID: 21300000, guid: 0d751405679c5d94f81f5802bacba6bc, type: 3}
+  riverFlowSprite: {fileID: 21300000, guid: 7366c4396e7d522478beb2d629ce282b, type: 3}
+  riverFlowSpeed: 0.8
   mountainExtension: 8
   westOuterForestSprite: {fileID: 21300000, guid: b370f6c2579e8594a8b84d8118db500d, type: 3}
   eastOuterForestSprite: {fileID: 21300000, guid: 5a4e87907c39e384e8a896c91b6b0f9e, type: 3}

@@ -25,6 +25,11 @@ namespace Marchlands.View
         [SerializeField] private Sprite southMountainsSprite;
         [SerializeField] private Sprite westRiverSprite;
         [SerializeField] private Sprite eastRiverSprite;
+        [Tooltip("Течение: маски воды рек (по форме русла) и тайловые блики, плывущие на север.")]
+        [SerializeField] private Sprite westRiverWaterMask;
+        [SerializeField] private Sprite eastRiverWaterMask;
+        [SerializeField] private Sprite riverFlowSprite;
+        [SerializeField] private float riverFlowSpeed = 0.8f;
 
         [Header("За краем карты")]
         [Tooltip("Насколько горы выходят за край карты вверх и вниз, u: запас для перехода в туман.")]
@@ -218,9 +223,42 @@ namespace Marchlands.View
                 {
                     Sprite sprite = side > 0f ? eastRiverSprite : westRiverSprite;
                     // Река идёт до самого края — сквозь горы (поверх них) в туман.
-                    CreateStretched("River", sprite, borderSortingOrder + 4, new Vector2(edge + side * width * 0.5f, 0f), new Vector2(width, mapSize.y + mountainExtension * 2f));
+                    var center = new Vector2(edge + side * width * 0.5f, 0f);
+                    var size = new Vector2(width, mapSize.y + mountainExtension * 2f);
+                    CreateStretched("River", sprite, borderSortingOrder + 4, center, size);
+                    DrawRiverFlow(side > 0f ? eastRiverWaterMask : westRiverWaterMask, center, size);
                 }
             }
+        }
+
+        /// <summary>Блики по воде, плывущие на север; маска по форме русла не пускает их на берега.</summary>
+        private void DrawRiverFlow(Sprite waterMask, Vector2 center, Vector2 size)
+        {
+            if (waterMask == null || riverFlowSprite == null)
+            {
+                return;
+            }
+
+            var maskObject = new GameObject("River Water Mask");
+            maskObject.transform.SetParent(transform, false);
+            maskObject.transform.position = center;
+            Vector2 maskSize = waterMask.bounds.size;
+            maskObject.transform.localScale = new Vector3(size.x / maskSize.x, size.y / maskSize.y, 1f);
+            var mask = maskObject.AddComponent<SpriteMask>();
+            // Маска действует только на блики (у них VisibleInsideMask); свой диапазон сортировки ломает отрисовку.
+            mask.sprite = waterMask;
+
+            float period = riverFlowSprite.bounds.size.y;
+            var flow = new GameObject("River Flow");
+            flow.transform.SetParent(transform, false);
+            flow.transform.position = center - new Vector2(0f, period * 0.5f);
+            var flowRenderer = flow.AddComponent<SpriteRenderer>();
+            flowRenderer.sprite = riverFlowSprite;
+            flowRenderer.drawMode = SpriteDrawMode.Tiled;
+            flowRenderer.size = new Vector2(size.x, size.y + period);
+            flowRenderer.sortingOrder = borderSortingOrder + 5;
+            flowRenderer.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
+            flow.AddComponent<RiverFlow>().Initialize(riverFlowSpeed, period);
         }
 
         /// <summary>Горы сверху и снизу: предгорья с рваным краем у поля, хребты и снежные вершины к краю карты.</summary>
