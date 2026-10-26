@@ -15,25 +15,15 @@ MonoBehaviour:
   playerSide: 0
   squads:
   - side: 0
-    position: {x: -44, y: 7}
+    position: {x: -44, y: 0}
     facing: 0
     formation: 0
-    type: 0
-  - side: 0
-    position: {x: -44, y: -7}
-    facing: 0
-    formation: 0
-    type: 0
+    type: 1
   - side: 1
-    position: {x: 44, y: 7}
+    position: {x: 44, y: 0}
     facing: 180
     formation: 0
-    type: 0
-  - side: 1
-    position: {x: 44, y: -7}
-    facing: 180
-    formation: 0
-    type: 0
+    type: 1
   villages:
   - {x: 0, y: 0}
   - {x: -14, y: 20}
