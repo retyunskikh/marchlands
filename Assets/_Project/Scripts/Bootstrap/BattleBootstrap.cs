@@ -36,6 +36,7 @@ namespace Marchlands.Bootstrap
         [SerializeField] private MusicDirector music;
         [SerializeField] private BattleInputController input;
         [SerializeField] private OrderPanel orderPanel;
+        [SerializeField] private SquadCard squadCard;
         [SerializeField] private TopBar topBar;
         [SerializeField] private BuildPanel buildPanel;
         [SerializeField] private BuildingPanel buildingPanel;
@@ -69,6 +70,10 @@ namespace Marchlands.Bootstrap
             music.Initialize(match, scenario.PlayerSide);
             input.Initialize(match, scenario.PlayerSide);
             orderPanel.Initialize(match);
+            if (squadCard != null)
+            {
+                squadCard.Initialize(match);
+            }
             topBar.Initialize(match, scenario.PlayerSide);
             buildPanel.Initialize(match, scenario.PlayerSide);
             buildingPanel.Initialize(match);
@@ -213,6 +218,10 @@ namespace Marchlands.Bootstrap
             squadViews.SetSelected(squad);
             fireArc.SetSquad(squad);
             orderPanel.SetSquad(squad);
+            if (squadCard != null)
+            {
+                squadCard.SetSquad(squad);
+            }
         }
     }
 }
