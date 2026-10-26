@@ -34,10 +34,10 @@ namespace Marchlands.UI
         [SerializeField] private string standingText = "Стоят";
         [SerializeField] private string marchingText = "На марше";
         [SerializeField] private string chargingText = "Атакуют!";
-        [SerializeField] private string meleeText = "В рукопашной";
+        [SerializeField] private string meleeText = "Дерутся";
         [SerializeField] private string routingText = "Бегут";
-        [SerializeField] private string formingText = "Перестраиваются";
-        [SerializeField] private string reinforcingText = "Пополняются в деревне";
+        [SerializeField] private string formingText = "Строятся";
+        [SerializeField] private string reinforcingText = "Пополняются";
 
         private Match match;
         private Squad squad;
