@@ -66,6 +66,8 @@ namespace Marchlands.View
         [SerializeField] private int recruitsShownMax = 32;
         [Tooltip("Где стоит толпа: на сколько дальше края казармы в сторону фронта, u.")]
         [SerializeField] private float recruitsOffset = 0.9f;
+        [Tooltip("С какой скоростью новый рекрут идёт от ворот здания к своему месту в толпе, u/s.")]
+        [SerializeField] private float recruitWalkSpeed = 2.5f;
         [SerializeField] private Vector2 recruitsSpacing = new Vector2(0.45f, 0.45f);
         [SerializeField] private int recruitsPerRow = 8;
 
@@ -102,6 +104,8 @@ namespace Marchlands.View
         public int RecruitsShownMax => recruitsShownMax;
 
         public float RecruitsOffset => recruitsOffset;
+
+        public float RecruitWalkSpeed => recruitWalkSpeed;
 
         public Vector2 RecruitsSpacing => recruitsSpacing;
 

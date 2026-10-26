@@ -16,6 +16,8 @@ namespace Marchlands.Bootstrap.Config
         [SerializeField] private List<Vector2> villages = new List<Vector2>();
         [Tooltip("Планы деревень, нарисованные под дороги этой карты, — по порядку деревень; пусто — общие раскладки.")]
         [SerializeField] private List<Sprite> villageLayouts = new List<Sprite>();
+        [Tooltip("Двери домов на планах деревень (от центра деревни) — из них выходит пополнение; по порядку деревень.")]
+        [SerializeField] private List<VillageDoors> villageDoors = new List<VillageDoors>();
 
         [Tooltip("Проверять условия победы (полный матч). В песочницах выключено.")]
         [SerializeField] private bool victoryConditions;
@@ -49,6 +51,12 @@ namespace Marchlands.Bootstrap.Config
 
         public IReadOnlyList<Sprite> VillageLayouts => villageLayouts;
 
+        /// <summary>Двери домов деревни с этим номером; null — у деревни нет своего плана.</summary>
+        public IReadOnlyList<Vector2> GetVillageDoors(int index)
+        {
+            return index < villageDoors.Count ? villageDoors[index].Points : null;
+        }
+
         public bool HasHeadquarters => hasHeadquarters;
 
         public bool HasTerrain => hasTerrain;
@@ -76,6 +84,14 @@ namespace Marchlands.Bootstrap.Config
         public Vector2 GetRetreatPoint(Side side)
         {
             return side == Side.France ? franceRetreatPoint : austriaRetreatPoint;
+        }
+
+        [Serializable]
+        public sealed class VillageDoors
+        {
+            [SerializeField] private List<Vector2> points = new List<Vector2>();
+
+            public IReadOnlyList<Vector2> Points => points;
         }
 
         [Serializable]

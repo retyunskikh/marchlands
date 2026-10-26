@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Economy;
@@ -22,6 +23,7 @@ namespace Marchlands.View
         private readonly List<VillageView> views = new List<VillageView>();
         private readonly List<Walker> walkers = new List<Walker>();
 
+        private readonly Dictionary<int, IReadOnlyList<Vector2>> doorsByVillage = new Dictionary<int, IReadOnlyList<Vector2>>();
         private Match match;
 
         private sealed class Walker
@@ -32,13 +34,20 @@ namespace Marchlands.View
         }
 
         /// <param name="layouts">Планы деревень карты по порядку деревень; null или пусто — общие раскладки стиля.</param>
-        public void Initialize(Match match, IReadOnlyList<Sprite> layouts = null)
+        /// <param name="doors">Двери домов на этих планах (от центра деревни); null — домики общей раскладки.</param>
+        public void Initialize(Match match, IReadOnlyList<Sprite> layouts = null, Func<int, IReadOnlyList<Vector2>> doors = null)
         {
             this.match = match;
             for (int i = 0; i < match.Villages.Count; i++)
             {
                 Village village = match.Villages[i];
                 Sprite layout = layouts != null && i < layouts.Count ? layouts[i] : null;
+                IReadOnlyList<Vector2> villageDoors = doors?.Invoke(i);
+                if (layout != null && villageDoors != null && villageDoors.Count > 0)
+                {
+                    doorsByVillage[village.Id] = villageDoors;
+                }
+
                 var viewObject = new GameObject($"Village {village.Id}");
                 viewObject.transform.SetParent(transform, false);
                 var view = viewObject.AddComponent<VillageView>();
@@ -64,7 +73,11 @@ namespace Marchlands.View
             {
                 Squad squad = match.FindSquad(reinforcement.SquadId);
                 Village village = FindVillage(reinforcement.VillageId);
-                if (squad == null || village == null || style.HouseOffsets.Length == 0)
+                // Выходит из двери дома: на плане карты — из настоящих домов, иначе из домиков общей раскладки.
+                IReadOnlyList<Vector2> doors = village != null && doorsByVillage.TryGetValue(village.Id, out IReadOnlyList<Vector2> planned)
+                    ? planned
+                    : style.HouseOffsets;
+                if (squad == null || village == null || doors.Count == 0)
                 {
                     continue;
                 }
@@ -77,8 +90,8 @@ namespace Marchlands.View
                 spriteRenderer.color = sprite != null ? Color.white : squadViews.Style.GetSideColor(squad.Side);
                 spriteRenderer.sortingOrder = walkerSortingOrder;
                 walkerObject.transform.localScale = Vector3.one * squadViews.Style.SoldierScale;
-                int house = (int)((uint)(match.CurrentTick * 31 + squad.Id * 17) % (uint)style.HouseOffsets.Length);
-                Vector2 offset = style.HouseOffsets[house];
+                int house = (int)((uint)(match.CurrentTick * 31 + squad.Id * 17) % (uint)doors.Count);
+                Vector2 offset = doors[house];
                 walkers.Add(new Walker
                 {
                     Renderer = spriteRenderer,

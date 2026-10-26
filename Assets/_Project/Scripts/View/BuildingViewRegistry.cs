@@ -18,8 +18,16 @@ namespace Marchlands.View
         [SerializeField] private SquadViewRegistry squadViews;
 
         private readonly Dictionary<int, BuildingView> views = new Dictionary<int, BuildingView>();
-        private readonly List<SpriteRenderer>[] recruits = { new List<SpriteRenderer>(), new List<SpriteRenderer>() };
-        private readonly List<SpriteRenderer>[] riders = { new List<SpriteRenderer>(), new List<SpriteRenderer>() };
+        private readonly List<Waiter>[] recruits = { new List<Waiter>(), new List<Waiter>() };
+        private readonly List<Waiter>[] riders = { new List<Waiter>(), new List<Waiter>() };
+
+        /// <summary>Ждущий человек толпы: где он сейчас нарисован и показан ли (новый выходит из ворот).</summary>
+        private sealed class Waiter
+        {
+            public SpriteRenderer Renderer;
+            public float2 Position;
+            public bool Shown;
+        }
 
         private Match match;
         private Building selected;
@@ -79,9 +87,10 @@ namespace Marchlands.View
 
         /// <summary>
         /// Ждущие люди резерва стоят толпой перед воротами здания, где формируется их род войск, лицом к фронту;
-        /// рисуется не больше recruitsShownMax. <paramref name="spread"/> — во сколько раз реже стоят (всадники крупнее).
+        /// рисуется не больше recruitsShownMax. Новый человек выходит из ворот здания и идёт на своё место.
+        /// <paramref name="spread"/> — во сколько раз реже стоят (всадники крупнее).
         /// </summary>
-        private void RenderWaiting(Side side, UnitType type, int waiting, List<SpriteRenderer> crowd, Sprite sprite, float spread)
+        private void RenderWaiting(Side side, UnitType type, int waiting, List<Waiter> crowd, Sprite sprite, float spread)
         {
             Building barracks = BuildRules.GetFormingBuilding(match, side, type);
             int shown = barracks == null || sprite == null
@@ -91,12 +100,13 @@ namespace Marchlands.View
             {
                 SpriteRenderer person = CreatePreview($"Waiting {type} {side} {crowd.Count}", sprite, style.BodySortingOrder + 5);
                 person.transform.localScale = Vector3.one * squadViews.Style.SoldierScale;
-                crowd.Add(person);
+                crowd.Add(new Waiter { Renderer = person });
             }
 
-            for (int i = 0; i < crowd.Count; i++)
+            for (int i = shown; i < crowd.Count; i++)
             {
-                crowd[i].enabled = i < shown;
+                crowd[i].Renderer.enabled = false;
+                crowd[i].Shown = false;
             }
 
             if (shown == 0)
@@ -124,6 +134,11 @@ namespace Marchlands.View
 
             float2 right = new float2(front.y, -front.x);
             Quaternion rotation = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(front.y, front.x)) - 90f);
+            // Ворота — сторона здания, обращённая к толпе.
+            Vector2 doorSize = barracks.Type == BuildingType.Stable ? style.StableSize : style.BarracksSize;
+            float2 toCrowd = math.normalizesafe(start - barracks.Position, front);
+            float2 door = barracks.Position + toCrowd * (math.min(doorSize.x, doorSize.y) * 0.5f);
+            float step = style.RecruitWalkSpeed * Time.deltaTime;
             for (int i = 0; i < shown; i++)
             {
                 int row = i / perRow;
@@ -135,7 +150,28 @@ namespace Marchlands.View
                     (column - (perRow - 1) * 0.5f + jitterX * 0.6f) * style.RecruitsSpacing.x,
                     (row + jitterY * 0.5f) * style.RecruitsSpacing.y) * spread;
                 float2 world = start + right * local.x + front * local.y;
-                crowd[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), rotation);
+                Waiter waiter = crowd[i];
+                if (!waiter.Shown)
+                {
+                    waiter.Shown = true;
+                    waiter.Position = door;
+                    waiter.Renderer.enabled = true;
+                }
+
+                float2 toSlot = world - waiter.Position;
+                float distance = math.length(toSlot);
+                Quaternion facing = rotation;
+                if (distance > step && distance > 1e-3f)
+                {
+                    waiter.Position += toSlot / distance * step;
+                    facing = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(toSlot.y, toSlot.x)) - 90f);
+                }
+                else
+                {
+                    waiter.Position = world;
+                }
+
+                waiter.Renderer.transform.SetPositionAndRotation(new Vector3(waiter.Position.x, waiter.Position.y, 0f), facing);
             }
         }
 
