@@ -60,76 +60,41 @@ namespace Marchlands.Tests.EditMode
             Building stable = match.Buildings.Single(b => b.Type == BuildingType.Stable);
             Assert.AreEqual(50, match.GetPlayer(Side.France).Gold);
             Assert.IsFalse(stable.IsBuilt);
-            Assert.AreEqual(UnitType.Cavalry, stable.HireUntil, "По умолчанию конюшня нанимает до отряда");
             RunTicks(match, TicksFor(40f));
             Assert.IsTrue(stable.IsBuilt);
         }
 
         [Test]
-        public void Stable_HiresIntoCavalryReserve_UntilSquadIsGathered()
+        public void Stable_HiresIntoCavalryReserve_UpToTwoSquads()
         {
             Match match = CreateMatch();
             Building stable = BuildReady(match, BuildingType.Stable, FranceHq + new float2(0f, 6f));
             PlayerState player = match.GetPlayer(Side.France);
             player.Gold = 1000;
 
-            match.Enqueue(new SetHiringCommand(stable.Id, true));
+            match.Enqueue(new SetHiringCommand(stable.Id, UnitType.Cavalry, true));
             RunTicks(match, TicksFor(3f));
             Assert.AreEqual(1, player.CavalryReserve);
-            Assert.AreEqual(0, player.Reserve, "Пехотный резерв не трогается");
+            Assert.AreEqual(0, player.GrenadierReserve + player.JaegerReserve, "Пехотные резервы не трогаются");
 
-            player.CavalryReserve = 24;
+            player.CavalryReserve = 48;
             int gold = player.Gold;
             RunTicks(match, TicksFor(9f));
-            Assert.AreEqual(24, player.CavalryReserve, "На отряд хватает — найм ждёт");
+            Assert.AreEqual(48, player.CavalryReserve, "Ждут всадники на два отряда — найм ждёт");
             Assert.GreaterOrEqual(player.Gold, gold);
-            Assert.AreEqual(HireWait.SquadReady, BuildRules.IsWaiting(match, stable));
+            Assert.AreEqual(HireWait.Full, BuildRules.IsWaiting(match, stable));
         }
 
         [Test]
-        public void HireTarget_Endless_KeepsHiring_PastSquadSize()
+        public void Stable_CannotHireInfantry()
         {
             Match match = CreateMatch();
-            Building barracks = BuildReady(match, BuildingType.Barracks, FranceHq + new float2(0f, 6f));
-            PlayerState player = match.GetPlayer(Side.France);
-            player.Gold = 1000;
-            player.Reserve = 36;
+            Building stable = BuildReady(match, BuildingType.Stable, FranceHq + new float2(0f, 6f));
 
-            match.Enqueue(new SetHiringCommand(barracks.Id, true));
-            RunTicks(match, TicksFor(4f));
-            Assert.AreEqual(36, player.Reserve, "По умолчанию — до гренадёров (36 в тестах)");
-
-            match.Enqueue(new SetHireTargetCommand(barracks.Id, null));
-            RunTicks(match, TicksFor(4f));
-            Assert.Greater(player.Reserve, 36, "Без остановки — найм продолжается");
-        }
-
-        [Test]
-        public void HireTarget_Jaegers_StopsAtSixteen()
-        {
-            Match match = CreateMatch();
-            Building barracks = BuildReady(match, BuildingType.Barracks, FranceHq + new float2(0f, 6f));
-            PlayerState player = match.GetPlayer(Side.France);
-            player.Gold = 1000;
-            player.Reserve = 15;
-
-            match.Enqueue(new SetHireTargetCommand(barracks.Id, UnitType.Jaegers));
-            match.Enqueue(new SetHiringCommand(barracks.Id, true));
-            RunTicks(match, TicksFor(10f));
-
-            Assert.AreEqual(16, player.Reserve);
-        }
-
-        [Test]
-        public void HireTarget_MustMatchBuilding()
-        {
-            Match match = CreateMatch();
-            Building barracks = BuildReady(match, BuildingType.Barracks, FranceHq + new float2(0f, 6f));
-
-            match.Enqueue(new SetHireTargetCommand(barracks.Id, UnitType.Cavalry));
+            match.Enqueue(new SetHiringCommand(stable.Id, UnitType.Grenadiers, true));
             match.Tick();
 
-            Assert.AreEqual(UnitType.Grenadiers, barracks.HireUntil, "Казарма конницу не нанимает");
+            Assert.IsFalse(stable.IsHiringAny);
         }
 
         [Test]
@@ -139,7 +104,7 @@ namespace Marchlands.Tests.EditMode
             BuildReady(match, BuildingType.Barracks, FranceHq + new float2(-6f, 4f));
             Building stable = BuildReady(match, BuildingType.Stable, FranceHq + new float2(6f, 4f));
             PlayerState player = match.GetPlayer(Side.France);
-            player.Reserve = 100;
+            player.GrenadierReserve = 100;
             Assert.IsFalse(BuildRules.CanFormSquad(match, Side.France, UnitType.Cavalry), "Пехотный резерв на конницу не идёт");
 
             player.CavalryReserve = 30;
@@ -150,7 +115,7 @@ namespace Marchlands.Tests.EditMode
             Assert.AreEqual(UnitType.Cavalry, cavalry.Type);
             Assert.AreEqual(24, cavalry.Alive);
             Assert.AreEqual(6, player.CavalryReserve);
-            Assert.AreEqual(100, player.Reserve);
+            Assert.AreEqual(100, player.GrenadierReserve);
             Assert.AreEqual(4f, math.distance(stable.Position, cavalry.Position), 0.05f, "Встаёт в spawnOffset от конюшни");
         }
 
@@ -169,7 +134,7 @@ namespace Marchlands.Tests.EditMode
 
             Assert.IsNull(match.FindSquad(cavalry.Id));
             Assert.AreEqual(20, match.GetPlayer(Side.France).CavalryReserve);
-            Assert.AreEqual(0, match.GetPlayer(Side.France).Reserve);
+            Assert.AreEqual(0, match.GetPlayer(Side.France).GrenadierReserve);
             Assert.IsNotNull(stable);
         }
 

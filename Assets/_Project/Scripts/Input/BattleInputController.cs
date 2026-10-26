@@ -414,6 +414,14 @@ namespace Marchlands.Input
             return best;
         }
 
+        /// <summary>Выделить отряд снаружи — например, только что построенный из резерва.</summary>
+        public void SelectSquad(Squad squad)
+        {
+            CancelPlacement();
+            SelectBuilding(null);
+            Select(squad);
+        }
+
         private void Select(Squad squad)
         {
             if (squad == selected)

@@ -67,7 +67,7 @@ MonoBehaviour:
       columnTargetMultiplier: 1.3
       fireArcHalfAngle: 45
       aimTime: 0.8
-      reloadTime: 14
+      reloadTime: 22
       reloadMoveSpeedMultiplier: 0.6
     morale:
       moraleShockFactor: 1.5
@@ -83,13 +83,14 @@ MonoBehaviour:
       calmEnemyRadius: 10
       routThreshold: 15
       routSpeed: 2
+      routRotationSpeed: 240
     melee:
       chargeSpeed: 2.5
       chargeCheckDistance: 4
       chargeMoraleThreshold: 50
-      meleeKillRate: 0.04
+      meleeKillRate: 0.02
       chargeBonus: 1.5
-      chargeBonusDuration: 3
+      chargeBonusDuration: 6
       flankMeleeMultiplier: 1.5
       chargeMaxDuration: 10
     ai:
@@ -122,12 +123,11 @@ MonoBehaviour:
       buildingSpacing: 3
       hireCost: 2
       hireInterval: 2
-      maxWaitingRecruits: 96
+      maxWaitingSquads: 2
       stableCost: 200
       stableBuildTime: 40
       cavalryHireCost: 4
       cavalryHireInterval: 3
-      maxWaitingCavalry: 48
       spawnOffset: 4
     victory:
       hqCaptureRadius: 5

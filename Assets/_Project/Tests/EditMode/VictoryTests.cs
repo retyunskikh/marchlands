@@ -167,11 +167,11 @@ namespace Marchlands.Tests.EditMode
             Assert.IsNull(match.Result, "Есть казарма и золото на отряд");
 
             match.GetPlayer(Side.Austria).Gold = 0;
-            match.GetPlayer(Side.Austria).Reserve = 16;
+            match.GetPlayer(Side.Austria).JaegerReserve = 16;
             RunTicks(match, 10);
             Assert.IsNull(match.Result, "У казарм ждут люди на отряд егерей");
 
-            match.GetPlayer(Side.Austria).Reserve = 10;
+            match.GetPlayer(Side.Austria).JaegerReserve = 10;
             match.GetPlayer(Side.Austria).Gold = 12;
             RunTicks(match, 1);
             Assert.IsNull(match.Result, "Ждущих вместе с теми, кого можно нанять, хватит на отряд");

@@ -53,7 +53,8 @@ namespace Marchlands.Tests.EditMode
                     moraleCalmTime = 10f,
                     calmEnemyRadius = 10f,
                     routThreshold = 15f,
-                    routSpeed = 2f
+                    routSpeed = 2f,
+                    routRotationSpeed = 720f
                 },
                 melee = new MeleeSettings
                 {
@@ -140,12 +141,11 @@ namespace Marchlands.Tests.EditMode
                     buildingSpacing = 3f,
                     hireCost = 2,
                     hireInterval = 2f,
-                    maxWaitingRecruits = 96,
+                    maxWaitingSquads = 2,
                     stableCost = 200,
                     stableBuildTime = 40f,
                     cavalryHireCost = 6,
                     cavalryHireInterval = 3f,
-                    maxWaitingCavalry = 48,
                     spawnOffset = 4f
                 },
                 victory = new VictorySettings

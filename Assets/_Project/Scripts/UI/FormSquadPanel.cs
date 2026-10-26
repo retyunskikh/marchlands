@@ -8,8 +8,8 @@ using UnityEngine.UI;
 namespace Marchlands.UI
 {
     /// <summary>
-    /// Иконки слева вверху: «Егеря», «Гренадёры» и «Конница». Иконка появляется, когда в резерве достаточно людей
-    /// на такой отряд; нажатие строит отряд у казармы. Появление и нажатие озвучены.
+    /// Иконки слева вверху: «Гренадёры», «Егеря» и (если есть конюшня) «Конница» со счётчиком людей в резерве
+    /// («30/48»). Пока людей не хватает на отряд, иконка тусклая; хватает — яркая, нажатие строит отряд (с горном).
     /// </summary>
     public sealed class FormSquadPanel : MonoBehaviour
     {
@@ -17,16 +17,18 @@ namespace Marchlands.UI
         [SerializeField] private Button grenadiersButton;
         [SerializeField] private Button cavalryButton;
         [SerializeField] private AudioSource audioSource;
-        [SerializeField] private AudioClip appearClip;
         [SerializeField] private AudioClip formClip;
-        [SerializeField] private float appearVolume = 0.7f;
         [SerializeField] private float formVolume = 0.9f;
+        [Tooltip("{0} — название, {1} — людей в резерве, {2} — нужно на отряд.")]
+        [SerializeField] private string countFormat = "{0} {1}/{2}";
+        [SerializeField] private string grenadiersName = "Гренадёры";
+        [SerializeField] private string jaegersName = "Егеря";
+        [SerializeField] private string cavalryName = "Конница";
+        [SerializeField] private Color readyTint = Color.white;
+        [SerializeField] private Color waitingTint = new Color(1f, 1f, 1f, 0.4f);
 
         private Match match;
         private Side playerSide;
-        private bool jaegersShown;
-        private bool grenadiersShown;
-        private bool cavalryShown;
 
         public void Initialize(Match match, Side playerSide)
         {
@@ -34,13 +36,13 @@ namespace Marchlands.UI
             this.playerSide = playerSide;
             jaegersButton.onClick.AddListener(() => Form(UnitType.Jaegers));
             grenadiersButton.onClick.AddListener(() => Form(UnitType.Grenadiers));
-            jaegersShown = SetVisible(jaegersButton, false, true);
-            grenadiersShown = SetVisible(grenadiersButton, false, true);
             if (cavalryButton != null)
             {
                 cavalryButton.onClick.AddListener(() => Form(UnitType.Cavalry));
-                cavalryShown = SetVisible(cavalryButton, false, true);
             }
+
+            // Без штаба (песочницы) нанимать негде — счётчики не нужны.
+            gameObject.SetActive(match.GetHeadquarters(playerSide) != null);
         }
 
         private void Update()
@@ -50,39 +52,53 @@ namespace Marchlands.UI
                 return;
             }
 
-            bool appeared = false;
-            jaegersShown = Refresh(jaegersButton, UnitType.Jaegers, jaegersShown, ref appeared);
-            grenadiersShown = Refresh(grenadiersButton, UnitType.Grenadiers, grenadiersShown, ref appeared);
+            Refresh(grenadiersButton, UnitType.Grenadiers, grenadiersName, true);
+            Refresh(jaegersButton, UnitType.Jaegers, jaegersName, true);
             if (cavalryButton != null)
             {
-                cavalryShown = Refresh(cavalryButton, UnitType.Cavalry, cavalryShown, ref appeared);
-            }
-
-            if (appeared)
-            {
-                Play(appearClip, appearVolume);
+                Refresh(cavalryButton, UnitType.Cavalry, cavalryName, HasStable());
             }
         }
 
-        private bool Refresh(Button button, UnitType type, bool shown, ref bool appeared)
+        private void Refresh(Button button, UnitType type, string unitName, bool visible)
         {
-            bool available = BuildRules.CanFormSquad(match, playerSide, type);
-            if (available && !shown)
-            {
-                appeared = true;
-            }
-
-            return SetVisible(button, available, false);
-        }
-
-        private static bool SetVisible(Button button, bool visible, bool force)
-        {
-            if (force || button.gameObject.activeSelf != visible)
+            if (button.gameObject.activeSelf != visible)
             {
                 button.gameObject.SetActive(visible);
             }
 
-            return visible;
+            if (!visible)
+            {
+                return;
+            }
+
+            bool ready = BuildRules.CanFormSquad(match, playerSide, type);
+            button.interactable = ready;
+            Color tint = ready ? readyTint : waitingTint;
+            foreach (Graphic graphic in button.GetComponentsInChildren<Graphic>(true))
+            {
+                if (graphic.name == "Icon")
+                {
+                    graphic.color = tint;
+                }
+                else if (graphic is Text label)
+                {
+                    label.text = string.Format(countFormat, unitName, match.GetPlayer(playerSide).GetReserve(type), match.Settings.Unit(type).squadSize);
+                }
+            }
+        }
+
+        private bool HasStable()
+        {
+            foreach (Building building in match.Buildings)
+            {
+                if (building.Owner == playerSide && building.Type == BuildingType.Stable)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void Form(UnitType type)
@@ -93,14 +109,9 @@ namespace Marchlands.UI
             }
 
             match.Enqueue(new FormSquadCommand(playerSide, type));
-            Play(formClip, formVolume);
-        }
-
-        private void Play(AudioClip clip, float volume)
-        {
-            if (audioSource != null && clip != null)
+            if (audioSource != null && formClip != null)
             {
-                audioSource.PlayOneShot(clip, volume);
+                audioSource.PlayOneShot(formClip, formVolume);
             }
         }
     }

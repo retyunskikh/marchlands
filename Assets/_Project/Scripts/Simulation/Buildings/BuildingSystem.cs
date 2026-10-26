@@ -7,9 +7,9 @@ using Unity.Mathematics;
 namespace Marchlands.Simulation.Buildings
 {
     /// <summary>
-    /// Постройка зданий и найм. Казарма с включённым наймом раз в hireInterval за hireCost получает рекрута
-    /// в резерв стороны, конюшня — всадника в резерв конницы. Найм ждёт, если не хватает золота, если у зданий
-    /// ждёт предельное число людей или если их уже хватает на отряд цели найма.
+    /// Постройка зданий и найм. Казарма раз в hireInterval за hireCost получает рекрута в резерв включённого рода
+    /// войск (гренадёры, егеря — по очереди, если включены оба), конюшня — всадника. Род войск, у которого ждут
+    /// людей на maxWaitingSquads отрядов, пропускается; без золота найм ждёт.
     /// </summary>
     internal static class BuildingSystem
     {
@@ -34,7 +34,7 @@ namespace Marchlands.Simulation.Buildings
                     continue;
                 }
 
-                if (building.IsHiring)
+                if (building.IsHiringAny)
                 {
                     Hire(match, building, settings, deltaTime);
                 }
@@ -50,10 +50,16 @@ namespace Marchlands.Simulation.Buildings
                 return;
             }
 
-            bool stable = building.Type == BuildingType.Stable;
+            UnitType? type = BuildRules.NextHireType(match, building);
+            if (!type.HasValue)
+            {
+                return;
+            }
+
             PlayerState player = match.GetPlayer(building.Owner);
-            player.Gold -= stable ? settings.cavalryHireCost : settings.hireCost;
-            player.AddReserve(stable ? UnitType.Cavalry : UnitType.Grenadiers, 1);
+            player.Gold -= BuildRules.GetHireCost(building, settings);
+            player.AddReserve(type.Value, 1);
+            building.NextHireType = ((int)type.Value + 1) % 3;
             building.HireRemaining = BuildRules.GetHireInterval(building, settings);
         }
 

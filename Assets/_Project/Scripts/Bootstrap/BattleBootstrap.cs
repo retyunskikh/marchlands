@@ -118,12 +118,25 @@ namespace Marchlands.Bootstrap
                 volleyEffects.Play(match.LastTickVolleys);
                 battleSounds.Play(match.LastTickCaptures);
                 villageViews.Play(match.LastTickReinforcements);
+                SelectFormedSquad();
             }
 
             squadViews.Render(clock.Alpha);
             villageViews.Render();
             buildingViews.Render();
             fireArc.Render(clock.Alpha);
+        }
+
+        /// <summary>Только что построенный отряд игрока сразу выделяется.</summary>
+        private void SelectFormedSquad()
+        {
+            foreach (Squad formed in match.LastTickFormedSquads)
+            {
+                if (formed.Side == scenario.PlayerSide)
+                {
+                    input.SelectSquad(formed);
+                }
+            }
         }
 
         private void SpawnScenario()

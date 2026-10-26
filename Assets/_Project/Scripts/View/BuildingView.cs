@@ -144,7 +144,7 @@ namespace Marchlands.View
             {
                 progress = building.BuildProgress;
             }
-            else if (building.IsHiring)
+            else if (building.IsHiringAny)
             {
                 float interval = BuildRules.GetHireInterval(building, settings.buildings);
                 progress = interval > 0f ? 1f - building.HireRemaining / interval : -1f;

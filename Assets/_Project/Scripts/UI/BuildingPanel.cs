@@ -8,36 +8,34 @@ using UnityEngine.UI;
 namespace Marchlands.UI
 {
     /// <summary>
-    /// Панель выделенного здания: название, состояние постройки или найма, у казармы и конюшни — кнопки
-    /// «Начать / Остановить найм» и цель найма («до егерей», «до гренадёров», «без остановки»). Видна только при выделении.
+    /// Панель выделенного здания: название, состояние постройки или найма и иконки найма — у казармы гренадёры
+    /// и егеря, у конюшни конница. Нажатие иконки включает или выключает найм этого рода войск (включённая
+    /// подсвечена, под ней — время до рекрута); «i» открывает характеристики. Видна только при выделении.
     /// </summary>
     public sealed class BuildingPanel : MonoBehaviour
     {
         [SerializeField] private GameObject panel;
         [SerializeField] private Text titleLabel;
         [SerializeField] private Text statusLabel;
-        [SerializeField] private Button recruitButton;
-        [SerializeField] private Text recruitLabel;
-        [SerializeField] private Button targetButton;
-        [SerializeField] private Text targetLabel;
+        [SerializeField] private HireToggle grenadiersToggle;
+        [SerializeField] private HireToggle jaegersToggle;
+        [SerializeField] private HireToggle cavalryToggle;
+        [SerializeField] private UnitInfoPanel infoPanel;
         [SerializeField] private string headquartersTitle = "Штаб";
         [SerializeField] private string barracksTitle = "Казарма";
         [SerializeField] private string stableTitle = "Конюшня";
         [SerializeField] private string headquartersStatus = "Здесь не нанимают";
         [Tooltip("{0} — процент постройки.")]
         [SerializeField] private string constructionFormat = "Строится… {0}%";
-        [SerializeField] private string idleStatus = "Найм остановлен";
+        [SerializeField] private string idleStatus = "Нажмите иконку, чтобы начать найм";
         [SerializeField] private string hiringStatus = "Идёт найм";
         [SerializeField] private string noGoldStatus = "Найм: не хватает золота";
-        [SerializeField] private string fullStatus = "Найм: у зданий нет места";
-        [SerializeField] private string squadReadyStatus = "Найм: людей хватает на отряд";
-        [Tooltip("{0} — цена одного человека.")]
-        [SerializeField] private string startHiringFormat = "Начать найм ({0} за чел.)";
-        [SerializeField] private string stopHiringText = "Остановить найм";
-        [SerializeField] private string untilGrenadiersText = "До гренадёров";
-        [SerializeField] private string untilJaegersText = "До егерей";
-        [SerializeField] private string untilCavalryText = "До отряда";
-        [SerializeField] private string endlessText = "Без остановки";
+        [SerializeField] private string fullStatus = "Найм: ждут люди на два отряда";
+        [Tooltip("{0} — название, {1} — цена человека.")]
+        [SerializeField] private string toggleFormat = "{0}\n{1} зол./чел.";
+        [SerializeField] private string grenadiersName = "Гренадёры";
+        [SerializeField] private string jaegersName = "Егеря";
+        [SerializeField] private string cavalryName = "Конница";
 
         private Match match;
         private Building building;
@@ -45,12 +43,10 @@ namespace Marchlands.UI
         public void Initialize(Match match)
         {
             this.match = match;
-            recruitButton.onClick.AddListener(OnToggleHiring);
-            if (targetButton != null)
-            {
-                targetButton.onClick.AddListener(OnNextTarget);
-            }
-
+            Bind(grenadiersToggle, UnitType.Grenadiers);
+            Bind(jaegersToggle, UnitType.Jaegers);
+            Bind(cavalryToggle, UnitType.Cavalry);
+            infoPanel.Initialize(match);
             SetBuilding(null);
         }
 
@@ -58,7 +54,18 @@ namespace Marchlands.UI
         {
             this.building = building;
             panel.SetActive(building != null);
+            if (building == null)
+            {
+                infoPanel.Hide();
+            }
+
             Refresh();
+        }
+
+        private void Bind(HireToggle toggle, UnitType type)
+        {
+            toggle.Button.onClick.AddListener(() => OnToggle(type));
+            toggle.InfoButton.onClick.AddListener(() => infoPanel.Show(type));
         }
 
         private void Update()
@@ -73,38 +80,32 @@ namespace Marchlands.UI
                 return;
             }
 
-            bool hires = building.Type != BuildingType.Headquarters;
             bool stable = building.Type == BuildingType.Stable;
-            titleLabel.text = !hires ? headquartersTitle : stable ? stableTitle : barracksTitle;
-            recruitButton.gameObject.SetActive(hires);
-            recruitButton.interactable = BuildRules.CanHire(building);
-            int cost = stable ? match.Settings.buildings.cavalryHireCost : match.Settings.buildings.hireCost;
-            recruitLabel.text = building.IsHiring ? stopHiringText : string.Format(startHiringFormat, cost);
-            if (targetButton != null)
-            {
-                targetButton.gameObject.SetActive(hires);
-                targetLabel.text = GetTargetText(building.HireUntil);
-            }
-
-            statusLabel.text = GetStatus(hires);
+            bool barracks = building.Type == BuildingType.Barracks;
+            titleLabel.text = stable ? stableTitle : barracks ? barracksTitle : headquartersTitle;
+            RefreshToggle(grenadiersToggle, UnitType.Grenadiers, grenadiersName, barracks);
+            RefreshToggle(jaegersToggle, UnitType.Jaegers, jaegersName, barracks);
+            RefreshToggle(cavalryToggle, UnitType.Cavalry, cavalryName, stable);
+            statusLabel.text = GetStatus(barracks || stable);
         }
 
-        private string GetTargetText(UnitType? target)
+        private void RefreshToggle(HireToggle toggle, UnitType type, string unitName, bool visible)
         {
-            if (!target.HasValue)
+            if (toggle.gameObject.activeSelf != visible)
             {
-                return endlessText;
+                toggle.gameObject.SetActive(visible);
             }
 
-            switch (target.Value)
+            if (!visible)
             {
-                case UnitType.Jaegers:
-                    return untilJaegersText;
-                case UnitType.Cavalry:
-                    return untilCavalryText;
-                default:
-                    return untilGrenadiersText;
+                return;
             }
+
+            toggle.Button.interactable = building.IsBuilt;
+            float interval = BuildRules.GetHireInterval(building, match.Settings.buildings);
+            float progress = interval > 0f ? 1f - building.HireRemaining / interval : 0f;
+            int cost = BuildRules.GetHireCost(building, match.Settings.buildings);
+            toggle.Show(string.Format(toggleFormat, unitName, cost), building.IsHiring(type), progress);
         }
 
         private string GetStatus(bool hires)
@@ -123,8 +124,6 @@ namespace Marchlands.UI
             {
                 case HireWait.Off:
                     return idleStatus;
-                case HireWait.SquadReady:
-                    return squadReadyStatus;
                 case HireWait.Full:
                     return fullStatus;
                 case HireWait.NoGold:
@@ -134,37 +133,12 @@ namespace Marchlands.UI
             }
         }
 
-        private void OnToggleHiring()
+        private void OnToggle(UnitType type)
         {
             if (building != null)
             {
-                match.Enqueue(new SetHiringCommand(building.Id, !building.IsHiring));
+                match.Enqueue(new SetHiringCommand(building.Id, type, !building.IsHiring(type)));
             }
-        }
-
-        /// <summary>Казарма: до гренадёров → до егерей → без остановки; конюшня: до отряда → без остановки.</summary>
-        private void OnNextTarget()
-        {
-            if (building == null)
-            {
-                return;
-            }
-
-            UnitType? next;
-            if (building.Type == BuildingType.Stable)
-            {
-                next = building.HireUntil.HasValue ? (UnitType?)null : UnitType.Cavalry;
-            }
-            else if (!building.HireUntil.HasValue)
-            {
-                next = UnitType.Grenadiers;
-            }
-            else
-            {
-                next = building.HireUntil.Value == UnitType.Grenadiers ? UnitType.Jaegers : (UnitType?)null;
-            }
-
-            match.Enqueue(new SetHireTargetCommand(building.Id, next));
         }
     }
 }

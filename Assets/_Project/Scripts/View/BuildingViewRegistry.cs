@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
 using UnityEngine;
@@ -69,8 +70,9 @@ namespace Marchlands.View
 
             foreach (Side side in new[] { Side.France, Side.Austria })
             {
-                RenderWaiting(side, UnitType.Grenadiers, recruits[(int)side], squadViews.Style.RecruitSprite, 1f);
-                RenderWaiting(side, UnitType.Cavalry, riders[(int)side],
+                PlayerState player = match.GetPlayer(side);
+                RenderWaiting(side, UnitType.Grenadiers, player.GrenadierReserve + player.JaegerReserve, recruits[(int)side], squadViews.Style.RecruitSprite, 1f);
+                RenderWaiting(side, UnitType.Cavalry, player.CavalryReserve, riders[(int)side],
                     squadViews.Style.GetSoldierSprite(side, UnitType.Cavalry, SoldierRole.Private), 1.8f);
             }
         }
@@ -79,12 +81,12 @@ namespace Marchlands.View
         /// Ждущие люди резерва стоят толпой перед воротами здания, где формируется их род войск, лицом к фронту;
         /// рисуется не больше recruitsShownMax. <paramref name="spread"/> — во сколько раз реже стоят (всадники крупнее).
         /// </summary>
-        private void RenderWaiting(Side side, UnitType type, List<SpriteRenderer> crowd, Sprite sprite, float spread)
+        private void RenderWaiting(Side side, UnitType type, int waiting, List<SpriteRenderer> crowd, Sprite sprite, float spread)
         {
             Building barracks = BuildRules.GetFormingBuilding(match, side, type);
             int shown = barracks == null || sprite == null
                 ? 0
-                : math.min(match.GetPlayer(side).GetReserve(type), style.RecruitsShownMax);
+                : math.min(waiting, style.RecruitsShownMax);
             while (crowd.Count < shown)
             {
                 crowd.Add(CreatePreview($"Waiting {type} {side} {crowd.Count}", sprite, style.BodySortingOrder + 5));

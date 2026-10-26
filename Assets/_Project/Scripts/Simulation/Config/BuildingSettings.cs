@@ -23,8 +23,8 @@ namespace Marchlands.Simulation.Config
         /// <summary>Раз в столько секунд казарма с включённым наймом получает рекрута, s.</summary>
         public float hireInterval;
 
-        /// <summary>Пока у казарм ждут столько людей, найм приостановлен.</summary>
-        public int maxWaitingRecruits;
+        /// <summary>Найм рода войск приостанавливается, когда в его резерве набралось людей на столько отрядов.</summary>
+        public int maxWaitingSquads;
 
         public int stableCost;
 
@@ -36,9 +36,6 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Раз в столько секунд конюшня с включённым наймом получает всадника, s.</summary>
         public float cavalryHireInterval;
-
-        /// <summary>Пока у конюшен ждут столько всадников, найм приостановлен.</summary>
-        public int maxWaitingCavalry;
 
         /// <summary>На каком расстоянии от казармы появляется нанятый отряд, u.</summary>
         public float spawnOffset;

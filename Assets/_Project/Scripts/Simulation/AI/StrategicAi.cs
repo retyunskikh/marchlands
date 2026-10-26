@@ -20,6 +20,8 @@ namespace Marchlands.Simulation.AI
         private static readonly float[] SiteDistanceFractions = { 0.6f, 0.9f, 0.35f };
         private static readonly float[] SiteAngleOffsets = { 0f, 30f, -30f, 60f, -60f, 90f, -90f };
 
+        private static readonly UnitType[] HiredTypes = { UnitType.Grenadiers, UnitType.Jaegers, UnitType.Cavalry };
+
         private int nextThinkTick;
         private int busyUntilTick = -1;
 
@@ -72,10 +74,18 @@ namespace Marchlands.Simulation.AI
 
             foreach (Building building in match.Buildings)
             {
-                if (building.Owner == Side && BuildRules.CanHire(building) && !building.IsHiring)
+                if (building.Owner != Side)
                 {
-                    Issue(match, new SetHiringCommand(building.Id, true));
-                    return;
+                    continue;
+                }
+
+                foreach (UnitType hired in HiredTypes)
+                {
+                    if (BuildRules.CanHireType(building, hired) && !building.IsHiring(hired))
+                    {
+                        Issue(match, new SetHiringCommand(building.Id, hired, true));
+                        return;
+                    }
                 }
             }
 

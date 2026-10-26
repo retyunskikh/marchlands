@@ -115,12 +115,32 @@ namespace Marchlands.Tests.EditMode
 
             match.Enqueue(new MoveCommand(squad.Id, new float2(0f, 20f), 90f));
             match.Enqueue(new VolleyCommand(squad.Id));
+            // 720 °/s: разворот на 180° занимает 0.25 с, затем бегом.
+            RunTicks(match, 3);
+            Assert.AreEqual(0f, Angles.Delta(squad.Facing, -90f), 1e-3f, "Развернулся к точке отхода");
             float before = squad.Position.y;
             match.Tick();
 
             Assert.AreEqual(-0.2f, squad.Position.y - before, 1e-4f, "2 u/s × 0.1 s в сторону точки отхода");
-            Assert.AreEqual(0f, Angles.Delta(squad.Facing, -90f), 1e-3f, "Бегущий сразу разворачивается к точке отхода");
             Assert.AreEqual(SquadOrderType.None, squad.Order.Type);
+        }
+
+        [Test]
+        public void RoutingSquad_TurnsSmoothly_NotInstantly()
+        {
+            SimulationSettings settings = TestSettings.Create();
+            settings.morale.routRotationSpeed = 180f;
+            var match = new Match(1, settings);
+            match.SetRetreatPoint(Side.France, new float2(0f, -30f));
+            Squad squad = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
+            squad.Morale = 5f;
+            match.Tick();
+            float2 start = squad.Position;
+
+            RunTicks(match, 5);
+
+            Assert.AreEqual(90f, math.abs(Angles.Delta(squad.Facing, 90f)), 1e-3f, "За 0.5 с — на 90°");
+            Assert.AreEqual(0f, math.distance(start, squad.Position), 1e-4f, "Пока разворачивается — не бежит");
         }
 
         [Test]
@@ -134,7 +154,7 @@ namespace Marchlands.Tests.EditMode
             RunTicks(match, 50);
 
             Assert.IsNull(match.FindSquad(squad.Id), "Добежавший отряд уходит с поля");
-            Assert.AreEqual(36, match.GetPlayer(Side.France).Reserve);
+            Assert.AreEqual(36, match.GetPlayer(Side.France).GrenadierReserve);
         }
 
         [Test]

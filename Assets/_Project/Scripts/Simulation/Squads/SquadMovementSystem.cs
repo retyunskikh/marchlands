@@ -148,7 +148,7 @@ namespace Marchlands.Simulation.Squads
             squad.Position += math.normalize(toTarget) * step;
         }
 
-        /// <summary>Бегство: сразу лицом к точке отхода и бегом к ней; там отряд стоит и ждёт сбора.</summary>
+        /// <summary>Бегство: разворот к точке отхода со скоростью routRotationSpeed и бегом к ней.</summary>
         private static void UpdateRout(Squad squad, Match match, float deltaTime)
         {
             float2 direction;
@@ -178,9 +178,14 @@ namespace Marchlands.Simulation.Squads
                 distance = float.MaxValue;
             }
 
-            squad.Facing = Angles.Of(direction);
+            float time = deltaTime;
+            if (!RotateTowards(squad, Angles.Of(direction), match.Settings.morale.routRotationSpeed, ref time))
+            {
+                return;
+            }
+
             float speed = match.Settings.morale.routSpeed * match.TerrainSpeedMultiplier(squad.Position);
-            squad.Position += direction * math.min(speed * deltaTime, distance);
+            squad.Position += direction * math.min(speed * time, distance);
         }
 
         private static Squad FindNearestEnemy(Match match, Squad squad)

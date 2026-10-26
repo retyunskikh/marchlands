@@ -132,8 +132,8 @@ namespace Marchlands.Simulation.Victory
         }
 
         /// <summary>
-        /// Есть казарма (хотя бы строящаяся), а ждущих людей вместе с теми, кого можно нанять, хватит на пехотный отряд,
-        /// или то же для конюшни и конницы.
+        /// Есть казарма (хотя бы строящаяся), а в резерве гренадёров или егерей вместе с теми, кого можно нанять,
+        /// хватит на отряд этого рода войск, или то же для конюшни и конницы.
         /// </summary>
         private static bool CanStillRecruit(Match match, Side side)
         {
@@ -152,7 +152,8 @@ namespace Marchlands.Simulation.Victory
 
             PlayerState player = match.GetPlayer(side);
             BuildingSettings settings = match.Settings.buildings;
-            return hasBarracks && CanGather(player.Reserve, player.Gold, settings.hireCost, UnitStats.SmallestInfantrySquadSize(match.Settings))
+            return hasBarracks && CanGather(player.GrenadierReserve, player.Gold, settings.hireCost, match.Settings.grenadiers.squadSize)
+                || hasBarracks && CanGather(player.JaegerReserve, player.Gold, settings.hireCost, match.Settings.jaegers.squadSize)
                 || hasStable && CanGather(player.CavalryReserve, player.Gold, settings.cavalryHireCost, match.Settings.cavalry.squadSize);
         }
 

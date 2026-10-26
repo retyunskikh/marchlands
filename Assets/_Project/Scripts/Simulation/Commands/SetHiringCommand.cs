@@ -1,31 +1,42 @@
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Squads;
 
 namespace Marchlands.Simulation.Commands
 {
-    /// <summary>Включить или выключить найм в казарме или конюшне: пока включён и хватает золота, приходят люди.</summary>
+    /// <summary>
+    /// Включить или выключить найм рода войск в казарме (гренадёры, егеря) или конюшне (конница).
+    /// Пока включён и хватает золота, люди приходят в резерв этого рода войск.
+    /// </summary>
     public sealed class SetHiringCommand : ICommand
     {
-        public SetHiringCommand(int buildingId, bool hiring)
+        public SetHiringCommand(int buildingId, UnitType type, bool hiring)
         {
             BuildingId = buildingId;
+            Type = type;
             Hiring = hiring;
         }
 
         public int BuildingId { get; }
 
+        public UnitType Type { get; }
+
         public bool Hiring { get; }
 
         public void Execute(Match match)
         {
-            Building barracks = match.FindBuilding(BuildingId);
-            if (barracks == null || barracks.Type == BuildingType.Headquarters || barracks.IsHiring == Hiring)
+            Building building = match.FindBuilding(BuildingId);
+            if (building == null || !BuildRules.CanHireType(building, Type) || building.IsHiring(Type) == Hiring)
             {
                 return;
             }
 
-            barracks.IsHiring = Hiring;
-            barracks.HireRemaining = Hiring ? BuildRules.GetHireInterval(barracks, match.Settings.buildings) : 0f;
+            bool wasHiring = building.IsHiringAny;
+            building.SetHiring(Type, Hiring);
+            if (!wasHiring && Hiring)
+            {
+                building.HireRemaining = BuildRules.GetHireInterval(building, match.Settings.buildings);
+            }
         }
     }
 }

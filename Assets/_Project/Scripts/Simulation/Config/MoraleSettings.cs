@@ -42,5 +42,8 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Скорость бегства, u/s.</summary>
         public float routSpeed;
+
+        /// <summary>Скорость разворота бегущего отряда к точке отхода, °/s; бежать он начинает, развернувшись.</summary>
+        public float routRotationSpeed;
     }
 }

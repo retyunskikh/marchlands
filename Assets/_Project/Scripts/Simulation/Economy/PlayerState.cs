@@ -1,10 +1,13 @@
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Squads;
 
 namespace Marchlands.Simulation.Economy
 {
-    /// <summary>Казна и резерв стороны.</summary>
+    /// <summary>Казна и резервы стороны: у каждого рода войск — свой запас людей, ждущих у казарм и конюшен.</summary>
     public sealed class PlayerState
     {
+        private readonly int[] reserves = new int[3];
+
         internal PlayerState(Side side, int gold)
         {
             Side = side;
@@ -15,28 +18,36 @@ namespace Marchlands.Simulation.Economy
 
         public int Gold { get; internal set; }
 
-        /// <summary>Люди, ждущие у казарм: рекруты и солдаты разбитых отрядов, добежавшие до своих. Из них формируются отряды.</summary>
-        public int Reserve { get; internal set; }
-
-        /// <summary>Всадники, ждущие у конюшен: нанятые и добежавшие из разбитых отрядов конницы.</summary>
-        public int CavalryReserve { get; internal set; }
-
-        /// <summary>Резерв, из которого формируется отряд этого рода войск.</summary>
-        public int GetReserve(Squads.UnitType type)
+        /// <summary>Рекруты и вернувшиеся из разбитых отрядов гренадёры.</summary>
+        public int GrenadierReserve
         {
-            return type == Squads.UnitType.Cavalry ? CavalryReserve : Reserve;
+            get => reserves[(int)UnitType.Grenadiers];
+            internal set => reserves[(int)UnitType.Grenadiers] = value;
         }
 
-        internal void AddReserve(Squads.UnitType type, int count)
+        /// <summary>Рекруты и вернувшиеся из разбитых отрядов егеря.</summary>
+        public int JaegerReserve
         {
-            if (type == Squads.UnitType.Cavalry)
-            {
-                CavalryReserve += count;
-            }
-            else
-            {
-                Reserve += count;
-            }
+            get => reserves[(int)UnitType.Jaegers];
+            internal set => reserves[(int)UnitType.Jaegers] = value;
+        }
+
+        /// <summary>Всадники, ждущие у конюшен: нанятые и добежавшие из разбитых отрядов конницы.</summary>
+        public int CavalryReserve
+        {
+            get => reserves[(int)UnitType.Cavalry];
+            internal set => reserves[(int)UnitType.Cavalry] = value;
+        }
+
+        /// <summary>Резерв, из которого формируется отряд этого рода войск.</summary>
+        public int GetReserve(UnitType type)
+        {
+            return reserves[(int)type];
+        }
+
+        internal void AddReserve(UnitType type, int count)
+        {
+            reserves[(int)type] += count;
         }
     }
 }

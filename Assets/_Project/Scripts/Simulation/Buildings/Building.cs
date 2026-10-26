@@ -43,11 +43,24 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Доля выполненной постройки, в [0, 1].</summary>
         public float BuildProgress => BuildTime > 0f ? math.saturate(1f - BuildRemaining / BuildTime) : 1f;
 
-        /// <summary>Идёт ли в казарме или конюшне найм.</summary>
-        public bool IsHiring { get; internal set; }
+        private readonly bool[] hiring = new bool[3];
 
-        /// <summary>Найм приостанавливается, когда людей хватает на отряд этого рода войск; null — найм без остановки.</summary>
-        public UnitType? HireUntil { get; internal set; }
+        /// <summary>Включён ли найм этого рода войск.</summary>
+        public bool IsHiring(UnitType type)
+        {
+            return hiring[(int)type];
+        }
+
+        /// <summary>Включён ли найм хоть одного рода войск.</summary>
+        public bool IsHiringAny => hiring[0] || hiring[1] || hiring[2];
+
+        internal void SetHiring(UnitType type, bool value)
+        {
+            hiring[(int)type] = value;
+        }
+
+        /// <summary>С какого рода войск начинать поиск следующего рекрута — так включённые роды нанимаются по очереди.</summary>
+        internal int NextHireType { get; set; }
 
         /// <summary>Сколько осталось до прихода следующего рекрута, s.</summary>
         public float HireRemaining { get; internal set; }

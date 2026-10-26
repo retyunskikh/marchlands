@@ -27,7 +27,8 @@ namespace Marchlands.Simulation.Commands
             }
 
             match.GetPlayer(Side).AddReserve(Type, -match.Settings.Unit(Type).squadSize);
-            BuildingSystem.SpawnSquad(match, BuildRules.GetFormingBuilding(match, Side, Type), Type);
+            Squad squad = BuildingSystem.SpawnSquad(match, BuildRules.GetFormingBuilding(match, Side, Type), Type);
+            match.ReportFormed(squad);
         }
     }
 }

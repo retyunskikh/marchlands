@@ -34,6 +34,7 @@ namespace Marchlands.Simulation.Core
         private readonly List<Building> buildings = new List<Building>();
         private readonly List<Village> lastTickCaptures = new List<Village>();
         private readonly List<Reinforcement> lastTickReinforcements = new List<Reinforcement>();
+        private readonly List<Squad> lastTickFormedSquads = new List<Squad>();
         private readonly float[] dominationTimes = new float[SideCount];
         private int nextBuildingId = 1;
         private readonly float2[] retreatPoints = new float2[SideCount];
@@ -76,6 +77,14 @@ namespace Marchlands.Simulation.Core
 
         /// <summary>Пополнения из деревень за последний тик — для отображения идущих к отряду людей.</summary>
         public IReadOnlyList<Reinforcement> LastTickReinforcements => lastTickReinforcements;
+
+        /// <summary>Отряды, построенные из резерва за последний тик, — ввод выделяет новый отряд игрока.</summary>
+        public IReadOnlyList<Squad> LastTickFormedSquads => lastTickFormedSquads;
+
+        internal void ReportFormed(Squad squad)
+        {
+            lastTickFormedSquads.Add(squad);
+        }
 
         internal void ReportReinforcement(Squad squad, Village village)
         {
@@ -196,20 +205,14 @@ namespace Marchlands.Simulation.Core
         /// <summary>Закладывает казарму. Проверки места и золота — в <see cref="BuildRules"/> и командах.</summary>
         internal Building AddBarracks(Side side, float2 position)
         {
-            var barracks = new Building(nextBuildingId++, BuildingType.Barracks, side, position, Settings.buildings.barracksBuildTime)
-            {
-                HireUntil = UnitType.Grenadiers
-            };
+            var barracks = new Building(nextBuildingId++, BuildingType.Barracks, side, position, Settings.buildings.barracksBuildTime);
             buildings.Add(barracks);
             return barracks;
         }
 
         internal Building AddStable(Side side, float2 position)
         {
-            var stable = new Building(nextBuildingId++, BuildingType.Stable, side, position, Settings.buildings.stableBuildTime)
-            {
-                HireUntil = UnitType.Cavalry
-            };
+            var stable = new Building(nextBuildingId++, BuildingType.Stable, side, position, Settings.buildings.stableBuildTime);
             buildings.Add(stable);
             return stable;
         }
@@ -378,6 +381,7 @@ namespace Marchlands.Simulation.Core
             float deltaTime = SimulationTime.TickDuration;
             lastTickCaptures.Clear();
             lastTickReinforcements.Clear();
+            lastTickFormedSquads.Clear();
 
             foreach (Squad squad in squads)
             {

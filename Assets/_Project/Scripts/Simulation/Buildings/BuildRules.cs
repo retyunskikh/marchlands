@@ -104,15 +104,37 @@ namespace Marchlands.Simulation.Buildings
                 && GetFormingBuilding(match, side, type) != null;
         }
 
-        /// <summary>Какие цели найма доступны зданию: казарме — пехота, конюшне — конница; null — без остановки.</summary>
-        public static bool IsValidHireTarget(Building building, UnitType? target)
+        /// <summary>Нанимает ли здание этот род войск: казарма — пехоту, конюшня — конницу; только построенное.</summary>
+        public static bool CanHireType(Building building, UnitType type)
         {
-            if (!target.HasValue)
+            return CanHire(building) && building.Type == GetHomeType(type);
+        }
+
+        public static int GetHireCost(Building building, BuildingSettings settings)
+        {
+            return building.Type == BuildingType.Stable ? settings.cavalryHireCost : settings.hireCost;
+        }
+
+        /// <summary>Сколько людей рода войск может ждать: на maxWaitingSquads отрядов.</summary>
+        public static int GetMaxWaiting(Match match, UnitType type)
+        {
+            return match.Settings.buildings.maxWaitingSquads * match.Settings.Unit(type).squadSize;
+        }
+
+        /// <summary>Кого нанять следующим: включённый род войск, у которого ещё есть место, начиная с очередного; null — некого.</summary>
+        internal static UnitType? NextHireType(Match match, Building building)
+        {
+            PlayerState player = match.GetPlayer(building.Owner);
+            for (int i = 0; i < 3; i++)
             {
-                return true;
+                var type = (UnitType)((building.NextHireType + i) % 3);
+                if (building.IsHiring(type) && player.GetReserve(type) < GetMaxWaiting(match, type))
+                {
+                    return type;
+                }
             }
 
-            return building.Type == GetHomeType(target.Value);
+            return null;
         }
 
         public static float GetHireInterval(Building building, BuildingSettings settings)
@@ -123,26 +145,17 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Почему найм в здании сейчас не идёт; None — идёт.</summary>
         public static HireWait IsWaiting(Match match, Building building)
         {
-            if (!building.IsHiring)
+            if (!building.IsHiringAny)
             {
                 return HireWait.Off;
             }
 
-            BuildingSettings settings = match.Settings.buildings;
-            bool stable = building.Type == BuildingType.Stable;
-            PlayerState player = match.GetPlayer(building.Owner);
-            int reserve = player.GetReserve(stable ? UnitType.Cavalry : UnitType.Grenadiers);
-            if (building.HireUntil.HasValue && reserve >= match.Settings.Unit(building.HireUntil.Value).squadSize)
-            {
-                return HireWait.SquadReady;
-            }
-
-            if (reserve >= (stable ? settings.maxWaitingCavalry : settings.maxWaitingRecruits))
+            if (!NextHireType(match, building).HasValue)
             {
                 return HireWait.Full;
             }
 
-            return player.Gold < (stable ? settings.cavalryHireCost : settings.hireCost) ? HireWait.NoGold : HireWait.None;
+            return match.GetPlayer(building.Owner).Gold < GetHireCost(building, match.Settings.buildings) ? HireWait.NoGold : HireWait.None;
         }
     }
 }
