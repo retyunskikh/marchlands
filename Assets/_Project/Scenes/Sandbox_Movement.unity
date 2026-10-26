@@ -487,6 +487,12 @@ MonoBehaviour:
   mapSize: {x: 120, y: 80}
   roadWidth: 2.6
   roadColor: {r: 0.66, g: 0.56, b: 0.38, a: 1}
+  roadMaterial: {fileID: 2100000, guid: bb1a9b8e1ec87314f85b876cf0ecd47d, type: 2}
+  roadTextureLength: 5
+  roadFringe: 0.4
+  roadSmoothStep: 0.4
+  roadWidthJitter: 0.04
+  roadEndFade: 1.2
   forestFloorColor: {r: 0.28, g: 0.42, b: 0.22, a: 1}
   treeSize: {x: 1.8, y: 2.6}
   treeDensity: 0.35

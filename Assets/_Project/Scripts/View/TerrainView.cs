@@ -48,6 +48,18 @@ namespace Marchlands.View
         [Header("Дороги")]
         [SerializeField] private float roadWidth = 2.6f;
         [SerializeField] private Color roadColor = new Color(0.66f, 0.56f, 0.38f);
+        [Tooltip("Материал дороги с тайловой текстурой грунтовки (колеи, края); без него дорога — ровная полоса roadColor.")]
+        [SerializeField] private Material roadMaterial;
+        [Tooltip("Сколько юнитов дороги занимает один повтор текстуры вдоль неё.")]
+        [SerializeField] private float roadTextureLength = 5f;
+        [Tooltip("Поля текстуры за краем дороги, где на неё заползает трава, u с каждой стороны.")]
+        [SerializeField] private float roadFringe = 0.4f;
+        [Tooltip("Шаг сглаживания линии дороги, u.")]
+        [SerializeField] private float roadSmoothStep = 0.4f;
+        [Tooltip("Насколько гуляет ширина дороги, доля.")]
+        [SerializeField] private float roadWidthJitter = 0.04f;
+        [Tooltip("На какой длине дорога растворяется у концов (на развилках), u.")]
+        [SerializeField] private float roadEndFade = 1.2f;
 
         [Header("Рощи")]
         [SerializeField] private Color forestFloorColor = new Color(0.28f, 0.42f, 0.22f);
@@ -269,6 +281,17 @@ namespace Marchlands.View
 
         private void DrawRoads(TerrainMap terrain)
         {
+            if (roadMaterial != null)
+            {
+                int index = 0;
+                foreach (float2[] road in terrain.Roads)
+                {
+                    DrawRoadMesh(road, index++);
+                }
+
+                return;
+            }
+
             foreach (float2[] road in terrain.Roads)
             {
                 for (int i = 0; i < road.Length; i++)
@@ -285,6 +308,75 @@ namespace Marchlands.View
                     Create("Road", squareSprite, roadColor, roadSortingOrder, (road[i] + road[i + 1]) * 0.5f, new Vector2(length, roadWidth), angle);
                 }
             }
+        }
+
+        /// <summary>
+        /// Дорога лентой по сглаженной линии: текстура грунтовки повторяется вдоль, ширина чуть гуляет,
+        /// у концов лента растворяется — на развилках одна дорога плавно уходит в другую.
+        /// </summary>
+        private void DrawRoadMesh(float2[] road, int roadIndex)
+        {
+            var points = new List<Vector2>(road.Length);
+            foreach (float2 point in road)
+            {
+                points.Add(new Vector2(point.x, point.y));
+            }
+
+            List<Vector2> line = RoadShape.Smooth(points, roadSmoothStep);
+            if (line.Count < 2)
+            {
+                return;
+            }
+
+            var lengths = new float[line.Count];
+            for (int i = 1; i < line.Count; i++)
+            {
+                lengths[i] = lengths[i - 1] + Vector2.Distance(line[i - 1], line[i]);
+            }
+
+            float total = lengths[line.Count - 1];
+            var vertices = new Vector3[line.Count * 2];
+            var uvs = new Vector2[line.Count * 2];
+            var colors = new Color[line.Count * 2];
+            var triangles = new int[(line.Count - 1) * 6];
+            for (int i = 0; i < line.Count; i++)
+            {
+                Vector2 tangent = (line[math.min(i + 1, line.Count - 1)] - line[math.max(i - 1, 0)]).normalized;
+                Vector2 normal = new Vector2(-tangent.y, tangent.x);
+                float jitter = 1f + roadWidthJitter * (Mathf.PerlinNoise(lengths[i] * 0.35f, roadIndex * 7.3f) * 2f - 1f);
+                float halfWidth = roadWidth * 0.5f * jitter + roadFringe;
+                vertices[i * 2] = line[i] + normal * halfWidth;
+                vertices[i * 2 + 1] = line[i] - normal * halfWidth;
+                float v = lengths[i] / roadTextureLength;
+                uvs[i * 2] = new Vector2(0f, v);
+                uvs[i * 2 + 1] = new Vector2(1f, v);
+                float fade = roadEndFade > 0f ? Mathf.Clamp01(math.min(lengths[i], total - lengths[i]) / roadEndFade) : 1f;
+                colors[i * 2] = colors[i * 2 + 1] = new Color(1f, 1f, 1f, Mathf.SmoothStep(0f, 1f, fade));
+                if (i + 1 < line.Count)
+                {
+                    int t = i * 6;
+                    triangles[t] = i * 2;
+                    triangles[t + 1] = i * 2 + 2;
+                    triangles[t + 2] = i * 2 + 1;
+                    triangles[t + 3] = i * 2 + 1;
+                    triangles[t + 4] = i * 2 + 2;
+                    triangles[t + 5] = i * 2 + 3;
+                }
+            }
+
+            var mesh = new Mesh { name = "Road" };
+            mesh.vertices = vertices;
+            mesh.uv = uvs;
+            mesh.colors = colors;
+            mesh.triangles = triangles;
+            mesh.RecalculateBounds();
+
+            var child = new GameObject("Road");
+            child.transform.SetParent(transform, false);
+            child.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var meshRenderer = child.AddComponent<MeshRenderer>();
+            meshRenderer.sharedMaterial = roadMaterial;
+            meshRenderer.sortingOrder = roadSortingOrder + roadIndex % 2;
         }
 
         private void DrawForests(TerrainMap terrain)
