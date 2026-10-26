@@ -31,7 +31,7 @@ namespace Marchlands.UI
         [Header("Строй")]
         [SerializeField] private Button formationButton;
         [SerializeField] private Text formationLabel;
-        [SerializeField] private string toColumnText = "На марш";
+        [SerializeField] private string toColumnText = "Марш";
         [SerializeField] private string toLineText = "В линию";
         [SerializeField] private Image formationIcon;
         [Tooltip("Что покажет кнопка: строй, в который отряд перестроится.")]

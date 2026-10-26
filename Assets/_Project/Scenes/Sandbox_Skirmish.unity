@@ -1411,7 +1411,7 @@ MonoBehaviour:
   volleyPaleTint: {r: 1, g: 1, b: 1, a: 0.35}
   formationButton: {fileID: 532968157}
   formationLabel: {fileID: 1681707535}
-  toColumnText: "\u041D\u0430 \u043C\u0430\u0440\u0448"
+  toColumnText: "\u041C\u0430\u0440\u0448"
   toLineText: "\u0412 \u043B\u0438\u043D\u0438\u044E"
   formationIcon: {fileID: 1310587165}
   lineSprite: {fileID: 21300000, guid: f1c7ca17a7472794a89973cdaf9ad57b, type: 3}
@@ -2209,7 +2209,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -75, y: 314}
+  m_AnchoredPosition: {x: -30, y: 314}
   m_SizeDelta: {x: 170, y: 170}
   m_Pivot: {x: 1, y: 0}
 --- !u!114 &423380991
@@ -14556,8 +14556,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 212, y: -134}
-  m_SizeDelta: {x: 150, y: 120}
+  m_AnchoredPosition: {x: 212, y: -130}
+  m_SizeDelta: {x: 150, y: 116}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1552457127
 MonoBehaviour:
@@ -14581,17 +14581,17 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 22
-    m_FontStyle: 0
-    m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 40
+    m_FontSize: 30
+    m_FontStyle: 1
+    m_BestFit: 1
+    m_MinSize: 18
+    m_MaxSize: 30
     m_Alignment: 0
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 1
-    m_LineSpacing: 1.05
+    m_LineSpacing: 1
   m_Text: "\u0427\u0438\u0441\u043B\u0435\u043D\u043D\u043E\u0441\u0442\u044C: 30/30\n\u0414\u0443\u0445:
     100 \u2014 \u0442\u0432\u0451\u0440\u0434\n\u0421\u0442\u043E\u044F\u0442\n\u0417\u0430\u0440\u044F\u0436\u0435\u043D\u044B"
 --- !u!222 &1552457128
