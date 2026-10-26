@@ -157,8 +157,8 @@ moraleLoss = lossFraction * 100 * moraleShockFactor
 
 | Параметр | Гренадёры | Егеря | Конница |
 |---|---:|---:|---:|
-| squadSize — численность нового отряда | 48 | 16 | 24 |
-| minSquadSize — меньше уже не отряд | 16 | 6 | 8 |
+| squadSize — численность нового отряда | 30 | 10 | 16 |
+| minSquadSize — меньше уже не отряд | 10 | 4 | 6 |
 | speedMultiplier — скорость марша и атаки | 0.9 | 1.5 | 2.2 |
 | accuracyMultiplier — меткость | 1.0 | 1.4 | — |
 | rangeMultiplier — все дальности огня | 1.0 | 1.25 | — |
@@ -234,22 +234,22 @@ moraleLoss = lossFraction * 100 * moraleShockFactor
 | flankMeleeMultiplier | 1.5 | |
 | chargeMaxDuration | 10 s | атака без контакта дольше этого выдыхается |
 | contactDistance | 0.5 u | враги ближе этого (между краями строя) сходятся в рукопашную |
-| captureRadius / captureTime | 4 u / 15 s | |
+| captureRadius / captureTime | 5 u / 15 s | |
 | captureDecayRate | 1 | скорость убывания незавершённого захвата, секунд прогресса за секунду |
 | incomeInterval | 5 s | |
 | villageIncome / hqIncome | 3 / 2 | |
 | startGold | 150 | |
 | barracksCost / barracksBuildTime | 120 / 30 s | |
-| buildRadiusFromHQ | 10 u | |
-| hireCost / hireInterval | 2 / 2 s | цена рекрута / как часто казарма с включённым наймом получает рекрута |
+| buildRadiusFromHQ | 16 u | |
+| hireCost / hireInterval | 3 / 3 s | цена рекрута / как часто казарма с включённым наймом получает рекрута |
 | maxWaitingSquads | 2 | найм рода войск ждёт, пока в его резерве люди на столько отрядов |
 | stableCost / stableBuildTime | 200 / 40 s | |
-| cavalryHireCost / cavalryHireInterval | 4 / 3 s | отряд из 24 всадников — 96 золота |
+| cavalryHireCost / cavalryHireInterval | 6 / 4.5 s | отряд из 16 всадников — 96 золота |
 | reinforceInterval | 6 s | пополнение пехотного отряда в своей деревне |
 | aiCavalrySquads / aiCavalryChargeDistance | 1 / 12 u | сколько отрядов конницы держит ИИ / с какой дистанции конница ИИ атакует |
 | aiJaegerSquads | 2 | сколько отрядов егерей держит ИИ |
-| buildingSpacing / spawnOffset | 3 u / 4 u | минимальное расстояние от новой казармы до зданий и деревень / где появляется нанятый отряд |
-| hqCaptureRadius / hqCaptureTime | 5 u / 30 s | |
+| buildingSpacing / spawnOffset | 5 u / 6 u | минимальное расстояние от новой казармы до зданий и деревень / где появляется нанятый отряд |
+| hqCaptureRadius / hqCaptureTime | 7 u / 30 s | |
 | dominationTime | 180 s | |
 | startSquads | 2 | на сторону |
 | zoomMin / zoomMax | 8 / 40 | ортографический размер |
@@ -257,7 +257,7 @@ moraleLoss = lossFraction * 100 * moraleShockFactor
 | forestSpeedMultiplier / forestCoverMultiplier | 0.6 / 0.7 | замедление в лесу / множитель попадания по отряду в лесу |
 | pathCellSize / aiDirectApproachDistance | 2 u / 12 u | ячейка поиска пути ИИ / ближе этого ИИ идёт к врагу напрямую |
 | lineRanks | 2 | число шеренг в линии |
-| fileSpacing / rankSpacing | 0.5 / 0.8 u | интервал в шеренге / дистанция между шеренгами |
+| fileSpacing / rankSpacing | 0.7 / 1.12 u | интервал в шеренге / дистанция между шеренгами |
 | arrivalTolerance | 0.05 u | отряд считается дошедшим до точки |
 | tapMaxMove / tapMaxDuration | 10 dp / 0.3 s | границы тапа; больше — протяжка |
 | doubleTapMaxInterval / doubleTapMaxDistance | 0.3 s / 40 dp | границы двойного тапа |

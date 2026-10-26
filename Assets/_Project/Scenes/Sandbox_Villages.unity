@@ -1585,6 +1585,13 @@ MonoBehaviour:
     circleSprite: {fileID: 21300000, guid: b6cb92c132d19f947854d3db7c821888, type: 3}
     squareSprite: {fileID: 21300000, guid: 5f47f2ad9246ed441acf41244c86118e, type: 3}
     discSprite: {fileID: 21300000, guid: 0c4c11c45c291d142a331ea1609b0e7c, type: 3}
+    layoutSprites:
+    - {fileID: 21300000, guid: 5546a47e44ea83c43afcc0f895abd199, type: 3}
+    - {fileID: 21300000, guid: f3330995d7388b241acce209dabc947e, type: 3}
+    - {fileID: 21300000, guid: 63509a727bde4614a936f9803ea58582, type: 3}
+    - {fileID: 21300000, guid: 5e7368a4bbf56804997dee74d3550738, type: 3}
+    - {fileID: 21300000, guid: c7ffd0f8511c7534298504cb54021976, type: 3}
+    layoutSize: 9
     houseOffsets:
     - {x: -1.1, y: 0.6}
     - {x: 0.9, y: 0.9}
@@ -1593,18 +1600,18 @@ MonoBehaviour:
     houseSize: 1.1
     houseColor: {r: 0.72, g: 0.55, b: 0.38, a: 1}
     neutralColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
-    zoneFillAlpha: 0.18
+    zoneFillAlpha: 0.12
     zoneOutlineAlpha: 0.55
     ringSegments: 48
-    ringThickness: 0.5
+    ringThickness: 0.6
     ringSegmentFill: 0.8
     ringEmptyColor: {r: 0, g: 0, b: 0, a: 0.35}
     contestedColor: {r: 1, g: 0.85, b: 0.2, a: 1}
     contestedBlinkRate: 2.5
     captureFlashDuration: 1.2
-    flagSize: {x: 0.9, y: 0.6}
-    flagOffset: {x: 1.6, y: 1.6}
-    poleSize: {x: 0.12, y: 2}
+    flagSize: {x: 1.6, y: 1}
+    flagOffset: {x: 0.35, y: 0.9}
+    poleSize: {x: 0.14, y: 2.2}
     poleColor: {r: 0.25, g: 0.2, b: 0.15, a: 1}
     groundSortingOrder: -50
     houseSortingOrder: -40
@@ -2815,9 +2822,9 @@ MonoBehaviour:
   style:
     squareSprite: {fileID: 21300000, guid: 5f47f2ad9246ed441acf41244c86118e, type: 3}
     circleSprite: {fileID: 21300000, guid: b6cb92c132d19f947854d3db7c821888, type: 3}
-    headquartersSize: {x: 3.2, y: 3.2}
-    barracksSize: {x: 3.4, y: 2.2}
-    stableSize: {x: 3.6, y: 2.6}
+    headquartersSize: {x: 5, y: 5}
+    barracksSize: {x: 5.4, y: 3.5}
+    stableSize: {x: 5.8, y: 4.2}
     headquartersInnerScale: 0.55
     innerColor: {r: 0.15, g: 0.15, b: 0.18, a: 1}
     headquartersBaseSprite: {fileID: 21300000, guid: 15ac2ef06e8b60d4e82e4cdd95c60444, type: 3}
@@ -2831,13 +2838,13 @@ MonoBehaviour:
     stableBaseSprite: {fileID: 21300000, guid: c2d350cd9bba69c4e8dde9907600c988, type: 3}
     stableRoofSprite: {fileID: 21300000, guid: 1ce157f28052fc948989486089ea00b0, type: 3}
     constructionAlpha: 0.45
-    progressBarSize: {x: 2.6, y: 0.22}
-    progressBarOffset: 2
+    progressBarSize: {x: 3.6, y: 0.3}
+    progressBarOffset: 3.2
     progressBackground: {r: 0, g: 0, b: 0, a: 0.45}
     progressColor: {r: 1, g: 0.85, b: 0.45, a: 1}
     captureColor: {r: 0.95, g: 0.25, b: 0.2, a: 1}
     selectionColor: {r: 1, g: 0.9, b: 0.3, a: 0.35}
-    selectionPadding: 0.4
+    selectionPadding: 0.5
     recruitsShownMax: 32
     recruitsOffset: 0.9
     recruitsSpacing: {x: 0.45, y: 0.45}
@@ -10520,6 +10527,7 @@ MonoBehaviour:
       cavalryBody: {fileID: 21300000, guid: 4f4bbb1eaaf7a1c43acb3456f8d7535e, type: 3}
       cavalryOfficerBody: {fileID: 21300000, guid: b6b85c0435c904e4ba9e1ef8f838cf3b, type: 3}
       cavalryArms: {fileID: 21300000, guid: c531a82a8e7ef1943a82bd80b90cc6c6, type: 3}
+    soldierScale: 1.4
     recruitSprite: {fileID: 21300000, guid: 4a0c1c9d4f62148438c3abefbdc10e43, type: 3}
     jaegerSpacing: {x: 1.6, y: 1.3}
     jaegerScatter: 0.12

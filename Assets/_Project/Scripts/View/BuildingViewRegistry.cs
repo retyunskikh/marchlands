@@ -89,7 +89,9 @@ namespace Marchlands.View
                 : math.min(waiting, style.RecruitsShownMax);
             while (crowd.Count < shown)
             {
-                crowd.Add(CreatePreview($"Waiting {type} {side} {crowd.Count}", sprite, style.BodySortingOrder + 5));
+                SpriteRenderer person = CreatePreview($"Waiting {type} {side} {crowd.Count}", sprite, style.BodySortingOrder + 5);
+                person.transform.localScale = Vector3.one * squadViews.Style.SoldierScale;
+                crowd.Add(person);
             }
 
             for (int i = 0; i < crowd.Count; i++)

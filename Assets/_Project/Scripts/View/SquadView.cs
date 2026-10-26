@@ -514,6 +514,7 @@ namespace Marchlands.View
                 soldiers.Add(drawn != null
                     ? CreateRenderer($"Soldier {index}", drawn, Color.white, order)
                     : CreateRenderer($"Soldier {index}", style.SoldierSprite, style.GetSideColor(squad.Side), order));
+                soldiers[index].transform.localScale = Vector3.one * style.SoldierScale;
 
                 fullSprites.Add(drawn);
                 soldierRoles.Add(role);
@@ -522,6 +523,7 @@ namespace Marchlands.View
                 {
                     bodySprites.Add(body);
                     SpriteRenderer armsRenderer = CreateRenderer($"Arms {index}", armsSprite, Color.white, order + 1);
+                    armsRenderer.transform.localScale = Vector3.one * style.SoldierScale;
                     armsRenderer.enabled = false;
                     arms.Add(armsRenderer);
                 }

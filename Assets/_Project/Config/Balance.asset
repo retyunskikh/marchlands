@@ -16,16 +16,16 @@ MonoBehaviour:
     squads:
       lineRanks: 2
       columnFrontWidth: 6
-      fileSpacing: 0.5
-      rankSpacing: 0.8
+      fileSpacing: 0.7
+      rankSpacing: 1.12
       lineSpeed: 1
       columnSpeed: 1.6
       rotationSpeed: 45
       formationChangeTime: 4
       arrivalTolerance: 0.05
     grenadiers:
-      squadSize: 48
-      minSquadSize: 16
+      squadSize: 30
+      minSquadSize: 10
       speedMultiplier: 0.9
       accuracyMultiplier: 1
       rangeMultiplier: 1
@@ -35,8 +35,8 @@ MonoBehaviour:
       chargeBonusMultiplier: 1
       targetHitMultiplier: 1
     jaegers:
-      squadSize: 16
-      minSquadSize: 6
+      squadSize: 10
+      minSquadSize: 4
       speedMultiplier: 1.5
       accuracyMultiplier: 1.4
       rangeMultiplier: 1.25
@@ -46,8 +46,8 @@ MonoBehaviour:
       chargeBonusMultiplier: 1
       targetHitMultiplier: 1
     cavalry:
-      squadSize: 24
-      minSquadSize: 8
+      squadSize: 16
+      minSquadSize: 6
       speedMultiplier: 2.2
       accuracyMultiplier: 1
       rangeMultiplier: 1
@@ -109,7 +109,7 @@ MonoBehaviour:
       cavalrySquads: 1
       cavalryChargeDistance: 12
     economy:
-      captureRadius: 4
+      captureRadius: 5
       captureTime: 15
       captureDecayRate: 1
       incomeInterval: 5
@@ -120,18 +120,18 @@ MonoBehaviour:
     buildings:
       barracksCost: 120
       barracksBuildTime: 30
-      buildRadiusFromHQ: 10
-      buildingSpacing: 3
-      hireCost: 2
-      hireInterval: 2
+      buildRadiusFromHQ: 16
+      buildingSpacing: 5
+      hireCost: 3
+      hireInterval: 3
       maxWaitingSquads: 2
       stableCost: 200
       stableBuildTime: 40
-      cavalryHireCost: 4
-      cavalryHireInterval: 3
-      spawnOffset: 4
+      cavalryHireCost: 6
+      cavalryHireInterval: 4.5
+      spawnOffset: 6
     victory:
-      hqCaptureRadius: 5
+      hqCaptureRadius: 7
       hqCaptureTime: 30
       dominationShare: 0.6666667
       dominationTime: 180

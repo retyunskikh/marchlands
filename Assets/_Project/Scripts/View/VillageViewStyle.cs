@@ -11,6 +11,10 @@ namespace Marchlands.View
         [SerializeField] private Sprite circleSprite;
         [SerializeField] private Sprite squareSprite;
         [SerializeField] private Sprite discSprite;
+        [Tooltip("Деревни вид сверху (избы, сараи, церковь, огороды, плетни) — у каждой деревни своя по номеру. Пусто — коробочки домиков.")]
+        [SerializeField] private Sprite[] layoutSprites = new Sprite[0];
+        [Tooltip("Размер рисунка деревни, u.")]
+        [SerializeField] private float layoutSize = 8f;
         [Tooltip("Расположение домиков относительно центра деревни, u.")]
         [SerializeField] private Vector2[] houseOffsets =
         {
@@ -56,6 +60,10 @@ namespace Marchlands.View
         public Sprite SquareSprite => squareSprite;
 
         public Sprite DiscSprite => discSprite;
+
+        public Sprite[] LayoutSprites => layoutSprites;
+
+        public float LayoutSize => layoutSize;
 
         public Vector2[] HouseOffsets => houseOffsets;
 

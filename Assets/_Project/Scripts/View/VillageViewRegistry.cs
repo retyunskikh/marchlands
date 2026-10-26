@@ -73,6 +73,7 @@ namespace Marchlands.View
                 spriteRenderer.sprite = sprite != null ? sprite : squadViews.Style.SoldierSprite;
                 spriteRenderer.color = sprite != null ? Color.white : squadViews.Style.GetSideColor(squad.Side);
                 spriteRenderer.sortingOrder = walkerSortingOrder;
+                walkerObject.transform.localScale = Vector3.one * squadViews.Style.SoldierScale;
                 int house = (int)((uint)(match.CurrentTick * 31 + squad.Id * 17) % (uint)style.HouseOffsets.Length);
                 Vector2 offset = style.HouseOffsets[house];
                 walkers.Add(new Walker

@@ -42,12 +42,24 @@ namespace Marchlands.View
             zoneOutline = CreateRenderer("Zone Outline", style.CircleSprite, style.GroundSortingOrder + 1);
             zoneOutline.transform.localScale = Vector3.one * diameter;
 
-            for (int i = 0; i < style.HouseOffsets.Length; i++)
+            Sprite[] layouts = style.LayoutSprites;
+            if (layouts != null && layouts.Length > 0 && layouts[village.Id % layouts.Length] != null)
             {
-                SpriteRenderer house = CreateRenderer($"House {i}", style.HouseSprite, style.HouseSortingOrder);
-                house.color = style.HouseColor;
-                house.transform.localPosition = style.HouseOffsets[i];
-                house.transform.localScale = Vector3.one * style.HouseSize;
+                // Нарисованная деревня — у каждой своя раскладка.
+                Sprite layout = layouts[village.Id % layouts.Length];
+                SpriteRenderer drawn = CreateRenderer("Village", layout, style.HouseSortingOrder);
+                Vector2 bounds = layout.bounds.size;
+                drawn.transform.localScale = new Vector3(style.LayoutSize / bounds.x, style.LayoutSize / bounds.y, 1f);
+            }
+            else
+            {
+                for (int i = 0; i < style.HouseOffsets.Length; i++)
+                {
+                    SpriteRenderer house = CreateRenderer($"House {i}", style.HouseSprite, style.HouseSortingOrder);
+                    house.color = style.HouseColor;
+                    house.transform.localPosition = style.HouseOffsets[i];
+                    house.transform.localScale = Vector3.one * style.HouseSize;
+                }
             }
 
             SpriteRenderer pole = CreateRenderer("Pole", style.SquareSprite, style.HouseSortingOrder + 1);

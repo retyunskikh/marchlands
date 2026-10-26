@@ -14,6 +14,8 @@ namespace Marchlands.View
         [SerializeField] private Sprite markerSprite;
         [SerializeField] private SoldierSprites franceSoldiers = new SoldierSprites();
         [SerializeField] private SoldierSprites austriaSoldiers = new SoldierSprites();
+        [Tooltip("Во сколько раз фигурки солдат крупнее исходного спрайта (только вид; интервалы строя — в конфиге).")]
+        [SerializeField] private float soldierScale = 1f;
         [Tooltip("Рекрут, ждущий у казармы.")]
         [SerializeField] private Sprite recruitSprite;
         [Tooltip("Рассыпной строй егерей: во сколько раз шире интервалы и дистанции (только вид).")]
@@ -90,6 +92,8 @@ namespace Marchlands.View
         public Sprite MarkerSprite => markerSprite;
 
         public Sprite RecruitSprite => recruitSprite;
+
+        public float SoldierScale => soldierScale;
 
         public float JaegerScatter => jaegerScatter;
 
