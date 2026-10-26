@@ -18,28 +18,34 @@ MonoBehaviour:
     position: {x: -44, y: 7}
     facing: 0
     formation: 0
-    fireAtWill: 0
+    type: 0
   - side: 0
     position: {x: -44, y: -7}
     facing: 0
     formation: 0
-    fireAtWill: 0
+    type: 0
   - side: 1
     position: {x: 44, y: 7}
     facing: 180
     formation: 0
-    fireAtWill: 0
+    type: 0
   - side: 1
     position: {x: 44, y: -7}
     facing: 180
     formation: 0
-    fireAtWill: 0
+    type: 0
   villages:
   - {x: 0, y: 0}
   - {x: -20, y: 24}
   - {x: 20, y: 24}
   - {x: -20, y: -24}
   - {x: 20, y: -24}
+  villageLayouts:
+  - {fileID: 21300000, guid: f70f9d8fccab9744c9ed9930dc0a6de3, type: 3}
+  - {fileID: 21300000, guid: 851c0c136bc6b584ea64788e41c3809e, type: 3}
+  - {fileID: 21300000, guid: 6135173b0180ec1469bda0f5b90b94e1, type: 3}
+  - {fileID: 21300000, guid: 99a0a718f004b094e9c65a1b2d4232f5, type: 3}
+  - {fileID: 21300000, guid: 5f6eaa4886376084fa57f270bfd37a83, type: 3}
   victoryConditions: 1
   hasHeadquarters: 1
   franceHeadquarters: {x: -52, y: 0}

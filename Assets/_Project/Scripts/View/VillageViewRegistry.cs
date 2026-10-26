@@ -31,15 +31,18 @@ namespace Marchlands.View
             public float2 Position;
         }
 
-        public void Initialize(Match match)
+        /// <param name="layouts">Планы деревень карты по порядку деревень; null или пусто — общие раскладки стиля.</param>
+        public void Initialize(Match match, IReadOnlyList<Sprite> layouts = null)
         {
             this.match = match;
-            foreach (Village village in match.Villages)
+            for (int i = 0; i < match.Villages.Count; i++)
             {
+                Village village = match.Villages[i];
+                Sprite layout = layouts != null && i < layouts.Count ? layouts[i] : null;
                 var viewObject = new GameObject($"Village {village.Id}");
                 viewObject.transform.SetParent(transform, false);
                 var view = viewObject.AddComponent<VillageView>();
-                view.Initialize(village, match.Settings.economy.captureRadius, match.Settings.economy.captureTime, style, squadViews.Style);
+                view.Initialize(village, match.Settings.economy.captureRadius, match.Settings.economy.captureTime, style, squadViews.Style, layout);
                 views.Add(view);
             }
         }

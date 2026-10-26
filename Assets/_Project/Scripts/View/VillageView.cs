@@ -27,7 +27,7 @@ namespace Marchlands.View
         private Side? shownOwner;
         private float flashTimer;
 
-        internal void Initialize(Village village, float captureRadius, float captureTime, VillageViewStyle style, SquadViewStyle sideStyle)
+        internal void Initialize(Village village, float captureRadius, float captureTime, VillageViewStyle style, SquadViewStyle sideStyle, Sprite layoutOverride)
         {
             this.village = village;
             this.captureTime = captureTime;
@@ -43,13 +43,22 @@ namespace Marchlands.View
             zoneOutline.transform.localScale = Vector3.one * diameter;
 
             Sprite[] layouts = style.LayoutSprites;
-            if (layouts != null && layouts.Length > 0 && layouts[village.Id % layouts.Length] != null)
+            Sprite layout = layoutOverride;
+            if (layout == null && layouts != null && layouts.Length > 0)
             {
-                // Нарисованная деревня — у каждой своя раскладка.
-                Sprite layout = layouts[village.Id % layouts.Length];
+                layout = layouts[village.Id % layouts.Length];
+            }
+
+            if (layout != null)
+            {
+                // Нарисованная деревня: план под дороги карты или одна из общих раскладок.
                 SpriteRenderer drawn = CreateRenderer("Village", layout, style.HouseSortingOrder);
-                Vector2 bounds = layout.bounds.size;
-                drawn.transform.localScale = new Vector3(style.LayoutSize / bounds.x, style.LayoutSize / bounds.y, 1f);
+                // План под дороги карты нарисован в своём масштабе; общие раскладки растягиваются до layoutSize.
+                if (layoutOverride == null)
+                {
+                    Vector2 bounds = layout.bounds.size;
+                    drawn.transform.localScale = new Vector3(style.LayoutSize / bounds.x, style.LayoutSize / bounds.y, 1f);
+                }
             }
             else
             {

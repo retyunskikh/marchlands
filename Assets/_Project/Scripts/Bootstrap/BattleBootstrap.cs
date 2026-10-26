@@ -69,7 +69,7 @@ namespace Marchlands.Bootstrap
 
             terrainView.Initialize(match);
             squadViews.Initialize(match);
-            villageViews.Initialize(match);
+            villageViews.Initialize(match, scenario.VillageLayouts);
             buildingViews.Initialize(match);
             fireArc.Initialize(match);
             volleyEffects.Initialize(match);

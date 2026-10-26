@@ -14,6 +14,8 @@ namespace Marchlands.Bootstrap.Config
         [SerializeField] private List<SquadSpawn> squads = new List<SquadSpawn>();
         [Tooltip("Положения деревень; на старте все ничьи.")]
         [SerializeField] private List<Vector2> villages = new List<Vector2>();
+        [Tooltip("Планы деревень, нарисованные под дороги этой карты, — по порядку деревень; пусто — общие раскладки.")]
+        [SerializeField] private List<Sprite> villageLayouts = new List<Sprite>();
 
         [Tooltip("Проверять условия победы (полный матч). В песочницах выключено.")]
         [SerializeField] private bool victoryConditions;
@@ -44,6 +46,8 @@ namespace Marchlands.Bootstrap.Config
         public IReadOnlyList<SquadSpawn> Squads => squads;
 
         public IReadOnlyList<Vector2> Villages => villages;
+
+        public IReadOnlyList<Sprite> VillageLayouts => villageLayouts;
 
         public bool HasHeadquarters => hasHeadquarters;
 

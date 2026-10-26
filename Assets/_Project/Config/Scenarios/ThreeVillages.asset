@@ -38,6 +38,10 @@ MonoBehaviour:
   - {x: 0, y: 0}
   - {x: -14, y: 20}
   - {x: 14, y: -20}
+  villageLayouts:
+  - {fileID: 21300000, guid: 3dcdd599e3dad424f9a789605ea6557a, type: 3}
+  - {fileID: 21300000, guid: 288a9f77d232a684f9aec46101b5ddcf, type: 3}
+  - {fileID: 21300000, guid: ab6b4e7e465e4d34d9660facef1ad457, type: 3}
   victoryConditions: 1
   hasHeadquarters: 1
   franceHeadquarters: {x: -52, y: 0}
