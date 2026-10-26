@@ -206,7 +206,7 @@ namespace Marchlands.View
             return true;
         }
 
-        /// <summary>Реки слева и справа: полоса от края поля до края карты; горы сверху и снизу перекрывают их концы.</summary>
+        /// <summary>Реки слева и справа: полоса от края поля до края карты, по всей высоте — вместе с горами, сквозь них.</summary>
         private void DrawRivers(TerrainMap terrain)
         {
             float halfMapX = mapSize.x * 0.5f;
@@ -217,7 +217,8 @@ namespace Marchlands.View
                 if (width > 0f)
                 {
                     Sprite sprite = side > 0f ? eastRiverSprite : westRiverSprite;
-                    CreateStretched("River", sprite, borderSortingOrder, new Vector2(edge + side * width * 0.5f, 0f), new Vector2(width, mapSize.y));
+                    // Река идёт до самого края — сквозь горы (поверх них) в туман.
+                    CreateStretched("River", sprite, borderSortingOrder + 4, new Vector2(edge + side * width * 0.5f, 0f), new Vector2(width, mapSize.y + mountainExtension * 2f));
                 }
             }
         }
