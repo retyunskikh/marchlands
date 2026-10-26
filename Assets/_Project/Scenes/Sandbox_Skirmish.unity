@@ -3935,10 +3935,38 @@ MonoBehaviour:
   forestFloorColor: {r: 0.28, g: 0.42, b: 0.22, a: 1}
   treeSize: {x: 1.8, y: 2.6}
   treeDensity: 0.35
+  bushSprites:
+  - {fileID: 21300000, guid: 2f726e2b2f3316848b37e72611a1f3ff, type: 3}
+  - {fileID: 21300000, guid: 1dc82d910c38e7445909cd0c9086d004, type: 3}
+  - {fileID: 21300000, guid: 0ca40d05952f84a45ace5d2a35e5b1e3, type: 3}
+  tuftSprites:
+  - {fileID: 21300000, guid: a638c84fbf4702e4591e60f2e15ae09a, type: 3}
+  - {fileID: 21300000, guid: 5d32fbe83e6ba5d4fb920bdf1a6f4c80, type: 3}
+  - {fileID: 21300000, guid: a638c84fbf4702e4591e60f2e15ae09a, type: 3}
+  - {fileID: 21300000, guid: 5d32fbe83e6ba5d4fb920bdf1a6f4c80, type: 3}
+  - {fileID: 21300000, guid: 2086cfd53d3c2794ab3c03a32457f41c, type: 3}
+  - {fileID: 21300000, guid: 2f0cfcb82aec10446bbd3733dd014549, type: 3}
+  - {fileID: 21300000, guid: 211507d256d49de489126f7a9d197916, type: 3}
+  decorSpacing: 2
+  bushChance: 0.12
+  tuftChance: 0.5
+  bushSize: {x: 1.5, y: 2.6}
+  tuftSize: {x: 0.9, y: 1.5}
+  decorClearance: 0.8
+  settlementClearance: 6
+  patchSprite: {fileID: 21300000, guid: 97b291e999058ff43b006807bf6c1a11, type: 3}
+  patchColors:
+  - {r: 0.75, g: 0.8, b: 0.35, a: 0.16}
+  - {r: 0.15, g: 0.3, b: 0.1, a: 0.14}
+  patchSpacing: 9
+  patchSize: {x: 7, y: 14}
   roadSortingOrder: -80
   forestFloorSortingOrder: -75
   borderSortingOrder: -60
   treeSortingOrder: -45
+  patchSortingOrder: -85
+  tuftSortingOrder: -72
+  bushSortingOrder: -55
 --- !u!4 &695066050
 Transform:
   m_ObjectHideFlags: 0

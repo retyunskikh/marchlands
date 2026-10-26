@@ -1,4 +1,7 @@
+using System.Collections.Generic;
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Terrain;
 using Unity.Mathematics;
 using UnityEngine;
@@ -6,7 +9,7 @@ using UnityEngine;
 namespace Marchlands.View
 {
     /// <summary>
-    /// Местность полной карты: реки слева и справа, горы сверху и снизу, грунтовые дороги и рощи.
+    /// Местность полной карты: реки слева и справа, горы сверху и снизу, грунтовые дороги, рощи и кусты с травой на поле.
     /// Рисуется один раз при старте — местность в бою не меняется. Без местности ничего не рисует.
     /// </summary>
     public sealed class TerrainView : MonoBehaviour
@@ -52,11 +55,35 @@ namespace Marchlands.View
         [Tooltip("Сколько деревьев на квадратную единицу рощи.")]
         [SerializeField] private float treeDensity = 0.35f;
 
+        [Header("Убранство поля (только вид)")]
+        [Tooltip("Кусты — рисуются поверх травы, но под деревнями, зданиями и отрядами.")]
+        [SerializeField] private Sprite[] bushSprites;
+        [Tooltip("Плоская мелочь: пучки травы, цветы, камешки.")]
+        [SerializeField] private Sprite[] tuftSprites;
+        [Tooltip("Шаг сетки, по которой разбросано убранство, u.")]
+        [SerializeField] private float decorSpacing = 2f;
+        [SerializeField, Range(0f, 1f)] private float bushChance = 0.12f;
+        [SerializeField, Range(0f, 1f)] private float tuftChance = 0.5f;
+        [SerializeField] private Vector2 bushSize = new Vector2(1.5f, 2.6f);
+        [SerializeField] private Vector2 tuftSize = new Vector2(0.9f, 1.5f);
+        [Tooltip("Насколько убранство держится от дорог и опушек, u.")]
+        [SerializeField] private float decorClearance = 0.8f;
+        [Tooltip("Насколько убранство держится от центров деревень и штабов, u.")]
+        [SerializeField] private float settlementClearance = 6f;
+        [Tooltip("Мягкие пятна светлой и тёмной травы — поле не выглядит залитым одним цветом.")]
+        [SerializeField] private Sprite patchSprite;
+        [SerializeField] private Color[] patchColors = { new Color(0.75f, 0.8f, 0.35f, 0.16f), new Color(0.15f, 0.3f, 0.1f, 0.14f) };
+        [SerializeField] private float patchSpacing = 9f;
+        [SerializeField] private Vector2 patchSize = new Vector2(7f, 14f);
+
         [Header("Порядок отрисовки")]
         [SerializeField] private int roadSortingOrder = -80;
         [SerializeField] private int forestFloorSortingOrder = -75;
         [SerializeField] private int borderSortingOrder = -60;
         [SerializeField] private int treeSortingOrder = -45;
+        [SerializeField] private int patchSortingOrder = -85;
+        [SerializeField] private int tuftSortingOrder = -72;
+        [SerializeField] private int bushSortingOrder = -55;
 
         public void Initialize(Match match)
         {
@@ -72,6 +99,99 @@ namespace Marchlands.View
             DrawFog();
             DrawRoads(terrain);
             DrawForests(terrain);
+            DrawDecor(match);
+        }
+
+        /// <summary>
+        /// Кусты, пучки травы, цветы и камешки на пустом поле: по сетке со случайным сдвигом, в обход дорог, леса,
+        /// деревень и штабов. Раскладка одинакова при каждом запуске.
+        /// </summary>
+        private void DrawDecor(Match match)
+        {
+            TerrainMap terrain = match.Terrain;
+            if (decorSpacing <= 0f || ((bushSprites == null || bushSprites.Length == 0) && (tuftSprites == null || tuftSprites.Length == 0)))
+            {
+                return;
+            }
+
+            var settlements = new List<float2>();
+            foreach (Village village in match.Villages)
+            {
+                settlements.Add(village.Position);
+            }
+
+            foreach (Building building in match.Buildings)
+            {
+                settlements.Add(building.Position);
+            }
+
+            float halfX = mapSize.x * 0.5f, halfY = mapSize.y * 0.5f;
+            int seed = 7919;
+            if (patchSprite != null && patchColors != null && patchColors.Length > 0 && patchSpacing > 0f)
+            {
+                for (float y = -halfY; y < halfY; y += patchSpacing)
+                {
+                    for (float x = -halfX; x < halfX; x += patchSpacing)
+                    {
+                        float2 jitter = new float2(Hash01(++seed), Hash01(++seed));
+                        float2 position = new float2(x, y) + jitter * patchSpacing;
+                        Color color = patchColors[math.min(patchColors.Length - 1, (int)(Hash01(++seed) * patchColors.Length))];
+                        float size = math.lerp(patchSize.x, patchSize.y, Hash01(++seed));
+                        CreateStretched("Grass Patch", patchSprite, patchSortingOrder, position, new Vector2(size, size * 0.7f), Hash01(++seed) * 180f, color);
+                    }
+                }
+            }
+
+            for (float y = -halfY; y < halfY; y += decorSpacing)
+            {
+                for (float x = -halfX; x < halfX; x += decorSpacing)
+                {
+                    float pick = Hash01(++seed);
+                    float2 jitter = new float2(Hash01(++seed), Hash01(++seed)) - 0.5f;
+                    float2 position = new float2(x, y) + (0.5f + jitter * 0.9f) * decorSpacing;
+                    float variant = Hash01(++seed);
+                    bool bush = pick < bushChance && bushSprites != null && bushSprites.Length > 0;
+                    bool tuft = !bush && pick < bushChance + tuftChance && tuftSprites != null && tuftSprites.Length > 0;
+                    if ((!bush && !tuft) || !IsOpenGround(terrain, settlements, position))
+                    {
+                        continue;
+                    }
+
+                    Sprite[] sprites = bush ? bushSprites : tuftSprites;
+                    Sprite sprite = sprites[math.min(sprites.Length - 1, (int)(variant * sprites.Length))];
+                    Vector2 range = bush ? bushSize : tuftSize;
+                    float size = math.lerp(range.x, range.y, Hash01(++seed));
+                    // У кустов — та же перспектива, что у деревьев: нижние поверх верхних.
+                    int order = bush ? bushSortingOrder + (int)((halfY - position.y) * 0.05f) : tuftSortingOrder;
+                    CreateStretched(bush ? "Bush" : "Tuft", sprite, order, position, new Vector2(size, size), bush ? 0f : Hash01(++seed) * 360f, Color.white);
+                }
+            }
+        }
+
+        private bool IsOpenGround(TerrainMap terrain, List<float2> settlements, float2 position)
+        {
+            if (!terrain.Contains(position) || terrain.IsOnRoad(position, roadWidth * 0.5f + decorClearance))
+            {
+                return false;
+            }
+
+            foreach (Forest forest in terrain.Forests)
+            {
+                if (math.distance(forest.Center, position) < forest.Radius + decorClearance)
+                {
+                    return false;
+                }
+            }
+
+            foreach (float2 settlement in settlements)
+            {
+                if (math.distance(settlement, position) < settlementClearance)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>Реки слева и справа: полоса от края поля до края карты; горы сверху и снизу перекрывают их концы.</summary>
