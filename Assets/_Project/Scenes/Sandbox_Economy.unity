@@ -11633,6 +11633,7 @@ MonoBehaviour:
     aimLowerTime: 0.35
     thrustRate: 1.1
     regroupSpeed: 3
+    showCount: 0
     countSize: 0.95
     countGap: 0.35
     countColor: {r: 1, g: 1, b: 0.95, a: 1}
@@ -11642,9 +11643,11 @@ MonoBehaviour:
     countLossTime: 0.6
     countBounce: 0.25
     countReinforceColor: {r: 0.7, g: 1, b: 0.6, a: 1}
-    reinforceBarSize: {x: 1.6, y: 0.16}
+    reinforceBarSize: {x: 1, y: 0.14}
     reinforceBarBack: {r: 0, g: 0, b: 0, a: 0.55}
-    reinforceBarFill: {r: 0.45, g: 1, b: 0.45, a: 1}
+    reinforceBarFill: {r: 1, g: 0.8, b: 0.3, a: 1}
+    reinforceIcon: {fileID: 21300000, guid: bafcc88fbecc7f242b83cdabd3213eea, type: 3}
+    reinforceIconSize: 0.9
     floaterLifetime: 1.4
     floaterRise: 1.6
     marchGait: {x: 1.8, y: 0.035}
@@ -14488,6 +14491,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Bootstrap::Marchlands.Bootstrap.BattleBootstrap
   balance: {fileID: 11400000, guid: 49be662d6d646434bba55014c3f78fed, type: 2}
   scenario: {fileID: 11400000, guid: 37171eaebc3c00042826c1f90f2aefd7, type: 2}
+  maps: []
   seed: 1
   targetFrameRate: 60
   terrainView: {fileID: 1546069960}

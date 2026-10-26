@@ -16,6 +16,7 @@ namespace Marchlands.View
         private TextMesh shadow;
         private SpriteRenderer barBack;
         private SpriteRenderer barFill;
+        private SpriteRenderer house;
         private Font font;
         private SquadViewStyle style;
         private int shownAlive = -1;
@@ -38,6 +39,7 @@ namespace Marchlands.View
             var pixel = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 4f, 4f), new Vector2(0f, 0.5f), 4f);
             barBack = CreateBar("Reinforce Back", pixel, style.ReinforceBarBack, sortingOrder);
             barFill = CreateBar("Reinforce Fill", pixel, style.ReinforceBarFill, sortingOrder + 1);
+            house = CreateBar("Reinforce House", style.ReinforceIcon, Color.white, sortingOrder + 1);
         }
 
         private SpriteRenderer CreateBar(string objectName, Sprite sprite, Color color, int sortingOrder)
@@ -61,6 +63,7 @@ namespace Marchlands.View
             bool reinforcing = visible && reinforceProgress >= 0f;
             barBack.gameObject.SetActive(reinforcing);
             barFill.gameObject.SetActive(reinforcing);
+            house.gameObject.SetActive(reinforcing && house.sprite != null);
             if (shownAlive >= 0 && alive > shownAlive)
             {
                 gainTimer = style.CountGainTime;
@@ -99,8 +102,18 @@ namespace Marchlands.View
 
             if (reinforcing)
             {
+                // Над полоской морали — полоска до следующего человека, над ней домик; при пополнении домик подпрыгивает.
+                float iconSize = style.ReinforceIconSize;
+                float barY = iconSize * 0.32f;
+                if (house.sprite != null)
+                {
+                    float spriteSize = Mathf.Max(house.sprite.bounds.size.x, house.sprite.bounds.size.y);
+                    house.transform.position = position + new Vector3(0f, barY + iconSize * 0.62f + bounce, 0f);
+                    house.transform.localScale = Vector3.one * (iconSize / spriteSize);
+                }
+
                 Vector2 size = style.ReinforceBarSize;
-                var left = position + new Vector3(-size.x * 0.5f, -style.CountSize * 0.62f, 0f);
+                var left = position + new Vector3(-size.x * 0.5f, barY, 0f);
                 barBack.transform.position = left;
                 barBack.transform.localScale = new Vector3(size.x, size.y, 1f);
                 barFill.transform.position = left;
