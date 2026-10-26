@@ -12,6 +12,9 @@ namespace Marchlands.UI
     {
         [Tooltip("Запас от края по горизонтали и вертикали, в единицах холста (1920×1080).")]
         [SerializeField] private Vector2 cornerPadding = new Vector2(36f, 0f);
+        [Tooltip("Учитывать безопасную зону (вырез камеры). Выключают у элементов, которые стоят не напротив выреза: "
+            + "система сообщает отступ на всю сторону экрана, и они отодвигались бы лишний раз.")]
+        [SerializeField] private bool followSafeArea = true;
 
         private RectTransform rectTransform;
         private Canvas canvas;
@@ -40,7 +43,7 @@ namespace Marchlands.UI
             appliedSafeArea = Screen.safeArea;
             appliedScreen = new Vector2Int(Screen.width, Screen.height);
             float scale = canvas != null && canvas.rootCanvas.scaleFactor > 0f ? canvas.rootCanvas.scaleFactor : 1f;
-            Rect safe = Screen.safeArea;
+            Rect safe = followSafeArea ? Screen.safeArea : new Rect(0f, 0f, Screen.width, Screen.height);
             float left = safe.xMin / scale;
             float right = (Screen.width - safe.xMax) / scale;
             float bottom = safe.yMin / scale;

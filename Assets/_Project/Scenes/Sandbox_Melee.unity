@@ -1942,6 +1942,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
+  followSafeArea: 1
 --- !u!1 &309758623
 GameObject:
   m_ObjectHideFlags: 0
@@ -2525,6 +2526,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
+  followSafeArea: 1
 --- !u!1 &426565802
 GameObject:
   m_ObjectHideFlags: 0
@@ -2853,7 +2855,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
-  cornerPadding: {x: 36, y: 0}
+  cornerPadding: {x: 16, y: 0}
+  followSafeArea: 0
 --- !u!1 &451751457
 GameObject:
   m_ObjectHideFlags: 0
@@ -3509,6 +3512,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
+  followSafeArea: 1
 --- !u!1 &533905311
 GameObject:
   m_ObjectHideFlags: 0
@@ -5017,6 +5021,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
+  followSafeArea: 1
 --- !u!1 &820522555
 GameObject:
   m_ObjectHideFlags: 0
@@ -10444,7 +10449,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
-  cornerPadding: {x: 24, y: 0}
+  cornerPadding: {x: 0, y: 0}
+  followSafeArea: 0
 --- !u!1 &899352617
 GameObject:
   m_ObjectHideFlags: 0
@@ -13562,6 +13568,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 36, y: 0}
+  followSafeArea: 1
 --- !u!1 &1492640964
 GameObject:
   m_ObjectHideFlags: 0
@@ -14688,7 +14695,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
-  cornerPadding: {x: 24, y: 0}
+  cornerPadding: {x: 0, y: 0}
+  followSafeArea: 0
 --- !u!1 &1676805138
 GameObject:
   m_ObjectHideFlags: 0
@@ -14824,7 +14832,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
-  cornerPadding: {x: 24, y: 0}
+  cornerPadding: {x: 0, y: 0}
+  followSafeArea: 0
 --- !u!1 &1681707532
 GameObject:
   m_ObjectHideFlags: 0
@@ -15140,7 +15149,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
-  cornerPadding: {x: 24, y: 0}
+  cornerPadding: {x: 0, y: 0}
+  followSafeArea: 0
 --- !u!1 &1743920310
 GameObject:
   m_ObjectHideFlags: 0
