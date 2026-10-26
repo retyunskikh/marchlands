@@ -181,7 +181,9 @@ namespace Marchlands.View
 
             float barAcross = math.abs(across.x) * barSize.x * 0.5f + math.abs(across.y) * barSize.y * 0.5f;
             float2 countAt = barCenter + across * (barAcross + style.CountGap);
-            countLabel.Show(new Vector3(countAt.x, countAt.y, 0f), squad.Alive, UnitStats.Of(squad, match.Settings).squadSize, true);
+            countLabel.Show(
+                new Vector3(countAt.x, countAt.y, 0f), squad.Alive, UnitStats.Of(squad, match.Settings).squadSize, true,
+                squad.IsReinforcing ? squad.ReinforceProgress : -1f);
             RenderRing(ringCenter, alpha);
         }
 

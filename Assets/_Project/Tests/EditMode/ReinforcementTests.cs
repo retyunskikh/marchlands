@@ -48,6 +48,24 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void ReinforcingFlag_AndProgress_ShowStateInVillage()
+        {
+            Match match = CreateMatchWithOwnVillage(out _);
+            Squad inside = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, 35);
+            Squad outside = match.AddSquad(Side.France, new float2(0f, 20f), 90f, Formation.Line, 30);
+
+            RunTicks(match, TicksFor(3f));
+            Assert.IsTrue(inside.IsReinforcing);
+            Assert.That(inside.ReinforceProgress, Is.EqualTo(0.5f).Within(0.02f));
+            Assert.IsFalse(outside.IsReinforcing);
+            Assert.AreEqual(0f, outside.ReinforceProgress);
+
+            RunTicks(match, TicksFor(3f));
+            Assert.AreEqual(36, inside.Alive);
+            Assert.IsFalse(inside.IsReinforcing, "Полный отряд больше не пополняется");
+        }
+
+        [Test]
         public void Reinforcement_WorksEvenInBattle()
         {
             Match match = CreateMatchWithOwnVillage(out _);

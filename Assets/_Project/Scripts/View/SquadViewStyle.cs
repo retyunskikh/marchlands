@@ -51,6 +51,12 @@ namespace Marchlands.View
         [SerializeField] private float countGainTime = 1.2f;
         [SerializeField] private float countLossTime = 0.6f;
         [SerializeField] private float countBounce = 0.25f;
+        [Tooltip("Цвет числа, пока отряд пополняется в своей деревне.")]
+        [SerializeField] private Color countReinforceColor = new Color(0.7f, 1f, 0.6f);
+        [Tooltip("Полоска до следующего человека из деревни под числом: ширина и высота в юнитах.")]
+        [SerializeField] private Vector2 reinforceBarSize = new Vector2(1.6f, 0.16f);
+        [SerializeField] private Color reinforceBarBack = new Color(0f, 0f, 0f, 0.55f);
+        [SerializeField] private Color reinforceBarFill = new Color(0.45f, 1f, 0.45f);
         [Tooltip("Сколько всплывает «+1», s, и на сколько поднимается, u.")]
         [SerializeField] private float floaterLifetime = 1.4f;
         [SerializeField] private float floaterRise = 1.6f;
@@ -132,6 +138,14 @@ namespace Marchlands.View
         public float CountLossTime => countLossTime;
 
         public float CountBounce => countBounce;
+
+        public Color CountReinforceColor => countReinforceColor;
+
+        public Vector2 ReinforceBarSize => reinforceBarSize;
+
+        public Color ReinforceBarBack => reinforceBarBack;
+
+        public Color ReinforceBarFill => reinforceBarFill;
 
         public float FloaterLifetime => floaterLifetime;
 

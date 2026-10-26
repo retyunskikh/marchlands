@@ -19,20 +19,25 @@ namespace Marchlands.Simulation.Economy
             foreach (Squad squad in match.Squads)
             {
                 Village village = interval > 0f && CanReinforce(match, squad) ? FindOwnVillage(match, squad) : null;
+                squad.IsReinforcing = village != null;
                 if (village == null)
                 {
                     squad.ReinforceTimer = 0f;
+                    squad.ReinforceProgress = 0f;
                     continue;
                 }
 
                 squad.ReinforceTimer += deltaTime;
                 if (squad.ReinforceTimer + TimerEpsilon < interval)
                 {
+                    squad.ReinforceProgress = squad.ReinforceTimer / interval;
                     continue;
                 }
 
                 squad.ReinforceTimer = 0f;
+                squad.ReinforceProgress = 0f;
                 squad.Alive++;
+                squad.IsReinforcing = squad.Alive < UnitStats.Of(squad, match.Settings).squadSize;
                 match.ReportReinforcement(squad, village);
             }
         }

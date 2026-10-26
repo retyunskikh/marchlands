@@ -10,8 +10,9 @@ namespace Marchlands.UI
 {
     /// <summary>
     /// Панель выделенного здания: название, состояние постройки или найма и иконки найма — у казармы гренадёры
-    /// и егеря, у конюшни конница. Нажатие иконки включает или выключает найм этого рода войск (включённая
-    /// подсвечена, под ней — время до рекрута); «i» открывает характеристики. Видна только при выделении.
+    /// и егеря, у конюшни конница: воин своей стороны в полный рост и цена человека с монеткой. Нажатие иконки
+    /// включает или выключает найм этого рода войск (включённая подсвечена, под ней — время до рекрута); «i»
+    /// открывает характеристики. У штаба — иконки постройки казармы и конюшни. Видна только при выделении.
     /// </summary>
     public sealed class BuildingPanel : MonoBehaviour
     {
@@ -25,7 +26,7 @@ namespace Marchlands.UI
         [SerializeField] private HireToggle buildBarracksToggle;
         [SerializeField] private HireToggle buildStableToggle;
         [Tooltip("{0} — название, {1} — цена.")]
-        [SerializeField] private string buildFormat = "{0}\n{1} зол.";
+        [SerializeField] private string buildFormat = "{1}";
         [SerializeField] private string headquartersBuildStatus = "Постройте казарму или конюшню";
         [SerializeField] private UnitInfoPanel infoPanel;
         [SerializeField] private string headquartersTitle = "Штаб";
@@ -39,7 +40,10 @@ namespace Marchlands.UI
         [SerializeField] private string noGoldStatus = "Найм: не хватает золота";
         [SerializeField] private string fullStatus = "Найм: ждут люди на два отряда";
         [Tooltip("{0} — название, {1} — цена человека.")]
-        [SerializeField] private string toggleFormat = "{0}\n{1} зол./чел.";
+        [SerializeField] private string toggleFormat = "{1}";
+        [Tooltip("Портреты для иконок найма по порядку: гренадёр, егерь, всадник.")]
+        [SerializeField] private Sprite[] francePortraits = new Sprite[3];
+        [SerializeField] private Sprite[] austriaPortraits = new Sprite[3];
         [SerializeField] private string grenadiersName = "Гренадёры";
         [SerializeField] private string jaegersName = "Егеря";
         [SerializeField] private string cavalryName = "Конница";
@@ -118,6 +122,12 @@ namespace Marchlands.UI
             if (!visible)
             {
                 return;
+            }
+
+            Sprite[] portraits = building.Owner == Side.France ? francePortraits : austriaPortraits;
+            if (portraits != null && (int)type < portraits.Length)
+            {
+                toggle.SetIcon(portraits[(int)type]);
             }
 
             toggle.Button.interactable = building.IsBuilt;

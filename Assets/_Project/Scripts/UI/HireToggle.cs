@@ -3,11 +3,12 @@ using UnityEngine.UI;
 
 namespace Marchlands.UI
 {
-    /// <summary>Иконка найма рода войск в карточке здания: портрет, подпись, подсветка «найм идёт» и полоска до рекрута.</summary>
+    /// <summary>Иконка найма рода войск в карточке здания: портрет, цена с монеткой, подсветка «найм идёт» и полоска до рекрута.</summary>
     public sealed class HireToggle : MonoBehaviour
     {
         [SerializeField] private Button button;
         [SerializeField] private Image frame;
+        [SerializeField] private Image icon;
         [SerializeField] private Text label;
         [SerializeField] private Image progressFill;
         [SerializeField] private Button infoButton;
@@ -17,6 +18,14 @@ namespace Marchlands.UI
         public Button Button => button;
 
         public Button InfoButton => infoButton;
+
+        public void SetIcon(Sprite sprite)
+        {
+            if (icon != null && sprite != null && icon.sprite != sprite)
+            {
+                icon.sprite = sprite;
+            }
+        }
 
         public void Show(string text, bool hiring, float progress)
         {

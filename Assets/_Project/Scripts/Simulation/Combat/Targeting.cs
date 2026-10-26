@@ -1,4 +1,5 @@
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Melee;
 using Marchlands.Simulation.Squads;
 
 namespace Marchlands.Simulation.Combat
@@ -32,13 +33,19 @@ namespace Marchlands.Simulation.Combat
         public static bool IsValidTarget(Match match, Squad shooter, Squad candidate, float range, out float distance)
         {
             distance = float.MaxValue;
-            // В свалку рукопашной не стреляют: там и свои.
-            if (candidate == null || candidate.Side == shooter.Side || candidate.Alive <= 0 || candidate.IsInMelee)
+            if (candidate == null || candidate.Side == shooter.Side || candidate.Alive <= 0)
             {
                 return false;
             }
 
-            if (!FireGeometry.IsInSector(shooter, candidate.Position, match.Settings))
+            // В чужую свалку рукопашной не стреляют: там и свои. Своего противника в рукопашной бьют в упор с любой стороны.
+            bool ownOpponent = candidate.IsInMelee && shooter.IsInMelee && MeleeSystem.AreEngaged(match, shooter, candidate);
+            if (candidate.IsInMelee && !ownOpponent)
+            {
+                return false;
+            }
+
+            if (!ownOpponent && !FireGeometry.IsInSector(shooter, candidate.Position, match.Settings))
             {
                 return false;
             }

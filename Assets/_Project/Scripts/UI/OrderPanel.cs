@@ -20,16 +20,11 @@ namespace Marchlands.UI
         [Header("Залп")]
         [SerializeField] private Button volleyButton;
         [SerializeField] private Text volleyLabel;
-        [SerializeField] private string volleyText = "Залп!";
-        [SerializeField] private string aimingText = "Целься!";
-        [Tooltip("{0} — сколько секунд осталось.")]
-        [SerializeField] private string reloadingText = "Заряжают… {0}";
-        [SerializeField] private string routingText = "Бегут!";
-        [SerializeField] private string meleeText = "Рукопашная";
         [Tooltip("Картинка кнопки: дуло мушкета; бледнеет, когда залп невозможен.")]
         [SerializeField] private Image volleyIcon;
-        [Tooltip("Круговая полоса перезарядки поверх кнопки.")]
+        [Tooltip("Круговая полоса перезарядки поверх кнопки и её тёмная дорожка.")]
         [SerializeField] private Image reloadFill;
+        [SerializeField] private Image reloadTrack;
         [SerializeField] private Color volleyReadyTint = Color.white;
         [SerializeField] private Color volleyPaleTint = new Color(1f, 1f, 1f, 0.35f);
 
@@ -145,6 +140,10 @@ namespace Marchlands.UI
                 reloadFill.enabled = reloading;
                 float reloadTime = match.Settings.combat.reloadTime;
                 reloadFill.fillAmount = reloading && reloadTime > 0f ? 1f - squad.FireTimer / reloadTime : 0f;
+                if (reloadTrack != null)
+                {
+                    reloadTrack.enabled = reloading;
+                }
             }
 
             formationButton.interactable = obeys && !squad.IsChangingFormation;
@@ -168,24 +167,10 @@ namespace Marchlands.UI
             stopButton.interactable = obeys && squad.Order.Type != SquadOrderType.None;
         }
 
+        /// <summary>На «Залпе» только секунды перезарядки; остальное показывают кольцо и яркость мушкета.</summary>
         private string GetVolleyText()
         {
-            if (squad.IsRouting)
-            {
-                return routingText;
-            }
-
-            if (squad.IsInMelee)
-            {
-                return meleeText;
-            }
-
-            return squad.FireState switch
-            {
-                FireState.Aiming => aimingText,
-                FireState.Reloading => string.Format(reloadingText, Mathf.CeilToInt(squad.FireTimer)),
-                _ => volleyText
-            };
+            return squad.FireState == FireState.Reloading ? Mathf.CeilToInt(squad.FireTimer).ToString() : string.Empty;
         }
 
         private void OnVolley()

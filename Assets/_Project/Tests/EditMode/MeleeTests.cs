@@ -153,7 +153,7 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void SquadsInMelee_DoNotFireOrTakeOrders()
+        public void SquadsInMelee_DoNotMove_ButCanVolleyAtOpponent()
         {
             Match match = CombatTestScenarios.FacingLines(1, 6f, out Squad attacker, out Squad defender);
             match.Enqueue(new ChargeCommand(attacker.Id, defender.Id));
@@ -167,8 +167,19 @@ namespace Marchlands.Tests.EditMode
 
             Assert.AreEqual(SquadOrderType.None, attacker.Order.Type);
             Assert.Less(math.distance(position, attacker.Position), 1e-3f, "Приказ движения в рукопашной не выполняется");
-            Assert.AreEqual(FireState.Loaded, defender.FireState);
-            Assert.IsFalse(VolleyRules.CanVolley(match, defender));
+            Assert.AreEqual(FireState.Aiming, defender.FireState, "Залп в упор по противнику в рукопашной");
+            Assert.AreEqual(attacker.Id, defender.AimTargetId);
+        }
+
+        [Test]
+        public void OutsiderDoesNotFireIntoMelee()
+        {
+            Match match = CombatTestScenarios.FacingLines(1, 6f, out Squad attacker, out Squad defender);
+            match.Enqueue(new ChargeCommand(attacker.Id, defender.Id));
+            RunUntilMelee(match, attacker);
+            Squad outsider = match.AddSquad(attacker.Side, attacker.Position + new float2(0f, 12f), -90f, Formation.Line);
+
+            Assert.IsFalse(VolleyRules.CanVolley(match, outsider), "Чужая свалка — не цель");
         }
 
         [Test]

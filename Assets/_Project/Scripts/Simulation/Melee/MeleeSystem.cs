@@ -163,7 +163,7 @@ namespace Marchlands.Simulation.Melee
             return squad.Alive > 0 && !squad.IsRouting && !squad.IsWithdrawn;
         }
 
-        private static bool AreEngaged(Match match, Squad a, Squad b)
+        internal static bool AreEngaged(Match match, Squad a, Squad b)
         {
             foreach (MeleeEngagement existing in match.Engagements)
             {

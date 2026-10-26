@@ -116,6 +116,12 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Сколько секунд отряд стоит в своей деревне с момента последнего пополнения.</summary>
         internal float ReinforceTimer { get; set; }
 
+        /// <summary>Отряд в зоне своей деревни и пополняется (не в полном составе).</summary>
+        public bool IsReinforcing { get; internal set; }
+
+        /// <summary>Доля пути до следующего человека из деревни, 0..1; 0, если не пополняется.</summary>
+        public float ReinforceProgress { get; internal set; }
+
         /// <summary>Бегущий отряд добежал до своих и ушёл в резерв; будет удалён в конце тика.</summary>
         internal bool IsWithdrawn { get; set; }
 
