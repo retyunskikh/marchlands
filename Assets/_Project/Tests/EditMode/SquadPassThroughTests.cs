@@ -28,20 +28,40 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void SquadMarchesThroughStandingEnemy_WithoutPushingIt()
+        public void SquadMarchingIntoEnemy_StopsAtContact_AndStartsMelee()
         {
             var match = new Match(1, TestSettings.Create());
-            Squad standing = match.AddSquad(Side.Austria, float2.zero, 90f, Formation.Line);
+            Squad standing = match.AddSquad(Side.Austria, float2.zero, -90f, Formation.Line);
             Squad marching = match.AddSquad(Side.France, new float2(0f, -10f), 90f, Formation.Column);
             match.Enqueue(new MoveCommand(marching.Id, new float2(0f, 10f), 90f));
 
-            for (int tick = 0; tick < 200; tick++)
+            for (int tick = 0; tick < 200 && !marching.IsInMelee; tick++)
             {
                 match.Tick();
             }
 
             Assert.AreEqual(float2.zero, standing.Position, "Стоящий отряд не сдвигается");
-            Assert.AreEqual(10f, marching.Position.y, 1e-3f);
+            Assert.IsTrue(marching.IsInMelee, "Сошлись — рукопашная без приказа атаки");
+            Assert.IsFalse(match.Engagements[0].IsCharge, "Без атаки нет бонуса удара");
+            Assert.Less(marching.Position.y, 0f, "Сквозь врага не прошёл");
+        }
+
+        [Test]
+        public void EnemyBlocksRotation_ThroughIt()
+        {
+            var match = new Match(1, TestSettings.Create());
+            // Линия гренадёров (36 → 18 в ширину, 9 u) поворачивается на 90° — её края упираются во врага сбоку.
+            Squad turning = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
+            Squad blocker = match.AddSquad(Side.Austria, new float2(3f, 3.2f), 180f, Formation.Column);
+            match.Enqueue(new MoveCommand(turning.Id, float2.zero, 0f));
+
+            for (int tick = 0; tick < 40; tick++)
+            {
+                match.Tick();
+            }
+
+            Assert.Greater(math.abs(Angles.Delta(turning.Facing, 0f)), 1f, "Развернуться сквозь врага нельзя");
+            Assert.IsNotNull(blocker);
         }
 
         [Test]

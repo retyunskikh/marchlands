@@ -26,6 +26,10 @@ namespace Marchlands.Input
         [SerializeField] private float wheelZoomFactor;
         [Tooltip("Допуск попадания пальцем по кольцу поворота, dp.")]
         [SerializeField] private float rotationRingGrab;
+        [Tooltip("Сколько держать палец неподвижно при протяжке приказа, чтобы закрепить точку и задавать фронт, s.")]
+        [SerializeField] private float holdToAimTime = 0.45f;
+        [Tooltip("Насколько палец может сдвинуться и всё ещё считаться неподвижным, dp.")]
+        [SerializeField] private float holdStillTolerance = 10f;
 
         public float TapMaxMove => tapMaxMove;
 
@@ -46,5 +50,9 @@ namespace Marchlands.Input
         public float WheelZoomFactor => wheelZoomFactor;
 
         public float RotationRingGrab => rotationRingGrab;
+
+        public float HoldToAimTime => holdToAimTime;
+
+        public float HoldStillTolerance => holdStillTolerance;
     }
 }

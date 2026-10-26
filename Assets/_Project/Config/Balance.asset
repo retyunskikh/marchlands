@@ -93,6 +93,7 @@ MonoBehaviour:
       chargeBonusDuration: 6
       flankMeleeMultiplier: 1.5
       chargeMaxDuration: 10
+      contactDistance: 0.5
     ai:
       reactionDelay: 0.8
       thinkInterval: 0.5

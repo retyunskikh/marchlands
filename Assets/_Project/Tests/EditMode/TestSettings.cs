@@ -65,6 +65,7 @@ namespace Marchlands.Tests.EditMode
                     chargeBonus = 1.5f,
                     chargeBonusDuration = 3f,
                     flankMeleeMultiplier = 1.5f,
+                    contactDistance = 0.5f,
                     chargeMaxDuration = 10f
                 },
                 ai = new AiSettings

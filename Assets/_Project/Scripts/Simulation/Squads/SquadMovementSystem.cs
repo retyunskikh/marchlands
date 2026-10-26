@@ -8,7 +8,9 @@ namespace Marchlands.Simulation.Squads
     /// <summary>
     /// Движение отряда: перестроение; приказ движения (разворот лицом к точке → марш вперёд → разворот
     /// в конечный фронт); бег в штыки; бегство. Время внутри тика переносится между фазами, поэтому
-    /// длительность приказа не зависит от того, на какой тик пришлась смена фазы.
+    /// длительность приказа не зависит от того, на какой тик пришлась смена фазы. Свои отряды проходят
+    /// друг сквозь друга, а во врага не войти и не развернуться сквозь него: такой шаг отменяется,
+    /// и отряд остаётся вплотную — рукопашную начинает <see cref="Melee.MeleeSystem"/>.
     /// </summary>
     internal static class SquadMovementSystem
     {
@@ -34,6 +36,9 @@ namespace Marchlands.Simulation.Squads
                 return;
             }
 
+            float2 position = squad.Position;
+            float facing = squad.Facing;
+            float overlapBefore = EnemyOverlap(squad, match);
             switch (squad.Order.Type)
             {
                 case SquadOrderType.Move when squad.FireState != FireState.Aiming:
@@ -46,6 +51,33 @@ namespace Marchlands.Simulation.Squads
             }
 
             KeepInsideTerrain(squad, match);
+
+            // Шаг или поворот, который вдавливает строй во врага, отменяется (если уже перекрывались — нельзя глубже).
+            if (EnemyOverlap(squad, match) > overlapBefore + OverlapEpsilon)
+            {
+                squad.Position = position;
+                squad.Facing = facing;
+            }
+        }
+
+        private const float OverlapEpsilon = 1e-3f;
+
+        /// <summary>Наибольшее перекрытие строя с не бегущими врагами, u.</summary>
+        private static float EnemyOverlap(Squad squad, Match match)
+        {
+            SquadFootprint own = SquadFootprint.Of(squad, match.Settings.squads);
+            float worst = 0f;
+            foreach (Squad other in match.Squads)
+            {
+                if (other.Side == squad.Side || other.IsRouting || other.IsWithdrawn || other.Alive <= 0)
+                {
+                    continue;
+                }
+
+                worst = math.max(worst, SquadFootprint.PenetrationDepth(own, SquadFootprint.Of(other, match.Settings.squads)));
+            }
+
+            return worst;
         }
 
         /// <summary>Не даёт отряду выйти за непроходимую границу (горы и реки) с учётом его габаритов.</summary>

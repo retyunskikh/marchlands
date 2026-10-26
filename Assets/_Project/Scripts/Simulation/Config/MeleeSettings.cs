@@ -27,5 +27,8 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Если за это время атака не дошла до контакта (путь перекрыт), отряд останавливается, s.</summary>
         public float chargeMaxDuration;
+
+        /// <summary>Враги ближе этого друг к другу (между краями строя) сходятся в рукопашную и без атаки, u.</summary>
+        public float contactDistance;
     }
 }

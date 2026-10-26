@@ -26,6 +26,26 @@ namespace Marchlands.Simulation.Squads
         /// <summary>x — половина ширины фронта, y — половина глубины.</summary>
         public float2 HalfExtents { get; }
 
+        /// <summary>Тот же прямоугольник, расширенный на <paramref name="margin"/> с каждой стороны.</summary>
+        public SquadFootprint Inflated(float margin)
+        {
+            return new SquadFootprint(Center, Forward, Right, HalfExtents + margin);
+        }
+
+        private SquadFootprint(float2 center, float2 forward, float2 right, float2 halfExtents)
+        {
+            Center = center;
+            Forward = forward;
+            Right = right;
+            HalfExtents = halfExtents;
+        }
+
+        /// <summary>Насколько два прямоугольника перекрываются (глубина вдоль разделяющей оси); 0 — не перекрываются.</summary>
+        public static float PenetrationDepth(SquadFootprint a, SquadFootprint b)
+        {
+            return TryGetPenetration(a, b, out float2 push) ? math.length(push) : 0f;
+        }
+
         public static SquadFootprint Of(Squad squad, SquadSettings settings)
         {
             return new SquadFootprint(squad.Position, squad.Facing, FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings));

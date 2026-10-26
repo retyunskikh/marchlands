@@ -9,6 +9,8 @@ namespace Marchlands.View
     public sealed class SquadViewRegistry : MonoBehaviour
     {
         [SerializeField] private SquadViewStyle style = new SquadViewStyle();
+        [Tooltip("Куда уходят фигурки павших: вспышка ранения, падение, исчезновение.")]
+        [SerializeField] private CasualtiesView casualties;
 
         private readonly Dictionary<int, SquadView> views = new Dictionary<int, SquadView>();
         private readonly HashSet<int> aliveIds = new HashSet<int>();
@@ -57,7 +59,7 @@ namespace Marchlands.View
                 var viewObject = new GameObject($"Squad {squad.Id} ({squad.Side})");
                 viewObject.transform.SetParent(transform, false);
                 var view = viewObject.AddComponent<SquadView>();
-                view.Initialize(squad, match, style);
+                view.Initialize(squad, match, style, casualties);
                 view.SetSelected(squad == selected);
                 views.Add(squad.Id, view);
             }

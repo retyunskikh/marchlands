@@ -69,6 +69,7 @@ namespace Marchlands.UI
         private bool isChargeTargeting;
         private Image fireAtWillImage;
         private Image chargeImage;
+        private Image volleyImage;
 
         /// <summary>Нажата «В штыки»: нужно выбрать врага на поле.</summary>
         public event Action ChargeRequested;
@@ -78,6 +79,7 @@ namespace Marchlands.UI
             this.match = match;
             fireAtWillImage = fireAtWillButton.GetComponent<Image>();
             chargeImage = chargeButton.GetComponent<Image>();
+            volleyImage = volleyButton.GetComponent<Image>();
             volleyButton.onClick.AddListener(OnVolley);
             formationButton.onClick.AddListener(OnFormation);
             chargeButton.onClick.AddListener(OnCharge);
@@ -129,6 +131,12 @@ namespace Marchlands.UI
             if (volleyIcon != null)
             {
                 volleyIcon.color = canVolley ? volleyReadyTint : volleyPaleTint;
+            }
+
+            // Автоматический огонь — режим «Залпа»: включён — у «Залпа» золотая рамка.
+            if (volleyImage != null)
+            {
+                volleyImage.color = squad.FireAtWill ? activeColor : normalColor;
             }
 
             if (reloadFill != null)

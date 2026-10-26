@@ -9,7 +9,8 @@ namespace Marchlands.Simulation.Melee
 {
     /// <summary>
     /// Штыковая атака и рукопашная (раздел 3.4 docs/design.md): проверка морали защитника на подходе,
-    /// начало рукопашной при касании и потери сторон. Потери тика считаются по численности на его начало,
+    /// начало рукопашной при касании атакующего, а также при любом сближении врагов ближе contactDistance,
+    /// и потери сторон. Потери тика считаются по численности на его начало,
     /// поэтому результат не зависит от порядка пар.
     /// </summary>
     internal static class MeleeSystem
@@ -17,6 +18,7 @@ namespace Marchlands.Simulation.Melee
         public static void Update(Match match, float deltaTime)
         {
             UpdateCharges(match, deltaTime);
+            EngageContacts(match);
             ApplyMeleeLosses(match, deltaTime);
         }
 
@@ -79,7 +81,7 @@ namespace Marchlands.Simulation.Melee
 
                 if (distance <= contactDistance)
                 {
-                    Engage(match, attacker, target);
+                    Engage(match, attacker, target, isCharge: true);
                     continue;
                 }
 
@@ -87,7 +89,7 @@ namespace Marchlands.Simulation.Melee
                 Squad blocker = FindEnemyInContact(match, attacker, contactDistance);
                 if (blocker != null)
                 {
-                    Engage(match, attacker, blocker);
+                    Engage(match, attacker, blocker, isCharge: true);
                     continue;
                 }
 
@@ -114,7 +116,67 @@ namespace Marchlands.Simulation.Melee
             return null;
         }
 
-        private static void Engage(Match match, Squad attacker, Squad defender)
+        /// <summary>
+        /// Враги, сошедшиеся ближе contactDistance, начинают рукопашную. Атакующий — бегущий в атаку (с бонусом удара),
+        /// а если в атаку не бежит никто — тот, кто сдвинулся за тик, при равенстве — с меньшим номером.
+        /// </summary>
+        private static void EngageContacts(Match match)
+        {
+            float gap = match.Settings.melee.contactDistance;
+            for (int i = 0; i < match.Squads.Count; i++)
+            {
+                Squad a = match.Squads[i];
+                if (!CanFight(a))
+                {
+                    continue;
+                }
+
+                for (int j = i + 1; j < match.Squads.Count; j++)
+                {
+                    Squad b = match.Squads[j];
+                    if (b.Side == a.Side || !CanFight(b) || AreEngaged(match, a, b))
+                    {
+                        continue;
+                    }
+
+                    SquadFootprint fa = SquadFootprint.Of(a, match.Settings.squads).Inflated(gap * 0.5f);
+                    SquadFootprint fb = SquadFootprint.Of(b, match.Settings.squads).Inflated(gap * 0.5f);
+                    if (!SquadFootprint.TryGetPenetration(fa, fb, out _))
+                    {
+                        continue;
+                    }
+
+                    // Кто бежит в атаку — тот и атакует, с бонусом удара; иначе атакует тот, кто шёл на врага.
+                    bool aCharges = a.Order.Type == SquadOrderType.Charge;
+                    bool bCharges = b.Order.Type == SquadOrderType.Charge;
+                    float movedA = math.distancesq(a.PreviousPosition, a.Position);
+                    float movedB = math.distancesq(b.PreviousPosition, b.Position);
+                    bool aAttacks = aCharges != bCharges ? aCharges : movedA > movedB || (movedA == movedB && a.Id < b.Id);
+                    Squad attacker = aAttacks ? a : b;
+                    Engage(match, attacker, aAttacks ? b : a, isCharge: attacker.Order.Type == SquadOrderType.Charge);
+                }
+            }
+        }
+
+        private static bool CanFight(Squad squad)
+        {
+            return squad.Alive > 0 && !squad.IsRouting && !squad.IsWithdrawn;
+        }
+
+        private static bool AreEngaged(Match match, Squad a, Squad b)
+        {
+            foreach (MeleeEngagement existing in match.Engagements)
+            {
+                if (existing.Involves(a) && existing.Involves(b))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void Engage(Match match, Squad attacker, Squad defender, bool isCharge)
         {
             StopCharge(attacker);
             foreach (MeleeEngagement existing in match.Engagements)
@@ -126,7 +188,8 @@ namespace Marchlands.Simulation.Melee
             }
 
             bool isFlank = MoraleMath.IsFlank(defender, attacker.Position, match.Settings.morale);
-            match.AddEngagement(new MeleeEngagement(attacker, defender, match.CurrentTick, isFlank));
+            match.AddEngagement(new MeleeEngagement(attacker, defender, match.CurrentTick, isFlank, isCharge));
+            attacker.Order = SquadOrder.None;
             attacker.MeleeOpponents++;
             defender.MeleeOpponents++;
 
@@ -153,7 +216,7 @@ namespace Marchlands.Simulation.Melee
                 float elapsed = (match.CurrentTick - engagement.StartTick) * elapsedPerTick;
                 // Бонус атаки (сверх 1) у конницы больше: удар в сабли с разгона.
                 float chargeBonus = 1f + (melee.chargeBonus - 1f) * UnitStats.Of(attacker, match.Settings).chargeBonusMultiplier;
-                float attackerMultiplier = elapsed < melee.chargeBonusDuration ? chargeBonus : 1f;
+                float attackerMultiplier = engagement.IsCharge && elapsed < melee.chargeBonusDuration ? chargeBonus : 1f;
                 if (engagement.IsFlank)
                 {
                     attackerMultiplier *= melee.flankMeleeMultiplier;

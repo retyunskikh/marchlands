@@ -14,12 +14,11 @@ namespace Marchlands.Simulation.Combat
 
         internal static bool CanStartAiming(Match match, Squad squad)
         {
-            // Конница, бегущие, дерущиеся в рукопашной и бегущие в штыки не стреляют.
+            // Конница, бегущие и дерущиеся в рукопашной не стреляют; бегущие в штыки — могут дать залп на подходе.
             return squad != null
                 && UnitStats.CanFire(squad, match.Settings)
                 && squad.Alive > 0
                 && squad.CanReceiveOrders
-                && squad.Order.Type != SquadOrderType.Charge
                 && squad.FireState == FireState.Loaded
                 && !squad.IsChangingFormation;
         }

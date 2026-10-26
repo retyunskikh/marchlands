@@ -34,6 +34,9 @@ namespace Marchlands.View
         [Tooltip("Выпадов в секунду у каждого солдата.")]
         [SerializeField] private float thrustRate = 1.1f;
 
+        [Tooltip("Как быстро строй смыкается после потерь, 1/s: солдаты не телепортируются на места павших.")]
+        [SerializeField] private float regroupSpeed = 3f;
+
         [Header("Походка (только вид)")]
         [Tooltip("Гренадёры маршируют в ногу: шагов в секунду, покачивание вбок, u.")]
         [SerializeField] private Vector2 marchGait = new Vector2(1.8f, 0.035f);
@@ -93,6 +96,8 @@ namespace Marchlands.View
         public float MeleeBlendTime => meleeBlendTime;
 
         public float GaitBlendTime => gaitBlendTime;
+
+        public float RegroupSpeed => regroupSpeed;
 
         /// <summary>Частота шага (в секунду) и размах покачивания (u) для рода войск.</summary>
         public Vector2 GetGait(UnitType type)

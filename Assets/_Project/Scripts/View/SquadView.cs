@@ -40,6 +40,10 @@ namespace Marchlands.View
         private readonly List<Sprite> fullSprites = new List<Sprite>();
         private readonly List<Sprite> bodySprites = new List<Sprite>();
         private readonly List<SoldierRole> soldierRoles = new List<SoldierRole>();
+
+        // Где солдат стоит в строю сейчас (локально): плавно догоняет своё место после потерь и перестроек.
+        private readonly List<float2> shownSlots = new List<float2>();
+        private CasualtiesView casualties;
         private readonly List<SpriteRenderer> arms = new List<SpriteRenderer>();
         private bool showingMeleeBodies;
 
@@ -58,9 +62,10 @@ namespace Marchlands.View
 
         public Squad Squad => squad;
 
-        internal void Initialize(Squad squad, Match match, SquadViewStyle style)
+        internal void Initialize(Squad squad, Match match, SquadViewStyle style, CasualtiesView casualties)
         {
             this.squad = squad;
+            this.casualties = casualties;
             this.match = match;
             settings = match.Settings.squads;
             combat = match.Settings.combat;
@@ -97,6 +102,7 @@ namespace Marchlands.View
                 Quaternion.Euler(0f, 0f, Angles.Of(meleeDirection) + SpriteFacingOffset), meleeBlend);
             float2 spacing = style.GetSpacing(squad.Type);
             bool openOrder = squad.Type == UnitType.Jaegers;
+            float regroup = 1f - math.exp(-style.RegroupSpeed * Time.deltaTime);
             for (int i = 0; i < soldiers.Count; i++)
             {
                 float2 local = changing ? math.lerp(fromSlots[i], toSlots[transitionTargets[i]], change) : fromSlots[i];
@@ -109,6 +115,14 @@ namespace Marchlands.View
                 {
                     local += Scatter(i + 101) * style.JaegerScatter;
                 }
+
+                // Место в строю могло смениться (павшие, пополнение) — солдат идёт к нему, а не перескакивает.
+                if (float.IsNaN(shownSlots[i].x))
+                {
+                    shownSlots[i] = local;
+                }
+
+                local = shownSlots[i] = math.lerp(shownSlots[i], local, regroup);
 
                 if (gaitBlend > 0f)
                 {
@@ -503,6 +517,7 @@ namespace Marchlands.View
 
                 fullSprites.Add(drawn);
                 soldierRoles.Add(role);
+                shownSlots.Add(new float2(float.NaN, float.NaN));
                 if (drawn != null && style.TryGetMeleeSprites(squad.Side, squad.Type, role, out Sprite body, out Sprite armsSprite))
                 {
                     bodySprites.Add(body);
@@ -519,19 +534,49 @@ namespace Marchlands.View
 
             while (soldiers.Count > alive)
             {
-                int last = soldiers.Count - 1;
-                Destroy(soldiers[last].gameObject);
-                soldiers.RemoveAt(last);
-                if (arms[last] != null)
+                int fallen = PickFallen();
+                SpriteRenderer soldier = soldiers[fallen];
+                if (casualties != null && soldier.enabled)
                 {
-                    Destroy(arms[last].gameObject);
+                    // Павший остаётся на поле: ранение, падение, исчезновение.
+                    soldier.sprite = fullSprites[fallen] != null ? fullSprites[fallen] : soldier.sprite;
+                    casualties.Add(soldier);
+                }
+                else
+                {
+                    Destroy(soldier.gameObject);
                 }
 
-                arms.RemoveAt(last);
-                bodySprites.RemoveAt(last);
-                fullSprites.RemoveAt(last);
-                soldierRoles.RemoveAt(last);
+                soldiers.RemoveAt(fallen);
+                if (arms[fallen] != null)
+                {
+                    Destroy(arms[fallen].gameObject);
+                }
+
+                arms.RemoveAt(fallen);
+                bodySprites.RemoveAt(fallen);
+                fullSprites.RemoveAt(fallen);
+                soldierRoles.RemoveAt(fallen);
+                shownSlots.RemoveAt(fallen);
             }
+        }
+
+        /// <summary>
+        /// Кто падает: чаще первые шеренги (по ним бьют), знаменосец и офицер — последними.
+        /// Выбор постоянный для отряда и его численности — без случайности кадра.
+        /// </summary>
+        private int PickFallen()
+        {
+            int count = soldiers.Count;
+            int front = math.max(1, math.min(count, (count + 1) / 2));
+            uint hash = (uint)(squad.Id * 7919 + count * 104729) * 2654435761u;
+            int index = (int)(hash % (uint)front);
+            for (int attempt = 0; attempt < count && soldierRoles[index] != SoldierRole.Private; attempt++)
+            {
+                index = (index + 1) % count;
+            }
+
+            return index;
         }
 
         private SpriteRenderer CreateRenderer(string objectName, Sprite sprite, Color color, int sortingOrder)

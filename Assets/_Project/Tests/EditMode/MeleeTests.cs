@@ -80,6 +80,19 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void ChargingSquad_CanStillVolley()
+        {
+            var match = new Match(1, TestSettings.Create());
+            Squad attacker = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
+            Squad defender = match.AddSquad(Side.Austria, new float2(0f, 8f), -90f, Formation.Line);
+            match.Enqueue(new ChargeCommand(attacker.Id, defender.Id));
+            match.Tick();
+
+            Assert.AreEqual(SquadOrderType.Charge, attacker.Order.Type);
+            Assert.IsTrue(VolleyRules.CanVolley(match, attacker), "Атака в штыки не мешает залпу на подходе");
+        }
+
+        [Test]
         public void Melee_AlwaysEnds()
         {
             for (ulong seed = 1; seed <= 20; seed++)
@@ -156,16 +169,6 @@ namespace Marchlands.Tests.EditMode
             Assert.Less(math.distance(position, attacker.Position), 1e-3f, "Приказ движения в рукопашной не выполняется");
             Assert.AreEqual(FireState.Loaded, defender.FireState);
             Assert.IsFalse(VolleyRules.CanVolley(match, defender));
-        }
-
-        [Test]
-        public void ChargingSquad_CannotFire()
-        {
-            Match match = CombatTestScenarios.FacingLines(1, 10f, out Squad attacker, out Squad defender);
-            match.Enqueue(new ChargeCommand(attacker.Id, defender.Id));
-            match.Tick();
-
-            Assert.IsFalse(VolleyRules.CanVolley(match, attacker));
         }
 
         [Test]

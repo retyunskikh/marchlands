@@ -31,6 +31,13 @@ namespace Marchlands.Input
 
         private bool isDraggingOrder;
         private bool isRotating;
+
+        // Протяжка приказа: палец задержали — точка закреплена, дальше палец задаёт фронт в ней.
+        private bool destinationLocked;
+        private float2 lockedDestination;
+        private float lockedFacing;
+        private Vector2 lastMoveScreen;
+        private double lastMoveTime;
         private Vector2 lastDragPosition;
 
         private bool hasPendingTap;
@@ -250,6 +257,9 @@ namespace Marchlands.Input
                 && rotationRing.IsOnRing(selected, world, ScreenToWorldDistance(startScreen, config.RotationRingGrab));
             isDraggingOrder = !isRotating && selected != null && FindSquadAt(world, own: true) == selected;
             lastDragPosition = startScreen;
+            destinationLocked = false;
+            lastMoveScreen = startScreen;
+            lastMoveTime = Time.realtimeSinceStartupAsDouble;
             if (isDraggingOrder || isRotating)
             {
                 hasPendingTap = false;
@@ -288,7 +298,46 @@ namespace Marchlands.Input
 
             float2 from = cameraController.ScreenToWorld(startScreen);
             float2 to = cameraController.ScreenToWorld(currentScreen);
+            UpdateDestinationLock(startScreen, currentScreen, from, to);
+            if (destinationLocked)
+            {
+                orderPreview.Show(from, lockedDestination, lockedFacing, selected.TargetFormation, selected.Alive, match.Settings.squads);
+                return;
+            }
+
             orderPreview.Show(from, to, Angles.Of(to - from), selected.TargetFormation, selected.Alive, match.Settings.squads);
+        }
+
+        /// <summary>
+        /// Палец задержали на месте holdToAimTime — точка приказа закрепляется. Дальше направление от неё к пальцу
+        /// задаёт фронт; пока палец у самой точки, фронт — по направлению протяжки.
+        /// </summary>
+        private void UpdateDestinationLock(Vector2 startScreen, Vector2 currentScreen, float2 from, float2 to)
+        {
+            double now = Time.realtimeSinceStartupAsDouble;
+            if (!destinationLocked)
+            {
+                if (Vector2.Distance(currentScreen, lastMoveScreen) > ScreenUnits.DpToPixels(config.HoldStillTolerance))
+                {
+                    lastMoveScreen = currentScreen;
+                    lastMoveTime = now;
+                }
+                else if (now - lastMoveTime >= config.HoldToAimTime
+                    && Vector2.Distance(currentScreen, startScreen) > ScreenUnits.DpToPixels(config.TapMaxMove))
+                {
+                    destinationLocked = true;
+                    lockedDestination = to;
+                    lockedFacing = Angles.Of(to - from);
+                }
+
+                return;
+            }
+
+            float2 toFinger = to - lockedDestination;
+            if (math.length(toFinger) > ScreenToWorldDistance(currentScreen, config.HoldStillTolerance * 2f))
+            {
+                lockedFacing = Angles.Of(toFinger);
+            }
         }
 
         private void OnDragEnded(Vector2 startScreen, Vector2 endScreen)
@@ -311,6 +360,13 @@ namespace Marchlands.Input
             isDraggingOrder = false;
             orderPreview.Hide();
 
+            if (destinationLocked)
+            {
+                destinationLocked = false;
+                match.Enqueue(new MoveCommand(selected.Id, lockedDestination, lockedFacing));
+                return;
+            }
+
             float2 from = cameraController.ScreenToWorld(startScreen);
             float2 to = cameraController.ScreenToWorld(endScreen);
             match.Enqueue(new MoveCommand(selected.Id, to, Angles.Of(to - from)));
@@ -319,6 +375,7 @@ namespace Marchlands.Input
         private void OnDragCancelled()
         {
             isDraggingOrder = false;
+            destinationLocked = false;
             isRotating = false;
             rotationRing.SetDraggedFacing(null);
             orderPreview.Hide();
