@@ -80,7 +80,6 @@ namespace Marchlands.Tests.EditMode
                     engageRadius = 15f,
                     defenseRadius = 20f,
                     directApproachDistance = 12f,
-                    jaegerSquads = 2,
                     cavalrySquads = 1,
                     cavalryChargeDistance = 12f
                 },
@@ -97,15 +96,15 @@ namespace Marchlands.Tests.EditMode
                     chargeBonusMultiplier = 1f,
                     targetHitMultiplier = 1f
                 },
-                jaegers = new UnitTypeSettings
+                fusiliers = new UnitTypeSettings
                 {
                     squadSize = 16,
                     minSquadSize = 6,
-                    speedMultiplier = 1.5f,
-                    accuracyMultiplier = 1.4f,
-                    rangeMultiplier = 1.25f,
+                    speedMultiplier = 1f,
+                    accuracyMultiplier = 1f,
+                    rangeMultiplier = 1f,
                     moraleLossMultiplier = 1f,
-                    meleeMultiplier = 0.7f,
+                    meleeMultiplier = 1f,
                     canFire = true,
                     chargeBonusMultiplier = 1f,
                     targetHitMultiplier = 1f
@@ -156,6 +155,8 @@ namespace Marchlands.Tests.EditMode
                     buildingSpacing = 3f,
                     hireCost = 2,
                     hireInterval = 2f,
+                    grenadierHireCost = 2,
+                    grenadierHireInterval = 2f,
                     maxWaitingSquads = 2,
                     stableCost = 200,
                     stableBuildTime = 40f,

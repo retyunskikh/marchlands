@@ -107,7 +107,6 @@ namespace Marchlands.View
             Quaternion meleeRotation = Quaternion.Slerp(rotation,
                 Quaternion.Euler(0f, 0f, Angles.Of(meleeDirection) + SpriteFacingOffset), meleeBlend);
             float2 spacing = style.GetSpacing(squad.Type);
-            bool openOrder = squad.Type == UnitType.Jaegers;
             float regroup = 1f - math.exp(-style.RegroupSpeed * Time.deltaTime);
             for (int i = 0; i < soldiers.Count; i++)
             {
@@ -116,10 +115,6 @@ namespace Marchlands.View
                 if (squad.IsRouting)
                 {
                     local = local * style.RoutSpread + Scatter(i) * style.RoutScatter;
-                }
-                else if (openOrder)
-                {
-                    local += Scatter(i + 101) * style.JaegerScatter;
                 }
 
                 // Место в строю могло смениться (павшие, пополнение) — солдат идёт к нему, а не перескакивает.
@@ -230,7 +225,7 @@ namespace Marchlands.View
 
         /// <summary>
         /// Смещение солдата в строю от походки (вид сверху: покачивание с ноги на ногу и рывки вперёд).
-        /// Гренадёры маршируют в ногу — у всех одна фаза; егеря бегут вразнобой; конница скачет —
+        /// Пехота марширует в ногу — у всех одна фаза; конница скачет —
         /// рывками вперёд-назад, по шеренгам с запаздыванием.
         /// </summary>
         private float2 GaitOffset(int index, float2 local)
@@ -240,12 +235,6 @@ namespace Marchlands.View
             float amplitude = gait.y * math.smoothstep(0f, 1f, gaitBlend);
             switch (squad.Type)
             {
-                case UnitType.Jaegers:
-                {
-                    float phase = Scatter(index + 311).x * math.PI;
-                    return new float2(math.sin(time + phase) * amplitude, math.abs(math.sin(time + phase)) * amplitude);
-                }
-
                 case UnitType.Cavalry:
                 {
                     // Шеренга сзади отстаёт по фазе — волна скачков.
@@ -323,7 +312,7 @@ namespace Marchlands.View
 
         /// <summary>
         /// Кадр шага: на ходу фигурка чередует «левой» и «правой» (у конницы — галоп), стоя — обычная.
-        /// Гренадёры шагают в ногу, егеря — вразнобой, конница — волной по шеренгам (та же фаза, что у походки).
+        /// Пехота шагает в ногу, конница — волной по шеренгам (та же фаза, что у походки).
         /// </summary>
         private void RenderStep(int index, float2 local)
         {
@@ -356,8 +345,6 @@ namespace Marchlands.View
         {
             switch (squad.Type)
             {
-                case UnitType.Jaegers:
-                    return Scatter(index + 311).x * math.PI;
                 case UnitType.Cavalry:
                     return -local.y * 1.3f + Scatter(index + 613).x * 0.4f;
                 default:

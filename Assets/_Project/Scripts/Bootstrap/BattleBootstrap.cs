@@ -175,11 +175,7 @@ namespace Marchlands.Bootstrap
 
             foreach (ScenarioConfig.SquadSpawn spawn in scenario.Squads)
             {
-                Squad squad = match.AddSquad(spawn.Side, spawn.Position, spawn.Facing, spawn.Formation, spawn.Type);
-                if (spawn.FireAtWill)
-                {
-                    match.Enqueue(new SetFireAtWillCommand(squad.Id, true));
-                }
+                match.AddSquad(spawn.Side, spawn.Position, spawn.Facing, spawn.Formation, spawn.Type);
             }
         }
 

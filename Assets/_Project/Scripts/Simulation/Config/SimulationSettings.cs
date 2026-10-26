@@ -9,7 +9,7 @@ namespace Marchlands.Simulation.Config
     {
         public SquadSettings squads = new SquadSettings();
         public UnitTypeSettings grenadiers = new UnitTypeSettings();
-        public UnitTypeSettings jaegers = new UnitTypeSettings();
+        public UnitTypeSettings fusiliers = new UnitTypeSettings();
         public UnitTypeSettings cavalry = new UnitTypeSettings();
         public UnitTypeSettings recruits = new UnitTypeSettings();
         public CombatSettings combat = new CombatSettings();
@@ -25,8 +25,8 @@ namespace Marchlands.Simulation.Config
         {
             switch (type)
             {
-                case UnitType.Jaegers:
-                    return jaegers;
+                case UnitType.Fusiliers:
+                    return fusiliers;
                 case UnitType.Cavalry:
                     return cavalry;
                 case UnitType.Recruits:

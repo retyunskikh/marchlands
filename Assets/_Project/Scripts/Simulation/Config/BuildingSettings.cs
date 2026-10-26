@@ -17,11 +17,17 @@ namespace Marchlands.Simulation.Config
         /// <summary>…и не ближе этого к другим зданиям и деревням, u.</summary>
         public float buildingSpacing;
 
-        /// <summary>Цена одного рекрута.</summary>
+        /// <summary>Цена одного фузилёра.</summary>
         public int hireCost;
 
-        /// <summary>Раз в столько секунд казарма с включённым наймом получает рекрута, s.</summary>
+        /// <summary>Раз в столько секунд казарма получает фузилёра, s.</summary>
         public float hireInterval;
+
+        /// <summary>Цена одного гренадёра.</summary>
+        public int grenadierHireCost;
+
+        /// <summary>Раз в столько секунд казарма получает гренадёра, s.</summary>
+        public float grenadierHireInterval;
 
         /// <summary>Найм рода войск приостанавливается, когда в его резерве набралось людей на столько отрядов.</summary>
         public int maxWaitingSquads;

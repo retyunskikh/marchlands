@@ -4,13 +4,14 @@ using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Marchlands.UI
 {
     /// <summary>
     /// Панель выделенного здания: название, состояние постройки или найма и иконки найма — у казармы гренадёры
-    /// и егеря, у конюшни конница: воин своей стороны в полный рост и цена человека с монеткой. Нажатие иконки
+    /// и фузилёры, у конюшни конница: воин своей стороны в полный рост и цена человека с монеткой. Нажатие иконки
     /// включает или выключает найм этого рода войск (включённая подсвечена, под ней — время до рекрута); «i»
     /// открывает характеристики. У штаба — иконки постройки казармы и конюшни. Видна только при выделении.
     /// </summary>
@@ -20,7 +21,8 @@ namespace Marchlands.UI
         [SerializeField] private Text titleLabel;
         [SerializeField] private Text statusLabel;
         [SerializeField] private HireToggle grenadiersToggle;
-        [SerializeField] private HireToggle jaegersToggle;
+        [FormerlySerializedAs("jaegersToggle")]
+        [SerializeField] private HireToggle fusiliersToggle;
         [SerializeField] private HireToggle cavalryToggle;
         [Tooltip("Иконки постройки в карточке штаба.")]
         [SerializeField] private HireToggle buildBarracksToggle;
@@ -41,11 +43,11 @@ namespace Marchlands.UI
         [SerializeField] private string fullStatus = "Найм: ждут люди на два отряда";
         [Tooltip("{0} — название, {1} — цена человека.")]
         [SerializeField] private string toggleFormat = "{1}";
-        [Tooltip("Портреты для иконок найма по порядку: гренадёр, егерь, всадник.")]
+        [Tooltip("Портреты для иконок найма по порядку: гренадёр, фузилёр, всадник.")]
         [SerializeField] private Sprite[] francePortraits = new Sprite[3];
         [SerializeField] private Sprite[] austriaPortraits = new Sprite[3];
         [SerializeField] private string grenadiersName = "Гренадёры";
-        [SerializeField] private string jaegersName = "Егеря";
+        [SerializeField] private string fusiliersName = "Фузилёры";
         [SerializeField] private string cavalryName = "Конница";
 
         private Match match;
@@ -58,7 +60,7 @@ namespace Marchlands.UI
         {
             this.match = match;
             Bind(grenadiersToggle, UnitType.Grenadiers);
-            Bind(jaegersToggle, UnitType.Jaegers);
+            Bind(fusiliersToggle, UnitType.Fusiliers);
             Bind(cavalryToggle, UnitType.Cavalry);
             if (buildBarracksToggle != null)
             {
@@ -104,7 +106,7 @@ namespace Marchlands.UI
             bool barracks = building.Type == BuildingType.Barracks;
             titleLabel.text = stable ? stableTitle : barracks ? barracksTitle : headquartersTitle;
             RefreshToggle(grenadiersToggle, UnitType.Grenadiers, grenadiersName, barracks);
-            RefreshToggle(jaegersToggle, UnitType.Jaegers, jaegersName, barracks);
+            RefreshToggle(fusiliersToggle, UnitType.Fusiliers, fusiliersName, barracks);
             RefreshToggle(cavalryToggle, UnitType.Cavalry, cavalryName, stable);
             bool headquarters = building.Type == BuildingType.Headquarters;
             RefreshBuildToggle(buildBarracksToggle, BuildingType.Barracks, barracksTitle, headquarters);
@@ -131,9 +133,9 @@ namespace Marchlands.UI
             }
 
             toggle.Button.interactable = building.IsBuilt;
-            float interval = BuildRules.GetHireInterval(building, match.Settings.buildings);
+            float interval = BuildRules.GetHireInterval(match, building);
             float progress = interval > 0f ? 1f - building.HireRemaining / interval : 0f;
-            int cost = BuildRules.GetHireCost(building, match.Settings.buildings);
+            int cost = BuildRules.GetHireCost(match.Settings.buildings, type);
             toggle.Show(string.Format(toggleFormat, unitName, cost), building.IsHiring(type), progress);
         }
 

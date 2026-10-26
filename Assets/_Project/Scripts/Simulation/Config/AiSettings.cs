@@ -36,9 +36,6 @@ namespace Marchlands.Simulation.Config
         /// <summary>Ближе этого к цели ИИ идёт напрямую, дальше — по пути с учётом местности, u.</summary>
         public float directApproachDistance;
 
-        /// <summary>Сколько отрядов егерей ИИ держит на поле; остальных людей собирает в гренадёров.</summary>
-        public int jaegerSquads;
-
         /// <summary>Сколько отрядов конницы держит ИИ.</summary>
         public int cavalrySquads;
 

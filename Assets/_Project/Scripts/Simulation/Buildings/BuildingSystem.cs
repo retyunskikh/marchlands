@@ -7,9 +7,9 @@ using Unity.Mathematics;
 namespace Marchlands.Simulation.Buildings
 {
     /// <summary>
-    /// Постройка зданий и найм. Казарма раз в hireInterval за hireCost получает рекрута в резерв включённого рода
-    /// войск (гренадёры, егеря — по очереди, если включены оба), конюшня — всадника. Род войск, у которого ждут
-    /// людей на maxWaitingSquads отрядов, пропускается; без золота найм ждёт.
+    /// Постройка зданий и найм. Казарма получает рекрута в резерв включённого рода войск (фузилёры, гренадёры —
+    /// по очереди, если включены оба), конюшня — всадника; цена и время найма у каждого рода войск свои.
+    /// Род войск, у которого ждут людей на maxWaitingSquads отрядов, пропускается; без золота найм ждёт.
     /// </summary>
     internal static class BuildingSystem
     {
@@ -57,10 +57,10 @@ namespace Marchlands.Simulation.Buildings
             }
 
             PlayerState player = match.GetPlayer(building.Owner);
-            player.Gold -= BuildRules.GetHireCost(building, settings);
+            player.Gold -= BuildRules.GetHireCost(settings, type.Value);
             player.AddReserve(type.Value, 1);
-            building.NextHireType = ((int)type.Value + 1) % 3;
-            building.HireRemaining = BuildRules.GetHireInterval(building, settings);
+            building.NextHireType = (System.Array.IndexOf(BuildRules.HireOrder, type.Value) + 1) % BuildRules.HireOrder.Length;
+            building.HireRemaining = BuildRules.GetHireInterval(match, building);
         }
 
         /// <summary>Отряд появляется в spawnOffset от здания со стороны вражеского штаба, фронтом к нему.</summary>

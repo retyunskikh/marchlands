@@ -158,7 +158,7 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void FireAtWill_Off_NeverFiresByItself()
+        public void Squad_NeverFiresWithoutOrder()
         {
             Match match = CombatTestScenarios.FacingLines(1, 5f, out Squad shooter, out _);
 
@@ -166,20 +166,6 @@ namespace Marchlands.Tests.EditMode
 
             Assert.AreEqual(FireState.Loaded, shooter.FireState);
             Assert.IsTrue(shooter.IsFirstVolley);
-        }
-
-        [Test]
-        public void FireAtWill_WaitsForEffectiveRange()
-        {
-            Match far = CombatTestScenarios.FacingLines(1, 9f, out Squad farShooter, out _);
-            far.Enqueue(new SetFireAtWillCommand(farShooter.Id, true));
-            RunTicks(far, 50);
-            Assert.IsTrue(farShooter.IsFirstVolley, "Дальше эффективной дальности огонь по готовности не открывается");
-
-            Match near = CombatTestScenarios.FacingLines(1, 6.5f, out Squad nearShooter, out _);
-            near.Enqueue(new SetFireAtWillCommand(nearShooter.Id, true));
-            RunTicks(near, TicksFor(0.8f) + 2);
-            Assert.IsFalse(nearShooter.IsFirstVolley, "На эффективной дальности отряд стреляет сам");
         }
 
         [Test]

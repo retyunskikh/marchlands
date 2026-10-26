@@ -65,13 +65,13 @@ namespace Marchlands.View
 
             foreach (BuildingView view in views.Values)
             {
-                view.Render();
+                view.Render(match);
             }
 
             foreach (Side side in new[] { Side.France, Side.Austria })
             {
                 PlayerState player = match.GetPlayer(side);
-                RenderWaiting(side, UnitType.Grenadiers, player.GrenadierReserve + player.JaegerReserve, recruits[(int)side], squadViews.Style.RecruitSprite, 1f);
+                RenderWaiting(side, UnitType.Grenadiers, player.GrenadierReserve + player.FusilierReserve, recruits[(int)side], squadViews.Style.RecruitSprite, 1f);
                 RenderWaiting(side, UnitType.Cavalry, player.CavalryReserve, riders[(int)side],
                     squadViews.Style.GetSoldierSprite(side, UnitType.Cavalry, SoldierRole.Private), 1.8f);
             }

@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 30e5c052086414846845811828cd8e4c
+guid: e03f344747f32924f87077ad8442286c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4587003361802022181
-    second: Austria_Jaeger_0
+      213: -8112586855742330918
+    second: Austria_GrenadierBody_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -49,7 +49,7 @@ TextureImporter:
   spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
-  alignment: 9
+  alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 110
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Austria_Jaeger_0
+      name: Austria_GrenadierBody_0
       rect:
         serializedVersion: 2
         x: 9
         y: 10
         width: 49
-        height: 46
+        height: 36
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 52d6bbb214f48af30800000000000000
-      internalID: 4587003361802022181
+      spriteID: ad7a9fdac3d4a6f80800000000000000
+      internalID: -8112586855742330918
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Austria_Jaeger_0: 4587003361802022181
+      Austria_GrenadierBody_0: -8112586855742330918
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
@@ -15,10 +16,10 @@ namespace Marchlands.UI
         [SerializeField] private Text bodyLabel;
         [SerializeField] private Button closeButton;
         [SerializeField] private string grenadiersTitle = "Гренадёры";
-        [SerializeField] private string jaegersTitle = "Егеря";
+        [SerializeField] private string fusiliersTitle = "Фузилёры";
         [SerializeField] private string cavalryTitle = "Конница";
-        [SerializeField] private string grenadiersNote = "Линейная пехота: большой отряд, крепкая мораль, силён в штыковой.";
-        [SerializeField] private string jaegersNote = "Лёгкая пехота: быстры, метко бьют издалека, слабы в рукопашной. Удобны для захвата деревень.";
+        [SerializeField] private string grenadiersNote = "Отборная пехота: крепкая мораль, сильны в штыковой. Дороже фузилёров и нанимаются вдвое дольше.";
+        [SerializeField] private string fusiliersNote = "Основная линейная пехота: дёшевы и быстро набираются, но уступают гренадёрам в стойкости и штыковой.";
         [SerializeField] private string cavalryNote = "Дорогая и быстрая, страшна в атаке в сабли. Стрелять не может.";
 
         private static readonly CultureInfo Russian = CultureInfo.GetCultureInfo("ru-RU");
@@ -37,9 +38,9 @@ namespace Marchlands.UI
             SimulationSettings settings = match.Settings;
             UnitTypeSettings unit = settings.Unit(type);
             bool cavalry = type == UnitType.Cavalry;
-            int cost = cavalry ? settings.buildings.cavalryHireCost : settings.buildings.hireCost;
-            titleLabel.text = type == UnitType.Jaegers ? jaegersTitle : cavalry ? cavalryTitle : grenadiersTitle;
-            string note = type == UnitType.Jaegers ? jaegersNote : cavalry ? cavalryNote : grenadiersNote;
+            int cost = BuildRules.GetHireCost(settings.buildings, type);
+            titleLabel.text = type == UnitType.Fusiliers ? fusiliersTitle : cavalry ? cavalryTitle : grenadiersTitle;
+            string note = type == UnitType.Fusiliers ? fusiliersNote : cavalry ? cavalryNote : grenadiersNote;
             string fire = unit.canFire
                 ? $"Меткость: {Percent(unit.accuracyMultiplier)}\nДальность огня: {Percent(unit.rangeMultiplier)}"
                 : "Стрелять не может";

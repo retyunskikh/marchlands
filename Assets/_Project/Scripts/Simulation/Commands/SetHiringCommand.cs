@@ -5,7 +5,7 @@ using Marchlands.Simulation.Squads;
 namespace Marchlands.Simulation.Commands
 {
     /// <summary>
-    /// Включить или выключить найм рода войск в казарме (гренадёры, егеря) или конюшне (конница).
+    /// Включить или выключить найм рода войск в казарме (гренадёры, фузилёры) или конюшне (конница).
     /// Пока включён и хватает золота, люди приходят в резерв этого рода войск.
     /// </summary>
     public sealed class SetHiringCommand : ICommand
@@ -35,7 +35,7 @@ namespace Marchlands.Simulation.Commands
             building.SetHiring(Type, Hiring);
             if (!wasHiring && Hiring)
             {
-                building.HireRemaining = BuildRules.GetHireInterval(building, match.Settings.buildings);
+                building.HireRemaining = BuildRules.GetHireInterval(match, building);
             }
         }
     }

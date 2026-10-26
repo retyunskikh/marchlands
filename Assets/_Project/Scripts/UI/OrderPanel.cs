@@ -31,9 +31,8 @@ namespace Marchlands.UI
         [Header("Строй")]
         [SerializeField] private Button formationButton;
         [SerializeField] private Text formationLabel;
-        [SerializeField] private string toColumnText = "В колонну";
+        [SerializeField] private string toColumnText = "На марш";
         [SerializeField] private string toLineText = "В линию";
-        [SerializeField] private string changingText = "Перестроение…";
         [SerializeField] private Image formationIcon;
         [Tooltip("Что покажет кнопка: строй, в который отряд перестроится.")]
         [SerializeField] private Sprite lineSprite;
@@ -46,11 +45,6 @@ namespace Marchlands.UI
         [SerializeField] private string chargeTargetingText = "Выберите врага";
         [SerializeField] private string chargingText = "В атаку!";
 
-        [Header("Автоматический огонь")]
-        [SerializeField] private Button fireAtWillButton;
-        [SerializeField] private Text fireAtWillLabel;
-        [SerializeField] private string fireAtWillOnText = "Автоматический огонь: вкл";
-        [SerializeField] private string fireAtWillOffText = "Автоматический огонь: выкл";
 
         [Header("Стоп")]
         [SerializeField] private Button stopButton;
@@ -62,9 +56,7 @@ namespace Marchlands.UI
         private Match match;
         private Squad squad;
         private bool isChargeTargeting;
-        private Image fireAtWillImage;
         private Image chargeImage;
-        private Image volleyImage;
 
         /// <summary>Нажата «В штыки»: нужно выбрать врага на поле.</summary>
         public event Action ChargeRequested;
@@ -72,13 +64,10 @@ namespace Marchlands.UI
         public void Initialize(Match match)
         {
             this.match = match;
-            fireAtWillImage = fireAtWillButton.GetComponent<Image>();
             chargeImage = chargeButton.GetComponent<Image>();
-            volleyImage = volleyButton.GetComponent<Image>();
             volleyButton.onClick.AddListener(OnVolley);
             formationButton.onClick.AddListener(OnFormation);
             chargeButton.onClick.AddListener(OnCharge);
-            fireAtWillButton.onClick.AddListener(OnFireAtWill);
             stopButton.onClick.AddListener(OnStop);
             SetSquad(null);
         }
@@ -119,19 +108,12 @@ namespace Marchlands.UI
             // Конница не стреляет — кнопок огня у неё нет.
             bool canFire = UnitStats.CanFire(squad, match.Settings);
             volleyButton.gameObject.SetActive(canFire);
-            fireAtWillButton.gameObject.SetActive(canFire);
             bool canVolley = VolleyRules.CanVolley(match, squad);
             volleyButton.interactable = canVolley;
             volleyLabel.text = GetVolleyText();
             if (volleyIcon != null)
             {
                 volleyIcon.color = canVolley ? volleyReadyTint : volleyPaleTint;
-            }
-
-            // Автоматический огонь — режим «Залпа»: включён — у «Залпа» золотая рамка.
-            if (volleyImage != null)
-            {
-                volleyImage.color = squad.FireAtWill ? activeColor : normalColor;
             }
 
             if (reloadFill != null)
@@ -146,10 +128,9 @@ namespace Marchlands.UI
                 }
             }
 
-            formationButton.interactable = obeys && !squad.IsChangingFormation;
-            formationLabel.text = squad.IsChangingFormation
-                ? changingText
-                : squad.Formation == Formation.Line ? toColumnText : toLineText;
+            // Во время перестроения кнопка разворачивает его обратно — ждать уже ненужного строя не надо.
+            formationButton.interactable = obeys;
+            formationLabel.text = squad.TargetFormation == Formation.Line ? toColumnText : toLineText;
             if (formationIcon != null)
             {
                 formationIcon.sprite = squad.TargetFormation == Formation.Line ? columnSprite : lineSprite;
@@ -159,10 +140,6 @@ namespace Marchlands.UI
             chargeButton.interactable = ChargeRules.CanCharge(squad);
             chargeLabel.text = isChargeTargeting ? chargeTargetingText : charging ? chargingText : chargeText;
             chargeImage.color = isChargeTargeting || charging ? activeColor : normalColor;
-
-            fireAtWillButton.interactable = obeys;
-            fireAtWillLabel.text = squad.FireAtWill ? fireAtWillOnText : fireAtWillOffText;
-            fireAtWillImage.color = squad.FireAtWill ? activeColor : normalColor;
 
             stopButton.interactable = obeys && squad.Order.Type != SquadOrderType.None;
         }
@@ -183,12 +160,12 @@ namespace Marchlands.UI
 
         private void OnFormation()
         {
-            if (squad == null || squad.IsChangingFormation)
+            if (squad == null)
             {
                 return;
             }
 
-            Formation next = squad.Formation == Formation.Line ? Formation.Column : Formation.Line;
+            Formation next = squad.TargetFormation == Formation.Line ? Formation.Column : Formation.Line;
             match.Enqueue(new ChangeFormationCommand(squad.Id, next));
         }
 
@@ -197,14 +174,6 @@ namespace Marchlands.UI
             if (squad != null)
             {
                 ChargeRequested?.Invoke();
-            }
-        }
-
-        private void OnFireAtWill()
-        {
-            if (squad != null)
-            {
-                match.Enqueue(new SetFireAtWillCommand(squad.Id, !squad.FireAtWill));
             }
         }
 

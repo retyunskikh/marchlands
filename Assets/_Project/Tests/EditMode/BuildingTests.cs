@@ -145,7 +145,7 @@ namespace Marchlands.Tests.EditMode
 
             RunTicks(match, TicksFor(10f));
             Assert.AreEqual(6, player.GrenadierReserve);
-            Assert.AreEqual(0, player.JaegerReserve, "Найм егерей не включали");
+            Assert.AreEqual(0, player.FusilierReserve, "Найм фузилёров не включали");
             // 6 рекрутов по 2 золота; доход штаба за это время — не больше трёх выплат по 2.
             Assert.That(player.Gold, Is.InRange(incomeBefore - 12, incomeBefore - 12 + 6));
         }
@@ -159,11 +159,11 @@ namespace Marchlands.Tests.EditMode
             player.Gold = 100;
 
             match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Grenadiers, true));
-            match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Jaegers, true));
+            match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Fusiliers, true));
             RunTicks(match, TicksFor(12f));
 
             Assert.AreEqual(3, player.GrenadierReserve);
-            Assert.AreEqual(3, player.JaegerReserve, "Рекруты приходят по очереди");
+            Assert.AreEqual(3, player.FusilierReserve, "Рекруты приходят по очереди");
         }
 
         [Test]
@@ -195,13 +195,13 @@ namespace Marchlands.Tests.EditMode
             Building barracks = BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
             PlayerState player = match.GetPlayer(Side.France);
             player.Gold = 100;
-            player.JaegerReserve = 32;
+            player.FusilierReserve = 32;
 
             match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Grenadiers, true));
-            match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Jaegers, true));
+            match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Fusiliers, true));
             RunTicks(match, TicksFor(8f));
 
-            Assert.AreEqual(32, player.JaegerReserve);
+            Assert.AreEqual(32, player.FusilierReserve);
             Assert.AreEqual(4, player.GrenadierReserve);
         }
 
@@ -212,12 +212,12 @@ namespace Marchlands.Tests.EditMode
             Building barracks = BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
             match.GetPlayer(Side.France).Gold = 100;
 
-            match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Jaegers, true));
+            match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Fusiliers, true));
             RunTicks(match, TicksFor(2f));
-            match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Jaegers, false));
+            match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Fusiliers, false));
             RunTicks(match, TicksFor(10f));
 
-            Assert.AreEqual(1, match.GetPlayer(Side.France).JaegerReserve);
+            Assert.AreEqual(1, match.GetPlayer(Side.France).FusilierReserve);
             Assert.IsFalse(barracks.IsHiringAny);
         }
 
@@ -239,19 +239,19 @@ namespace Marchlands.Tests.EditMode
             Match match = CreateMatch();
             Building barracks = BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
             PlayerState player = match.GetPlayer(Side.France);
-            player.JaegerReserve = 20;
+            player.FusilierReserve = 20;
             player.GrenadierReserve = 20;
 
-            Assert.IsTrue(BuildRules.CanFormSquad(match, Side.France, UnitType.Jaegers));
+            Assert.IsTrue(BuildRules.CanFormSquad(match, Side.France, UnitType.Fusiliers));
             Assert.IsFalse(BuildRules.CanFormSquad(match, Side.France, UnitType.Grenadiers), "На гренадёров людей мало");
 
-            match.Enqueue(new FormSquadCommand(Side.France, UnitType.Jaegers));
+            match.Enqueue(new FormSquadCommand(Side.France, UnitType.Fusiliers));
             match.Tick();
 
             Squad squad = match.Squads.Single(s => !s.IsCamp);
-            Assert.AreEqual(UnitType.Jaegers, squad.Type);
+            Assert.AreEqual(UnitType.Fusiliers, squad.Type);
             Assert.AreEqual(16, squad.Alive);
-            Assert.AreEqual(4, player.JaegerReserve);
+            Assert.AreEqual(4, player.FusilierReserve);
             Assert.AreEqual(20, player.GrenadierReserve, "Резерв гренадёров отдельный");
             Assert.AreSame(squad, match.LastTickFormedSquads.Single(), "О новом отряде сообщается — его выделит ввод");
             // Встал в 4 u от казармы в сторону вражеского штаба (вверх), фронтом к нему.
@@ -284,7 +284,7 @@ namespace Marchlands.Tests.EditMode
             Building barracks = BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
             PlayerState player = match.GetPlayer(Side.France);
             player.GrenadierReserve = 7;
-            player.JaegerReserve = 5;
+            player.FusilierReserve = 5;
 
             match.Tick();
 
@@ -294,7 +294,7 @@ namespace Marchlands.Tests.EditMode
             Assert.AreEqual(3f, math.distance(camp.Position, barracks.Position), 0.05f, "Стоят в campOffset перед казармой");
 
             player.GrenadierReserve = 0;
-            player.JaegerReserve = 0;
+            player.FusilierReserve = 0;
             match.Tick();
             match.Tick();
             Assert.IsFalse(match.Squads.Any(s => s.IsCamp), "Резерв пуст — толпы нет");
@@ -307,7 +307,7 @@ namespace Marchlands.Tests.EditMode
             BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
             PlayerState player = match.GetPlayer(Side.France);
             player.GrenadierReserve = 10;
-            player.JaegerReserve = 10;
+            player.FusilierReserve = 10;
             match.Tick();
             Squad camp = match.Squads.Single(s => s.IsCamp);
 
@@ -316,7 +316,7 @@ namespace Marchlands.Tests.EditMode
             camp.Morale = 0f;
             match.Tick();
 
-            Assert.AreEqual(14, player.GrenadierReserve + player.JaegerReserve);
+            Assert.AreEqual(14, player.GrenadierReserve + player.FusilierReserve);
             Assert.AreEqual(14, camp.Alive);
             Assert.IsFalse(camp.IsRouting, "Толпа рекрутов не бежит");
         }
@@ -441,12 +441,12 @@ namespace Marchlands.Tests.EditMode
             Assert.Less(barracks.Position.y, AustriaHq.y, "Казарма на стороне, обращённой к противнику");
             Assert.LessOrEqual(math.distance(barracks.Position, AustriaHq), 10f);
 
-            // После постройки остаётся 30 золота, штаб даёт +2 за 5 с: на 16 егерей (32 золота) хватит к ~50-й секунде.
+            // После постройки остаётся 30 золота, штаб даёт +2 за 5 с: на 16 фузилёров (32 золота) хватит к ~50-й секунде.
             RunTicks(match, TicksFor(100f));
-            Assert.IsTrue(barracks.IsHiring(UnitType.Grenadiers) && barracks.IsHiring(UnitType.Jaegers), "ИИ включает найм пехоты");
+            Assert.IsTrue(barracks.IsHiring(UnitType.Grenadiers) && barracks.IsHiring(UnitType.Fusiliers), "ИИ включает найм пехоты");
             Squad formed = match.Squads.FirstOrDefault(s => s.Side == Side.Austria && !s.IsCamp);
             Assert.IsNotNull(formed, "ИИ формирует отряд из рекрутов");
-            Assert.AreEqual(UnitType.Jaegers, formed.Type, "Первыми — егеря");
+            Assert.AreEqual(UnitType.Fusiliers, formed.Type, "Первыми — фузилёры");
         }
 
         [Test]

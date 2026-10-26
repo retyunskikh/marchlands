@@ -5,7 +5,8 @@ using Marchlands.Simulation.Squads;
 namespace Marchlands.Simulation.Commands
 {
     /// <summary>
-    /// Начать перестроение. Игнорируется, если отряд уже в этом строю или ещё не закончил предыдущее перестроение.
+    /// Начать перестроение. Во время перестроения приказ вернуться в прежний строй разворачивает его с той же точки:
+    /// возврат длится столько, сколько уже прошло. Игнорируется, если отряд уже в этом строю или идёт к нему.
     /// </summary>
     public sealed class ChangeFormationCommand : ICommand
     {
@@ -22,8 +23,19 @@ namespace Marchlands.Simulation.Commands
         public void Execute(Match match)
         {
             Squad squad = match.FindSquad(SquadId);
-            if (squad == null || !squad.CanReceiveOrders || squad.IsChangingFormation || squad.Formation == Formation)
+            if (squad == null || !squad.CanReceiveOrders || squad.TargetFormation == Formation
+                || (!squad.IsChangingFormation && squad.Formation == Formation))
             {
+                return;
+            }
+
+            if (squad.IsChangingFormation)
+            {
+                float elapsed = match.Settings.squads.formationChangeTime - squad.FormationChangeRemaining;
+                squad.Formation = squad.TargetFormation;
+                squad.TargetFormation = Formation;
+                squad.FormationChangeRemaining = elapsed;
+                squad.FormationChangeProgress = 1f - squad.FormationChangeProgress;
                 return;
             }
 

@@ -1,15 +1,15 @@
 fileFormatVersion: 2
-guid: e86713f2bd0e8034db7eb9bb67d9288f
+guid: aad90d5e78f15c74cb194d9ff4a3b94d
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3437782754221603361
-    second: Austria_JaegerArms_0
+      213: -4448337786317893865
+    second: France_Fusilier_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
     mipMapMode: 0
-    enableMipMap: 1
+    enableMipMap: 0
     sRGBTexture: 1
     linearTexture: 0
     fadeOut: 0
@@ -51,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 110
+  spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -75,7 +75,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Austria_JaegerArms_0
+      name: France_Fusilier_0
       rect:
         serializedVersion: 2
-        x: 13
-        y: 22
-        width: 39
-        height: 34
+        x: 0
+        y: 0
+        width: 240
+        height: 300
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 12ab758633575bf20800000000000000
-      internalID: 3437782754221603361
+      spriteID: 71f03950a545442c0800000000000000
+      internalID: -4448337786317893865
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Austria_JaegerArms_0: 3437782754221603361
+      France_Fusilier_0: -4448337786317893865
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -35,14 +35,14 @@ MonoBehaviour:
       skirmishFire: 0
       chargeBonusMultiplier: 1
       targetHitMultiplier: 1
-    jaegers:
-      squadSize: 10
-      minSquadSize: 4
-      speedMultiplier: 1.5
-      accuracyMultiplier: 1.4
-      rangeMultiplier: 1.25
+    fusiliers:
+      squadSize: 30
+      minSquadSize: 10
+      speedMultiplier: 1
+      accuracyMultiplier: 1
+      rangeMultiplier: 1
       moraleLossMultiplier: 1
-      meleeMultiplier: 0.7
+      meleeMultiplier: 1
       canFire: 1
       skirmishFire: 0
       chargeBonusMultiplier: 1
@@ -120,7 +120,6 @@ MonoBehaviour:
       engageRadius: 15
       defenseRadius: 20
       directApproachDistance: 12
-      jaegerSquads: 2
       cavalrySquads: 1
       cavalryChargeDistance: 12
     economy:
@@ -139,6 +138,8 @@ MonoBehaviour:
       buildingSpacing: 5
       hireCost: 3
       hireInterval: 3
+      grenadierHireCost: 5
+      grenadierHireInterval: 6
       maxWaitingSquads: 2
       stableCost: 200
       stableBuildTime: 40

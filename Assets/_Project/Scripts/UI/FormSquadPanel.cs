@@ -3,17 +3,19 @@ using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Marchlands.UI
 {
     /// <summary>
-    /// Кружки слева вверху: гренадёр, егерь и (если есть конюшня) всадник, под каждым — счётчик людей в резерве
+    /// Кружки слева вверху: гренадёр, фузилёр и (если есть конюшня) всадник, под каждым — счётчик людей в резерве
     /// («30/48»). Пока людей не хватает на отряд, иконка тусклая; хватает — яркая, нажатие строит отряд (с горном).
     /// </summary>
     public sealed class FormSquadPanel : MonoBehaviour
     {
-        [SerializeField] private Button jaegersButton;
+        [FormerlySerializedAs("jaegersButton")]
+        [SerializeField] private Button fusiliersButton;
         [SerializeField] private Button grenadiersButton;
         [SerializeField] private Button cavalryButton;
         [SerializeField] private AudioSource audioSource;
@@ -22,7 +24,7 @@ namespace Marchlands.UI
         [Tooltip("{0} — название, {1} — людей в резерве, {2} — нужно на отряд.")]
         [SerializeField] private string countFormat = "{1}/{2}";
         [SerializeField] private string grenadiersName = "Гренадёры";
-        [SerializeField] private string jaegersName = "Егеря";
+        [SerializeField] private string fusiliersName = "Фузилёры";
         [SerializeField] private string cavalryName = "Конница";
         [SerializeField] private Color readyTint = Color.white;
         [SerializeField] private Color waitingTint = new Color(1f, 1f, 1f, 0.4f);
@@ -34,7 +36,7 @@ namespace Marchlands.UI
         {
             this.match = match;
             this.playerSide = playerSide;
-            jaegersButton.onClick.AddListener(() => Form(UnitType.Jaegers));
+            fusiliersButton.onClick.AddListener(() => Form(UnitType.Fusiliers));
             grenadiersButton.onClick.AddListener(() => Form(UnitType.Grenadiers));
             if (cavalryButton != null)
             {
@@ -53,7 +55,7 @@ namespace Marchlands.UI
             }
 
             Refresh(grenadiersButton, UnitType.Grenadiers, grenadiersName, true);
-            Refresh(jaegersButton, UnitType.Jaegers, jaegersName, true);
+            Refresh(fusiliersButton, UnitType.Fusiliers, fusiliersName, true);
             if (cavalryButton != null)
             {
                 Refresh(cavalryButton, UnitType.Cavalry, cavalryName, HasStable());

@@ -68,9 +68,6 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Отряд ещё не стрелял в этом бою — следующий залп получит бонус первого.</summary>
         public bool IsFirstVolley { get; internal set; } = true;
 
-        /// <summary>Залп сам, как только цель войдёт в эффективную дальность.</summary>
-        public bool FireAtWill { get; internal set; }
-
         /// <summary>Цель, выбранная в начале прицеливания; 0 — нет.</summary>
         public int AimTargetId { get; internal set; }
 

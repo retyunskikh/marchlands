@@ -35,7 +35,7 @@ namespace Marchlands.Simulation.Buildings
                 }
             }
 
-            int reserve = cavalry ? player.CavalryReserve : player.GrenadierReserve + player.JaegerReserve;
+            int reserve = cavalry ? player.CavalryReserve : player.GrenadierReserve + player.FusilierReserve;
             Building home = BuildRules.GetFormingBuilding(match, side, cavalry ? UnitType.Cavalry : UnitType.Grenadiers);
             if (home == null || reserve <= 0)
             {
@@ -74,7 +74,7 @@ namespace Marchlands.Simulation.Buildings
             return null;
         }
 
-        /// <summary>Погибшие рекруты: у конницы — из её резерва, у пехоты — поровну из резервов гренадёров и егерей.</summary>
+        /// <summary>Погибшие рекруты: у конницы — из её резерва, у пехоты — поровну из резервов гренадёров и фузилёров.</summary>
         private static void Deduct(PlayerState player, bool cavalry, int lost)
         {
             if (cavalry)
@@ -85,13 +85,13 @@ namespace Marchlands.Simulation.Buildings
 
             for (int i = 0; i < lost; i++)
             {
-                if (player.GrenadierReserve >= player.JaegerReserve && player.GrenadierReserve > 0)
+                if (player.GrenadierReserve >= player.FusilierReserve && player.GrenadierReserve > 0)
                 {
                     player.GrenadierReserve--;
                 }
-                else if (player.JaegerReserve > 0)
+                else if (player.FusilierReserve > 0)
                 {
-                    player.JaegerReserve--;
+                    player.FusilierReserve--;
                 }
             }
         }

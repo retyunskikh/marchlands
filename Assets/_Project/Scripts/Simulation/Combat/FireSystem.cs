@@ -61,15 +61,6 @@ namespace Marchlands.Simulation.Combat
                     continue;
                 }
 
-                if (squad.FireState == FireState.Loaded && squad.FireAtWill && VolleyRules.CanStartAiming(match, squad))
-                {
-                    Squad target = Targeting.FindTarget(match, squad, UnitStats.EffectiveRange(squad, match.Settings));
-                    if (target != null)
-                    {
-                        StartAiming(squad, target, combat);
-                    }
-                }
-
                 if (squad.FireState == FireState.Aiming)
                 {
                     squad.FireTimer -= deltaTime;
@@ -137,7 +128,7 @@ namespace Marchlands.Simulation.Combat
             int shooters = VolleyMath.Shooters(shooter.Formation, shooter.Alive, match.Settings.squads);
             bool inCover = match.Terrain != null && match.Terrain.IsInForest(target.Position);
             float cover = inCover ? match.Settings.terrain.forestCoverMultiplier : 1f;
-            // Дальнобойность рода войск растягивает всю кривую попадания: егерь на 1.25 × d бьёт, как гренадёр на d.
+            // Дальнобойность рода войск растягивает всю кривую попадания: при множителе 1.25 стрелок на 1.25 × d бьёт, как обычный на d.
             UnitTypeSettings unit = UnitStats.Of(shooter, match.Settings);
             float scaledDistance = distance / unit.rangeMultiplier;
             cover *= UnitStats.Of(target, match.Settings).targetHitMultiplier;

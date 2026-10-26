@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 999dc76b038d51840935aa8ee657efa9
+guid: 4f4b8f3c32b837742ba334eed31f1704
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3993755282563570856
-    second: France_Jaeger_0
+      213: -2837671758561250488
+    second: France_Grenadier_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: France_Jaeger_0
+      name: France_Grenadier_0
       rect:
         serializedVersion: 2
         x: 9
         y: 10
         width: 49
-        height: 46
+        height: 54
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8ac9a09054bac6730800000000000000
-      internalID: 3993755282563570856
+      spriteID: 8437cc9f1909e98d0800000000000000
+      internalID: -2837671758561250488
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      France_Jaeger_0: 3993755282563570856
+      France_Grenadier_0: -2837671758561250488
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -18,10 +18,6 @@ namespace Marchlands.View
         [SerializeField] private float soldierScale = 1f;
         [Tooltip("Рекрут, ждущий у казармы.")]
         [SerializeField] private Sprite recruitSprite;
-        [Tooltip("Рассыпной строй егерей: во сколько раз шире интервалы и дистанции (только вид).")]
-        [SerializeField] private Vector2 jaegerSpacing = new Vector2(1.6f, 1.3f);
-        [Tooltip("Насколько егерь сбивается со своего места в рассыпном строю, u.")]
-        [SerializeField] private float jaegerScatter = 0.12f;
         [Header("Рукопашная (только вид)")]
         [Tooltip("За сколько секунд строй сходится в свалку и расходится обратно.")]
         [SerializeField] private float meleeBlendTime = 0.6f;
@@ -68,8 +64,6 @@ namespace Marchlands.View
         [Header("Походка (только вид)")]
         [Tooltip("Гренадёры маршируют в ногу: шагов в секунду, покачивание вбок, u.")]
         [SerializeField] private Vector2 marchGait = new Vector2(1.8f, 0.035f);
-        [Tooltip("Егеря бегут вразнобой: шагов в секунду, покачивание, u.")]
-        [SerializeField] private Vector2 runGait = new Vector2(3f, 0.05f);
         [Tooltip("Конница скачет: скачков в секунду, рывок вперёд-назад, u.")]
         [SerializeField] private Vector2 gallopGait = new Vector2(2.4f, 0.09f);
         [Tooltip("За сколько секунд походка появляется и стихает.")]
@@ -121,8 +115,6 @@ namespace Marchlands.View
 
         public float SoldierScale => soldierScale;
 
-        public float JaegerScatter => jaegerScatter;
-
         public float MeleeBlendTime => meleeBlendTime;
 
         public float GaitBlendTime => gaitBlendTime;
@@ -162,8 +154,6 @@ namespace Marchlands.View
         {
             switch (type)
             {
-                case UnitType.Jaegers:
-                    return runGait;
                 case UnitType.Cavalry:
                     return gallopGait;
                 default:
@@ -192,8 +182,6 @@ namespace Marchlands.View
         {
             switch (type)
             {
-                case UnitType.Jaegers:
-                    return jaegerSpacing;
                 case UnitType.Cavalry:
                     return cavalrySpacing;
                 default:

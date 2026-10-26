@@ -9,8 +9,8 @@ namespace Marchlands.Simulation.AI
 {
     /// <summary>
     /// Стратегический ИИ одной стороны (этап 6 docs/design.md): в начале строит казарму в радиусе штаба на стороне,
-    /// обращённой к противнику, затем держит в казармах найм и формирует отряды: егерей (они быстрее берут деревни) —
-    /// до jaegerSquads и не больше, чем гренадёров, остальных людей собирает в гренадёров. Когда золота хватает,
+    /// обращённой к противнику, затем держит в казармах найм и формирует отряды пехоты поровну: первыми тех, кого
+    /// на поле меньше (при равенстве — фузилёров), а если их не собрать — других. Когда золота хватает,
     /// строит конюшню и держит cavalrySquads отрядов конницы. Отрядами управляет <see cref="TacticalAi"/>.
     /// Приказы — только командами, с той же задержкой реакции.
     /// </summary>
@@ -20,7 +20,7 @@ namespace Marchlands.Simulation.AI
         private static readonly float[] SiteDistanceFractions = { 0.6f, 0.9f, 0.35f };
         private static readonly float[] SiteAngleOffsets = { 0f, 30f, -30f, 60f, -60f, 90f, -90f };
 
-        private static readonly UnitType[] HiredTypes = { UnitType.Grenadiers, UnitType.Jaegers, UnitType.Cavalry };
+        private static readonly UnitType[] HiredTypes = { UnitType.Fusiliers, UnitType.Grenadiers, UnitType.Cavalry };
 
         private int nextThinkTick;
         private int busyUntilTick = -1;
@@ -89,14 +89,15 @@ namespace Marchlands.Simulation.AI
                 }
             }
 
-            // Егерей — не больше jaegerSquads и не больше, чем гренадёров: иначе быстро гибнущие егеря съедают всех рекрутов.
-            int jaegers = CountSquads(match, UnitType.Jaegers);
-            bool wantJaegers = jaegers < ai.jaegerSquads && jaegers <= CountSquads(match, UnitType.Grenadiers);
-            UnitType type = wantJaegers ? UnitType.Jaegers : UnitType.Grenadiers;
-            if (BuildRules.CanFormSquad(match, Side, type))
+            UnitType first = CountSquads(match, UnitType.Grenadiers) < CountSquads(match, UnitType.Fusiliers) ? UnitType.Grenadiers : UnitType.Fusiliers;
+            UnitType second = first == UnitType.Grenadiers ? UnitType.Fusiliers : UnitType.Grenadiers;
+            foreach (UnitType type in new[] { first, second })
             {
-                Issue(match, new FormSquadCommand(Side, type));
-                return;
+                if (BuildRules.CanFormSquad(match, Side, type))
+                {
+                    Issue(match, new FormSquadCommand(Side, type));
+                    return;
+                }
             }
 
             if (CountSquads(match, UnitType.Cavalry) < ai.cavalrySquads && BuildRules.CanFormSquad(match, Side, UnitType.Cavalry))

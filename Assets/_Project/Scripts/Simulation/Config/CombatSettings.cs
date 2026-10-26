@@ -9,7 +9,7 @@ namespace Marchlands.Simulation.Config
         /// <summary>Максимальная дальность залпа, u.</summary>
         public float maxRange;
 
-        /// <summary>Эффективная дальность; на ней срабатывает «огонь по готовности», u.</summary>
+        /// <summary>Эффективная дальность: ИИ держит огонь до неё, рекруты стреляют с неё, u.</summary>
         public float effectiveRange;
 
         /// <summary>Дистанция «в упор», u.</summary>

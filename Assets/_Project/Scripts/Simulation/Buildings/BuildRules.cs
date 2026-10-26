@@ -110,9 +110,65 @@ namespace Marchlands.Simulation.Buildings
             return CanHire(building) && building.Type == GetHomeType(type);
         }
 
-        public static int GetHireCost(Building building, BuildingSettings settings)
+        /// <summary>Цена одного рекрута рода войск.</summary>
+        public static int GetHireCost(BuildingSettings settings, UnitType type)
         {
-            return building.Type == BuildingType.Stable ? settings.cavalryHireCost : settings.hireCost;
+            switch (type)
+            {
+                case UnitType.Cavalry:
+                    return settings.cavalryHireCost;
+                case UnitType.Grenadiers:
+                    return settings.grenadierHireCost;
+                default:
+                    return settings.hireCost;
+            }
+        }
+
+        /// <summary>Раз в столько секунд здание получает рекрута рода войск, s.</summary>
+        public static float GetHireInterval(BuildingSettings settings, UnitType type)
+        {
+            switch (type)
+            {
+                case UnitType.Cavalry:
+                    return settings.cavalryHireInterval;
+                case UnitType.Grenadiers:
+                    return settings.grenadierHireInterval;
+                default:
+                    return settings.hireInterval;
+            }
+        }
+
+        /// <summary>
+        /// Кого здание нанимает сейчас — по нему цена и таймер: очередной включённый род войск с местом в резерве;
+        /// если места нет ни у кого — первый включённый; если найм выключен — основной род войск здания.
+        /// </summary>
+        public static UnitType GetUpcomingHireType(Match match, Building building)
+        {
+            UnitType? next = NextHireType(match, building);
+            if (next.HasValue)
+            {
+                return next.Value;
+            }
+
+            foreach (UnitType type in HireOrder)
+            {
+                if (building.IsHiring(type))
+                {
+                    return type;
+                }
+            }
+
+            return building.Type == BuildingType.Stable ? UnitType.Cavalry : UnitType.Fusiliers;
+        }
+
+        public static int GetHireCost(Match match, Building building)
+        {
+            return GetHireCost(match.Settings.buildings, GetUpcomingHireType(match, building));
+        }
+
+        public static float GetHireInterval(Match match, Building building)
+        {
+            return GetHireInterval(match.Settings.buildings, GetUpcomingHireType(match, building));
         }
 
         /// <summary>Сколько людей рода войск может ждать: на maxWaitingSquads отрядов.</summary>
@@ -121,13 +177,16 @@ namespace Marchlands.Simulation.Buildings
             return match.Settings.buildings.maxWaitingSquads * match.Settings.Unit(type).squadSize;
         }
 
+        /// <summary>Очерёдность найма: фузилёры, гренадёры, конница.</summary>
+        internal static readonly UnitType[] HireOrder = { UnitType.Fusiliers, UnitType.Grenadiers, UnitType.Cavalry };
+
         /// <summary>Кого нанять следующим: включённый род войск, у которого ещё есть место, начиная с очередного; null — некого.</summary>
         internal static UnitType? NextHireType(Match match, Building building)
         {
             PlayerState player = match.GetPlayer(building.Owner);
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < HireOrder.Length; i++)
             {
-                var type = (UnitType)((building.NextHireType + i) % 3);
+                UnitType type = HireOrder[(building.NextHireType + i) % HireOrder.Length];
                 if (building.IsHiring(type) && player.GetReserve(type) < GetMaxWaiting(match, type))
                 {
                     return type;
@@ -135,11 +194,6 @@ namespace Marchlands.Simulation.Buildings
             }
 
             return null;
-        }
-
-        public static float GetHireInterval(Building building, BuildingSettings settings)
-        {
-            return building.Type == BuildingType.Stable ? settings.cavalryHireInterval : settings.hireInterval;
         }
 
         /// <summary>Почему найм в здании сейчас не идёт; None — идёт.</summary>
@@ -155,7 +209,7 @@ namespace Marchlands.Simulation.Buildings
                 return HireWait.Full;
             }
 
-            return match.GetPlayer(building.Owner).Gold < GetHireCost(building, match.Settings.buildings) ? HireWait.NoGold : HireWait.None;
+            return match.GetPlayer(building.Owner).Gold < GetHireCost(match, building) ? HireWait.NoGold : HireWait.None;
         }
     }
 }

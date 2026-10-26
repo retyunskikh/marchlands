@@ -18,7 +18,7 @@ namespace Marchlands.View
     public sealed class SoldierSprites
     {
         [SerializeField] private Sprite grenadier;
-        [SerializeField] private Sprite jaeger;
+        [SerializeField] private Sprite fusilier;
         [SerializeField] private Sprite officer;
         [SerializeField] private Sprite flagBearer;
         [SerializeField] private Sprite drummer;
@@ -27,7 +27,7 @@ namespace Marchlands.View
 
         [Header("Шаг: два кадра — левой и правой (у конницы — галоп)")]
         [SerializeField] private Sprite[] grenadierWalk = new Sprite[2];
-        [SerializeField] private Sprite[] jaegerWalk = new Sprite[2];
+        [SerializeField] private Sprite[] fusilierWalk = new Sprite[2];
         [SerializeField] private Sprite[] officerWalk = new Sprite[2];
         [SerializeField] private Sprite[] flagBearerWalk = new Sprite[2];
         [SerializeField] private Sprite[] drummerWalk = new Sprite[2];
@@ -37,15 +37,15 @@ namespace Marchlands.View
         [Header("Рукопашная: тело без оружия и руки с оружием отдельно")]
         [SerializeField] private Sprite grenadierBody;
         [SerializeField] private Sprite grenadierArms;
-        [SerializeField] private Sprite jaegerBody;
-        [SerializeField] private Sprite jaegerArms;
+        [SerializeField] private Sprite fusilierBody;
+        [SerializeField] private Sprite fusilierArms;
         [SerializeField] private Sprite officerBody;
         [SerializeField] private Sprite officerArms;
         [SerializeField] private Sprite cavalryBody;
         [SerializeField] private Sprite cavalryOfficerBody;
         [SerializeField] private Sprite cavalryArms;
 
-        public bool IsComplete => grenadier != null && jaeger != null && officer != null && flagBearer != null && drummer != null
+        public bool IsComplete => grenadier != null && fusilier != null && officer != null && flagBearer != null && drummer != null
             && cavalry != null && cavalryOfficer != null;
 
         /// <summary>
@@ -68,8 +68,8 @@ namespace Marchlands.View
             }
             else if (role == SoldierRole.Private)
             {
-                body = type == UnitType.Jaegers ? jaegerBody : grenadierBody;
-                arms = type == UnitType.Jaegers ? jaegerArms : grenadierArms;
+                body = type == UnitType.Fusiliers ? fusilierBody : grenadierBody;
+                arms = type == UnitType.Fusiliers ? fusilierArms : grenadierArms;
             }
 
             return body != null && arms != null;
@@ -97,7 +97,7 @@ namespace Marchlands.View
                         frames = drummerWalk;
                         break;
                     default:
-                        frames = type == UnitType.Jaegers ? jaegerWalk : grenadierWalk;
+                        frames = type == UnitType.Fusiliers ? fusilierWalk : grenadierWalk;
                         break;
                 }
             }
@@ -121,7 +121,7 @@ namespace Marchlands.View
                 case SoldierRole.Drummer:
                     return drummer;
                 default:
-                    return type == UnitType.Jaegers ? jaeger : grenadier;
+                    return type == UnitType.Fusiliers ? fusilier : grenadier;
             }
         }
     }

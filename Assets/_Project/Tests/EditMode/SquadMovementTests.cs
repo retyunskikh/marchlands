@@ -118,17 +118,45 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void FormationChange_IsIgnoredWhileAlreadyChanging()
+        public void FormationChange_CanBeReversedMidway_TakingTheTimeAlreadySpent()
         {
             Match match = CreateMatch();
             Squad squad = match.AddSquad(Side.France, float2.zero, 0f, Formation.Line);
             match.Enqueue(new ChangeFormationCommand(squad.Id, Formation.Column));
             match.Tick();
+            for (int i = 0; i < 10; i++)
+            {
+                match.Tick();
+            }
+
+            // Через 1 с из 4 — обратно в линию: возврат длится столько же, сколько уже прошло.
             match.Enqueue(new ChangeFormationCommand(squad.Id, Formation.Line));
+            match.Tick();
+            Assert.IsTrue(squad.IsChangingFormation);
+            Assert.AreEqual(Formation.Line, squad.TargetFormation);
+            Assert.That(squad.FormationChangeProgress, Is.EqualTo(0.75f).Within(0.03f), "Возврат начинается с той же точки");
 
-            RunUntil(match, () => !squad.IsChangingFormation);
+            for (int i = 0; i < 10 && squad.IsChangingFormation; i++)
+            {
+                match.Tick();
+            }
 
-            Assert.AreEqual(Formation.Column, squad.Formation);
+            Assert.IsFalse(squad.IsChangingFormation, "Возврат быстрее полного перестроения");
+            Assert.AreEqual(Formation.Line, squad.Formation);
+        }
+
+        [Test]
+        public void FormationChange_ToSameTarget_IsIgnored()
+        {
+            Match match = CreateMatch();
+            Squad squad = match.AddSquad(Side.France, float2.zero, 0f, Formation.Line);
+            match.Enqueue(new ChangeFormationCommand(squad.Id, Formation.Column));
+            match.Tick();
+            float remaining = squad.FormationChangeRemaining;
+            match.Enqueue(new ChangeFormationCommand(squad.Id, Formation.Column));
+            match.Tick();
+
+            Assert.Less(squad.FormationChangeRemaining, remaining, "Таймер не сбрасывается");
         }
 
         [Test]

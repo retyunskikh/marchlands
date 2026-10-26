@@ -75,7 +75,7 @@ namespace Marchlands.Tests.EditMode
             match.Enqueue(new SetHiringCommand(stable.Id, UnitType.Cavalry, true));
             RunTicks(match, TicksFor(3f));
             Assert.AreEqual(1, player.CavalryReserve);
-            Assert.AreEqual(0, player.GrenadierReserve + player.JaegerReserve, "Пехотные резервы не трогаются");
+            Assert.AreEqual(0, player.GrenadierReserve + player.FusilierReserve, "Пехотные резервы не трогаются");
 
             player.CavalryReserve = 48;
             int gold = player.Gold;
@@ -139,12 +139,12 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void Cavalry_CannotFire_EvenAtWill()
+        public void Cavalry_CannotFire()
         {
             var match = new Match(1, TestSettings.Create());
             Squad cavalry = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, UnitType.Cavalry);
             match.AddSquad(Side.Austria, new float2(0f, 5f), -90f, Formation.Line);
-            match.Enqueue(new SetFireAtWillCommand(cavalry.Id, true));
+            match.Enqueue(new VolleyCommand(cavalry.Id));
 
             RunTicks(match, 30);
 

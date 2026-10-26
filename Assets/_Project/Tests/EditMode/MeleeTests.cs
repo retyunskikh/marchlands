@@ -225,17 +225,18 @@ namespace Marchlands.Tests.EditMode
         public void LoadedDefender_GetsCounterVolleyOnChargingAttacker()
         {
             Match match = CombatTestScenarios.FacingLines(1, 11f, out Squad attacker, out Squad defender);
-            match.Enqueue(new SetFireAtWillCommand(defender.Id, true));
             match.Enqueue(new ChargeCommand(attacker.Id, defender.Id));
 
             bool counterVolley = false;
             for (int i = 0; i < MaxTicks && !attacker.IsInMelee && !attacker.IsRouting; i++)
             {
+                // Игрок даёт встречный залп, как только атакующий в эффективной дальности.
+                match.Enqueue(new VolleyCommand(defender.Id, match.Settings.combat.effectiveRange));
                 match.Tick();
                 counterVolley |= match.LastTickVolleys.Any(v => v.ShooterId == defender.Id && v.TargetId == attacker.Id);
             }
 
-            Assert.IsTrue(counterVolley, "Защитник с огнём по готовности встречает атаку залпом");
+            Assert.IsTrue(counterVolley, "Заряженный защитник встречает атаку залпом");
             Assert.Less(attacker.Alive, 36);
         }
 

@@ -25,11 +25,11 @@ namespace Marchlands.Simulation.Economy
             internal set => reserves[(int)UnitType.Grenadiers] = value;
         }
 
-        /// <summary>Рекруты и вернувшиеся из разбитых отрядов егеря.</summary>
-        public int JaegerReserve
+        /// <summary>Рекруты и вернувшиеся из разбитых отрядов фузилёры.</summary>
+        public int FusilierReserve
         {
-            get => reserves[(int)UnitType.Jaegers];
-            internal set => reserves[(int)UnitType.Jaegers] = value;
+            get => reserves[(int)UnitType.Fusiliers];
+            internal set => reserves[(int)UnitType.Fusiliers] = value;
         }
 
         /// <summary>Всадники, ждущие у конюшен: нанятые и добежавшие из разбитых отрядов конницы.</summary>

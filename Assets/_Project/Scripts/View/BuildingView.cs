@@ -1,5 +1,6 @@
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Config;
+using Marchlands.Simulation.Core;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -115,7 +116,7 @@ namespace Marchlands.View
             selection.enabled = selected;
         }
 
-        internal void Render()
+        internal void Render(Match match)
         {
             Color bodyColor = sideColor;
             Color shownInnerColor = innerColor;
@@ -146,7 +147,7 @@ namespace Marchlands.View
             }
             else if (building.IsHiringAny)
             {
-                float interval = BuildRules.GetHireInterval(building, settings.buildings);
+                float interval = BuildRules.GetHireInterval(match, building);
                 progress = interval > 0f ? 1f - building.HireRemaining / interval : -1f;
             }
 
