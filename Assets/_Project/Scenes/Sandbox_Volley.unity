@@ -1798,6 +1798,7 @@ GameObject:
   - component: {fileID: 292482926}
   - component: {fileID: 292482928}
   - component: {fileID: 292482929}
+  - component: {fileID: 292482930}
   m_Layer: 0
   m_Name: Volley
   m_TagString: Untagged
@@ -1925,6 +1926,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.35}
   m_EffectDistance: {x: 0, y: -5}
   m_UseGraphicAlpha: 1
+--- !u!114 &292482930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 292482924}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
+  cornerPadding: {x: 24, y: 0}
 --- !u!1 &309758623
 GameObject:
   m_ObjectHideFlags: 0
@@ -2091,6 +2105,7 @@ GameObject:
   - component: {fileID: 359218149}
   - component: {fileID: 359218148}
   - component: {fileID: 359218147}
+  - component: {fileID: 359218150}
   m_Layer: 0
   m_Name: "\u0413\u0440\u0435\u043D\u0430\u0434\u0451\u0440\u044B"
   m_TagString: Untagged
@@ -2201,6 +2216,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 359218145}
   m_CullTransparentMesh: 1
+--- !u!114 &359218150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 359218145}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
+  cornerPadding: {x: 24, y: 0}
 --- !u!1 &387248216
 GameObject:
   m_ObjectHideFlags: 0
@@ -2416,6 +2444,7 @@ GameObject:
   - component: {fileID: 423380991}
   - component: {fileID: 423380993}
   - component: {fileID: 423380994}
+  - component: {fileID: 423380995}
   m_Layer: 0
   m_Name: Charge
   m_TagString: Untagged
@@ -2541,6 +2570,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.35}
   m_EffectDistance: {x: 0, y: -5}
   m_UseGraphicAlpha: 1
+--- !u!114 &423380995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 423380989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
+  cornerPadding: {x: 24, y: 0}
 --- !u!1 &426565802
 GameObject:
   m_ObjectHideFlags: 0
@@ -2788,6 +2830,7 @@ GameObject:
   - component: {fileID: 449916319}
   - component: {fileID: 449916320}
   - component: {fileID: 449916321}
+  - component: {fileID: 449916322}
   m_Layer: 0
   m_Name: Gold
   m_TagString: Untagged
@@ -2856,6 +2899,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Gold
+--- !u!114 &449916322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 449916318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
+  cornerPadding: {x: 36, y: 0}
 --- !u!1 &451751457
 GameObject:
   m_ObjectHideFlags: 0
@@ -3372,6 +3428,7 @@ GameObject:
   - component: {fileID: 532968155}
   - component: {fileID: 532968157}
   - component: {fileID: 532968158}
+  - component: {fileID: 532968159}
   m_Layer: 0
   m_Name: Formation
   m_TagString: Untagged
@@ -3497,6 +3554,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.35}
   m_EffectDistance: {x: 0, y: -5}
   m_UseGraphicAlpha: 1
+--- !u!114 &532968159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 532968153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
+  cornerPadding: {x: 24, y: 0}
 --- !u!1 &533905311
 GameObject:
   m_ObjectHideFlags: 0
@@ -3901,6 +3971,7 @@ GameObject:
   - component: {fileID: 614916642}
   - component: {fileID: 614916641}
   - component: {fileID: 614916640}
+  - component: {fileID: 614916643}
   m_Layer: 0
   m_Name: "\u0415\u0433\u0435\u0440\u044F"
   m_TagString: Untagged
@@ -4011,6 +4082,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 614916638}
   m_CullTransparentMesh: 1
+--- !u!114 &614916643
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 614916638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
+  cornerPadding: {x: 24, y: 0}
 --- !u!1 &640610501
 GameObject:
   m_ObjectHideFlags: 0
@@ -4833,6 +4917,7 @@ GameObject:
   - component: {fileID: 794412202}
   - component: {fileID: 794412201}
   - component: {fileID: 794412205}
+  - component: {fileID: 794412206}
   m_Layer: 0
   m_Name: Stop
   m_TagString: Untagged
@@ -4958,6 +5043,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.35}
   m_EffectDistance: {x: 0, y: -5}
   m_UseGraphicAlpha: 1
+--- !u!114 &794412206
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794412200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
+  cornerPadding: {x: 24, y: 0}
 --- !u!1 &820522555
 GameObject:
   m_ObjectHideFlags: 0
@@ -10187,6 +10285,7 @@ GameObject:
   - component: {fileID: 896648900}
   - component: {fileID: 896648899}
   - component: {fileID: 896648898}
+  - component: {fileID: 896648901}
   m_Layer: 0
   m_Name: "\u041A\u043E\u043D\u043D\u0438\u0446\u0430"
   m_TagString: Untagged
@@ -10297,6 +10396,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 896648896}
   m_CullTransparentMesh: 1
+--- !u!114 &896648901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 896648896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
+  cornerPadding: {x: 24, y: 0}
 --- !u!1 &899352617
 GameObject:
   m_ObjectHideFlags: 0
@@ -13301,6 +13413,7 @@ GameObject:
   - component: {fileID: 1488958727}
   - component: {fileID: 1488958729}
   - component: {fileID: 1488958730}
+  - component: {fileID: 1488958731}
   m_Layer: 0
   m_Name: Pause
   m_TagString: Untagged
@@ -13426,6 +13539,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.35}
   m_EffectDistance: {x: 0, y: -4}
   m_UseGraphicAlpha: 1
+--- !u!114 &1488958731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1488958725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
+  cornerPadding: {x: 36, y: 0}
 --- !u!1 &1492640964
 GameObject:
   m_ObjectHideFlags: 0
@@ -14634,6 +14760,7 @@ GameObject:
   - component: {fileID: 1738620289}
   - component: {fileID: 1738620288}
   - component: {fileID: 1738620287}
+  - component: {fileID: 1738620290}
   m_Layer: 0
   m_Name: Panel
   m_TagString: Untagged
@@ -14719,6 +14846,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1738620285}
   m_CullTransparentMesh: 1
+--- !u!114 &1738620290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1738620285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 555718de65ca1c244bf1f38e8c0c4dbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
+  cornerPadding: {x: 24, y: 0}
 --- !u!1 &1743920310
 GameObject:
   m_ObjectHideFlags: 0
