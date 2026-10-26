@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Marchlands.View
 {
     /// <summary>
-    /// Численность отряда числом «24/30» у полоски морали: при пополнении — зелёная, с подскоком и всплывающим «+1»,
+    /// Численность отряда у полоски морали: число «24/30» (если включено в стиле) при пополнении — зелёное, с подскоком и всплывающим «+1»,
     /// при потерях — на миг красная. Пока отряд пополняется в своей деревне, число светло-зелёное, а под ним
     /// полоска до следующего человека. Рисуется текстом в мире, с тёмной тенью для читаемости на траве.
     /// </summary>
@@ -55,8 +55,9 @@ namespace Marchlands.View
         /// <param name="reinforceProgress">Доля до следующего человека из деревни; отрицательная — отряд не пополняется.</param>
         internal void Show(Vector3 position, int alive, int full, bool visible, float reinforceProgress)
         {
-            text.gameObject.SetActive(visible);
-            shadow.gameObject.SetActive(visible);
+            // Число — только если включено в стиле (его заменила карточка отряда); «+1» и полоска пополнения — всегда.
+            text.gameObject.SetActive(visible && style.ShowCount);
+            shadow.gameObject.SetActive(visible && style.ShowCount);
             bool reinforcing = visible && reinforceProgress >= 0f;
             barBack.gameObject.SetActive(reinforcing);
             barFill.gameObject.SetActive(reinforcing);

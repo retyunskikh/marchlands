@@ -40,6 +40,8 @@ namespace Marchlands.View
         [SerializeField] private float regroupSpeed = 3f;
 
         [Header("Численность отряда")]
+        [Tooltip("Писать численность числом у отряда; без него остаются «+1» при пополнении и полоска пополнения.")]
+        [SerializeField] private bool showCount;
         [Tooltip("Высота цифр численности, u.")]
         [SerializeField] private float countSize = 0.55f;
         [Tooltip("Насколько левее полоски морали стоят цифры, u.")]
@@ -118,6 +120,8 @@ namespace Marchlands.View
         public float MeleeBlendTime => meleeBlendTime;
 
         public float GaitBlendTime => gaitBlendTime;
+
+        public bool ShowCount => showCount;
 
         public float CountSize => countSize;
 
