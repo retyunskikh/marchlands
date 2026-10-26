@@ -39,6 +39,22 @@ namespace Marchlands.View
         [Tooltip("Как быстро строй смыкается после потерь, 1/s: солдаты не телепортируются на места павших.")]
         [SerializeField] private float regroupSpeed = 3f;
 
+        [Header("Численность отряда")]
+        [Tooltip("Высота цифр численности, u.")]
+        [SerializeField] private float countSize = 0.55f;
+        [Tooltip("Насколько левее полоски морали стоят цифры, u.")]
+        [SerializeField] private float countGap = 0.9f;
+        [SerializeField] private Color countColor = new Color(1f, 1f, 0.95f);
+        [SerializeField] private Color countGainColor = new Color(0.45f, 1f, 0.45f);
+        [SerializeField] private Color countLossColor = new Color(1f, 0.35f, 0.3f);
+        [Tooltip("Сколько цифры зелёные и подпрыгивают после пополнения, s.")]
+        [SerializeField] private float countGainTime = 1.2f;
+        [SerializeField] private float countLossTime = 0.6f;
+        [SerializeField] private float countBounce = 0.25f;
+        [Tooltip("Сколько всплывает «+1», s, и на сколько поднимается, u.")]
+        [SerializeField] private float floaterLifetime = 1.4f;
+        [SerializeField] private float floaterRise = 1.6f;
+
         [Header("Походка (только вид)")]
         [Tooltip("Гренадёры маршируют в ногу: шагов в секунду, покачивание вбок, u.")]
         [SerializeField] private Vector2 marchGait = new Vector2(1.8f, 0.035f);
@@ -100,6 +116,26 @@ namespace Marchlands.View
         public float MeleeBlendTime => meleeBlendTime;
 
         public float GaitBlendTime => gaitBlendTime;
+
+        public float CountSize => countSize;
+
+        public float CountGap => countGap;
+
+        public Color CountColor => countColor;
+
+        public Color CountGainColor => countGainColor;
+
+        public Color CountLossColor => countLossColor;
+
+        public float CountGainTime => countGainTime;
+
+        public float CountLossTime => countLossTime;
+
+        public float CountBounce => countBounce;
+
+        public float FloaterLifetime => floaterLifetime;
+
+        public float FloaterRise => floaterRise;
 
         public float RegroupSpeed => regroupSpeed;
 

@@ -168,14 +168,14 @@ namespace Marchlands.View
             float radiusSq = tensionRadius * tensionRadius;
             foreach (Squad own in match.Squads)
             {
-                if (own.Side != playerSide || own.IsRouting)
+                if (own.Side != playerSide || own.IsRouting || own.IsCamp)
                 {
                     continue;
                 }
 
                 foreach (Squad enemy in match.Squads)
                 {
-                    if (enemy.Side != playerSide && !enemy.IsRouting && math.distancesq(own.Position, enemy.Position) <= radiusSq)
+                    if (enemy.Side != playerSide && !enemy.IsRouting && !enemy.IsCamp && math.distancesq(own.Position, enemy.Position) <= radiusSq)
                     {
                         return true;
                     }

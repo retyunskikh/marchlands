@@ -1,3 +1,4 @@
+using Marchlands.Simulation.Combat;
 using System.Linq;
 using Marchlands.Simulation.AI;
 using Marchlands.Simulation.Buildings;
@@ -247,7 +248,7 @@ namespace Marchlands.Tests.EditMode
             match.Enqueue(new FormSquadCommand(Side.France, UnitType.Jaegers));
             match.Tick();
 
-            Squad squad = match.Squads.Single();
+            Squad squad = match.Squads.Single(s => !s.IsCamp);
             Assert.AreEqual(UnitType.Jaegers, squad.Type);
             Assert.AreEqual(16, squad.Alive);
             Assert.AreEqual(4, player.JaegerReserve);
@@ -266,14 +267,96 @@ namespace Marchlands.Tests.EditMode
             player.GrenadierReserve = 100;
             match.Enqueue(new FormSquadCommand(Side.France, UnitType.Grenadiers));
             match.Tick();
-            Assert.AreEqual(0, match.Squads.Count, "Казармы нет");
+            Assert.AreEqual(0, match.Squads.Count(s => !s.IsCamp), "Казармы нет");
 
             BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
             player.GrenadierReserve = 35;
             match.Enqueue(new FormSquadCommand(Side.France, UnitType.Grenadiers));
             match.Tick();
-            Assert.AreEqual(0, match.Squads.Count, "Людей меньше, чем в отряде");
+            Assert.AreEqual(0, match.Squads.Count(s => !s.IsCamp), "Людей меньше, чем в отряде");
             Assert.AreEqual(35, player.GrenadierReserve);
+        }
+
+        [Test]
+        public void WaitingPeople_StandAsCamp_InFrontOfBarracks()
+        {
+            Match match = CreateMatch();
+            Building barracks = BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
+            PlayerState player = match.GetPlayer(Side.France);
+            player.GrenadierReserve = 7;
+            player.JaegerReserve = 5;
+
+            match.Tick();
+
+            Squad camp = match.Squads.Single(s => s.IsCamp);
+            Assert.AreEqual(12, camp.Alive);
+            Assert.IsFalse(camp.IsCavalryCamp);
+            Assert.AreEqual(3f, math.distance(camp.Position, barracks.Position), 0.05f, "Стоят в campOffset перед казармой");
+
+            player.GrenadierReserve = 0;
+            player.JaegerReserve = 0;
+            match.Tick();
+            match.Tick();
+            Assert.IsFalse(match.Squads.Any(s => s.IsCamp), "Резерв пуст — толпы нет");
+        }
+
+        [Test]
+        public void CampLosses_AreTakenFromReserve_AndCampDoesNotRout()
+        {
+            Match match = CreateMatch();
+            BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
+            PlayerState player = match.GetPlayer(Side.France);
+            player.GrenadierReserve = 10;
+            player.JaegerReserve = 10;
+            match.Tick();
+            Squad camp = match.Squads.Single(s => s.IsCamp);
+
+            // Будто по толпе пришёлся залп: 6 убитых.
+            camp.Alive -= 6;
+            camp.Morale = 0f;
+            match.Tick();
+
+            Assert.AreEqual(14, player.GrenadierReserve + player.JaegerReserve);
+            Assert.AreEqual(14, camp.Alive);
+            Assert.IsFalse(camp.IsRouting, "Толпа рекрутов не бежит");
+        }
+
+        [Test]
+        public void EnemyCanVolleyAtCamp()
+        {
+            Match match = CreateMatch();
+            Building barracks = BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
+            match.GetPlayer(Side.France).GrenadierReserve = 20;
+            match.Tick();
+            Squad camp = match.Squads.Single(s => s.IsCamp);
+            Squad enemy = match.AddSquad(Side.Austria, camp.Position + new float2(0f, 8f), -90f, Formation.Line);
+
+            Assert.IsTrue(VolleyRules.CanVolley(match, enemy), "Толпа рекрутов — законная цель");
+            Assert.IsFalse(VolleyRules.CanVolley(match, camp), "Рекруты не стреляют");
+            Assert.IsNotNull(barracks);
+        }
+
+        [Test]
+        public void Camp_ShootsSkirmishFire_AtNearbyEnemy()
+        {
+            Match match = CreateMatch();
+            BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
+            match.GetPlayer(Side.France).GrenadierReserve = 30;
+            match.Tick();
+            Squad camp = match.Squads.Single(s => s.IsCamp);
+            Squad enemy = match.AddSquad(Side.Austria, camp.Position + new float2(0f, 6f), -90f, Formation.Line);
+
+            int shots = 0;
+            for (int i = 0; i < TicksFor(10f); i++)
+            {
+                match.Tick();
+                shots += match.LastTickVolleys.Count(v => v.ShooterId == camp.Id);
+                Assert.IsTrue(match.LastTickVolleys.Where(v => v.ShooterId == camp.Id).All(v => v.Shooters == 1), "Каждый сам по себе, не залпом");
+            }
+
+            // 30 рекрутов, раз в 14 с каждый: за 10 с — около 21 выстрела.
+            Assert.That(shots, Is.InRange(17, 23));
+            Assert.Less(enemy.Alive, 36, "По врагу попадают");
         }
 
         [Test]
@@ -361,7 +444,7 @@ namespace Marchlands.Tests.EditMode
             // После постройки остаётся 30 золота, штаб даёт +2 за 5 с: на 16 егерей (32 золота) хватит к ~50-й секунде.
             RunTicks(match, TicksFor(100f));
             Assert.IsTrue(barracks.IsHiring(UnitType.Grenadiers) && barracks.IsHiring(UnitType.Jaegers), "ИИ включает найм пехоты");
-            Squad formed = match.Squads.FirstOrDefault(s => s.Side == Side.Austria);
+            Squad formed = match.Squads.FirstOrDefault(s => s.Side == Side.Austria && !s.IsCamp);
             Assert.IsNotNull(formed, "ИИ формирует отряд из рекрутов");
             Assert.AreEqual(UnitType.Jaegers, formed.Type, "Первыми — егеря");
         }

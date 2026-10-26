@@ -71,7 +71,7 @@ namespace Marchlands.Simulation.Buildings
             return match.AddSquad(barracks.Owner, position, Angles.Of(direction), Formation.Line, type);
         }
 
-        private static float2 GetFrontDirection(Match match, Building barracks)
+        internal static float2 GetFrontDirection(Match match, Building barracks)
         {
             Side enemy = barracks.Owner == Side.France ? Side.Austria : Side.France;
             Building enemyHeadquarters = match.GetHeadquarters(enemy);

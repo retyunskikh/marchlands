@@ -27,8 +27,11 @@ namespace Marchlands.Simulation.Config
         /// <summary>Множитель потерь, которые отряд наносит в рукопашной.</summary>
         public float meleeMultiplier;
 
-        /// <summary>Может ли отряд стрелять.</summary>
+        /// <summary>Может ли отряд стрелять залпом.</summary>
         public bool canFire;
+
+        /// <summary>Стреляет ли вразнобой — каждый сам по себе, когда враг в эффективной дальности (толпа рекрутов).</summary>
+        public bool skirmishFire;
 
         /// <summary>Во сколько раз больше обычного бонус атаки (сверх 1): 2 — бонус 1.5 становится 2.0.</summary>
         public float chargeBonusMultiplier;

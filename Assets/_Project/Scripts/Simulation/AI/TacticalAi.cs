@@ -68,6 +68,11 @@ namespace Marchlands.Simulation.AI
 
             foreach (Squad squad in match.Squads)
             {
+                if (squad.IsCamp)
+                {
+                    continue;
+                }
+
                 if (squad.Side != Side)
                 {
                     continue;
@@ -226,7 +231,7 @@ namespace Marchlands.Simulation.AI
             defenders.Clear();
             foreach (Squad threat in match.Squads)
             {
-                if (threat.Side == Side || threat.IsRouting || !IsThreat(match, threat))
+                if (threat.Side == Side || threat.IsRouting || threat.IsCamp || !IsThreat(match, threat))
                 {
                     continue;
                 }
@@ -235,7 +240,7 @@ namespace Marchlands.Simulation.AI
                 float bestDistance = float.MaxValue;
                 foreach (Squad own in match.Squads)
                 {
-                    if (own.Side != Side || !own.CanReceiveOrders || defenders.ContainsKey(own.Id)
+                    if (own.Side != Side || own.IsCamp || !own.CanReceiveOrders || defenders.ContainsKey(own.Id)
                         || (brains.TryGetValue(own.Id, out SquadBrain brain) && brain.Stance == Stance.Retreat)
                         || IsEngagedWithOther(match, own, threat))
                     {

@@ -10,6 +10,9 @@ namespace Marchlands.Simulation.Squads
         Jaegers,
 
         /// <summary>Конница: дорогая, быстрая, сильна в рукопашной, не стреляет. Нанимается в конюшне.</summary>
-        Cavalry
+        Cavalry,
+
+        /// <summary>Ждущие у казармы или конюшни люди: стоят толпой, не стреляют, отбиваются слабо. Не управляются.</summary>
+        Recruits
     }
 }

@@ -32,6 +32,7 @@ MonoBehaviour:
       moraleLossMultiplier: 0.8
       meleeMultiplier: 1.25
       canFire: 1
+      skirmishFire: 0
       chargeBonusMultiplier: 1
       targetHitMultiplier: 1
     jaegers:
@@ -43,6 +44,7 @@ MonoBehaviour:
       moraleLossMultiplier: 1
       meleeMultiplier: 0.7
       canFire: 1
+      skirmishFire: 0
       chargeBonusMultiplier: 1
       targetHitMultiplier: 1
     cavalry:
@@ -54,8 +56,21 @@ MonoBehaviour:
       moraleLossMultiplier: 1
       meleeMultiplier: 2
       canFire: 0
+      skirmishFire: 0
       chargeBonusMultiplier: 2
       targetHitMultiplier: 1.3
+    recruits:
+      squadSize: 0
+      minSquadSize: 0
+      speedMultiplier: 0
+      accuracyMultiplier: 0.75
+      rangeMultiplier: 1
+      moraleLossMultiplier: 0
+      meleeMultiplier: 0.75
+      canFire: 0
+      skirmishFire: 1
+      chargeBonusMultiplier: 1
+      targetHitMultiplier: 1
     combat:
       maxRange: 12
       effectiveRange: 7
@@ -130,6 +145,7 @@ MonoBehaviour:
       cavalryHireCost: 6
       cavalryHireInterval: 4.5
       spawnOffset: 6
+      campOffset: 4.5
     victory:
       hqCaptureRadius: 7
       hqCaptureTime: 30

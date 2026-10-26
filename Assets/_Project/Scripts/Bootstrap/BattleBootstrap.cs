@@ -80,7 +80,7 @@ namespace Marchlands.Bootstrap
             input.ChargeTargetingChanged += orderPanel.SetChargeTargeting;
             input.PlacementChanged += buildPanel.SetPlacementState;
             orderPanel.ChargeRequested += input.BeginChargeTargeting;
-            buildPanel.BuildRequested += input.BeginPlacement;
+            buildingPanel.BuildRequested += input.BeginPlacement;
             buildPanel.ConfirmRequested += input.ConfirmPlacement;
             buildPanel.CancelRequested += input.CancelPlacement;
         }
@@ -103,7 +103,7 @@ namespace Marchlands.Bootstrap
             if (buildPanel != null)
             {
                 input.PlacementChanged -= buildPanel.SetPlacementState;
-                buildPanel.BuildRequested -= input.BeginPlacement;
+                buildingPanel.BuildRequested -= input.BeginPlacement;
                 buildPanel.ConfirmRequested -= input.ConfirmPlacement;
                 buildPanel.CancelRequested -= input.CancelPlacement;
             }

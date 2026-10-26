@@ -389,6 +389,8 @@ namespace Marchlands.Simulation.Core
                 squad.PreviousFacing = squad.Facing;
             }
 
+            RecruitCampSystem.Update(this);
+
             foreach (IMatchController controller in controllers)
             {
                 controller.Update(this);

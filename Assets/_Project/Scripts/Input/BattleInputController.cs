@@ -493,7 +493,8 @@ namespace Marchlands.Input
             foreach (Squad squad in match.Squads)
             {
                 // Бегущим приказов не отдать, а собираются они у казармы — тап должен доставаться ей.
-                if ((squad.Side == playerSide) != own || squad.IsRouting)
+                // Свою толпу рекрутов не выделить; вражескую можно выбрать целью атаки.
+                if ((squad.Side == playerSide) != own || squad.IsRouting || (own && squad.IsCamp))
                 {
                     continue;
                 }

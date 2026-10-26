@@ -64,7 +64,8 @@ namespace Marchlands.Simulation.Morale
 
         private static bool ShouldRout(Match match, Squad squad)
         {
-            return squad.Morale < match.Settings.morale.routThreshold || squad.Alive < UnitStats.Of(squad, match.Settings).minSquadSize;
+            // Толпа рекрутов не бежит: её численность — это резерв.
+            return !squad.IsCamp && squad.Morale < match.Settings.morale.routThreshold || squad.Alive < UnitStats.Of(squad, match.Settings).minSquadSize;
         }
 
         /// <summary>Бегущий, добежавший до казармы (штаба, точки отхода), уходит с поля в резерв стороны.</summary>
@@ -111,7 +112,7 @@ namespace Marchlands.Simulation.Morale
                 Squad routed = match.PendingRouts.Dequeue();
                 foreach (Squad other in match.Squads)
                 {
-                    if (other == routed || other.IsWithdrawn || other.IsRouting && other.Side != routed.Side)
+                    if (other == routed || other.IsWithdrawn || other.IsCamp || other.IsRouting && other.Side != routed.Side)
                     {
                         continue;
                     }

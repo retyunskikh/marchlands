@@ -44,6 +44,7 @@ namespace Marchlands.View
         // Где солдат стоит в строю сейчас (локально): плавно догоняет своё место после потерь и перестроек.
         private readonly List<float2> shownSlots = new List<float2>();
         private CasualtiesView casualties;
+        private SquadCountLabel countLabel;
         private readonly List<SpriteRenderer> arms = new List<SpriteRenderer>();
         private bool showingMeleeBodies;
 
@@ -77,6 +78,8 @@ namespace Marchlands.View
             moraleBackground = CreateRenderer("Morale", style.MarkerSprite, style.MoraleBarBackground, style.RingSortingOrder);
             moraleFill = CreateRenderer("Morale Fill", style.MarkerSprite, style.MoraleRoutingColor, style.RingSortingOrder + 1);
             CreateRing();
+            countLabel = gameObject.AddComponent<SquadCountLabel>();
+            countLabel.Initialize(style, style.RingSortingOrder + 2);
         }
 
         internal void SetSelected(bool selected)
@@ -168,6 +171,17 @@ namespace Marchlands.View
             float2 ringCenter = barCenter + back * (barExtent + style.RingGap + style.RingRadius);
 
             RenderMoraleBar(barCenter);
+
+            // Численность — сбоку от полоски морали, поперёк направления в тыл (там кольцо перезарядки), ближе к верху экрана.
+            float2 across = new float2(-back.y, back.x);
+            if (across.y < 0f || (across.y == 0f && across.x < 0f))
+            {
+                across = -across;
+            }
+
+            float barAcross = math.abs(across.x) * barSize.x * 0.5f + math.abs(across.y) * barSize.y * 0.5f;
+            float2 countAt = barCenter + across * (barAcross + style.CountGap);
+            countLabel.Show(new Vector3(countAt.x, countAt.y, 0f), squad.Alive, UnitStats.Of(squad, match.Settings).squadSize, true);
             RenderRing(ringCenter, alpha);
         }
 

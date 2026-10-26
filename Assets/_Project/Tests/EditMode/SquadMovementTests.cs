@@ -150,5 +150,20 @@ namespace Marchlands.Tests.EditMode
             Assert.That(marchTicks, Is.InRange(ExpectedTicks(5f) - 1, ExpectedTicks(5f) + 1));
             Assert.AreEqual(0f, math.distance(target, squad.Position), 1e-4f);
         }
+
+        [Test]
+        public void TurnOrder_IsDoneDuringFormationChange()
+        {
+            var match = new Match(1, TestSettings.Create());
+            Squad squad = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
+            match.Enqueue(new ChangeFormationCommand(squad.Id, Formation.Column));
+            match.Enqueue(new MoveCommand(squad.Id, float2.zero, 0f));
+
+            match.Tick();
+            match.Tick();
+
+            Assert.IsTrue(squad.IsChangingFormation, "Перестроение ещё идёт");
+            Assert.Less(math.abs(Angles.Delta(squad.Facing, 0f)), 90f, "А разворот уже начался");
+        }
     }
 }

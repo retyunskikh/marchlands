@@ -39,5 +39,8 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>На каком расстоянии от казармы появляется нанятый отряд, u.</summary>
         public float spawnOffset;
+
+        /// <summary>На каком расстоянии перед зданием стоит толпа ждущих людей, u.</summary>
+        public float campOffset;
     }
 }

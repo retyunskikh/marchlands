@@ -7,19 +7,11 @@ using UnityEngine.UI;
 namespace Marchlands.UI
 {
     /// <summary>
-    /// Постройка зданий: кнопки «Казарма (цена)» и «Конюшня (цена)», а в режиме постановки — «Поставить» и «Отмена».
+    /// Режим постановки здания: подсказка, «Поставить» и «Отмена». Постройку начинает карточка штаба (<see cref="BuildingPanel"/>).
     /// Сама команда отдаётся вводом, который знает выбранное место. Без штаба панель скрыта.
     /// </summary>
     public sealed class BuildPanel : MonoBehaviour
     {
-        [SerializeField] private Button buildButton;
-        [SerializeField] private Text buildLabel;
-        [Tooltip("{0} — цена казармы.")]
-        [SerializeField] private string buildFormat = "Казарма ({0})";
-        [SerializeField] private Button stableButton;
-        [SerializeField] private Text stableLabel;
-        [Tooltip("{0} — цена конюшни.")]
-        [SerializeField] private string stableFormat = "Конюшня ({0})";
         [SerializeField] private GameObject placementButtons;
         [SerializeField] private Button confirmButton;
         [SerializeField] private Button cancelButton;
@@ -34,9 +26,6 @@ namespace Marchlands.UI
         private bool hasSite;
         private bool canConfirm;
 
-        /// <summary>Нажата кнопка постройки здания этого типа.</summary>
-        public event Action<BuildingType> BuildRequested;
-
         public event Action ConfirmRequested;
 
         public event Action CancelRequested;
@@ -45,13 +34,6 @@ namespace Marchlands.UI
         {
             this.match = match;
             this.playerSide = playerSide;
-            buildLabel.text = string.Format(buildFormat, match.Settings.buildings.barracksCost);
-            buildButton.onClick.AddListener(() => BuildRequested?.Invoke(BuildingType.Barracks));
-            if (stableButton != null)
-            {
-                stableLabel.text = string.Format(stableFormat, match.Settings.buildings.stableCost);
-                stableButton.onClick.AddListener(() => BuildRequested?.Invoke(BuildingType.Stable));
-            }
             confirmButton.onClick.AddListener(() => ConfirmRequested?.Invoke());
             cancelButton.onClick.AddListener(() => CancelRequested?.Invoke());
             gameObject.SetActive(match.GetHeadquarters(playerSide) != null);
@@ -79,13 +61,6 @@ namespace Marchlands.UI
 
         private void Refresh()
         {
-            buildButton.gameObject.SetActive(!isPlacing);
-            buildButton.interactable = BuildRules.CanAffordBarracks(match, playerSide);
-            if (stableButton != null)
-            {
-                stableButton.gameObject.SetActive(!isPlacing);
-                stableButton.interactable = BuildRules.CanAfford(match, playerSide, BuildingType.Stable);
-            }
             placementButtons.SetActive(isPlacing);
             confirmButton.interactable = canConfirm;
             hintLabel.text = !hasSite ? chooseSiteText : canConfirm ? validSiteText : invalidSiteText;

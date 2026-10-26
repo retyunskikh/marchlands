@@ -110,6 +110,20 @@ namespace Marchlands.Tests.EditMode
                     chargeBonusMultiplier = 1f,
                     targetHitMultiplier = 1f
                 },
+                recruits = new UnitTypeSettings
+                {
+                    squadSize = 0,
+                    minSquadSize = 0,
+                    speedMultiplier = 0f,
+                    accuracyMultiplier = 0.75f,
+                    rangeMultiplier = 1f,
+                    moraleLossMultiplier = 0f,
+                    meleeMultiplier = 0.75f,
+                    canFire = false,
+                    skirmishFire = true,
+                    chargeBonusMultiplier = 1f,
+                    targetHitMultiplier = 1f
+                },
                 cavalry = new UnitTypeSettings
                 {
                     squadSize = 24,
@@ -147,7 +161,8 @@ namespace Marchlands.Tests.EditMode
                     stableBuildTime = 40f,
                     cavalryHireCost = 6,
                     cavalryHireInterval = 3f,
-                    spawnOffset = 4f
+                    spawnOffset = 4f,
+                    campOffset = 3f
                 },
                 victory = new VictorySettings
                 {

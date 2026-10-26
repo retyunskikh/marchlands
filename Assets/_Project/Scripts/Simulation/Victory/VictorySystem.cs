@@ -122,7 +122,7 @@ namespace Marchlands.Simulation.Victory
         {
             foreach (Squad squad in match.Squads)
             {
-                if (squad.Side == side && !squad.IsWithdrawn)
+                if (squad.Side == side && !squad.IsWithdrawn && !squad.IsCamp)
                 {
                     return false;
                 }
@@ -169,7 +169,7 @@ namespace Marchlands.Simulation.Victory
             enemyPresent = false;
             foreach (Squad squad in match.Squads)
             {
-                if (squad.IsRouting || squad.Alive <= 0 || math.distance(squad.Position, point) > radius)
+                if (squad.IsRouting || squad.IsCamp || squad.Alive <= 0 || math.distance(squad.Position, point) > radius)
                 {
                     continue;
                 }

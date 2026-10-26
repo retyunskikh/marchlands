@@ -104,13 +104,26 @@ namespace Marchlands.View
                 return;
             }
 
-            // Фронт — как у появляющегося отряда: к центру карты, то есть ворота отражённой по горизонтали казармы.
-            float2 front = new float2(barracks.Position.x > 0f ? -1f : 1f, 0f);
-            float2 right = new float2(front.y, -front.x);
-            Vector2 buildingSize = barracks.Type == BuildingType.Stable ? style.StableSize : style.BarracksSize;
-            float2 start = barracks.Position + front * (buildingSize.x * 0.5f + style.RecruitsOffset);
-            Quaternion rotation = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(front.y, front.x)) - 90f);
+            // Толпа стоит там же, где её «отряд» в симуляции (по нему можно стрелять); без него — перед воротами.
             int perRow = math.max(1, style.RecruitsPerRow);
+            Squad camp = FindCamp(side, type == UnitType.Cavalry);
+            float2 front;
+            float2 start;
+            if (camp != null)
+            {
+                front = Angles.Direction(camp.Facing);
+                int rows = (shown + perRow - 1) / perRow;
+                start = camp.Position - front * ((rows - 1) * 0.5f * style.RecruitsSpacing.y * spread);
+            }
+            else
+            {
+                front = new float2(barracks.Position.x > 0f ? -1f : 1f, 0f);
+                Vector2 buildingSize = barracks.Type == BuildingType.Stable ? style.StableSize : style.BarracksSize;
+                start = barracks.Position + front * (buildingSize.x * 0.5f + style.RecruitsOffset);
+            }
+
+            float2 right = new float2(front.y, -front.x);
+            Quaternion rotation = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(front.y, front.x)) - 90f);
             for (int i = 0; i < shown; i++)
             {
                 int row = i / perRow;
@@ -124,6 +137,19 @@ namespace Marchlands.View
                 float2 world = start + right * local.x + front * local.y;
                 crowd[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), rotation);
             }
+        }
+
+        private Squad FindCamp(Side side, bool cavalry)
+        {
+            foreach (Squad squad in match.Squads)
+            {
+                if (squad.IsCamp && squad.Side == side && squad.IsCavalryCamp == cavalry && squad.Alive > 0)
+                {
+                    return squad;
+                }
+            }
+
+            return null;
         }
 
         private static float Hash01(int value)

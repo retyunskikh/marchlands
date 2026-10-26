@@ -50,6 +50,12 @@ namespace Marchlands.View
             aliveIds.Clear();
             foreach (Squad squad in match.Squads)
             {
+                // Толпу рекрутов рисует реестр зданий.
+                if (squad.IsCamp)
+                {
+                    continue;
+                }
+
                 aliveIds.Add(squad.Id);
                 if (views.ContainsKey(squad.Id))
                 {

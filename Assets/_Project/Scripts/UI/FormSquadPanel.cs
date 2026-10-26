@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace Marchlands.UI
 {
     /// <summary>
-    /// Иконки слева вверху: «Гренадёры», «Егеря» и (если есть конюшня) «Конница» со счётчиком людей в резерве
+    /// Кружки слева вверху: гренадёр, егерь и (если есть конюшня) всадник, под каждым — счётчик людей в резерве
     /// («30/48»). Пока людей не хватает на отряд, иконка тусклая; хватает — яркая, нажатие строит отряд (с горном).
     /// </summary>
     public sealed class FormSquadPanel : MonoBehaviour
@@ -20,7 +20,7 @@ namespace Marchlands.UI
         [SerializeField] private AudioClip formClip;
         [SerializeField] private float formVolume = 0.9f;
         [Tooltip("{0} — название, {1} — людей в резерве, {2} — нужно на отряд.")]
-        [SerializeField] private string countFormat = "{0} {1}/{2}";
+        [SerializeField] private string countFormat = "{1}/{2}";
         [SerializeField] private string grenadiersName = "Гренадёры";
         [SerializeField] private string jaegersName = "Егеря";
         [SerializeField] private string cavalryName = "Конница";

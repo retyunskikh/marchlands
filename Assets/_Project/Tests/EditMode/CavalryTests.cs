@@ -111,7 +111,7 @@ namespace Marchlands.Tests.EditMode
             match.Enqueue(new FormSquadCommand(Side.France, UnitType.Cavalry));
             match.Tick();
 
-            Squad cavalry = match.Squads.Single();
+            Squad cavalry = match.Squads.Single(s => !s.IsCamp && s.Type == UnitType.Cavalry);
             Assert.AreEqual(UnitType.Cavalry, cavalry.Type);
             Assert.AreEqual(24, cavalry.Alive);
             Assert.AreEqual(6, player.CavalryReserve);

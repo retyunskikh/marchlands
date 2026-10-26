@@ -32,7 +32,20 @@ namespace Marchlands.Simulation.Squads
             if (squad.IsChangingFormation)
             {
                 UpdateFormationChange(squad, settings, deltaTime);
-                // Во время перестроения отряд стоит; приказ движения продолжится после него.
+                // Во время перестроения отряд стоит, но уже разворачивается: к цели движения, а на месте — в конечный фронт.
+                if (squad.Order.Type == SquadOrderType.Move)
+                {
+                    float2 toTarget = squad.Order.Target - squad.Position;
+                    float targetFacing = math.length(toTarget) > settings.arrivalTolerance ? Angles.Of(toTarget) : squad.Order.FinalFacing;
+                    float facingBefore = squad.Facing;
+                    float time = deltaTime;
+                    RotateTowards(squad, targetFacing, settings.rotationSpeed, ref time);
+                    if (EnemyOverlap(squad, match) > OverlapEpsilon)
+                    {
+                        squad.Facing = facingBefore;
+                    }
+                }
+
                 return;
             }
 

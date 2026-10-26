@@ -1,3 +1,4 @@
+using System;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
@@ -20,6 +21,12 @@ namespace Marchlands.UI
         [SerializeField] private HireToggle grenadiersToggle;
         [SerializeField] private HireToggle jaegersToggle;
         [SerializeField] private HireToggle cavalryToggle;
+        [Tooltip("Иконки постройки в карточке штаба.")]
+        [SerializeField] private HireToggle buildBarracksToggle;
+        [SerializeField] private HireToggle buildStableToggle;
+        [Tooltip("{0} — название, {1} — цена.")]
+        [SerializeField] private string buildFormat = "{0}\n{1} зол.";
+        [SerializeField] private string headquartersBuildStatus = "Постройте казарму или конюшню";
         [SerializeField] private UnitInfoPanel infoPanel;
         [SerializeField] private string headquartersTitle = "Штаб";
         [SerializeField] private string barracksTitle = "Казарма";
@@ -40,12 +47,21 @@ namespace Marchlands.UI
         private Match match;
         private Building building;
 
+        /// <summary>В карточке штаба нажата иконка постройки здания этого типа.</summary>
+        public event Action<BuildingType> BuildRequested;
+
         public void Initialize(Match match)
         {
             this.match = match;
             Bind(grenadiersToggle, UnitType.Grenadiers);
             Bind(jaegersToggle, UnitType.Jaegers);
             Bind(cavalryToggle, UnitType.Cavalry);
+            if (buildBarracksToggle != null)
+            {
+                buildBarracksToggle.Button.onClick.AddListener(() => BuildRequested?.Invoke(BuildingType.Barracks));
+                buildStableToggle.Button.onClick.AddListener(() => BuildRequested?.Invoke(BuildingType.Stable));
+            }
+
             infoPanel.Initialize(match);
             SetBuilding(null);
         }
@@ -86,7 +102,10 @@ namespace Marchlands.UI
             RefreshToggle(grenadiersToggle, UnitType.Grenadiers, grenadiersName, barracks);
             RefreshToggle(jaegersToggle, UnitType.Jaegers, jaegersName, barracks);
             RefreshToggle(cavalryToggle, UnitType.Cavalry, cavalryName, stable);
-            statusLabel.text = GetStatus(barracks || stable);
+            bool headquarters = building.Type == BuildingType.Headquarters;
+            RefreshBuildToggle(buildBarracksToggle, BuildingType.Barracks, barracksTitle, headquarters);
+            RefreshBuildToggle(buildStableToggle, BuildingType.Stable, stableTitle, headquarters);
+            statusLabel.text = headquarters && buildBarracksToggle != null ? headquartersBuildStatus : GetStatus(barracks || stable);
         }
 
         private void RefreshToggle(HireToggle toggle, UnitType type, string unitName, bool visible)
@@ -106,6 +125,27 @@ namespace Marchlands.UI
             float progress = interval > 0f ? 1f - building.HireRemaining / interval : 0f;
             int cost = BuildRules.GetHireCost(building, match.Settings.buildings);
             toggle.Show(string.Format(toggleFormat, unitName, cost), building.IsHiring(type), progress);
+        }
+
+        private void RefreshBuildToggle(HireToggle toggle, BuildingType type, string title, bool visible)
+        {
+            if (toggle == null)
+            {
+                return;
+            }
+
+            if (toggle.gameObject.activeSelf != visible)
+            {
+                toggle.gameObject.SetActive(visible);
+            }
+
+            if (!visible)
+            {
+                return;
+            }
+
+            toggle.Button.interactable = BuildRules.CanAfford(match, building.Owner, type);
+            toggle.Show(string.Format(buildFormat, title, BuildRules.GetCost(match, type)), false, 0f);
         }
 
         private string GetStatus(bool hires)

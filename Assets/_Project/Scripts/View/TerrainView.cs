@@ -24,6 +24,8 @@ namespace Marchlands.View
         [SerializeField] private Sprite eastRiverSprite;
 
         [Header("За краем карты")]
+        [Tooltip("Насколько горы выходят за край карты вверх и вниз, u: запас для перехода в туман.")]
+        [SerializeField] private float mountainExtension = 8f;
         [Tooltip("Лес за реками с опушкой у реки: полотно 44 × 160 u от края поля наружу — игрок не видит пустоты.")]
         [SerializeField] private Sprite westOuterForestSprite;
         [SerializeField] private Sprite eastOuterForestSprite;
@@ -95,7 +97,7 @@ namespace Marchlands.View
             foreach (float side in new[] { -1f, 1f })
             {
                 float edge = side > 0f ? terrain.BoundsMax.y : terrain.BoundsMin.y;
-                float depth = halfMapY - math.abs(edge);
+                float depth = halfMapY - math.abs(edge) + mountainExtension;
                 if (depth > 0f)
                 {
                     Sprite sprite = side > 0f ? northMountainsSprite : southMountainsSprite;

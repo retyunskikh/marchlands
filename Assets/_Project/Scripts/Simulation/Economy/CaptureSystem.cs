@@ -60,6 +60,11 @@ namespace Marchlands.Simulation.Economy
             austria = false;
             foreach (Squad squad in match.Squads)
             {
+                if (squad.IsCamp)
+                {
+                    continue;
+                }
+
                 if (squad.IsRouting || squad.Alive <= 0 || math.distance(squad.Position, village.Position) > radius)
                 {
                     continue;

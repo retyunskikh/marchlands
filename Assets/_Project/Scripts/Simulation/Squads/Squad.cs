@@ -101,6 +101,18 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Накопленные дробные потери в рукопашной.</summary>
         internal float MeleeLossAccumulator { get; set; }
 
+        /// <summary>Толпа рекрутов — у конюшни (резерв конницы), иначе у казармы (пехотный резерв).</summary>
+        public bool IsCavalryCamp { get; internal set; }
+
+        /// <summary>Численность толпы рекрутов после последней сверки с резервом; разница — погибшие.</summary>
+        internal int SyncedAlive { get; set; }
+
+        /// <summary>Накопленные дробные выстрелы стрельбы вразнобой.</summary>
+        internal float SkirmishShots { get; set; }
+
+        /// <summary>Толпа рекрутов, а не управляемый отряд.</summary>
+        public bool IsCamp => Type == UnitType.Recruits;
+
         /// <summary>Сколько секунд отряд стоит в своей деревне с момента последнего пополнения.</summary>
         internal float ReinforceTimer { get; set; }
 

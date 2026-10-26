@@ -26,6 +26,8 @@ namespace Marchlands.UI
         [SerializeField] private Text resultReason;
         [SerializeField] private Button resultRestartButton;
         [SerializeField] private Button resultMenuButton;
+        [Tooltip("Салют на экране победы.")]
+        [SerializeField] private FireworksView fireworks;
         [SerializeField] private string victoryText = "Победа!";
         [SerializeField] private string defeatText = "Поражение";
         [SerializeField] private string headquartersReason = "Захвачен штаб";
@@ -75,6 +77,10 @@ namespace Marchlands.UI
             pauseOverlay.SetActive(false);
             pauseButton.gameObject.SetActive(false);
             resultOverlay.SetActive(true);
+            if (fireworks != null && result.Winner == playerSide)
+            {
+                fireworks.Play();
+            }
         }
 
         private void OnDestroy()

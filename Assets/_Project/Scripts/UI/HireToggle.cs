@@ -22,8 +22,11 @@ namespace Marchlands.UI
         {
             label.text = text;
             frame.color = hiring ? onColor : offColor;
-            progressFill.enabled = hiring;
-            progressFill.fillAmount = Mathf.Clamp01(progress);
+            if (progressFill != null)
+            {
+                progressFill.enabled = hiring;
+                progressFill.fillAmount = Mathf.Clamp01(progress);
+            }
         }
     }
 }
