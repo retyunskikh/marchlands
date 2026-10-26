@@ -53,7 +53,9 @@ namespace Marchlands.View
 
         public void Render(float alpha)
         {
-            bool visible = squad != null && match.FindSquad(squad.Id) != null;
+            // Бегущий и конница не стреляют — сектор не нужен.
+            bool visible = squad != null && match.FindSquad(squad.Id) != null
+                && !squad.IsRouting && UnitStats.CanFire(squad, match.Settings);
             meshRenderer.enabled = visible;
             if (!visible)
             {

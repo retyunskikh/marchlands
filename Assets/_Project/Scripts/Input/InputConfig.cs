@@ -24,6 +24,8 @@ namespace Marchlands.Input
         [SerializeField] private float buildingTapRadius;
         [Tooltip("Множитель масштаба за одно деление колеса мыши (для редактора).")]
         [SerializeField] private float wheelZoomFactor;
+        [Tooltip("Допуск попадания пальцем по кольцу поворота, dp.")]
+        [SerializeField] private float rotationRingGrab;
 
         public float TapMaxMove => tapMaxMove;
 
@@ -42,5 +44,7 @@ namespace Marchlands.Input
         public float BuildingTapRadius => buildingTapRadius;
 
         public float WheelZoomFactor => wheelZoomFactor;
+
+        public float RotationRingGrab => rotationRingGrab;
     }
 }

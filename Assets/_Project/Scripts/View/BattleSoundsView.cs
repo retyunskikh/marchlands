@@ -22,6 +22,8 @@ namespace Marchlands.View
         [Tooltip("Как быстро шум сражения нарастает и стихает, громкости в секунду.")]
         [SerializeField] private float meleeFadeSpeed = 2f;
         [SerializeField] private float captureVolume = 0.8f;
+        [Tooltip("Горн нашего захвата тише колокола вражеского.")]
+        [SerializeField] private float ownCaptureVolume = 0.45f;
 
         private Match match;
         private Side playerSide;
@@ -49,7 +51,7 @@ namespace Marchlands.View
                 AudioClip clip = village.Owner == playerSide ? ownCaptureClip : enemyCaptureClip;
                 if (clip != null)
                 {
-                    captureSource.PlayOneShot(clip, captureVolume);
+                    captureSource.PlayOneShot(clip, village.Owner == playerSide ? ownCaptureVolume : captureVolume);
                 }
             }
         }

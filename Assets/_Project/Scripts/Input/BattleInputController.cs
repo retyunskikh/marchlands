@@ -21,6 +21,7 @@ namespace Marchlands.Input
         [SerializeField] private InputConfig config;
         [SerializeField] private CameraController cameraController;
         [SerializeField] private OrderPreviewView orderPreview;
+        [SerializeField] private RotationRingView rotationRing;
         [SerializeField] private BuildingViewRegistry buildingViews;
 
         private Match match;
@@ -29,6 +30,7 @@ namespace Marchlands.Input
         private Squad selected;
 
         private bool isDraggingOrder;
+        private bool isRotating;
         private Vector2 lastDragPosition;
 
         private bool hasPendingTap;
@@ -62,6 +64,7 @@ namespace Marchlands.Input
             this.match = match;
             this.playerSide = playerSide;
             cameraController.Initialize(config);
+            rotationRing.Initialize(match);
         }
 
         /// <summary>«Казарма» или «Конюшня» нажата: тап по земле выбирает место, затем «Поставить» или «Отмена».</summary>
@@ -236,18 +239,46 @@ namespace Marchlands.Input
             pendingTapPosition = screenPosition;
         }
 
+        /// <summary>
+        /// Протяжка от кольца вокруг выделенного отряда — поворот; от самого отряда — приказ движения;
+        /// иначе — прокрутка камеры.
+        /// </summary>
         private void OnDragStarted(Vector2 startScreen)
         {
-            isDraggingOrder = selected != null && FindSquadAt(cameraController.ScreenToWorld(startScreen), own: true) == selected;
+            float2 world = cameraController.ScreenToWorld(startScreen);
+            isRotating = selected != null && selected.CanReceiveOrders
+                && rotationRing.IsOnRing(selected, world, ScreenToWorldDistance(startScreen, config.RotationRingGrab));
+            isDraggingOrder = !isRotating && selected != null && FindSquadAt(world, own: true) == selected;
             lastDragPosition = startScreen;
-            if (isDraggingOrder)
+            if (isDraggingOrder || isRotating)
             {
                 hasPendingTap = false;
             }
         }
 
+        /// <summary>Сколько u в мире занимают <paramref name="dp"/> на экране рядом с точкой.</summary>
+        private float ScreenToWorldDistance(Vector2 screen, float dp)
+        {
+            float pixels = ScreenUnits.DpToPixels(dp);
+            return math.distance(cameraController.ScreenToWorld(screen), cameraController.ScreenToWorld(screen + new Vector2(pixels, 0f)));
+        }
+
+        private float FacingTowards(Vector2 screen)
+        {
+            float2 toFinger = (float2)cameraController.ScreenToWorld(screen) - selected.Position;
+            return math.lengthsq(toFinger) > 1e-6f ? Angles.Of(toFinger) : selected.Facing;
+        }
+
         private void OnDragUpdated(Vector2 startScreen, Vector2 currentScreen)
         {
+            if (isRotating)
+            {
+                float facing = FacingTowards(currentScreen);
+                rotationRing.SetDraggedFacing(facing);
+                orderPreview.Show(selected.Position, selected.Position, facing, selected.TargetFormation, selected.Alive, match.Settings.squads);
+                return;
+            }
+
             if (!isDraggingOrder)
             {
                 cameraController.Pan(currentScreen - lastDragPosition);
@@ -262,6 +293,16 @@ namespace Marchlands.Input
 
         private void OnDragEnded(Vector2 startScreen, Vector2 endScreen)
         {
+            if (isRotating)
+            {
+                isRotating = false;
+                rotationRing.SetDraggedFacing(null);
+                orderPreview.Hide();
+                // Поворот на месте: движение в свою же точку с новым фронтом.
+                match.Enqueue(new MoveCommand(selected.Id, selected.Position, FacingTowards(endScreen)));
+                return;
+            }
+
             if (!isDraggingOrder)
             {
                 return;
@@ -278,6 +319,8 @@ namespace Marchlands.Input
         private void OnDragCancelled()
         {
             isDraggingOrder = false;
+            isRotating = false;
+            rotationRing.SetDraggedFacing(null);
             orderPreview.Hide();
         }
 
@@ -435,6 +478,8 @@ namespace Marchlands.Input
             }
 
             selected = squad;
+            isRotating = false;
+            rotationRing.SetSquad(squad);
             SetChargeTargeting(false);
             SelectionChanged?.Invoke(squad);
         }

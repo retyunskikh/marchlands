@@ -26,6 +26,12 @@ namespace Marchlands.UI
         [SerializeField] private string reloadingText = "Заряжают… {0}";
         [SerializeField] private string routingText = "Бегут!";
         [SerializeField] private string meleeText = "Рукопашная";
+        [Tooltip("Картинка кнопки: дуло мушкета; бледнеет, когда залп невозможен.")]
+        [SerializeField] private Image volleyIcon;
+        [Tooltip("Круговая полоса перезарядки поверх кнопки.")]
+        [SerializeField] private Image reloadFill;
+        [SerializeField] private Color volleyReadyTint = Color.white;
+        [SerializeField] private Color volleyPaleTint = new Color(1f, 1f, 1f, 0.35f);
 
         [Header("Строй")]
         [SerializeField] private Button formationButton;
@@ -33,6 +39,10 @@ namespace Marchlands.UI
         [SerializeField] private string toColumnText = "В колонну";
         [SerializeField] private string toLineText = "В линию";
         [SerializeField] private string changingText = "Перестроение…";
+        [SerializeField] private Image formationIcon;
+        [Tooltip("Что покажет кнопка: строй, в который отряд перестроится.")]
+        [SerializeField] private Sprite lineSprite;
+        [SerializeField] private Sprite columnSprite;
 
         [Header("В штыки")]
         [SerializeField] private Button chargeButton;
@@ -113,13 +123,30 @@ namespace Marchlands.UI
             bool canFire = UnitStats.CanFire(squad, match.Settings);
             volleyButton.gameObject.SetActive(canFire);
             fireAtWillButton.gameObject.SetActive(canFire);
-            volleyButton.interactable = VolleyRules.CanVolley(match, squad);
+            bool canVolley = VolleyRules.CanVolley(match, squad);
+            volleyButton.interactable = canVolley;
             volleyLabel.text = GetVolleyText();
+            if (volleyIcon != null)
+            {
+                volleyIcon.color = canVolley ? volleyReadyTint : volleyPaleTint;
+            }
+
+            if (reloadFill != null)
+            {
+                bool reloading = squad.FireState == FireState.Reloading;
+                reloadFill.enabled = reloading;
+                float reloadTime = match.Settings.combat.reloadTime;
+                reloadFill.fillAmount = reloading && reloadTime > 0f ? 1f - squad.FireTimer / reloadTime : 0f;
+            }
 
             formationButton.interactable = obeys && !squad.IsChangingFormation;
             formationLabel.text = squad.IsChangingFormation
                 ? changingText
                 : squad.Formation == Formation.Line ? toColumnText : toLineText;
+            if (formationIcon != null)
+            {
+                formationIcon.sprite = squad.TargetFormation == Formation.Line ? columnSprite : lineSprite;
+            }
 
             bool charging = squad.Order.Type == SquadOrderType.Charge;
             chargeButton.interactable = ChargeRules.CanCharge(squad);

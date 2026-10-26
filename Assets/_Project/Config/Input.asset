@@ -21,3 +21,4 @@ MonoBehaviour:
   zoomMax: 40
   buildingTapRadius: 2
   wheelZoomFactor: 1.15
+  rotationRingGrab: 40
