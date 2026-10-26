@@ -81,6 +81,7 @@ namespace Marchlands.Tests.EditMode
                     defenseRadius = 20f,
                     directApproachDistance = 12f,
                     cavalrySquads = 1,
+                    houseMargin = 10,
                     cavalryChargeDistance = 12f
                 },
                 grenadiers = new UnitTypeSettings
@@ -158,6 +159,12 @@ namespace Marchlands.Tests.EditMode
                     grenadierHireCost = 2,
                     grenadierHireInterval = 2f,
                     maxWaitingSquads = 2,
+                    headquartersPopulation = 1000,
+                    housePopulation = 30,
+                    houseCost = 80,
+                    houseBuildTime = 15f,
+                    maxHouses = 4,
+                    annexSpacing = 0f,
                     stableCost = 200,
                     stableBuildTime = 40f,
                     cavalryHireCost = 6,

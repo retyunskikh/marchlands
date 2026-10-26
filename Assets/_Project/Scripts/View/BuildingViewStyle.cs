@@ -29,6 +29,17 @@ namespace Marchlands.View
 
         [Header("Казарма")]
         [Tooltip("Плац с оградой, колодцем и козлами с ружьями. Ворота справа.")]
+        [Header("Дома-пристройки к штабу")]
+        [SerializeField] private Sprite annexBaseSprite;
+        [Tooltip("Крыша пристройки — тонируется цветом стороны, как крыши штаба.")]
+        [SerializeField] private Sprite annexRoofSprite;
+        [SerializeField] private Vector2 annexSize = new Vector2(2.4f, 1.6f);
+        [Tooltip("Места пристроек в порядке постройки: от центра штаба, ворота — по +X (у правого штаба отражается).")]
+        [SerializeField] private Vector2[] annexOffsets =
+        {
+            new Vector2(-1.2f, 3.3f), new Vector2(-1.2f, -3.3f), new Vector2(1.4f, 3.3f), new Vector2(1.4f, -3.3f)
+        };
+
         [SerializeField] private Sprite barracksBaseSprite;
         [Tooltip("Крыши казармы и караульни в оттенках серого — окрашиваются цветом стороны.")]
         [SerializeField] private Sprite barracksRoofSprite;
@@ -109,6 +120,14 @@ namespace Marchlands.View
         public Color InnerColor => innerColor;
 
         public float ConstructionAlpha => constructionAlpha;
+
+        public Sprite AnnexBaseSprite => annexBaseSprite;
+
+        public Sprite AnnexRoofSprite => annexRoofSprite;
+
+        public Vector2 AnnexSize => annexSize;
+
+        public Vector2[] AnnexOffsets => annexOffsets;
 
         public Vector2 ProgressBarSize => progressBarSize;
 

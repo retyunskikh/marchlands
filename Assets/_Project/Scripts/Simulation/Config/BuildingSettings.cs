@@ -43,6 +43,24 @@ namespace Marchlands.Simulation.Config
         /// <summary>Раз в столько секунд конюшня с включённым наймом получает всадника, s.</summary>
         public float cavalryHireInterval;
 
+        /// <summary>Сколько мест (солдат на поле и рекрутов в резерве) даёт штаб.</summary>
+        public int headquartersPopulation;
+
+        /// <summary>Сколько мест добавляет каждый дом-пристройка к штабу.</summary>
+        public int housePopulation;
+
+        /// <summary>Цена первого дома; каждый следующий вдвое дороже.</summary>
+        public int houseCost;
+
+        /// <summary>Время постройки дома, s.</summary>
+        public float houseBuildTime;
+
+        /// <summary>Сколько домов можно пристроить к штабу.</summary>
+        public int maxHouses;
+
+        /// <summary>Насколько дальше обычного (buildingSpacing) от штаба держатся новые здания — там пристройки, u.</summary>
+        public float annexSpacing;
+
         /// <summary>На каком расстоянии от казармы появляется нанятый отряд, u.</summary>
         public float spawnOffset;
 

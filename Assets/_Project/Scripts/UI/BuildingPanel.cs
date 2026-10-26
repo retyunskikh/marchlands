@@ -27,6 +27,14 @@ namespace Marchlands.UI
         [Tooltip("Иконки постройки в карточке штаба.")]
         [SerializeField] private HireToggle buildBarracksToggle;
         [SerializeField] private HireToggle buildStableToggle;
+        [Tooltip("Иконка дома-пристройки в карточке штаба: +housePopulation мест.")]
+        [SerializeField] private HireToggle buildHouseToggle;
+        [Tooltip("{0} — население, {1} — мест.")]
+        [SerializeField] private string populationFormat = "Население: {0}/{1}";
+        [Tooltip("{0} — процент постройки дома.")]
+        [SerializeField] private string houseBuildingFormat = " · строится дом {0}%";
+        [SerializeField] private string housesMaxedText = " · домов больше не пристроить";
+        [SerializeField] private string noHousingStatus = "Найм: нет мест — пристройте дом к штабу";
         [Tooltip("{0} — название, {1} — цена.")]
         [SerializeField] private string buildFormat = "{1}";
         [SerializeField] private string headquartersBuildStatus = "Постройте казарму или конюшню";
@@ -66,6 +74,11 @@ namespace Marchlands.UI
             {
                 buildBarracksToggle.Button.onClick.AddListener(() => BuildRequested?.Invoke(BuildingType.Barracks));
                 buildStableToggle.Button.onClick.AddListener(() => BuildRequested?.Invoke(BuildingType.Stable));
+            }
+
+            if (buildHouseToggle != null)
+            {
+                buildHouseToggle.Button.onClick.AddListener(OnBuildHouse);
             }
 
             infoPanel.Initialize(match);
@@ -111,7 +124,9 @@ namespace Marchlands.UI
             bool headquarters = building.Type == BuildingType.Headquarters;
             RefreshBuildToggle(buildBarracksToggle, BuildingType.Barracks, barracksTitle, headquarters);
             RefreshBuildToggle(buildStableToggle, BuildingType.Stable, stableTitle, headquarters);
-            statusLabel.text = headquarters && buildBarracksToggle != null ? headquartersBuildStatus : GetStatus(barracks || stable);
+            RefreshHouseToggle(headquarters);
+            statusLabel.text = headquarters && buildHouseToggle != null ? GetPopulationStatus()
+                : headquarters && buildBarracksToggle != null ? headquartersBuildStatus : GetStatus(barracks || stable);
         }
 
         private void RefreshToggle(HireToggle toggle, UnitType type, string unitName, bool visible)
@@ -180,10 +195,57 @@ namespace Marchlands.UI
                     return idleStatus;
                 case HireWait.Full:
                     return fullStatus;
+                case HireWait.NoHousing:
+                    return noHousingStatus;
                 case HireWait.NoGold:
                     return noGoldStatus;
                 default:
                     return hiringStatus;
+            }
+        }
+
+        private void RefreshHouseToggle(bool headquarters)
+        {
+            if (buildHouseToggle == null)
+            {
+                return;
+            }
+
+            bool visible = headquarters && building.Houses < match.Settings.buildings.maxHouses;
+            if (buildHouseToggle.gameObject.activeSelf != visible)
+            {
+                buildHouseToggle.gameObject.SetActive(visible);
+            }
+
+            if (!visible)
+            {
+                return;
+            }
+
+            buildHouseToggle.Button.interactable = BuildRules.CanBuildHouse(match, building.Owner);
+            buildHouseToggle.Show(string.Format(buildFormat, string.Empty, BuildRules.GetHouseCost(match, building.Owner)), building.IsBuildingHouse, -1f);
+        }
+
+        /// <summary>Строка штаба: население из мест, строящийся дом или что домов больше не пристроить.</summary>
+        private string GetPopulationStatus()
+        {
+            string text = string.Format(populationFormat,
+                BuildRules.GetPopulation(match, building.Owner), BuildRules.GetPopulationCapacity(match, building.Owner));
+            if (building.IsBuildingHouse)
+            {
+                float buildTime = match.Settings.buildings.houseBuildTime;
+                int percent = buildTime > 0f ? Mathf.FloorToInt((1f - building.HouseBuildRemaining / buildTime) * 100f) : 100;
+                return text + string.Format(houseBuildingFormat, percent);
+            }
+
+            return building.Houses >= match.Settings.buildings.maxHouses ? text + housesMaxedText : text;
+        }
+
+        private void OnBuildHouse()
+        {
+            if (building != null)
+            {
+                match.Enqueue(new BuildHouseCommand(building.Owner));
             }
         }
 

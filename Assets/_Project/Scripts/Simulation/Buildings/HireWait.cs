@@ -12,6 +12,9 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>По всем включённым родам войск ждёт предельное число людей.</summary>
         Full,
 
+        /// <summary>Нет мест: население упёрлось в предел — нужен дом у штаба.</summary>
+        NoHousing,
+
         /// <summary>Не хватает золота.</summary>
         NoGold
     }

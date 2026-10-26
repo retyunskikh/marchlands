@@ -39,6 +39,9 @@ namespace Marchlands.Simulation.Config
         /// <summary>Сколько отрядов конницы держит ИИ.</summary>
         public int cavalrySquads;
 
+        /// <summary>ИИ закладывает дом, когда свободных мест остаётся меньше этого.</summary>
+        public int houseMargin;
+
         /// <summary>Конница ИИ бросается в атаку на врага ближе этой дистанции (от фронта), u.</summary>
         public float cavalryChargeDistance;
     }

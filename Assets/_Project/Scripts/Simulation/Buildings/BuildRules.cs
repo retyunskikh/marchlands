@@ -36,7 +36,8 @@ namespace Marchlands.Simulation.Buildings
 
             foreach (Building building in match.Buildings)
             {
-                if (math.distance(point, building.Position) < settings.buildingSpacing)
+                float spacing = settings.buildingSpacing + (building.Type == BuildingType.Headquarters ? settings.annexSpacing : 0f);
+                if (math.distance(point, building.Position) < spacing)
                 {
                     return false;
                 }
@@ -209,7 +210,66 @@ namespace Marchlands.Simulation.Buildings
                 return HireWait.Full;
             }
 
+            if (!HasHousing(match, building.Owner))
+            {
+                return HireWait.NoHousing;
+            }
+
             return match.GetPlayer(building.Owner).Gold < GetHireCost(match, building) ? HireWait.NoGold : HireWait.None;
+        }
+
+        /// <summary>Население стороны: живые солдаты её отрядов (и бегущих) плюс рекруты в резерве.</summary>
+        public static int GetPopulation(Match match, Side side)
+        {
+            int population = 0;
+            foreach (Squad squad in match.Squads)
+            {
+                // Толпа у казармы — это и есть резерв, его считаем ниже.
+                if (squad.Side == side && !squad.IsCamp && !squad.IsWithdrawn)
+                {
+                    population += squad.Alive;
+                }
+            }
+
+            PlayerState player = match.GetPlayer(side);
+            foreach (UnitType type in HireOrder)
+            {
+                population += player.GetReserve(type);
+            }
+
+            return population;
+        }
+
+        /// <summary>Сколько мест у стороны: штаб плюс дома; без штаба (песочницы) — без предела.</summary>
+        public static int GetPopulationCapacity(Match match, Side side)
+        {
+            Building headquarters = match.GetHeadquarters(side);
+            BuildingSettings settings = match.Settings.buildings;
+            return headquarters == null ? int.MaxValue : settings.headquartersPopulation + headquarters.Houses * settings.housePopulation;
+        }
+
+        /// <summary>Есть ли место ещё для одного человека.</summary>
+        public static bool HasHousing(Match match, Side side)
+        {
+            return GetPopulation(match, side) < GetPopulationCapacity(match, side);
+        }
+
+        /// <summary>Цена следующего дома: houseCost, и каждый следующий вдвое дороже.</summary>
+        public static int GetHouseCost(Match match, Side side)
+        {
+            Building headquarters = match.GetHeadquarters(side);
+            int built = headquarters != null ? headquarters.Houses : 0;
+            return match.Settings.buildings.houseCost << math.min(built, 20);
+        }
+
+        /// <summary>Можно ли заложить дом: штаб есть, дом сейчас не строится, предел не достигнут, золота хватает.</summary>
+        public static bool CanBuildHouse(Match match, Side side)
+        {
+            Building headquarters = match.GetHeadquarters(side);
+            return headquarters != null
+                && !headquarters.IsBuildingHouse
+                && headquarters.Houses < match.Settings.buildings.maxHouses
+                && match.GetPlayer(side).Gold >= GetHouseCost(match, side);
         }
     }
 }

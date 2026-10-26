@@ -1,3 +1,4 @@
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
@@ -7,6 +8,7 @@ namespace Marchlands.Simulation.Economy
     /// <summary>
     /// Пополнение из деревень: не бегущий пехотный отряд в зоне своей деревни раз в reinforceInterval получает
     /// одного человека, пока не наберёт полную численность своего рода войск. Даже в бою; конница так не пополняется.
+    /// Пополняется, только пока у стороны есть свободные места (население ниже предела).
     /// </summary>
     internal static class ReinforcementSystem
     {
@@ -48,7 +50,8 @@ namespace Marchlands.Simulation.Economy
                 && !squad.IsRouting
                 && !squad.IsWithdrawn
                 && squad.Alive > 0
-                && squad.Alive < UnitStats.Of(squad, match.Settings).squadSize;
+                && squad.Alive < UnitStats.Of(squad, match.Settings).squadSize
+                && BuildRules.HasHousing(match, squad.Side);
         }
 
         private static Village FindOwnVillage(Match match, Squad squad)

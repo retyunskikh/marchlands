@@ -65,6 +65,14 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Сколько осталось до прихода следующего рекрута, s.</summary>
         public float HireRemaining { get; internal set; }
 
+        /// <summary>Сколько домов пристроено к штабу.</summary>
+        public int Houses { get; internal set; }
+
+        /// <summary>Сколько осталось строить дом, s; 0 — дом не строится.</summary>
+        public float HouseBuildRemaining { get; internal set; }
+
+        public bool IsBuildingHouse => HouseBuildRemaining > 0f;
+
         /// <summary>Прогресс захвата штаба врагом, s (до hqCaptureTime).</summary>
         public float CaptureProgress { get; internal set; }
     }

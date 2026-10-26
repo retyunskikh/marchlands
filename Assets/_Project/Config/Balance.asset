@@ -121,6 +121,7 @@ MonoBehaviour:
       defenseRadius: 20
       directApproachDistance: 12
       cavalrySquads: 1
+      houseMargin: 10
       cavalryChargeDistance: 12
     economy:
       captureRadius: 5
@@ -145,6 +146,12 @@ MonoBehaviour:
       stableBuildTime: 40
       cavalryHireCost: 6
       cavalryHireInterval: 4.5
+      headquartersPopulation: 60
+      housePopulation: 30
+      houseCost: 80
+      houseBuildTime: 15
+      maxHouses: 4
+      annexSpacing: 2.5
       spawnOffset: 6
       campOffset: 4.5
     victory:

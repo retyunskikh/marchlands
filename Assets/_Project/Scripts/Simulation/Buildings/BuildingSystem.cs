@@ -34,6 +34,16 @@ namespace Marchlands.Simulation.Buildings
                     continue;
                 }
 
+                if (building.IsBuildingHouse)
+                {
+                    building.HouseBuildRemaining -= deltaTime;
+                    if (building.HouseBuildRemaining <= TimerEpsilon)
+                    {
+                        building.HouseBuildRemaining = 0f;
+                        building.Houses++;
+                    }
+                }
+
                 if (building.IsHiringAny)
                 {
                     Hire(match, building, settings, deltaTime);

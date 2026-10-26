@@ -1,4 +1,5 @@
 using System.Globalization;
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,7 +7,7 @@ using UnityEngine.UI;
 namespace Marchlands.UI
 {
     /// <summary>
-    /// Верхняя панель: золото и число деревень игрока, а пока кто-то держит ⅔ деревень — таймер
+    /// Верхняя панель: золото, деревни и население игрока, а пока кто-то держит ⅔ деревень — таймер
     /// доминирования (раздел 4 docs/design.md).
     /// </summary>
     public sealed class TopBar : MonoBehaviour
@@ -14,6 +15,11 @@ namespace Marchlands.UI
         [SerializeField] private Text goldLabel;
         [SerializeField] private Text villagesLabel;
         [SerializeField] private Text dominationLabel;
+        [Tooltip("Население из мест; без штаба (песочницы) скрыто.")]
+        [SerializeField] private Text populationLabel;
+        [Tooltip("{0} — население, {1} — мест.")]
+        [SerializeField] private string populationFormat = "Население: {0}/{1}";
+        [SerializeField] private Color populationFullColor = new Color(1f, 0.55f, 0.45f);
         [Tooltip("{0} — золото.")]
         [SerializeField] private string goldFormat = "Золото: {0}";
         [Tooltip("{0} — свои деревни, {1} — всего.")]
@@ -32,6 +38,9 @@ namespace Marchlands.UI
         private Side playerSide;
         private int shownGold = -1;
         private int shownVillages = -1;
+        private int shownPopulation = -1;
+        private int shownCapacity = -1;
+        private Color populationColor;
         private int shownDominationSeconds = -1;
 
         public void Initialize(Match match, Side playerSide)
@@ -39,6 +48,12 @@ namespace Marchlands.UI
             this.match = match;
             this.playerSide = playerSide;
             villagesLabel.gameObject.SetActive(match.Villages.Count > 0);
+            if (populationLabel != null)
+            {
+                populationColor = populationLabel.color;
+                populationLabel.gameObject.SetActive(match.GetHeadquarters(playerSide) != null);
+            }
+
             Refresh();
         }
 
@@ -66,8 +81,29 @@ namespace Marchlands.UI
                 villagesLabel.text = string.Format(villagesFormat, villages, match.Villages.Count);
             }
 
-
+            RefreshPopulation();
             RefreshDomination();
+        }
+
+        private void RefreshPopulation()
+        {
+            if (populationLabel == null || !populationLabel.gameObject.activeSelf)
+            {
+                return;
+            }
+
+            int population = BuildRules.GetPopulation(match, playerSide);
+            int capacity = BuildRules.GetPopulationCapacity(match, playerSide);
+            if (population == shownPopulation && capacity == shownCapacity)
+            {
+                return;
+            }
+
+            shownPopulation = population;
+            shownCapacity = capacity;
+            populationLabel.text = string.Format(populationFormat, population, capacity);
+            // Мест нет — красноватым: найм стоит, пора пристраивать дом.
+            populationLabel.color = population >= capacity ? populationFullColor : populationColor;
         }
 
         private void RefreshDomination()

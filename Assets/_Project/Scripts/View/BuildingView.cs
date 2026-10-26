@@ -25,6 +25,8 @@ namespace Marchlands.View
         private SpriteRenderer progressFill;
         private SpriteRenderer flag;
         private Color innerColor;
+        private SpriteRenderer[] annexBases = new SpriteRenderer[0];
+        private SpriteRenderer[] annexRoofs = new SpriteRenderer[0];
 
         public Building Building => building;
 
@@ -49,6 +51,10 @@ namespace Marchlands.View
             if (baseSprite != null && roofSprite != null)
             {
                 CreateEstate(baseSprite, roofSprite, isHeadquarters);
+                if (isHeadquarters)
+                {
+                    CreateAnnexes();
+                }
             }
             else
             {
@@ -104,6 +110,61 @@ namespace Marchlands.View
             pole.transform.localScale = new Vector3(style.HeadquartersPoleSize, style.HeadquartersPoleSize, 1f);
         }
 
+        /// <summary>Места для домов-пристроек вокруг штаба; показываются по мере постройки.</summary>
+        private void CreateAnnexes()
+        {
+            Vector2[] offsets = style.AnnexOffsets;
+            if (style.AnnexBaseSprite == null || style.AnnexRoofSprite == null || offsets == null)
+            {
+                return;
+            }
+
+            float direction = building.Position.x > 0f ? -1f : 1f;
+            annexBases = new SpriteRenderer[offsets.Length];
+            annexRoofs = new SpriteRenderer[offsets.Length];
+            for (int i = 0; i < offsets.Length; i++)
+            {
+                Vector2 position = new Vector2(offsets[i].x * direction, offsets[i].y);
+                annexBases[i] = CreateRenderer($"Annex {i}", style.BodySortingOrder, Color.white);
+                annexBases[i].sprite = style.AnnexBaseSprite;
+                annexBases[i].transform.localPosition = position;
+                annexBases[i].transform.localScale = FitScale(style.AnnexBaseSprite, style.AnnexSize);
+                annexRoofs[i] = CreateRenderer($"Annex Roof {i}", style.BodySortingOrder + 1, sideColor);
+                annexRoofs[i].sprite = style.AnnexRoofSprite;
+                annexRoofs[i].transform.localPosition = position;
+                annexRoofs[i].transform.localScale = FitScale(style.AnnexRoofSprite, style.AnnexSize);
+                annexBases[i].enabled = annexRoofs[i].enabled = false;
+            }
+        }
+
+        private static Vector3 FitScale(Sprite sprite, Vector2 target)
+        {
+            Vector2 bounds = sprite.bounds.size;
+            return new Vector3(target.x / bounds.x, target.y / bounds.y, 1f);
+        }
+
+        /// <summary>Построенные дома — сплошные, строящийся — полупрозрачный, остальные места пусты.</summary>
+        private void RenderAnnexes()
+        {
+            for (int i = 0; i < annexBases.Length; i++)
+            {
+                bool built = i < building.Houses;
+                bool underConstruction = i == building.Houses && building.IsBuildingHouse;
+                bool visible = built || underConstruction;
+                annexBases[i].enabled = annexRoofs[i].enabled = visible;
+                if (!visible)
+                {
+                    continue;
+                }
+
+                float alpha = built ? 1f : style.ConstructionAlpha;
+                annexBases[i].color = new Color(1f, 1f, 1f, alpha);
+                Color roof = sideColor;
+                roof.a *= alpha;
+                annexRoofs[i].color = roof;
+            }
+        }
+
         /// <summary>Масштаб, при котором спрайт занимает габариты здания.</summary>
         private Vector3 FitScale(Sprite sprite)
         {
@@ -133,6 +194,7 @@ namespace Marchlands.View
                 flag.color = bodyColor;
             }
 
+            RenderAnnexes();
             float progress = -1f;
             Color progressColor = style.ProgressColor;
             if (building.CaptureProgress > 0f)
@@ -144,6 +206,11 @@ namespace Marchlands.View
             else if (!building.IsBuilt)
             {
                 progress = building.BuildProgress;
+            }
+            else if (building.IsBuildingHouse)
+            {
+                float buildTime = settings.buildings.houseBuildTime;
+                progress = buildTime > 0f ? 1f - building.HouseBuildRemaining / buildTime : -1f;
             }
             else if (building.IsHiringAny)
             {

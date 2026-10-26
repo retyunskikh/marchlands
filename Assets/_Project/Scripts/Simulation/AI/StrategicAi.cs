@@ -11,8 +11,8 @@ namespace Marchlands.Simulation.AI
     /// Стратегический ИИ одной стороны (этап 6 docs/design.md): в начале строит казарму в радиусе штаба на стороне,
     /// обращённой к противнику, затем держит в казармах найм и формирует отряды пехоты поровну: первыми тех, кого
     /// на поле меньше (при равенстве — фузилёров), а если их не собрать — других. Когда золота хватает,
-    /// строит конюшню и держит cavalrySquads отрядов конницы. Отрядами управляет <see cref="TacticalAi"/>.
-    /// Приказы — только командами, с той же задержкой реакции.
+    /// строит конюшню и держит cavalrySquads отрядов конницы; когда мест остаётся меньше houseMargin — пристраивает
+    /// дом. Отрядами управляет <see cref="TacticalAi"/>. Приказы — только командами, с той же задержкой реакции.
     /// </summary>
     public sealed class StrategicAi : IMatchController
     {
@@ -59,6 +59,14 @@ namespace Marchlands.Simulation.AI
                     Issue(match, new BuildBarracksCommand(Side, site));
                 }
 
+                return;
+            }
+
+            // Мест почти нет — первым делом дом, иначе найм встанет.
+            int freePlaces = BuildRules.GetPopulationCapacity(match, Side) - BuildRules.GetPopulation(match, Side);
+            if (freePlaces < ai.houseMargin && BuildRules.CanBuildHouse(match, Side))
+            {
+                Issue(match, new BuildHouseCommand(Side));
                 return;
             }
 
