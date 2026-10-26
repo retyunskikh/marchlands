@@ -27,13 +27,14 @@ namespace Marchlands.UI
             }
         }
 
+        /// <param name="progress">Доля до следующего рекрута этого рода войск; отрицательная — сейчас нанимают не его.</param>
         public void Show(string text, bool hiring, float progress)
         {
             label.text = text;
             frame.color = hiring ? onColor : offColor;
             if (progressFill != null)
             {
-                progressFill.enabled = hiring;
+                progressFill.enabled = hiring && progress >= 0f;
                 progressFill.fillAmount = Mathf.Clamp01(progress);
             }
         }

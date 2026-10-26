@@ -1,9 +1,10 @@
-using Marchlands.Simulation.Economy;
-using Marchlands.Simulation.Buildings;
+using System.Collections.Generic;
 using System.Linq;
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
 using NUnit.Framework;
@@ -61,6 +62,50 @@ namespace Marchlands.Tests.EditMode
             Assert.AreEqual(2, BuildRules.GetHireCost(match, barracks), "Фузилёр стоит 2");
             RunTicks(match, 40);
             Assert.AreEqual(2, player.FusilierReserve, "Фузилёр — раз в 2 с");
+        }
+
+        [Test]
+        public void BothInfantryTypes_AreHiredInTurn_EachAtItsOwnPace()
+        {
+            SimulationSettings settings = TestSettings.Create();
+            settings.buildings.grenadierHireInterval = 4f;
+            var match = new Match(1, settings);
+            match.AddHeadquarters(Side.France, new float2(-30f, 0f));
+            match.GetPlayer(Side.France).Gold = 1000;
+            match.Enqueue(new BuildBarracksCommand(Side.France, new float2(-24f, 0f)));
+            match.Tick();
+            Building barracks = match.Buildings.Single(b => b.Type == BuildingType.Barracks);
+            barracks.BuildRemaining = 0f;
+            match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Fusiliers, true));
+            match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Grenadiers, true));
+            PlayerState player = match.GetPlayer(Side.France);
+
+            // Записываем, кто и на каком тике пришёл: по одному, по очереди, гренадёр — вдвое дольше.
+            var hires = new List<(int Tick, UnitType Type)>();
+            int fusiliers = 0, grenadiers = 0;
+            for (int tick = 0; tick < 200 && hires.Count < 4; tick++)
+            {
+                match.Tick();
+                if (player.FusilierReserve > fusiliers)
+                {
+                    hires.Add((tick, UnitType.Fusiliers));
+                }
+
+                if (player.GrenadierReserve > grenadiers)
+                {
+                    hires.Add((tick, UnitType.Grenadiers));
+                }
+
+                fusiliers = player.FusilierReserve;
+                grenadiers = player.GrenadierReserve;
+            }
+
+            Assert.AreEqual(UnitType.Fusiliers, hires[0].Type, "Первым — фузилёр");
+            Assert.AreEqual(UnitType.Grenadiers, hires[1].Type);
+            Assert.AreEqual(UnitType.Fusiliers, hires[2].Type);
+            Assert.AreEqual(UnitType.Grenadiers, hires[3].Type);
+            Assert.AreEqual(40, hires[1].Tick - hires[0].Tick, "Гренадёр — 4 с после фузилёра");
+            Assert.AreEqual(20, hires[2].Tick - hires[1].Tick, "Фузилёр — 2 с после гренадёра");
         }
 
         [Test]

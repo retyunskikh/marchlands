@@ -133,8 +133,10 @@ namespace Marchlands.UI
             }
 
             toggle.Button.interactable = building.IsBuilt;
+            // Нанимают по очереди — полоска только у того, чей рекрут идёт сейчас.
             float interval = BuildRules.GetHireInterval(match, building);
-            float progress = interval > 0f ? 1f - building.HireRemaining / interval : 0f;
+            bool current = building.IsHiring(type) && BuildRules.GetUpcomingHireType(match, building) == type;
+            float progress = !current ? -1f : interval > 0f ? 1f - building.HireRemaining / interval : 0f;
             int cost = BuildRules.GetHireCost(match.Settings.buildings, type);
             toggle.Show(string.Format(toggleFormat, unitName, cost), building.IsHiring(type), progress);
         }
