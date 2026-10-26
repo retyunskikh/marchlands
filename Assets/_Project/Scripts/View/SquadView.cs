@@ -46,7 +46,6 @@ namespace Marchlands.View
         private CasualtiesView casualties;
         private SquadCountLabel countLabel;
         private readonly List<SpriteRenderer> arms = new List<SpriteRenderer>();
-        private bool showingMeleeBodies;
 
         private Formation slotsFormation;
         private Formation slotsTarget;
@@ -58,6 +57,7 @@ namespace Marchlands.View
 
         // 0 — обычный строй, 1 — полная свалка рукопашной; меняется плавно.
         private float meleeBlend;
+        private float aimBlend;
         private float2 meleeContact;
         private float2 meleeDirection = new float2(0f, 1f);
 
@@ -101,6 +101,9 @@ namespace Marchlands.View
             Quaternion rotation = Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset);
             UpdateMelee(alpha, position);
             UpdateGait();
+            UpdateAim();
+            int shooters = VolleyMath.Shooters(squad.Formation, squad.Alive, settings);
+            float2 forward = Angles.Direction(facing);
             Quaternion meleeRotation = Quaternion.Slerp(rotation,
                 Quaternion.Euler(0f, 0f, Angles.Of(meleeDirection) + SpriteFacingOffset), meleeBlend);
             float2 spacing = style.GetSpacing(squad.Type);
@@ -139,14 +142,12 @@ namespace Marchlands.View
                 }
 
                 soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), meleeBlend > 0f ? meleeRotation : rotation);
-                RenderArms(i, world, meleeRotation);
-                if (meleeBlend <= 0f)
+                bool posed = RenderArms(i, world, rotation, meleeRotation, forward, i < shooters);
+                if (!posed)
                 {
                     RenderStep(i, local);
                 }
             }
-
-            showingMeleeBodies = meleeBlend > 0f;
 
             if (selectionMarker.enabled)
             {
@@ -211,6 +212,15 @@ namespace Marchlands.View
         }
 
         /// <summary>Идёт ли отряд: сдвинулся за последний тик (бегущие и атакующие тоже идут).</summary>
+        /// <summary>«Целься!»: стреляющие вскидывают ружья, пока отряд прицеливается, и опускают после залпа.</summary>
+        private void UpdateAim()
+        {
+            bool aiming = squad.FireState == FireState.Aiming && !squad.IsRouting;
+            float time = aiming ? style.AimRaiseTime : style.AimLowerTime;
+            float step = time > 0f ? Time.deltaTime / time : 1f;
+            aimBlend = aiming ? math.min(1f, aimBlend + step) : math.max(0f, aimBlend - step);
+        }
+
         private void UpdateGait()
         {
             bool moving = math.distancesq(squad.PreviousPosition, squad.Position) > 1e-6f && !squad.IsInMelee;
@@ -363,32 +373,46 @@ namespace Marchlands.View
         }
 
         /// <summary>
-        /// В рукопашной у солдата тело без оружия, а руки с ружьём (саблей) — отдельной фигуркой, которая
-        /// выбрасывается вперёд и возвращается. Вне схватки — обычная цельная фигурка.
+        /// В рукопашной и при «Целься!» у солдата тело без оружия, а руки с ружьём (саблей) — отдельной фигуркой:
+        /// в схватке она выбрасывается вперёд и возвращается, при прицеливании ружьё выносится вперёд и замирает
+        /// (только у рядовых стреляющих шеренг). Иначе — обычная цельная фигурка.
         /// </summary>
-        private void RenderArms(int index, float2 world, Quaternion meleeRotation)
+        /// <returns>Солдат в позе с отдельными руками — кадр шага не нужен.</returns>
+        private bool RenderArms(int index, float2 world, Quaternion rotation, Quaternion meleeRotation, float2 forward, bool shooter)
         {
             SpriteRenderer armsRenderer = arms[index];
+            bool melee = meleeBlend > 0f;
             if (armsRenderer == null)
             {
-                return;
+                return melee;
             }
 
-            bool melee = meleeBlend > 0f;
-            // Вне схватки кадр выбирает шаг (RenderStep) — здесь только переключение тело/цельная фигурка.
-            if (melee != showingMeleeBodies || (melee && soldiers[index].sprite != bodySprites[index]))
+            bool aiming = !melee && aimBlend > 0f && shooter && soldierRoles[index] == SoldierRole.Private;
+            bool posed = melee || aiming;
+            if (posed && soldiers[index].sprite != bodySprites[index])
             {
-                soldiers[index].sprite = melee ? bodySprites[index] : fullSprites[index];
-                armsRenderer.enabled = melee;
+                soldiers[index].sprite = bodySprites[index];
             }
-
-            if (!melee)
+            else if (!posed && soldiers[index].sprite == bodySprites[index])
             {
-                return;
+                soldiers[index].sprite = fullSprites[index];
             }
 
-            float2 reach = meleeDirection * (Thrust(index) * style.ThrustLength * math.smoothstep(0f, 1f, meleeBlend));
-            armsRenderer.transform.SetPositionAndRotation(new Vector3(world.x + reach.x, world.y + reach.y, 0f), meleeRotation);
+            if (armsRenderer.enabled != posed)
+            {
+                armsRenderer.enabled = posed;
+            }
+
+            if (!posed)
+            {
+                return false;
+            }
+
+            float2 reach = melee
+                ? meleeDirection * (Thrust(index) * style.ThrustLength * math.smoothstep(0f, 1f, meleeBlend))
+                : forward * (style.AimReach * math.smoothstep(0f, 1f, aimBlend));
+            armsRenderer.transform.SetPositionAndRotation(new Vector3(world.x + reach.x, world.y + reach.y, 0f), melee ? meleeRotation : rotation);
+            return true;
         }
 
         /// <summary>Постоянное для каждого солдата смещение в [-1, 1]² — толпа не дрожит от кадра к кадру.</summary>

@@ -33,6 +33,10 @@ namespace Marchlands.View
         [SerializeField] private float meleeScatter = 0.3f;
         [Tooltip("Длина выпада штыком или саблей, u.")]
         [SerializeField] private float thrustLength = 0.16f;
+        [Tooltip("«Целься!»: на сколько юнитов стреляющие выносят ружьё вперёд и за сколько секунд вскидывают и опускают его.")]
+        [SerializeField] private float aimReach = 0.12f;
+        [SerializeField] private float aimRaiseTime = 0.3f;
+        [SerializeField] private float aimLowerTime = 0.35f;
         [Tooltip("Выпадов в секунду у каждого солдата.")]
         [SerializeField] private float thrustRate = 1.1f;
 
@@ -174,6 +178,12 @@ namespace Marchlands.View
         public float MeleeScatter => meleeScatter;
 
         public float ThrustLength => thrustLength;
+
+        public float AimReach => aimReach;
+
+        public float AimRaiseTime => aimRaiseTime;
+
+        public float AimLowerTime => aimLowerTime;
 
         public float ThrustRate => thrustRate;
 
