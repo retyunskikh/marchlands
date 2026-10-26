@@ -22,6 +22,8 @@ namespace Marchlands.Bootstrap
     {
         [SerializeField] private BalanceConfig balance;
         [SerializeField] private ScenarioConfig scenario;
+        [Tooltip("Карты на выбор в главном меню, по порядку карточек; пусто — всегда scenario (песочницы).")]
+        [SerializeField] private ScenarioConfig[] maps;
         [SerializeField] private int seed = 1;
         [SerializeField] private int targetFrameRate = 60;
 
@@ -55,6 +57,11 @@ namespace Marchlands.Bootstrap
         {
             // На мобильных Unity по умолчанию ограничивает частоту 30 кадрами.
             Application.targetFrameRate = targetFrameRate;
+
+            if (maps != null && maps.Length > 0)
+            {
+                scenario = maps[Mathf.Clamp(MapChoice.Selected, 0, maps.Length - 1)];
+            }
 
             match = new Match(unchecked((ulong)seed), balance.CreateSettings());
             clock = new FixedStepClock(SimulationTime.TicksPerSecond, SimulationTime.MaxTicksPerAdvance);

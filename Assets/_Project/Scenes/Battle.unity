@@ -13722,6 +13722,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Bootstrap::Marchlands.Bootstrap.BattleBootstrap
   balance: {fileID: 11400000, guid: 49be662d6d646434bba55014c3f78fed, type: 2}
   scenario: {fileID: 11400000, guid: 2c5e77ca7fdab554eb287f223353b816, type: 2}
+  maps:
+  - {fileID: 11400000, guid: 2c5e77ca7fdab554eb287f223353b816, type: 2}
+  - {fileID: 11400000, guid: 9ba21e141138e9c4c8a77df07dc8f267, type: 2}
   seed: 1
   targetFrameRate: 60
   terrainView: {fileID: 1117390951}
