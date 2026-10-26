@@ -24,8 +24,9 @@ namespace Marchlands.View
         [SerializeField] private Sprite eastRiverSprite;
 
         [Header("За краем карты")]
-        [Tooltip("Бесшовный полог леса за реками — игрок не видит пустоты.")]
-        [SerializeField] private Sprite outerForestSprite;
+        [Tooltip("Лес за реками с опушкой у реки: полотно 44 × 160 u от края поля наружу — игрок не видит пустоты.")]
+        [SerializeField] private Sprite westOuterForestSprite;
+        [SerializeField] private Sprite eastOuterForestSprite;
         [Tooltip("Вертикальный градиент тумана (прозрачный внизу), в который уходят горы.")]
         [SerializeField] private Sprite fogSprite;
         [SerializeField] private Color fogColor = new Color(0.78f, 0.81f, 0.84f);
@@ -63,7 +64,7 @@ namespace Marchlands.View
                 return;
             }
 
-            DrawOuterForest();
+            DrawOuterForest(terrain);
             DrawRivers(terrain);
             DrawMountains(terrain);
             DrawFog();
@@ -103,26 +104,23 @@ namespace Marchlands.View
             }
         }
 
-        /// <summary>За реками слева и справа — сплошной лес до края видимого.</summary>
-        private void DrawOuterForest()
+        /// <summary>
+        /// За реками слева и справа — лес до края видимого: от края поля наружу на ширину спрайта, опушкой к реке.
+        /// Лежит под рекой: вода и берег его закрывают, а между рекой и лесом виден подлесок.
+        /// </summary>
+        private void DrawOuterForest(TerrainMap terrain)
         {
-            if (outerForestSprite == null)
-            {
-                return;
-            }
-
-            float halfX = mapSize.x * 0.5f;
-            float height = mapSize.y + outerExtent * 2f;
             foreach (float side in new[] { -1f, 1f })
             {
-                var forest = new GameObject("Outer Forest");
-                forest.transform.SetParent(transform, false);
-                forest.transform.position = new Vector3(side * (halfX + outerExtent * 0.5f), 0f, 0f);
-                var spriteRenderer = forest.AddComponent<SpriteRenderer>();
-                spriteRenderer.sprite = outerForestSprite;
-                spriteRenderer.drawMode = SpriteDrawMode.Tiled;
-                spriteRenderer.size = new Vector2(outerExtent, height);
-                spriteRenderer.sortingOrder = borderSortingOrder - 1;
+                Sprite sprite = side > 0f ? eastOuterForestSprite : westOuterForestSprite;
+                if (sprite == null)
+                {
+                    continue;
+                }
+
+                float edge = side > 0f ? terrain.BoundsMax.x : terrain.BoundsMin.x;
+                Vector2 size = sprite.bounds.size;
+                CreateStretched("Outer Forest", sprite, borderSortingOrder - 1, new Vector2(edge + side * size.x * 0.5f, 0f), size);
             }
         }
 

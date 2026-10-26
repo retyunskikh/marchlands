@@ -12961,7 +12961,8 @@ MonoBehaviour:
   southMountainsSprite: {fileID: 21300000, guid: f79f6e6bd3bf22b49a12d4d02b086e17, type: 3}
   westRiverSprite: {fileID: 21300000, guid: 4e3de2fd258661743a548216e62b9ecd, type: 3}
   eastRiverSprite: {fileID: 21300000, guid: b61a6ef4cfacef345a8513a08da88452, type: 3}
-  outerForestSprite: {fileID: 21300000, guid: 25f26a19fe9f0ef49b8ae043d958efd1, type: 3}
+  westOuterForestSprite: {fileID: 21300000, guid: b370f6c2579e8594a8b84d8118db500d, type: 3}
+  eastOuterForestSprite: {fileID: 21300000, guid: 5a4e87907c39e384e8a896c91b6b0f9e, type: 3}
   fogSprite: {fileID: 21300000, guid: 59fccc4cf2bd69541b74d7fbffec853c, type: 3}
   fogColor: {r: 0.78, g: 0.81, b: 0.84, a: 1}
   outerExtent: 40
