@@ -1,4 +1,3 @@
-using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
@@ -38,10 +37,6 @@ namespace Marchlands.UI
         [SerializeField] private string meleeText = "В рукопашной";
         [SerializeField] private string routingText = "Бегут";
         [SerializeField] private string formingText = "Перестраиваются";
-        [SerializeField] private string aimingText = "Целься!";
-        [Tooltip("{0} — секунд до готовности.")]
-        [SerializeField] private string reloadingFormat = "Заряжают {0} с";
-        [SerializeField] private string loadedText = "Заряжены";
         [SerializeField] private string reinforcingText = "Пополняются в деревне";
 
         private Match match;
@@ -96,14 +91,8 @@ namespace Marchlands.UI
             }
 
             strengthLabel.text = string.Format(strengthFormat, squad.Alive, UnitStats.Of(squad, match.Settings).squadSize);
-            string details = string.Format(moraleFormat, Mathf.RoundToInt(morale)) + "\n" + GetActivity();
-            string fire = GetFireState();
-            if (fire.Length > 0)
-            {
-                details += "\n" + fire;
-            }
-
-            detailsLabel.text = details;
+            // Перезарядку показывает кнопка «Залп» — в карточке её нет.
+            detailsLabel.text = string.Format(moraleFormat, Mathf.RoundToInt(morale)) + "\n" + GetActivity();
         }
 
         private string GetActivity()
@@ -131,24 +120,6 @@ namespace Marchlands.UI
                     return marchingText;
                 default:
                     return squad.IsReinforcing ? reinforcingText : standingText;
-            }
-        }
-
-        private string GetFireState()
-        {
-            if (!UnitStats.CanFire(squad, match.Settings) || squad.IsRouting)
-            {
-                return string.Empty;
-            }
-
-            switch (squad.FireState)
-            {
-                case FireState.Aiming:
-                    return aimingText;
-                case FireState.Reloading:
-                    return string.Format(reloadingFormat, Mathf.CeilToInt(squad.FireTimer));
-                default:
-                    return loadedText;
             }
         }
     }
