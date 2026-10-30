@@ -66,5 +66,32 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>На каком расстоянии перед зданием стоит толпа ждущих людей, u.</summary>
         public float campOffset;
+
+        /// <summary>Здоровье штаба.</summary>
+        public float headquartersHealth;
+
+        /// <summary>Здоровье казармы.</summary>
+        public float barracksHealth;
+
+        /// <summary>Здоровье конюшни.</summary>
+        public float stableHealth;
+
+        /// <summary>Сколько часовых стреляет одним залпом из каждого построенного здания.</summary>
+        public int sentryShots;
+
+        /// <summary>Раз в столько секунд часовые здания дают залп, s.</summary>
+        public float sentryInterval;
+
+        /// <summary>Вероятность попадания одного часового (до множителей колонны, укрытия и рода войск цели).</summary>
+        public float sentryHitChance;
+
+        /// <summary>Часовые стреляют по врагу, чей центр ближе этого к центру здания, u.</summary>
+        public float sentryRange;
+
+        /// <summary>Отряд бьёт здание в штыки, когда его центр ближе этого к центру здания, u.</summary>
+        public float assaultRange;
+
+        /// <summary>Сколько здоровья здания снимает в секунду один солдат штурмующего отряда (× meleeMultiplier рода войск).</summary>
+        public float assaultDamage;
     }
 }

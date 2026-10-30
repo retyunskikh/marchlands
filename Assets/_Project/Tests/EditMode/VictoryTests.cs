@@ -56,43 +56,19 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void HeadquartersCapture_WinsAfterCaptureTime()
+        public void HeadquartersDestroyed_WinsForAttacker()
         {
             Match match = CreateMatch();
-            match.AddSquad(Side.France, AustriaHq + new float2(-3f, 0f), 0f, Formation.Column);
+            // Большой отряд: обычный под огнём часовых штаба и казармы может побежать раньше, чем штаб падёт.
+            Squad squad = match.AddSquad(Side.France, AustriaHq + new float2(-8f, 0f), 0f, Formation.Column, UnitType.Grenadiers, 80);
             match.AddSquad(Side.Austria, new float2(0f, 30f), 180f, Formation.Line);
+            match.Enqueue(new AssaultCommand(squad.Id, match.GetHeadquarters(Side.Austria).Id));
 
-            int ticks = TicksUntilResult(match, 60f);
+            TicksUntilResult(match, 120f);
 
-            Assert.That(ticks, Is.InRange(TicksFor(30f) - 1, TicksFor(30f) + 1));
             Assert.AreEqual(Side.France, match.Result.Winner);
-            Assert.AreEqual(VictoryReason.HeadquartersCaptured, match.Result.Reason);
-        }
-
-        [Test]
-        public void HeadquartersCapture_FreezesWhileDefended()
-        {
-            Match match = CreateMatch();
-            match.AddSquad(Side.France, AustriaHq + new float2(-3f, 3f), 0f, Formation.Column);
-            match.AddSquad(Side.Austria, AustriaHq + new float2(1f, -3f), 180f, Formation.Column);
-
-            RunTicks(match, TicksFor(60f));
-
-            Assert.IsNull(match.Result);
-            Assert.AreEqual(0f, match.GetHeadquarters(Side.Austria).CaptureProgress);
-        }
-
-        [Test]
-        public void RoutingSquad_DoesNotCaptureHeadquarters()
-        {
-            Match match = CreateMatch();
-            Squad squad = match.AddSquad(Side.France, AustriaHq + new float2(-3f, 0f), 0f, Formation.Column);
-            match.AddSquad(Side.Austria, new float2(0f, 30f), 180f, Formation.Line);
-            squad.Morale = 5f;
-
-            RunTicks(match, TicksFor(5f));
-
-            Assert.AreEqual(0f, match.GetHeadquarters(Side.Austria).CaptureProgress);
+            Assert.AreEqual(VictoryReason.HeadquartersDestroyed, match.Result.Reason);
+            Assert.IsTrue(match.GetHeadquarters(Side.Austria).IsDestroyed, "Разрушенный штаб остаётся на карте");
         }
 
         [Test]

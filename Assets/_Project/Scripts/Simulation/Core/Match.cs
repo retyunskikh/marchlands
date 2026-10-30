@@ -26,6 +26,7 @@ namespace Marchlands.Simulation.Core
         private readonly List<ICommand> currentTickCommands = new List<ICommand>();
         private readonly List<Squad> squads = new List<Squad>();
         private readonly List<VolleyEvent> lastTickVolleys = new List<VolleyEvent>();
+        private readonly List<SentryVolley> lastTickSentryVolleys = new List<SentryVolley>();
         private readonly List<MeleeEngagement> engagements = new List<MeleeEngagement>();
         private readonly List<IMatchController> controllers = new List<IMatchController>();
         private readonly List<Village> villages = new List<Village>();
@@ -65,6 +66,9 @@ namespace Marchlands.Simulation.Core
 
         /// <summary>Залпы, произошедшие в последнем выполненном тике.</summary>
         public IReadOnlyList<VolleyEvent> LastTickVolleys => lastTickVolleys;
+
+        /// <summary>Залпы часовых зданий за последний выполненный тик.</summary>
+        public IReadOnlyList<SentryVolley> LastTickSentryVolleys => lastTickSentryVolleys;
 
         public IReadOnlyList<Village> Villages => villages;
 
@@ -197,7 +201,7 @@ namespace Marchlands.Simulation.Core
                 throw new InvalidOperationException($"У стороны {side} уже есть штаб.");
             }
 
-            var headquarters = new Building(nextBuildingId++, BuildingType.Headquarters, side, position, 0f);
+            var headquarters = new Building(nextBuildingId++, BuildingType.Headquarters, side, position, 0f, Settings.buildings.headquartersHealth);
             buildings.Add(headquarters);
             return headquarters;
         }
@@ -205,14 +209,14 @@ namespace Marchlands.Simulation.Core
         /// <summary>Закладывает казарму. Проверки места и золота — в <see cref="BuildRules"/> и командах.</summary>
         internal Building AddBarracks(Side side, float2 position)
         {
-            var barracks = new Building(nextBuildingId++, BuildingType.Barracks, side, position, Settings.buildings.barracksBuildTime);
+            var barracks = new Building(nextBuildingId++, BuildingType.Barracks, side, position, Settings.buildings.barracksBuildTime, Settings.buildings.barracksHealth);
             buildings.Add(barracks);
             return barracks;
         }
 
         internal Building AddStable(Side side, float2 position)
         {
-            var stable = new Building(nextBuildingId++, BuildingType.Stable, side, position, Settings.buildings.stableBuildTime);
+            var stable = new Building(nextBuildingId++, BuildingType.Stable, side, position, Settings.buildings.stableBuildTime, Settings.buildings.stableHealth);
             buildings.Add(stable);
             return stable;
         }
@@ -382,6 +386,7 @@ namespace Marchlands.Simulation.Core
             lastTickCaptures.Clear();
             lastTickReinforcements.Clear();
             lastTickFormedSquads.Clear();
+            lastTickSentryVolleys.Clear();
 
             foreach (Squad squad in squads)
             {
@@ -405,6 +410,7 @@ namespace Marchlands.Simulation.Core
 
             lastTickVolleys.Clear();
             FireSystem.Update(this, deltaTime, lastTickVolleys);
+            SentrySystem.Update(this, deltaTime, lastTickSentryVolleys);
 
             foreach (Squad squad in squads)
             {
@@ -412,6 +418,7 @@ namespace Marchlands.Simulation.Core
             }
 
             MeleeSystem.Update(this, deltaTime);
+            AssaultSystem.Update(this, deltaTime);
             MoraleSystem.Update(this, deltaTime);
             MeleeSystem.RemoveFinished(this);
             CaptureSystem.Update(this, deltaTime);
@@ -423,6 +430,19 @@ namespace Marchlands.Simulation.Core
             squads.RemoveAll(squad => squad.Alive <= 0 || squad.IsWithdrawn);
 
             CurrentTick++;
+        }
+
+        /// <summary>
+        /// Здание разрушено: казарма и конюшня убираются с карты (толпа ждущих у них расходится, резерв остаётся),
+        /// разрушенный штаб остаётся — по нему засчитывается поражение.
+        /// </summary>
+        internal void DestroyBuilding(Building building)
+        {
+            building.Health = 0f;
+            if (building.Type != BuildingType.Headquarters)
+            {
+                buildings.Remove(building);
+            }
         }
 
         internal void AddEngagement(MeleeEngagement engagement)

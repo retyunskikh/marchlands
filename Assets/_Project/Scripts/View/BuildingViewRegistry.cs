@@ -18,6 +18,7 @@ namespace Marchlands.View
         [SerializeField] private SquadViewRegistry squadViews;
 
         private readonly Dictionary<int, BuildingView> views = new Dictionary<int, BuildingView>();
+        private readonly List<int> removed = new List<int>();
         private readonly List<Waiter>[] fusiliers = { new List<Waiter>(), new List<Waiter>() };
         private readonly List<Waiter>[] grenadiers = { new List<Waiter>(), new List<Waiter>() };
         private readonly List<Waiter>[] riders = { new List<Waiter>(), new List<Waiter>() };
@@ -70,6 +71,30 @@ namespace Marchlands.View
                 view.Initialize(building, match.Settings, style, squadViews.Style.GetSideColor(building.Owner));
                 view.SetSelected(building == selected);
                 views.Add(building.Id, view);
+            }
+
+            // Разрушенные казармы и конюшни исчезают с карты (за кадр могло пройти несколько тиков).
+            if (views.Count > match.Buildings.Count)
+            {
+                removed.Clear();
+                foreach (KeyValuePair<int, BuildingView> pair in views)
+                {
+                    if (match.FindBuilding(pair.Key) == null)
+                    {
+                        removed.Add(pair.Key);
+                    }
+                }
+
+                foreach (int id in removed)
+                {
+                    if (selected != null && selected.Id == id)
+                    {
+                        selected = null;
+                    }
+
+                    Destroy(views[id].gameObject);
+                    views.Remove(id);
+                }
             }
 
             foreach (BuildingView view in views.Values)

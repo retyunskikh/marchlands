@@ -167,6 +167,12 @@ namespace Marchlands.Input
                 Select(null);
             }
 
+            // Выделенное здание могли разрушить.
+            if (selectedBuilding != null && match.FindBuilding(selectedBuilding.Id) == null)
+            {
+                SelectBuilding(null);
+            }
+
             if (isChargeTargeting && !ChargeRules.CanCharge(selected))
             {
                 SetChargeTargeting(false);
@@ -208,7 +214,7 @@ namespace Marchlands.Input
                 return;
             }
 
-            Building building = FindOwnBuildingAt(world);
+            Building building = FindBuildingAt(world, own: true);
             if (building != null)
             {
                 hasPendingTap = false;
@@ -413,6 +419,14 @@ namespace Marchlands.Input
                 return;
             }
 
+            // Тап по вражескому зданию — штурм в штыки.
+            Building enemyBuilding = FindBuildingAt(world, own: false);
+            if (enemyBuilding != null)
+            {
+                match.Enqueue(new AssaultCommand(selected.Id, enemyBuilding.Id));
+                return;
+            }
+
             // Тап по своему отряду выделяет его, тап по земле просто отменяет выбор цели.
             Squad own = FindSquadAt(world, own: true);
             if (own != null)
@@ -451,14 +465,14 @@ namespace Marchlands.Input
             }
         }
 
-        private Building FindOwnBuildingAt(float2 world)
+        private Building FindBuildingAt(float2 world, bool own)
         {
             Building best = null;
             float bestDistance = config.BuildingTapRadius;
             foreach (Building building in match.Buildings)
             {
                 float distance = math.distance(world, building.Position);
-                if (building.Owner == playerSide && distance <= bestDistance)
+                if ((building.Owner == playerSide) == own && !building.IsDestroyed && distance <= bestDistance)
                 {
                     best = building;
                     bestDistance = distance;

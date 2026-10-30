@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Marchlands.View
 {
@@ -52,12 +53,13 @@ namespace Marchlands.View
         [Tooltip("Прозрачность строящегося здания.")]
         [SerializeField] private float constructionAlpha = 0.45f;
         [SerializeField] private Vector2 progressBarSize = new Vector2(2.6f, 0.22f);
-        [Tooltip("Насколько выше центра здания стоит полоска постройки или найма, u.")]
-        [SerializeField] private float progressBarOffset = 2f;
+        [Tooltip("Насколько выше верхнего края здания стоит полоска постройки или найма, u.")]
+        [SerializeField] private float progressBarOffset = 0.7f;
         [SerializeField] private Color progressBackground = new Color(0f, 0f, 0f, 0.45f);
         [SerializeField] private Color progressColor = new Color(1f, 0.85f, 0.45f);
-        [Tooltip("Цвет полоски захвата штаба врагом.")]
-        [SerializeField] private Color captureColor = new Color(0.95f, 0.25f, 0.2f);
+        [Tooltip("Цвет полоски здоровья повреждённого здания; она стоит над полоской постройки или найма.")]
+        [FormerlySerializedAs("captureColor")]
+        [SerializeField] private Color healthColor = new Color(0.95f, 0.25f, 0.2f);
         [SerializeField] private Color selectionColor = new Color(1f, 0.9f, 0.3f, 0.35f);
         [SerializeField] private float selectionPadding = 0.4f;
 
@@ -145,7 +147,7 @@ namespace Marchlands.View
 
         public Color ProgressColor => progressColor;
 
-        public Color CaptureColor => captureColor;
+        public Color HealthColor => healthColor;
 
         public Color SelectionColor => selectionColor;
 

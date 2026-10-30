@@ -141,6 +141,19 @@ namespace Marchlands.Simulation.AI
                     return;
                 }
 
+                // Захватывать нечего и рядом врага нет — штурм ближайшего вражеского здания (последним падёт штаб).
+                Building building = SelectBuilding(match, squad);
+                if (building != null)
+                {
+                    brain.VillageId = 0;
+                    if (squad.Order.Type != SquadOrderType.Assault || squad.Order.TargetBuildingId != building.Id)
+                    {
+                        Issue(match, brain, new AssaultCommand(squad.Id, building.Id));
+                    }
+
+                    return;
+                }
+
                 target = SelectTarget(match, squad, brain, float.MaxValue);
             }
 
@@ -363,6 +376,29 @@ namespace Marchlands.Simulation.AI
             }
 
             brain.VillageId = best?.Id ?? 0;
+            return best;
+        }
+
+        /// <summary>Ближайшее не разрушенное вражеское здание, на которое отряд может пойти в штыки; null — таких нет.</summary>
+        private static Building SelectBuilding(Match match, Squad squad)
+        {
+            Building best = null;
+            float bestDistance = float.MaxValue;
+            foreach (Building building in match.Buildings)
+            {
+                if (!ChargeRules.CanAssault(squad, building))
+                {
+                    continue;
+                }
+
+                float distance = math.distancesq(building.Position, squad.Position);
+                if (distance < bestDistance)
+                {
+                    best = building;
+                    bestDistance = distance;
+                }
+            }
+
             return best;
         }
 

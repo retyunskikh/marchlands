@@ -69,6 +69,9 @@ namespace Marchlands.Simulation.Squads
                 case SquadOrderType.Charge:
                     UpdateCharge(squad, match, deltaTime);
                     break;
+                case SquadOrderType.Assault:
+                    UpdateAssault(squad, match, deltaTime);
+                    break;
             }
 
             KeepInsideTerrain(squad, match);
@@ -199,6 +202,30 @@ namespace Marchlands.Simulation.Squads
             float speed = UnitStats.ChargeSpeed(squad, match.Settings) * match.TerrainSpeedMultiplier(squad.Position);
             float step = math.min(speed * time, distance);
             squad.Position += math.normalize(toTarget) * step;
+        }
+
+        /// <summary>
+        /// Бег в штыки на здание: разворот к нему и бег, пока центр отряда не окажется в assaultRange от центра здания.
+        /// Удары по зданию наносит <see cref="Buildings.AssaultSystem"/>.
+        /// </summary>
+        private static void UpdateAssault(Squad squad, Match match, float deltaTime)
+        {
+            Buildings.Building target = match.FindBuilding(squad.Order.TargetBuildingId);
+            if (target == null)
+            {
+                return;
+            }
+
+            float2 toTarget = target.Position - squad.Position;
+            float distance = math.length(toTarget) - match.Settings.buildings.assaultRange;
+            float time = deltaTime;
+            if (distance <= 0f || !RotateTowards(squad, Angles.Of(toTarget), match.Settings.squads.rotationSpeed, ref time))
+            {
+                return;
+            }
+
+            float speed = UnitStats.ChargeSpeed(squad, match.Settings) * match.TerrainSpeedMultiplier(squad.Position);
+            squad.Position += math.normalize(toTarget) * math.min(speed * time, distance);
         }
 
         /// <summary>Бегство: разворот к точке отхода со скоростью routRotationSpeed и бегом к ней.</summary>

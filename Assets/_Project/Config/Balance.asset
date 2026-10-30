@@ -155,9 +155,16 @@ MonoBehaviour:
       annexSpacing: 2.5
       spawnOffset: 6
       campOffset: 4.5
+      headquartersHealth: 600
+      barracksHealth: 300
+      stableHealth: 300
+      sentryShots: 4
+      sentryInterval: 6
+      sentryHitChance: 0.2
+      sentryRange: 10
+      assaultRange: 3.5
+      assaultDamage: 0.5
     victory:
-      hqCaptureRadius: 7
-      hqCaptureTime: 30
       dominationShare: 1
       dominationTime: 180
     terrain:

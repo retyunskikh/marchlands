@@ -8,7 +8,7 @@ using Unity.Mathematics;
 namespace Marchlands.Simulation.Victory
 {
     /// <summary>
-    /// Условия победы (раздел 3.7 docs/design.md): захват вражеского штаба, доминирование по деревням,
+    /// Условия победы (раздел 3.7 docs/design.md): разрушение вражеского штаба, доминирование по деревням,
     /// уничтожение армии противника. Проверяются в конце тика, если включены для матча.
     /// </summary>
     internal static class VictorySystem
@@ -27,7 +27,7 @@ namespace Marchlands.Simulation.Victory
 
             foreach (Side side in Sides)
             {
-                UpdateHeadquartersCapture(match, side, deltaTime);
+                CheckHeadquarters(match, side);
                 if (match.Result != null)
                 {
                     return;
@@ -53,37 +53,14 @@ namespace Marchlands.Simulation.Victory
             }
         }
 
-        /// <summary>Штаб захватывается как деревня, только за hqCaptureTime в радиусе hqCaptureRadius.</summary>
-        private static void UpdateHeadquartersCapture(Match match, Side owner, float deltaTime)
+        /// <summary>Штаб стороны разрушен штурмом — победа противника.</summary>
+        private static void CheckHeadquarters(Match match, Side owner)
         {
             Building headquarters = match.GetHeadquarters(owner);
-            if (headquarters == null)
+            if (headquarters != null && headquarters.IsDestroyed)
             {
-                return;
+                match.Finish(Enemy(owner), VictoryReason.HeadquartersDestroyed);
             }
-
-            VictorySettings victory = match.Settings.victory;
-            Side enemy = Enemy(owner);
-            GetPresence(match, headquarters.Position, victory.hqCaptureRadius, out bool ownerPresent, out bool enemyPresent, owner);
-
-            if (enemyPresent && ownerPresent)
-            {
-                return;
-            }
-
-            if (enemyPresent)
-            {
-                headquarters.CaptureProgress += deltaTime;
-                if (headquarters.CaptureProgress >= victory.hqCaptureTime - TimerEpsilon)
-                {
-                    match.Finish(enemy, VictoryReason.HeadquartersCaptured);
-                }
-
-                return;
-            }
-
-            float decay = match.Settings.economy.captureDecayRate * deltaTime;
-            headquarters.CaptureProgress = math.max(0f, headquarters.CaptureProgress - decay);
         }
 
         /// <summary>Держит ли сторона долю деревень непрерывно dominationTime секунд.</summary>
@@ -161,28 +138,6 @@ namespace Marchlands.Simulation.Victory
         {
             long hireable = hireCost > 0 ? gold / hireCost : int.MaxValue;
             return reserve + hireable >= squadSize;
-        }
-
-        private static void GetPresence(Match match, float2 point, float radius, out bool ownerPresent, out bool enemyPresent, Side owner)
-        {
-            ownerPresent = false;
-            enemyPresent = false;
-            foreach (Squad squad in match.Squads)
-            {
-                if (squad.IsRouting || squad.IsCamp || squad.Alive <= 0 || math.distance(squad.Position, point) > radius)
-                {
-                    continue;
-                }
-
-                if (squad.Side == owner)
-                {
-                    ownerPresent = true;
-                }
-                else
-                {
-                    enemyPresent = true;
-                }
-            }
         }
 
         private static Side Enemy(Side side)

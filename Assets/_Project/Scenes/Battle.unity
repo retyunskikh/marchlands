@@ -5073,7 +5073,7 @@ MonoBehaviour:
   fireworks: {fileID: 69363321}
   victoryText: "\u041F\u043E\u0431\u0435\u0434\u0430!"
   defeatText: "\u041F\u043E\u0440\u0430\u0436\u0435\u043D\u0438\u0435"
-  headquartersReason: "\u0417\u0430\u0445\u0432\u0430\u0447\u0435\u043D \u0448\u0442\u0430\u0431"
+  headquartersReason: "\u0420\u0430\u0437\u0440\u0443\u0448\u0435\u043D \u0448\u0442\u0430\u0431"
   dominationReason: "\u0423\u0434\u0435\u0440\u0436\u0430\u043D\u0438\u0435 \u0434\u0435\u0440\u0435\u0432\u0435\u043D\u044C"
   annihilationReason: "\u0410\u0440\u043C\u0438\u044F \u0440\u0430\u0437\u0431\u0438\u0442\u0430"
   menuSceneName: MainMenu
@@ -11498,7 +11498,7 @@ MonoBehaviour:
   style:
     squareSprite: {fileID: 21300000, guid: 5f47f2ad9246ed441acf41244c86118e, type: 3}
     circleSprite: {fileID: 21300000, guid: b6cb92c132d19f947854d3db7c821888, type: 3}
-    headquartersSize: {x: 5, y: 5}
+    headquartersSize: {x: 6.5, y: 6.5}
     barracksSize: {x: 5.4, y: 3.5}
     stableSize: {x: 5.8, y: 4.2}
     headquartersInnerScale: 0.55
@@ -11513,20 +11513,20 @@ MonoBehaviour:
     annexRoofSprite: {fileID: 21300000, guid: 403e0df79e62f224dbbbe4276e9f25c1, type: 3}
     annexSize: {x: 2.4, y: 1.6}
     annexOffsets:
-    - {x: -1.2, y: 3.3}
-    - {x: -1.2, y: -3.3}
-    - {x: 1.4, y: 3.3}
-    - {x: 1.4, y: -3.3}
+    - {x: -1.56, y: 4.05}
+    - {x: -1.56, y: -4.05}
+    - {x: 1.82, y: 4.05}
+    - {x: 1.82, y: -4.05}
     barracksBaseSprite: {fileID: 21300000, guid: 383fa761e0e3369489715081e93e62af, type: 3}
     barracksRoofSprite: {fileID: 21300000, guid: 45f55e9492a9db444b92443694ed4d53, type: 3}
     stableBaseSprite: {fileID: 21300000, guid: c2d350cd9bba69c4e8dde9907600c988, type: 3}
     stableRoofSprite: {fileID: 21300000, guid: 1ce157f28052fc948989486089ea00b0, type: 3}
     constructionAlpha: 0.45
     progressBarSize: {x: 3.6, y: 0.3}
-    progressBarOffset: 3.2
+    progressBarOffset: 0.7
     progressBackground: {r: 0, g: 0, b: 0, a: 0.45}
     progressColor: {r: 1, g: 0.85, b: 0.45, a: 1}
-    captureColor: {r: 0.95, g: 0.25, b: 0.2, a: 1}
+    healthColor: {r: 0.95, g: 0.25, b: 0.2, a: 1}
     selectionColor: {r: 1, g: 0.9, b: 0.3, a: 0.35}
     selectionPadding: 0.5
     recruitsShownMax: 32
@@ -13015,6 +13015,8 @@ MonoBehaviour:
   puffSize: {x: 1.1, y: 1.8}
   puffSpeed: {x: 0.15, y: 0.5}
   smokeColor: {r: 0.9, g: 0.9, b: 0.88, a: 0.75}
+  sentryFireOffset: 2.5
+  sentryPuffs: 3
   volleyClip: {fileID: 8300000, guid: 88cb9ceaaefd9d84a845b42764b0823c, type: 3}
   audioVoices: 4
   volumeRange: {x: 0.35, y: 1}

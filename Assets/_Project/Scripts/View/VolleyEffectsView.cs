@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
@@ -26,6 +27,10 @@ namespace Marchlands.View
         [Tooltip("Скорость, с которой дым выносит вперёд от фронта, u/s.")]
         [SerializeField] private Vector2 puffSpeed = new Vector2(0.15f, 0.5f);
         [SerializeField] private Color smokeColor = new Color(0.9f, 0.9f, 0.88f, 0.75f);
+        [Tooltip("На каком расстоянии от центра здания в сторону цели стреляют часовые, u.")]
+        [SerializeField] private float sentryFireOffset = 2.5f;
+        [Tooltip("Сколько клубов дыма даёт залп часовых.")]
+        [SerializeField] private int sentryPuffs = 3;
 
         [Header("Звук")]
         [SerializeField] private AudioClip volleyClip;
@@ -63,8 +68,26 @@ namespace Marchlands.View
                 if (shooter != null)
                 {
                     EmitSmoke(shooter);
-                    PlaySound(shooter, volley.Shooters);
+                    PlaySound(shooter.Position, volley.Shooters);
                 }
+            }
+        }
+
+        /// <summary>Показывает залпы часовых зданий за последний тик: клубы дыма у стены, обращённой к цели, и выстрел.</summary>
+        public void PlaySentries(IReadOnlyList<SentryVolley> volleys)
+        {
+            foreach (SentryVolley volley in volleys)
+            {
+                float2 forward = math.normalizesafe(volley.TargetPosition - volley.BuildingPosition, new float2(1f, 0f));
+                float2 right = new float2(forward.y, -forward.x);
+                float2 origin = volley.BuildingPosition + forward * sentryFireOffset;
+                for (int i = 0; i < sentryPuffs; i++)
+                {
+                    float2 position = origin + right * Random.Range(-0.8f, 0.8f) + forward * Random.Range(0.1f, 0.4f);
+                    EmitPuff(position, forward * Random.Range(puffSpeed.x, puffSpeed.y));
+                }
+
+                PlaySound(volley.BuildingPosition, volley.Shooters);
             }
         }
 
@@ -81,21 +104,26 @@ namespace Marchlands.View
                 float along = math.lerp(-halfWidth, halfWidth, (i + Random.value) / puffs);
                 float2 position = front + right * along + forward * Random.Range(0.1f, 0.6f);
                 float2 velocity = forward * Random.Range(puffSpeed.x, puffSpeed.y) + right * Random.Range(-0.1f, 0.1f);
-                var emit = new ParticleSystem.EmitParams
-                {
-                    position = new Vector3(position.x, position.y, 0f),
-                    velocity = new Vector3(velocity.x, velocity.y, 0f),
-                    startSize = Random.Range(puffSize.x, puffSize.y),
-                    startLifetime = smokeDuration * Random.Range(0.8f, 1f),
-                    startColor = smokeColor,
-                    rotation = Random.Range(0f, 360f),
-                    applyShapeToPosition = false
-                };
-                smoke.Emit(emit, 1);
+                EmitPuff(position, velocity);
             }
         }
 
-        private void PlaySound(Squad shooter, int shooters)
+        private void EmitPuff(float2 position, float2 velocity)
+        {
+            var emit = new ParticleSystem.EmitParams
+            {
+                position = new Vector3(position.x, position.y, 0f),
+                velocity = new Vector3(velocity.x, velocity.y, 0f),
+                startSize = Random.Range(puffSize.x, puffSize.y),
+                startLifetime = smokeDuration * Random.Range(0.8f, 1f),
+                startColor = smokeColor,
+                rotation = Random.Range(0f, 360f),
+                applyShapeToPosition = false
+            };
+            smoke.Emit(emit, 1);
+        }
+
+        private void PlaySound(float2 at, int shooters)
         {
             if (volleyClip == null || voices.Count == 0)
             {
@@ -109,7 +137,7 @@ namespace Marchlands.View
             float pan = 0f;
             if (view != null)
             {
-                Vector3 viewport = view.WorldToViewportPoint(new Vector3(shooter.Position.x, shooter.Position.y, 0f));
+                Vector3 viewport = view.WorldToViewportPoint(new Vector3(at.x, at.y, 0f));
                 pan = math.clamp((viewport.x - 0.5f) * 2f, -1f, 1f) * stereoWidth;
             }
 

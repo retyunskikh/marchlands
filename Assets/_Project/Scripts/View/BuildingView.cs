@@ -8,7 +8,7 @@ namespace Marchlands.View
 {
     /// <summary>
     /// Здание: тело цвета стороны (полупрозрачное во время постройки), полоска постройки или прихода
-    /// следующего рекрута и рамка выделения. Только читает состояние здания.
+    /// следующего рекрута, полоска здоровья повреждённого здания и рамка выделения. Только читает состояние здания.
     /// </summary>
     public sealed class BuildingView : MonoBehaviour
     {
@@ -23,6 +23,9 @@ namespace Marchlands.View
         private SpriteRenderer selection;
         private SpriteRenderer progressBackground;
         private SpriteRenderer progressFill;
+        private SpriteRenderer healthBackground;
+        private SpriteRenderer healthFill;
+        private float barsTop;
         private SpriteRenderer flag;
         private Color innerColor;
         private SpriteRenderer[] annexBases = new SpriteRenderer[0];
@@ -69,10 +72,16 @@ namespace Marchlands.View
                     : new Vector3(size.x, size.y * 0.15f, 1f);
             }
 
+            barsTop = size.y * 0.5f + style.ProgressBarOffset;
             progressBackground = CreateRenderer("Progress", style.OverlaySortingOrder, style.ProgressBackground);
-            progressBackground.transform.localPosition = new Vector3(0f, style.ProgressBarOffset, 0f);
+            progressBackground.transform.localPosition = new Vector3(0f, barsTop, 0f);
             progressBackground.transform.localScale = new Vector3(style.ProgressBarSize.x, style.ProgressBarSize.y, 1f);
             progressFill = CreateRenderer("Progress Fill", style.OverlaySortingOrder + 1, style.ProgressColor);
+
+            healthBackground = CreateRenderer("Health", style.OverlaySortingOrder, style.ProgressBackground);
+            healthBackground.transform.localPosition = new Vector3(0f, HealthBarY, 0f);
+            healthBackground.transform.localScale = new Vector3(style.ProgressBarSize.x, style.ProgressBarSize.y, 1f);
+            healthFill = CreateRenderer("Health Fill", style.OverlaySortingOrder + 1, style.HealthColor);
         }
 
         /// <summary>
@@ -195,15 +204,9 @@ namespace Marchlands.View
             }
 
             RenderAnnexes();
+            RenderHealth();
             float progress = -1f;
-            Color progressColor = style.ProgressColor;
-            if (building.CaptureProgress > 0f)
-            {
-                // Враг у штаба — главная тревога, она важнее найма.
-                progress = building.CaptureProgress / settings.victory.hqCaptureTime;
-                progressColor = style.CaptureColor;
-            }
-            else if (!building.IsBuilt)
+            if (!building.IsBuilt)
             {
                 progress = building.BuildProgress;
             }
@@ -218,17 +221,34 @@ namespace Marchlands.View
                 progress = interval > 0f ? 1f - building.HireRemaining / interval : -1f;
             }
 
-            bool showProgress = progress >= 0f;
-            progressBackground.enabled = showProgress;
-            progressFill.enabled = showProgress;
-            if (showProgress)
+            RenderBar(progressBackground, progressFill, progress, barsTop);
+        }
+
+        /// <summary>Над полоской постройки или найма.</summary>
+        private float HealthBarY => barsTop + style.ProgressBarSize.y * 1.6f;
+
+        /// <summary>Полоска здоровья видна, только когда здание повреждено.</summary>
+        private void RenderHealth()
+        {
+            float health = building.MaxHealth > 0f && building.Health < building.MaxHealth ? building.Health / building.MaxHealth : -1f;
+            RenderBar(healthBackground, healthFill, health, HealthBarY);
+        }
+
+        /// <param name="value">Доля заполнения; отрицательная — полоска скрыта.</param>
+        private void RenderBar(SpriteRenderer background, SpriteRenderer fill, float value, float y)
+        {
+            bool shown = value >= 0f;
+            background.enabled = shown;
+            fill.enabled = shown;
+            if (!shown)
             {
-                Vector2 bar = style.ProgressBarSize;
-                float width = bar.x * math.saturate(progress);
-                progressFill.color = progressColor;
-                progressFill.transform.localPosition = new Vector3(-bar.x * 0.5f + width * 0.5f, style.ProgressBarOffset, 0f);
-                progressFill.transform.localScale = new Vector3(width, bar.y, 1f);
+                return;
             }
+
+            Vector2 bar = style.ProgressBarSize;
+            float width = bar.x * math.saturate(value);
+            fill.transform.localPosition = new Vector3(-bar.x * 0.5f + width * 0.5f, y, 0f);
+            fill.transform.localScale = new Vector3(width, bar.y, 1f);
         }
 
         private SpriteRenderer CreateRenderer(string objectName, int sortingOrder, Color color)

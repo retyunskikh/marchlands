@@ -4,7 +4,7 @@ namespace Marchlands.Simulation.Victory
 {
     public enum VictoryReason
     {
-        HeadquartersCaptured,
+        HeadquartersDestroyed,
         Domination,
         Annihilation
     }

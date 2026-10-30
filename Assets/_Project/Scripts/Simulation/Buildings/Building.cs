@@ -14,7 +14,7 @@ namespace Marchlands.Simulation.Buildings
     /// <summary>Здание стороны: штаб или казарма. Снаружи сборки только для чтения.</summary>
     public sealed class Building
     {
-        internal Building(int id, BuildingType type, Side owner, float2 position, float buildTime)
+        internal Building(int id, BuildingType type, Side owner, float2 position, float buildTime, float maxHealth)
         {
             Id = id;
             Type = type;
@@ -22,6 +22,8 @@ namespace Marchlands.Simulation.Buildings
             Position = position;
             BuildTime = buildTime;
             BuildRemaining = buildTime;
+            MaxHealth = maxHealth;
+            Health = maxHealth;
         }
 
         public int Id { get; }
@@ -73,7 +75,14 @@ namespace Marchlands.Simulation.Buildings
 
         public bool IsBuildingHouse => HouseBuildRemaining > 0f;
 
-        /// <summary>Прогресс захвата штаба врагом, s (до hqCaptureTime).</summary>
-        public float CaptureProgress { get; internal set; }
+        public float MaxHealth { get; }
+
+        /// <summary>Здоровье; штурмующие в штыки отряды его снимают, на нуле здание разрушено.</summary>
+        public float Health { get; internal set; }
+
+        public bool IsDestroyed => Health <= 0f;
+
+        /// <summary>Сколько осталось до следующего залпа часовых, s.</summary>
+        internal float SentryTimer { get; set; }
     }
 }

@@ -136,7 +136,7 @@ namespace Marchlands.UI
                 formationIcon.sprite = squad.TargetFormation == Formation.Line ? columnSprite : lineSprite;
             }
 
-            bool charging = squad.Order.Type == SquadOrderType.Charge;
+            bool charging = squad.Order.Type == SquadOrderType.Charge || squad.Order.Type == SquadOrderType.Assault;
             chargeButton.interactable = ChargeRules.CanCharge(squad);
             chargeLabel.text = isChargeTargeting ? chargeTargetingText : charging ? chargingText : chargeText;
             chargeImage.color = isChargeTargeting || charging ? activeColor : normalColor;

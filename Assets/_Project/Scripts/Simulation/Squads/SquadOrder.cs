@@ -6,7 +6,10 @@ namespace Marchlands.Simulation.Squads
     {
         None,
         Move,
-        Charge
+        Charge,
+
+        /// <summary>В штыки на вражеское здание.</summary>
+        Assault
     }
 
     /// <summary>Текущий приказ отряда.</summary>
@@ -14,12 +17,13 @@ namespace Marchlands.Simulation.Squads
     {
         public static readonly SquadOrder None = default;
 
-        private SquadOrder(SquadOrderType type, float2 target, float finalFacing, int targetSquadId)
+        private SquadOrder(SquadOrderType type, float2 target, float finalFacing, int targetSquadId, int targetBuildingId = 0)
         {
             Type = type;
             Target = target;
             FinalFacing = finalFacing;
             TargetSquadId = targetSquadId;
+            TargetBuildingId = targetBuildingId;
         }
 
         public SquadOrderType Type { get; }
@@ -33,6 +37,9 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Атакуемый отряд для штыковой атаки.</summary>
         public int TargetSquadId { get; }
 
+        /// <summary>Штурмуемое здание.</summary>
+        public int TargetBuildingId { get; }
+
         public static SquadOrder Move(float2 target, float finalFacing)
         {
             return new SquadOrder(SquadOrderType.Move, target, finalFacing, 0);
@@ -41,6 +48,11 @@ namespace Marchlands.Simulation.Squads
         public static SquadOrder Charge(int targetSquadId)
         {
             return new SquadOrder(SquadOrderType.Charge, float2.zero, 0f, targetSquadId);
+        }
+
+        public static SquadOrder Assault(int targetBuildingId)
+        {
+            return new SquadOrder(SquadOrderType.Assault, float2.zero, 0f, 0, targetBuildingId);
         }
     }
 }

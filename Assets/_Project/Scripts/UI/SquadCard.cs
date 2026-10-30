@@ -115,6 +115,7 @@ namespace Marchlands.UI
             switch (squad.Order.Type)
             {
                 case SquadOrderType.Charge:
+                case SquadOrderType.Assault:
                     return chargingText;
                 case SquadOrderType.Move:
                     return marchingText;

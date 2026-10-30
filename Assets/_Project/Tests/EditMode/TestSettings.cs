@@ -171,12 +171,19 @@ namespace Marchlands.Tests.EditMode
                     cavalryHireCost = 6,
                     cavalryHireInterval = 3f,
                     spawnOffset = 4f,
-                    campOffset = 3f
+                    campOffset = 3f,
+                    headquartersHealth = 600f,
+                    barracksHealth = 300f,
+                    stableHealth = 300f,
+                    sentryShots = 4,
+                    sentryInterval = 6f,
+                    sentryHitChance = 0.2f,
+                    sentryRange = 10f,
+                    assaultRange = 3.5f,
+                    assaultDamage = 0.5f
                 },
                 victory = new VictorySettings
                 {
-                    hqCaptureRadius = 5f,
-                    hqCaptureTime = 30f,
                     dominationShare = 2f / 3f,
                     dominationTime = 180f
                 },

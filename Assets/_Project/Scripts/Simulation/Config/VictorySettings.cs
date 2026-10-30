@@ -6,12 +6,6 @@ namespace Marchlands.Simulation.Config
     [Serializable]
     public sealed class VictorySettings
     {
-        /// <summary>Радиус захвата штаба, u (от центра отряда).</summary>
-        public float hqCaptureRadius;
-
-        /// <summary>Сколько секунд нужно простоять у вражеского штаба, s.</summary>
-        public float hqCaptureTime;
-
         /// <summary>Доля деревень для доминирования (округляется вверх до целого числа деревень).</summary>
         public float dominationShare;
 

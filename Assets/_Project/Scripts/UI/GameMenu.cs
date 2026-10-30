@@ -30,7 +30,7 @@ namespace Marchlands.UI
         [SerializeField] private FireworksView fireworks;
         [SerializeField] private string victoryText = "Победа!";
         [SerializeField] private string defeatText = "Поражение";
-        [SerializeField] private string headquartersReason = "Захвачен штаб";
+        [SerializeField] private string headquartersReason = "Разрушен штаб";
         [SerializeField] private string dominationReason = "Удержание деревень";
         [SerializeField] private string annihilationReason = "Армия разбита";
 
@@ -70,7 +70,7 @@ namespace Marchlands.UI
             resultTitle.text = result.Winner == playerSide ? victoryText : defeatText;
             resultReason.text = result.Reason switch
             {
-                VictoryReason.HeadquartersCaptured => headquartersReason,
+                VictoryReason.HeadquartersDestroyed => headquartersReason,
                 VictoryReason.Domination => dominationReason,
                 _ => annihilationReason
             };
