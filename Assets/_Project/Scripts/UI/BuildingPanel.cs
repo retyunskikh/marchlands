@@ -173,7 +173,9 @@ namespace Marchlands.UI
                 return;
             }
 
-            toggle.Button.interactable = BuildRules.CanAfford(match, building.Owner, type);
+            bool affordable = BuildRules.CanAfford(match, building.Owner, type);
+            toggle.Button.interactable = affordable;
+            toggle.SetAvailable(affordable);
             toggle.Show(string.Format(buildFormat, title, BuildRules.GetCost(match, type)), false, 0f);
         }
 
@@ -222,8 +224,10 @@ namespace Marchlands.UI
                 return;
             }
 
+            int cost = BuildRules.GetHouseCost(match, building.Owner);
             buildHouseToggle.Button.interactable = BuildRules.CanBuildHouse(match, building.Owner);
-            buildHouseToggle.Show(string.Format(buildFormat, string.Empty, BuildRules.GetHouseCost(match, building.Owner)), building.IsBuildingHouse, -1f);
+            buildHouseToggle.SetAvailable(building.IsBuildingHouse || match.GetPlayer(building.Owner).Gold >= cost);
+            buildHouseToggle.Show(string.Format(buildFormat, string.Empty, cost), building.IsBuildingHouse, -1f);
         }
 
         /// <summary>Строка штаба: население из мест, строящийся дом или что домов больше не пристроить.</summary>

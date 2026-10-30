@@ -22,6 +22,7 @@ MonoBehaviour:
       columnSpeed: 1.6
       rotationSpeed: 45
       formationChangeTime: 4
+      reformMoveSpeedMultiplier: 0.4
       arrivalTolerance: 0.05
     grenadiers:
       squadSize: 30
@@ -148,7 +149,7 @@ MonoBehaviour:
       cavalryHireInterval: 4.5
       headquartersPopulation: 60
       housePopulation: 30
-      houseCost: 80
+      houseCost: 40
       houseBuildTime: 15
       maxHouses: 4
       annexSpacing: 2.5
@@ -157,7 +158,7 @@ MonoBehaviour:
     victory:
       hqCaptureRadius: 7
       hqCaptureTime: 30
-      dominationShare: 0.6666667
+      dominationShare: 1
       dominationTime: 180
     terrain:
       roadSpeedMultiplier: 1.25

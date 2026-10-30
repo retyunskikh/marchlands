@@ -33,6 +33,9 @@ namespace Marchlands.Simulation.Config
         /// <summary>Время перестроения, s.</summary>
         public float formationChangeTime;
 
+        /// <summary>Доля скорости марша в линии, с которой отряд идёт к цели, пока перестраивается в колонну.</summary>
+        public float reformMoveSpeedMultiplier;
+
         /// <summary>Расстояние до точки, при котором отряд считается дошедшим, u.</summary>
         public float arrivalTolerance;
     }

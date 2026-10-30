@@ -15,12 +15,22 @@ MonoBehaviour:
   playerSide: 0
   squads:
   - side: 0
-    position: {x: -44, y: 0}
+    position: {x: -44, y: 7}
     facing: 0
     formation: 0
     type: 1
   - side: 1
-    position: {x: 44, y: 0}
+    position: {x: 44, y: 7}
+    facing: 180
+    formation: 0
+    type: 1
+  - side: 0
+    position: {x: -44, y: -7}
+    facing: 0
+    formation: 0
+    type: 1
+  - side: 1
+    position: {x: 44, y: -7}
     facing: 180
     formation: 0
     type: 1

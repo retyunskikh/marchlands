@@ -160,7 +160,7 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void SquadStandsDuringFormationChange_ThenContinuesMoveOrder()
+        public void SquadMarchesSlowlyWhileFormingColumn_ThenAtColumnSpeed()
         {
             Match match = CreateMatch();
             Squad squad = match.AddSquad(Side.France, float2.zero, 0f, Formation.Line);
@@ -169,13 +169,30 @@ namespace Marchlands.Tests.EditMode
             match.Enqueue(new MoveCommand(squad.Id, target, 0f));
 
             int changeTicks = RunUntil(match, () => !squad.IsChangingFormation && match.CurrentTick > 0);
-            Assert.AreEqual(0f, math.length(squad.Position), 1e-5f, "Во время перестроения отряд не двигается");
+            // Перестроение 4 с со скоростью линии × 0.4: 4 × 1.0 × 0.4 = 1.6 u.
+            Assert.AreEqual(1.6f, squad.Position.x, 0.15f, "Во время перестроения отряд уже идёт, но медленно");
 
-            // После перестроения — марш колонной: 8 u / 1.6 u/s = 5 с.
+            // Остаток колонной: 6.4 u / 1.6 u/s = 4 с.
             int marchTicks = RunUntil(match, () => squad.Order.Type == SquadOrderType.None);
 
             Assert.That(changeTicks, Is.InRange(ExpectedTicks(4f) - 1, ExpectedTicks(4f) + 1));
-            Assert.That(marchTicks, Is.InRange(ExpectedTicks(5f) - 1, ExpectedTicks(5f) + 1));
+            Assert.That(marchTicks, Is.InRange(ExpectedTicks(4f) - 1, ExpectedTicks(4f) + 1));
+            Assert.AreEqual(0f, math.distance(target, squad.Position), 1e-4f);
+        }
+
+        [Test]
+        public void SquadStandsWhileFormingLine_ThenContinuesMoveOrder()
+        {
+            Match match = CreateMatch();
+            Squad squad = match.AddSquad(Side.France, float2.zero, 0f, Formation.Column);
+            var target = new float2(4f, 0f);
+            match.Enqueue(new ChangeFormationCommand(squad.Id, Formation.Line));
+            match.Enqueue(new MoveCommand(squad.Id, target, 0f));
+
+            RunUntil(match, () => !squad.IsChangingFormation && match.CurrentTick > 0);
+            Assert.AreEqual(0f, math.length(squad.Position), 1e-5f, "Перестраиваясь в линию, отряд стоит");
+
+            RunUntil(match, () => squad.Order.Type == SquadOrderType.None);
             Assert.AreEqual(0f, math.distance(target, squad.Position), 1e-4f);
         }
 

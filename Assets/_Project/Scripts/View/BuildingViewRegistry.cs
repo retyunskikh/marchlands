@@ -18,7 +18,8 @@ namespace Marchlands.View
         [SerializeField] private SquadViewRegistry squadViews;
 
         private readonly Dictionary<int, BuildingView> views = new Dictionary<int, BuildingView>();
-        private readonly List<Waiter>[] recruits = { new List<Waiter>(), new List<Waiter>() };
+        private readonly List<Waiter>[] fusiliers = { new List<Waiter>(), new List<Waiter>() };
+        private readonly List<Waiter>[] grenadiers = { new List<Waiter>(), new List<Waiter>() };
         private readonly List<Waiter>[] riders = { new List<Waiter>(), new List<Waiter>() };
 
         /// <summary>Ждущий человек толпы: где он сейчас нарисован и показан ли (новый выходит из ворот).</summary>
@@ -79,19 +80,23 @@ namespace Marchlands.View
             foreach (Side side in new[] { Side.France, Side.Austria })
             {
                 PlayerState player = match.GetPlayer(side);
-                RenderWaiting(side, UnitType.Grenadiers, player.GrenadierReserve + player.FusilierReserve, recruits[(int)side], squadViews.Style.RecruitSprite, 1f);
-                RenderWaiting(side, UnitType.Cavalry, player.CavalryReserve, riders[(int)side],
-                    squadViews.Style.GetSoldierSprite(side, UnitType.Cavalry, SoldierRole.Private), 1.8f);
+                // Пехота ждёт двумя группами в своём обмундировании: фузилёры слева от середины толпы, гренадёры справа.
+                float groupOffset = math.max(1, style.RecruitsPerRow) * style.RecruitsSpacing.x * 0.5f + style.RecruitsGroupGap * 0.5f;
+                RenderWaiting(side, UnitType.Fusiliers, player.FusilierReserve, fusiliers[(int)side], 1f, -groupOffset);
+                RenderWaiting(side, UnitType.Grenadiers, player.GrenadierReserve, grenadiers[(int)side], 1f, groupOffset);
+                RenderWaiting(side, UnitType.Cavalry, player.CavalryReserve, riders[(int)side], 1.8f, 0f);
             }
         }
 
         /// <summary>
         /// Ждущие люди резерва стоят толпой перед воротами здания, где формируется их род войск, лицом к фронту;
         /// рисуется не больше recruitsShownMax. Новый человек выходит из ворот здания и идёт на своё место.
-        /// <paramref name="spread"/> — во сколько раз реже стоят (всадники крупнее).
+        /// <paramref name="spread"/> — во сколько раз реже стоят (всадники крупнее); <paramref name="sideOffset"/> — сдвиг
+        /// группы вправо от середины толпы, u.
         /// </summary>
-        private void RenderWaiting(Side side, UnitType type, int waiting, List<Waiter> crowd, Sprite sprite, float spread)
+        private void RenderWaiting(Side side, UnitType type, int waiting, List<Waiter> crowd, float spread, float sideOffset)
         {
+            Sprite sprite = squadViews.Style.GetSoldierSprite(side, type, SoldierRole.Private);
             Building barracks = BuildRules.GetFormingBuilding(match, side, type);
             int shown = barracks == null || sprite == null
                 ? 0
@@ -133,6 +138,7 @@ namespace Marchlands.View
             }
 
             float2 right = new float2(front.y, -front.x);
+            start += right * sideOffset;
             Quaternion rotation = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(front.y, front.x)) - 90f);
             // Ворота — сторона здания, обращённая к толпе.
             Vector2 doorSize = barracks.Type == BuildingType.Stable ? style.StableSize : style.BarracksSize;
@@ -144,8 +150,9 @@ namespace Marchlands.View
                 int row = i / perRow;
                 int column = i % perRow;
                 // Толпа, а не строй: каждый чуть сбит со своего места.
-                float jitterX = Hash01(i * 2 + (int)side * 977) - 0.5f;
-                float jitterY = Hash01(i * 2 + 1 + (int)side * 977) - 0.5f;
+                int seed = (int)side * 977 + (int)type * 131;
+                float jitterX = Hash01(i * 2 + seed) - 0.5f;
+                float jitterY = Hash01(i * 2 + 1 + seed) - 0.5f;
                 float2 local = new float2(
                     (column - (perRow - 1) * 0.5f + jitterX * 0.6f) * style.RecruitsSpacing.x,
                     (row + jitterY * 0.5f) * style.RecruitsSpacing.y) * spread;

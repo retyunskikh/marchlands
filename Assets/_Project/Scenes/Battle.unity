@@ -1643,6 +1643,8 @@ MonoBehaviour:
   infoButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &380351011
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2222,6 +2224,8 @@ MonoBehaviour:
   infoButton: {fileID: 313266781}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &482308657
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4640,6 +4644,8 @@ MonoBehaviour:
   infoButton: {fileID: 1696577296}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &758145032
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5329,6 +5335,8 @@ MonoBehaviour:
   infoButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &851894139
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11523,8 +11531,10 @@ MonoBehaviour:
     selectionPadding: 0.5
     recruitsShownMax: 32
     recruitsOffset: 0.9
+    recruitWalkSpeed: 2.5
     recruitsSpacing: {x: 0.45, y: 0.45}
-    recruitsPerRow: 8
+    recruitsPerRow: 5
+    recruitsGroupGap: 1
     buildRadiusColor: {r: 1, g: 1, b: 1, a: 0.35}
     validSiteColor: {r: 0.4, g: 1, b: 0.4, a: 0.6}
     invalidSiteColor: {r: 1, g: 0.3, b: 0.3, a: 0.6}
@@ -12373,6 +12383,8 @@ MonoBehaviour:
   infoButton: {fileID: 1097548601}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &1171190720
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15148,6 +15160,8 @@ MonoBehaviour:
   infoButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &1762068649
 MonoBehaviour:
   m_ObjectHideFlags: 0

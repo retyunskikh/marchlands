@@ -29,10 +29,18 @@ namespace Marchlands.Simulation.Squads
                 return;
             }
 
-            if (squad.IsChangingFormation)
+            bool reforming = squad.IsChangingFormation;
+            // В маршевую колонну отряд перестраивается на ходу: сразу идёт к цели, но медленно.
+            bool marchingWhileReforming = reforming && squad.TargetFormation == Formation.Column
+                && squad.Order.Type == SquadOrderType.Move;
+            if (reforming)
             {
                 UpdateFormationChange(squad, settings, deltaTime);
-                // Во время перестроения отряд стоит, но уже разворачивается: к цели движения, а на месте — в конечный фронт.
+            }
+
+            if (reforming && !marchingWhileReforming)
+            {
+                // Перестраиваясь в линию, отряд стоит, но уже разворачивается: к цели движения, а на месте — в конечный фронт.
                 if (squad.Order.Type == SquadOrderType.Move)
                 {
                     float2 toTarget = squad.Order.Target - squad.Position;
@@ -56,7 +64,7 @@ namespace Marchlands.Simulation.Squads
             {
                 case SquadOrderType.Move when squad.FireState != FireState.Aiming:
                     // На время прицеливания отряд стоит; приказ продолжится после залпа.
-                    UpdateMove(squad, match, deltaTime);
+                    UpdateMove(squad, match, deltaTime, marchingWhileReforming ? settings.reformMoveSpeedMultiplier : 1f);
                     break;
                 case SquadOrderType.Charge:
                     UpdateCharge(squad, match, deltaTime);
@@ -126,7 +134,7 @@ namespace Marchlands.Simulation.Squads
             squad.TargetFormation = squad.Formation;
         }
 
-        private static void UpdateMove(Squad squad, Match match, float deltaTime)
+        private static void UpdateMove(Squad squad, Match match, float deltaTime, float speedMultiplier)
         {
             SimulationSettings settings = match.Settings;
             float time = deltaTime;
@@ -141,7 +149,7 @@ namespace Marchlands.Simulation.Squads
                     return;
                 }
 
-                float speed = UnitStats.Speed(squad, squad.Formation, settings);
+                float speed = UnitStats.Speed(squad, squad.Formation, settings) * speedMultiplier;
                 if (squad.FireState == FireState.Reloading)
                 {
                     speed *= settings.combat.reloadMoveSpeedMultiplier;

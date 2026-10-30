@@ -23,6 +23,10 @@ namespace Marchlands.View
         private readonly List<float2> fromSlots = new List<float2>();
         private readonly List<float2> toSlots = new List<float2>();
         private readonly List<int> transitionTargets = new List<int>();
+
+        // Какой слот текущего строя занимает солдат: после перестроения он остаётся там, куда пришёл, а не перебегает.
+        private readonly List<int> slotOrder = new List<int>();
+        private readonly List<float2> shownLocal = new List<float2>();
         private readonly List<SpriteRenderer> ringSegments = new List<SpriteRenderer>();
 
         private Squad squad;
@@ -110,7 +114,8 @@ namespace Marchlands.View
             float regroup = 1f - math.exp(-style.RegroupSpeed * Time.deltaTime);
             for (int i = 0; i < soldiers.Count; i++)
             {
-                float2 local = changing ? math.lerp(fromSlots[i], toSlots[transitionTargets[i]], change) : fromSlots[i];
+                int slot = slotOrder[i];
+                float2 local = changing ? math.lerp(fromSlots[slot], toSlots[transitionTargets[slot]], change) : fromSlots[slot];
                 local *= spacing;
                 if (squad.IsRouting)
                 {
@@ -137,7 +142,7 @@ namespace Marchlands.View
                 }
 
                 soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), meleeBlend > 0f ? meleeRotation : rotation);
-                bool posed = RenderArms(i, world, rotation, meleeRotation, forward, i < shooters);
+                bool posed = RenderArms(i, world, rotation, meleeRotation, forward, slot < shooters);
                 if (!posed)
                 {
                     RenderStep(i, local);
@@ -475,17 +480,50 @@ namespace Marchlands.View
                 return;
             }
 
+            // Перестроение закончилось или повернуло назад: прежняя цель стала текущим строем, и солдат
+            // занимает тот слот, к которому шёл.
+            bool sameSoldiers = slotsAlive == squad.Alive && slotOrder.Count == squad.Alive;
+            if (sameSoldiers && slotsChanging && squad.Formation == slotsTarget && squad.Formation != slotsFormation)
+            {
+                for (int i = 0; i < slotOrder.Count; i++)
+                {
+                    slotOrder[i] = transitionTargets[slotOrder[i]];
+                }
+            }
+
             slotsFormation = squad.Formation;
             slotsTarget = squad.TargetFormation;
             slotsAlive = squad.Alive;
             slotsChanging = changing;
 
             FormationLayout.GetLocalSlots(squad.Formation, squad.Alive, settings, fromSlots);
+            if (!sameSoldiers)
+            {
+                AssignSlotsByPosition();
+            }
+
             if (changing)
             {
                 FormationLayout.GetLocalSlots(squad.TargetFormation, squad.Alive, settings, toSlots);
                 FormationLayout.MatchTransitionSlots(fromSlots, toSlots, transitionTargets);
             }
+        }
+
+        /// <summary>
+        /// Численность сменилась: солдаты занимают новые слоты по порядку слева направо от того места, где стоят,
+        /// чтобы не перебегать через весь строй. Новичок, ещё не стоявший в строю, считается стоящим в слоте своего номера.
+        /// </summary>
+        private void AssignSlotsByPosition()
+        {
+            float2 spacing = style.GetSpacing(squad.Type);
+            shownLocal.Clear();
+            for (int i = 0; i < soldiers.Count; i++)
+            {
+                float2 shown = shownSlots[i];
+                shownLocal.Add(float.IsNaN(shown.x) || float.IsNaN(shown.y) ? fromSlots[i] : shown / spacing);
+            }
+
+            FormationLayout.MatchTransitionSlots(shownLocal, fromSlots, slotOrder);
         }
 
         /// <summary>

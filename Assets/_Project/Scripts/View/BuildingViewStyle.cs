@@ -69,7 +69,9 @@ namespace Marchlands.View
         [Tooltip("С какой скоростью новый рекрут идёт от ворот здания к своему месту в толпе, u/s.")]
         [SerializeField] private float recruitWalkSpeed = 2.5f;
         [SerializeField] private Vector2 recruitsSpacing = new Vector2(0.45f, 0.45f);
-        [SerializeField] private int recruitsPerRow = 8;
+        [SerializeField] private int recruitsPerRow = 5;
+        [Tooltip("Фузилёры и гренадёры ждут двумя группами по сторонам от середины толпы; промежуток между группами, u.")]
+        [SerializeField] private float recruitsGroupGap = 1f;
 
         [Header("Предпросмотр постройки")]
         [SerializeField] private Color buildRadiusColor = new Color(1f, 1f, 1f, 0.35f);
@@ -110,6 +112,8 @@ namespace Marchlands.View
         public Vector2 RecruitsSpacing => recruitsSpacing;
 
         public int RecruitsPerRow => recruitsPerRow;
+
+        public float RecruitsGroupGap => recruitsGroupGap;
 
         public Sprite BarracksRoofSprite => barracksRoofSprite;
 

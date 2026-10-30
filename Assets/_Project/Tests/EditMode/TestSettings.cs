@@ -22,6 +22,7 @@ namespace Marchlands.Tests.EditMode
                     columnSpeed = 1.6f,
                     rotationSpeed = 45f,
                     formationChangeTime = 4f,
+                    reformMoveSpeedMultiplier = 0.4f,
                     arrivalTolerance = 0.05f
                 },
                 combat = new CombatSettings

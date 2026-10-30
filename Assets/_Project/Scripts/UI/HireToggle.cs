@@ -14,6 +14,8 @@ namespace Marchlands.UI
         [SerializeField] private Button infoButton;
         [SerializeField] private Color onColor = new Color(1f, 0.85f, 0.35f);
         [SerializeField] private Color offColor = new Color(0.95f, 0.92f, 0.82f);
+        [SerializeField] private Color availableTint = Color.white;
+        [SerializeField] private Color unavailableTint = new Color(1f, 1f, 1f, 0.4f);
 
         public Button Button => button;
 
@@ -25,6 +27,18 @@ namespace Marchlands.UI
             {
                 icon.sprite = sprite;
             }
+        }
+
+        /// <summary>Бледная иконка — нажать нельзя (например, не хватает золота).</summary>
+        public void SetAvailable(bool available)
+        {
+            Color tint = available ? availableTint : unavailableTint;
+            if (icon != null)
+            {
+                icon.color = tint;
+            }
+
+            label.color = new Color(label.color.r, label.color.g, label.color.b, tint.a);
         }
 
         /// <param name="progress">Доля до следующего рекрута этого рода войск; отрицательная — сейчас нанимают не его.</param>
