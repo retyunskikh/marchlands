@@ -13,7 +13,7 @@ namespace Marchlands.UI
     /// Панель выделенного здания: название, состояние постройки или найма и иконки найма — у казармы гренадёры
     /// и фузилёры, у конюшни конница: воин своей стороны в полный рост и цена человека с монеткой. Нажатие иконки
     /// включает или выключает найм этого рода войск (включённая подсвечена, под ней — время до рекрута); «i»
-    /// открывает характеристики. У штаба — иконки постройки казармы и конюшни. Видна только при выделении.
+    /// открывает характеристики. У штаба — подписанные иконки постройки казармы, конюшни и дома. Видна только при выделении.
     /// </summary>
     public sealed class BuildingPanel : MonoBehaviour
     {
@@ -42,6 +42,8 @@ namespace Marchlands.UI
         [SerializeField] private string headquartersTitle = "Штаб";
         [SerializeField] private string barracksTitle = "Казарма";
         [SerializeField] private string stableTitle = "Конюшня";
+        [Tooltip("Подпись иконки дома в карточке штаба.")]
+        [SerializeField] private string houseTitle = "Дом";
         [SerializeField] private string headquartersStatus = "Здесь не нанимают";
         [Tooltip("{0} — процент постройки.")]
         [SerializeField] private string constructionFormat = "Строится… {0}%";
@@ -176,6 +178,7 @@ namespace Marchlands.UI
             bool affordable = BuildRules.CanAfford(match, building.Owner, type);
             toggle.Button.interactable = affordable;
             toggle.SetAvailable(affordable);
+            toggle.SetName(title);
             toggle.Show(string.Format(buildFormat, title, BuildRules.GetCost(match, type)), false, 0f);
         }
 
@@ -226,6 +229,7 @@ namespace Marchlands.UI
 
             int cost = BuildRules.GetHouseCost(match, building.Owner);
             buildHouseToggle.Button.interactable = BuildRules.CanBuildHouse(match, building.Owner);
+            buildHouseToggle.SetName(houseTitle);
             buildHouseToggle.SetAvailable(building.IsBuildingHouse || match.GetPlayer(building.Owner).Gold >= cost);
             buildHouseToggle.Show(string.Format(buildFormat, string.Empty, cost), building.IsBuildingHouse, -1f);
         }
