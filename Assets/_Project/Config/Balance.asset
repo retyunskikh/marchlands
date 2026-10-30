@@ -147,7 +147,7 @@ MonoBehaviour:
       stableBuildTime: 40
       cavalryHireCost: 6
       cavalryHireInterval: 4.5
-      headquartersPopulation: 60
+      headquartersPopulation: 100
       housePopulation: 30
       houseCost: 40
       houseBuildTime: 15
