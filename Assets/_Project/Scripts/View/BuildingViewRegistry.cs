@@ -252,8 +252,9 @@ namespace Marchlands.View
 
         private void CreateSentries(Building building)
         {
+            // В блокгаузе стрелки внутри — их не видно, только дым из бойниц.
             Vector2[] postsShape = style.SentryPosts;
-            int count = math.min(match.Settings.buildings.sentryShots, postsShape?.Length ?? 0);
+            int count = building.Type == BuildingType.Blockhouse ? 0 : math.min(match.Settings.buildings.sentryShots, postsShape?.Length ?? 0);
             Sprite sprite = squadViews.Style.GetSoldierSprite(building.Owner, UnitType.Fusiliers, SoldierRole.Private);
             if (count <= 0 || sprite == null)
             {

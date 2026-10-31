@@ -113,6 +113,12 @@ MonoBehaviour:
   hasHeadquarters: 1
   franceHeadquarters: {x: -52, y: 0}
   austriaHeadquarters: {x: 52, y: 0}
+  franceBlockhouses:
+  - {x: -33, y: 10}
+  - {x: -33, y: -10}
+  austriaBlockhouses:
+  - {x: 33, y: 10}
+  - {x: 33, y: -10}
   franceAi: 0
   austriaAi: 1
   hasTerrain: 1

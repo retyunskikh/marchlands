@@ -3633,6 +3633,9 @@ MonoBehaviour:
     headquartersSize: {x: 5, y: 5}
     barracksSize: {x: 5.4, y: 3.5}
     stableSize: {x: 5.8, y: 4.2}
+    blockhouseSize: {x: 3, y: 3}
+    blockhouseBaseSprite: {fileID: 21300000, guid: 5b01b6f9709ee0e47bb4fe3e0ff9d091, type: 3}
+    blockhouseRoofSprite: {fileID: 21300000, guid: cd648a090cc06fd4886e55fcdcbd3297, type: 3}
     headquartersInnerScale: 0.55
     innerColor: {r: 0.15, g: 0.15, b: 0.18, a: 1}
     headquartersBaseSprite: {fileID: 21300000, guid: 15ac2ef06e8b60d4e82e4cdd95c60444, type: 3}
@@ -13847,6 +13850,8 @@ MonoBehaviour:
   smokeColor: {r: 0.9, g: 0.9, b: 0.88, a: 0.75}
   sentryFireOffset: 2.5
   sentryPuffs: 3
+  blockhouseWallOffset: 1.7
+  blockhouseWallSpread: 1.2
   muzzleOffset: 0.45
   singlePuffScale: 0.75
   volleyClip: {fileID: 8300000, guid: 88cb9ceaaefd9d84a845b42764b0823c, type: 3}
@@ -14526,6 +14531,10 @@ MonoBehaviour:
   headquartersTitle: "\u0428\u0442\u0430\u0431"
   barracksTitle: "\u041A\u0430\u0437\u0430\u0440\u043C\u0430"
   stableTitle: "\u041A\u043E\u043D\u044E\u0448\u043D\u044F"
+  blockhouseTitle: "\u0411\u043B\u043E\u043A\u0433\u0430\u0443\u0437"
+  blockhouseStatusFormat: "\u041F\u0440\u0438\u043A\u0440\u044B\u0432\u0430\u0435\u0442
+    \u043F\u0440\u043E\u0445\u043E\u0434: {0} \u0440\u0443\u0436\u0435\u0439, \u0434\u0430\u043B\u044C\u043D\u043E\u0441\u0442\u044C
+    {1}"
   houseTitle: "\u0414\u043E\u043C"
   headquartersStatus: "\u0417\u0434\u0435\u0441\u044C \u043D\u0435 \u043D\u0430\u043D\u0438\u043C\u0430\u044E\u0442"
   constructionFormat: "\u0421\u0442\u0440\u043E\u0438\u0442\u0441\u044F\u2026 {0}%"

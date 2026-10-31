@@ -8,7 +8,10 @@ namespace Marchlands.Simulation.Buildings
     {
         Headquarters,
         Barracks,
-        Stable
+        Stable,
+
+        /// <summary>Блокгауз: стоит с начала матча у прохода к базе, отстреливается сильнее часовых, не нанимает.</summary>
+        Blockhouse
     }
 
     /// <summary>Здание стороны: штаб или казарма. Снаружи сборки только для чтения.</summary>

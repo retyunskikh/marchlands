@@ -183,6 +183,11 @@ namespace Marchlands.Bootstrap
                     match.AddHeadquarters(side, scenario.GetHeadquarters(side));
                 }
 
+                foreach (Vector2 blockhouse in scenario.GetBlockhouses(side))
+                {
+                    match.AddBlockhouse(side, blockhouse);
+                }
+
                 if (scenario.IsAiControlled(side))
                 {
                     match.AddController(new TacticalAi(side));

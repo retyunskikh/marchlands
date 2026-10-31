@@ -49,14 +49,17 @@ namespace Marchlands.View
 
             bool isHeadquarters = building.Type == BuildingType.Headquarters;
             bool isStable = building.Type == BuildingType.Stable;
-            size = isHeadquarters ? style.HeadquartersSize : isStable ? style.StableSize : style.BarracksSize;
+            bool isBlockhouse = building.Type == BuildingType.Blockhouse;
+            size = style.SizeOf(building.Type);
 
             selection = CreateRenderer("Selection", style.BodySortingOrder - 1, style.SelectionColor);
             selection.transform.localScale = new Vector3(size.x + style.SelectionPadding * 2f, size.y + style.SelectionPadding * 2f, 1f);
             selection.enabled = false;
 
-            Sprite baseSprite = isHeadquarters ? style.HeadquartersBaseSprite : isStable ? style.StableBaseSprite : style.BarracksBaseSprite;
-            Sprite roofSprite = isHeadquarters ? style.HeadquartersRoofSprite : isStable ? style.StableRoofSprite : style.BarracksRoofSprite;
+            Sprite baseSprite = isHeadquarters ? style.HeadquartersBaseSprite : isStable ? style.StableBaseSprite
+                : isBlockhouse ? style.BlockhouseBaseSprite : style.BarracksBaseSprite;
+            Sprite roofSprite = isHeadquarters ? style.HeadquartersRoofSprite : isStable ? style.StableRoofSprite
+                : isBlockhouse ? style.BlockhouseRoofSprite : style.BarracksRoofSprite;
             if (baseSprite != null && roofSprite != null)
             {
                 CreateEstate(baseSprite, roofSprite, isHeadquarters);
@@ -91,7 +94,7 @@ namespace Marchlands.View
 
             rangeRing = CreateRenderer("Sentry Range", style.BodySortingOrder - 2, style.SentryRangeColor);
             rangeRing.sprite = style.CircleSprite;
-            rangeRing.transform.localScale = Vector3.one * (settings.buildings.sentryRange * 2f);
+            rangeRing.transform.localScale = Vector3.one * (Volley.Of(building, settings.buildings).Range * 2f);
             rangeRing.enabled = false;
             CreateDamage();
         }
@@ -256,7 +259,7 @@ namespace Marchlands.View
             RenderAnnexes();
             RenderDamage(health);
             RenderHealth(health, underAssault || selected);
-            rangeRing.enabled = building.IsBuilt && settings.buildings.sentryShots > 0 && (underAssault || selected);
+            rangeRing.enabled = building.IsBuilt && Volley.Of(building, settings.buildings).Shots > 0 && (underAssault || selected);
             float progress = -1f;
             if (!building.IsBuilt)
             {

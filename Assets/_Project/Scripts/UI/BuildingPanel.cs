@@ -44,6 +44,9 @@ namespace Marchlands.UI
         [SerializeField] private string headquartersTitle = "Штаб";
         [SerializeField] private string barracksTitle = "Казарма";
         [SerializeField] private string stableTitle = "Конюшня";
+        [SerializeField] private string blockhouseTitle = "Блокгауз";
+        [Tooltip("Строка своего блокгауза: {0} — ружей, {1} — дальность.")]
+        [SerializeField] private string blockhouseStatusFormat = "Прикрывает проход: {0} ружей, дальность {1}";
         [Tooltip("Подпись иконки дома в карточке штаба.")]
         [SerializeField] private string houseTitle = "Дом";
         [SerializeField] private string headquartersStatus = "Здесь не нанимают";
@@ -135,7 +138,8 @@ namespace Marchlands.UI
             bool own = building.Owner == playerSide;
             bool stable = building.Type == BuildingType.Stable;
             bool barracks = building.Type == BuildingType.Barracks;
-            string title = stable ? stableTitle : barracks ? barracksTitle : headquartersTitle;
+            bool blockhouse = building.Type == BuildingType.Blockhouse;
+            string title = stable ? stableTitle : barracks ? barracksTitle : blockhouse ? blockhouseTitle : headquartersTitle;
             titleLabel.text = own ? title : string.Format(enemyTitleFormat, title);
             RefreshToggle(grenadiersToggle, UnitType.Grenadiers, grenadiersName, own && barracks);
             RefreshToggle(fusiliersToggle, UnitType.Fusiliers, fusiliersName, own && barracks);
@@ -156,15 +160,22 @@ namespace Marchlands.UI
                 return;
             }
 
+            if (blockhouse)
+            {
+                Volley volley = Volley.Of(building, match.Settings.buildings);
+                statusLabel.text = string.Format(blockhouseStatusFormat, volley.Shots, volley.Range);
+                return;
+            }
+
             statusLabel.text = headquarters && buildHouseToggle != null ? GetPopulationStatus()
                 : headquarters && buildBarracksToggle != null ? headquartersBuildStatus : GetStatus(barracks || stable);
         }
 
         private string GetEnemyStatus()
         {
-            BuildingSettings settings = match.Settings.buildings;
+            Volley volley = Volley.Of(building, match.Settings.buildings);
             return string.Format(enemyStatusFormat, Mathf.CeilToInt(building.Health), Mathf.RoundToInt(building.MaxHealth),
-                building.IsBuilt ? settings.sentryShots : 0, settings.sentryRange);
+                building.IsBuilt ? volley.Shots : 0, volley.Range);
         }
 
         private string GetDamagedStatus()

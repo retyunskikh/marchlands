@@ -31,6 +31,9 @@ namespace Marchlands.View
         [SerializeField] private float sentryFireOffset = 2.5f;
         [Tooltip("Сколько клубов дыма даёт залп часовых, если их фигурок не видно.")]
         [SerializeField] private int sentryPuffs = 3;
+        [Tooltip("Блокгауз: на каком расстоянии от центра — бойницы стены, обращённой к цели, и на какую ширину стены они разнесены, u.")]
+        [SerializeField] private float blockhouseWallOffset = 1.7f;
+        [SerializeField] private float blockhouseWallSpread = 1.2f;
         [Tooltip("Насколько впереди стрелка-одиночки (часовой, рекрут) встаёт клуб дыма, u.")]
         [SerializeField] private float muzzleOffset = 0.45f;
         [Tooltip("Размер клуба дыма одиночного выстрела относительно залпового.")]
@@ -113,6 +116,21 @@ namespace Marchlands.View
 
                 float2 forward = math.normalizesafe(volley.TargetPosition - volley.BuildingPosition, new float2(1f, 0f));
                 float2 right = new float2(forward.y, -forward.x);
+                Building building = match.FindBuilding(volley.BuildingId);
+                if (building != null && building.Type == BuildingType.Blockhouse)
+                {
+                    // Из каждой бойницы стены, обращённой к цели, — свой клуб дыма; стрелков не видно.
+                    float2 wall = volley.BuildingPosition + forward * blockhouseWallOffset;
+                    for (int i = 0; i < volley.Shooters; i++)
+                    {
+                        float along = volley.Shooters > 1 ? math.lerp(-blockhouseWallSpread, blockhouseWallSpread, i / (volley.Shooters - 1f)) : 0f;
+                        EmitSingleShot(wall + right * (along + Random.Range(-0.1f, 0.1f)), volley.TargetPosition);
+                    }
+
+                    PlaySound(volley.BuildingPosition, volley.Shooters);
+                    continue;
+                }
+
                 float2 origin = volley.BuildingPosition + forward * sentryFireOffset;
                 for (int i = 0; i < sentryPuffs; i++)
                 {

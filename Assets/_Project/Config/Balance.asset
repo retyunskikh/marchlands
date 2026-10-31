@@ -165,6 +165,11 @@ MonoBehaviour:
       sentryInterval: 6
       sentryHitChance: 0.2
       sentryRange: 10
+      blockhouseHealth: 250
+      blockhouseShots: 6
+      blockhouseInterval: 6
+      blockhouseHitChance: 0.22
+      blockhouseRange: 11
       assaultRange: 4.2
       assaultDamage: 0.5
       repairDelay: 15

@@ -68,7 +68,7 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Найм включается в построенной казарме или конюшне.</summary>
         public static bool CanHire(Building building)
         {
-            return building != null && building.Type != BuildingType.Headquarters && building.IsBuilt;
+            return building != null && (building.Type == BuildingType.Barracks || building.Type == BuildingType.Stable) && building.IsBuilt;
         }
 
         /// <summary>Где формируется отряд рода войск: конница — у конюшни, пехота — у казармы.</summary>

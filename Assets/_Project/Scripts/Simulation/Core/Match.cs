@@ -230,6 +230,14 @@ namespace Marchlands.Simulation.Core
             return stable;
         }
 
+        /// <summary>Ставит блокгауз стороны (есть с начала матча и уже построен).</summary>
+        public Building AddBlockhouse(Side side, float2 position)
+        {
+            var blockhouse = new Building(nextBuildingId++, BuildingType.Blockhouse, side, position, 0f, Settings.buildings.blockhouseHealth);
+            buildings.Add(blockhouse);
+            return blockhouse;
+        }
+
         public Building GetHeadquarters(Side side)
         {
             foreach (Building building in buildings)

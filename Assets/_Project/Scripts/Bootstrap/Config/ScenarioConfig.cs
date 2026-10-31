@@ -26,6 +26,9 @@ namespace Marchlands.Bootstrap.Config
         [SerializeField] private bool hasHeadquarters;
         [SerializeField] private Vector2 franceHeadquarters;
         [SerializeField] private Vector2 austriaHeadquarters;
+        [Tooltip("Блокгаузы у проходов к базе: стоят с начала матча.")]
+        [SerializeField] private List<Vector2> franceBlockhouses = new List<Vector2>();
+        [SerializeField] private List<Vector2> austriaBlockhouses = new List<Vector2>();
 
         [Header("Кем управляется сторона")]
         [SerializeField] private bool franceAi;
@@ -33,7 +36,7 @@ namespace Marchlands.Bootstrap.Config
 
         [Header("Местность (полная карта)")]
         [SerializeField] private bool hasTerrain;
-        [Tooltip("Проходимая зона; за ней горы (сверху и снизу) и реки (слева и справа).")]
+        [Tooltip("Проходимая зона; за ней лес (сверху и снизу) и реки (слева и справа).")]
         [SerializeField] private Vector2 terrainMin;
         [SerializeField] private Vector2 terrainMax;
         [SerializeField] private List<ForestSpawn> forests = new List<ForestSpawn>();
@@ -70,6 +73,11 @@ namespace Marchlands.Bootstrap.Config
         public IReadOnlyList<RoadSpawn> Roads => roads;
 
         public bool VictoryConditions => victoryConditions;
+
+        public IReadOnlyList<Vector2> GetBlockhouses(Side side)
+        {
+            return side == Side.France ? franceBlockhouses : austriaBlockhouses;
+        }
 
         public Vector2 GetHeadquarters(Side side)
         {

@@ -88,6 +88,21 @@ namespace Marchlands.Simulation.Config
         /// <summary>Часовые стреляют по врагу, чей центр ближе этого к центру здания, u.</summary>
         public float sentryRange;
 
+        /// <summary>Здоровье блокгауза.</summary>
+        public float blockhouseHealth;
+
+        /// <summary>Сколько ружей стреляет одним залпом из блокгауза (из бойниц; стрелков не видно).</summary>
+        public int blockhouseShots;
+
+        /// <summary>Раз в столько секунд блокгауз даёт залп, s.</summary>
+        public float blockhouseInterval;
+
+        /// <summary>Вероятность попадания одного стрелка блокгауза (до множителей колонны, укрытия и рода войск цели).</summary>
+        public float blockhouseHitChance;
+
+        /// <summary>Блокгауз стреляет по врагу, чей центр ближе этого к центру блокгауза, u.</summary>
+        public float blockhouseRange;
+
         /// <summary>Отряд бьёт здание в штыки, когда его центр ближе этого к центру здания, u.</summary>
         public float assaultRange;
 

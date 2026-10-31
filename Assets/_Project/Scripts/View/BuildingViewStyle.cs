@@ -14,6 +14,10 @@ namespace Marchlands.View
         [SerializeField] private Vector2 headquartersSize = new Vector2(3.2f, 3.2f);
         [SerializeField] private Vector2 barracksSize = new Vector2(3.4f, 2.2f);
         [SerializeField] private Vector2 stableSize = new Vector2(3.6f, 2.6f);
+        [Tooltip("Блокгауз: сруб с повёрнутым верхним ярусом за частоколом.")]
+        [SerializeField] private Vector2 blockhouseSize = new Vector2(3f, 3f);
+        [SerializeField] private Sprite blockhouseBaseSprite;
+        [SerializeField] private Sprite blockhouseRoofSprite;
         [Tooltip("Доля тёмной внутренней части штаба.")]
         [SerializeField] private float headquartersInnerScale = 0.55f;
         [SerializeField] private Color innerColor = new Color(0.15f, 0.15f, 0.18f);
@@ -166,6 +170,12 @@ namespace Marchlands.View
 
         public Vector2 StableSize => stableSize;
 
+        public Vector2 BlockhouseSize => blockhouseSize;
+
+        public Sprite BlockhouseBaseSprite => blockhouseBaseSprite;
+
+        public Sprite BlockhouseRoofSprite => blockhouseRoofSprite;
+
         public int RecruitsShownMax => recruitsShownMax;
 
         public float RecruitsOffset => recruitsOffset;
@@ -283,6 +293,8 @@ namespace Marchlands.View
                     return headquartersSize;
                 case BuildingType.Stable:
                     return stableSize;
+                case BuildingType.Blockhouse:
+                    return blockhouseSize;
                 default:
                     return barracksSize;
             }
