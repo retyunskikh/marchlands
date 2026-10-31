@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
@@ -73,6 +74,15 @@ namespace Marchlands.View
 
         // 0 — обычный строй, 1 — полная свалка рукопашной; меняется плавно.
         private float meleeBlend;
+
+        // Штурм здания: строй рассыпается и обступает стены, часть лезет на них.
+        private float assaultBlend;
+        private float2 assaultCenter;
+        private float2 assaultHalf = new float2(1f, 1f);
+        private float2 assaultFrom = new float2(0f, -1f);
+        private int frameRanks;
+
+        internal System.Func<BuildingType, Vector2> BuildingSize { get; set; }
         private float aimBlend;
         private float2 meleeContact;
         private float2 meleeDirection = new float2(0f, 1f);
@@ -141,6 +151,7 @@ namespace Marchlands.View
 
             Quaternion rotation = Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset);
             UpdateMelee(alpha, position);
+            UpdateAssault(position);
             UpdateAim();
             int shooters = VolleyMath.Shooters(squad.Formation, squad.Alive, settings);
             float2 forward = Angles.Direction(facing);
@@ -183,9 +194,24 @@ namespace Marchlands.View
                     world = ToMeleePosition(world, i);
                 }
 
-                soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), meleeBlend > 0f ? meleeRotation : soldierRotation);
+                Quaternion poseRotation = meleeRotation;
+                float2 poseDirection = meleeDirection;
+                float scale = 1f;
+                if (assaultBlend > 0f)
+                {
+                    float2 storm = ToAssaultPosition(i, local, out scale);
+                    float blend = math.smoothstep(0f, 1f, assaultBlend);
+                    world = math.lerp(world, storm, blend);
+                    poseDirection = math.normalizesafe(assaultCenter - world, forward);
+                    poseRotation = Quaternion.Slerp(soldierRotation, Quaternion.Euler(0f, 0f, Angles.Of(poseDirection) + SpriteFacingOffset), blend);
+                    scale = math.lerp(1f, scale, blend);
+                }
+
+                bool fighting = meleeBlend > 0f || assaultBlend > 0f;
+                soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), fighting ? poseRotation : soldierRotation);
+                SetSoldierScale(i, scale);
                 // Расчёт пушки ружей не вскидывает — наводит ствол.
-                bool posed = RenderArms(i, world, soldierRotation, meleeRotation, soldierForward, slot < shooters && !squad.IsArtillery);
+                bool posed = RenderArms(i, world, soldierRotation, poseRotation, poseDirection, soldierForward, slot < shooters && !squad.IsArtillery);
                 if (!posed)
                 {
                     RenderStep(i, local, gait);
@@ -303,7 +329,7 @@ namespace Marchlands.View
             lastFacing = facing;
             hasLastCenter = true;
 
-            bool column = squad.Formation == Formation.Column && !changing && !squad.IsRouting && meleeBlend <= 0f;
+            bool column = squad.Formation == Formation.Column && !changing && !squad.IsRouting && meleeBlend <= 0f && assaultBlend <= 0f;
             float target = column && !pivoting ? 1f : 0f;
             bend = Mathf.MoveTowards(bend, target, Time.deltaTime / BendBlendTime);
 
@@ -593,6 +619,94 @@ namespace Marchlands.View
         }
 
         /// <summary>
+        /// Штурм: отряд с приказом на штурм дошёл до здания и бьёт его — строй рассыпается вокруг стен;
+        /// приказ кончился (здание пало, отозвали) или началась рукопашная — собирается обратно.
+        /// </summary>
+        private void UpdateAssault(float2 position)
+        {
+            Building target = squad.Order.Type == SquadOrderType.Assault ? match.FindBuilding(squad.Order.TargetBuildingId) : null;
+            bool storming = target != null && !target.IsDestroyed && !squad.IsRouting && meleeBlend <= 0f
+                && math.distance(position, target.Position) <= match.Settings.buildings.assaultRange + AssaultReachSlack;
+            float step = style.AssaultBlendTime > 0f ? Time.deltaTime / style.AssaultBlendTime : 1f;
+            if (storming)
+            {
+                assaultCenter = target.Position;
+                Vector2 size = BuildingSize != null ? BuildingSize(target.Type) : new Vector2(2f, 2f);
+                assaultHalf = new float2(size.x, size.y) * 0.5f;
+                float2 away = position - assaultCenter;
+                if (math.lengthsq(away) > 1e-6f)
+                {
+                    assaultFrom = math.normalize(away);
+                }
+
+                assaultBlend = math.min(1f, assaultBlend + step);
+            }
+            else
+            {
+                assaultBlend = math.max(0f, assaultBlend - step);
+            }
+
+            FormationLayout.GetGrid(squad, settings, out int _, out frameRanks);
+        }
+
+        // Отряд встаёт ровно на assaultRange; на сколько дальше ещё считаем, что он у стен, u.
+        private const float AssaultReachSlack = 0.3f;
+
+        /// <summary>
+        /// Место солдата на штурме: по дуге вокруг здания со своей стороны (правый фланг строя — справа), первая
+        /// шеренга у стен, задние — дальше. Первая волна толкается и колет стену, часть лезет на неё: заходит
+        /// на здание, наверху крупнее (ближе к зрителю), и срывается обратно.
+        /// </summary>
+        private float2 ToAssaultPosition(int index, float2 local, out float scale)
+        {
+            scale = 1f;
+            float2 half = FormationLayout.GetHalfExtents(squad, settings) * GetSpacing();
+            float spread = half.x > 1e-3f ? math.clamp(local.x / half.x, -1f, 1f) : 0f;
+            float rankStep = settings.rankSpacing * GetSpacing().y;
+            int rank = rankStep > 1e-3f ? math.clamp((int)math.round((half.y - local.y) / rankStep - 0.5f), 0, math.max(0, frameRanks - 1)) : 0;
+
+            // Смотрим со здания на отряд: правый фланг отряда (он смотрит на здание) — по часовой стрелке.
+            float angle = Angles.Of(assaultFrom) - spread * style.AssaultArc * 0.5f + Scatter(index + 311).x * 8f;
+            float2 direction = Angles.Direction(angle);
+            float edge = math.min(assaultHalf.x / math.max(math.abs(direction.x), 1e-3f), assaultHalf.y / math.max(math.abs(direction.y), 1e-3f));
+            float radius = edge + style.AssaultStandOff + rank * style.AssaultRankGap + Scatter(index + 421).y * 0.15f;
+            float2 across = new float2(-direction.y, direction.x);
+            float sway = math.sin(Time.time * 2.3f + Scatter(index + 977).x * 6f) * style.AssaultSway;
+
+            bool climber = rank == 0 && (Scatter(index + 733).x + 1f) * 0.5f < style.AssaultClimbShare;
+            if (climber && style.AssaultClimbPeriod > 0f)
+            {
+                float phase = Time.time / style.AssaultClimbPeriod + Scatter(index + 857).y;
+                phase -= math.floor(phase);
+                // Карабкается, держится наверху, срывается вниз.
+                float up = math.smoothstep(0f, 0.45f, phase) * (1f - math.smoothstep(0.75f, 0.9f, phase));
+                radius = math.lerp(radius, edge - style.AssaultClimbDepth, up);
+                scale = 1f + style.AssaultClimbScale * up;
+                sway *= 1f - up;
+            }
+            else
+            {
+                // Подаётся к стене за выпадом.
+                radius -= Thrust(index) * style.ThrustLength * 0.4f;
+            }
+
+            return assaultCenter + direction * radius + across * sway;
+        }
+
+        private void SetSoldierScale(int index, float scale)
+        {
+            Vector3 target = Vector3.one * (style.SoldierScale * scale);
+            if (soldiers[index].transform.localScale != target)
+            {
+                soldiers[index].transform.localScale = target;
+                if (arms[index] != null)
+                {
+                    arms[index].transform.localScale = target;
+                }
+            }
+        }
+
+        /// <summary>
         /// Свалка: строй сжимается к линии схватки, солдаты сбиваются с мест и по очереди делают выпады к врагу.
         /// Сторону линии солдат не меняет — свои остаются со своей стороны.
         /// </summary>
@@ -667,10 +781,11 @@ namespace Marchlands.View
         /// (только у рядовых стреляющих шеренг). Иначе — обычная цельная фигурка.
         /// </summary>
         /// <returns>Солдат в позе с отдельными руками — кадр шага не нужен.</returns>
-        private bool RenderArms(int index, float2 world, Quaternion rotation, Quaternion meleeRotation, float2 forward, bool shooter)
+        private bool RenderArms(int index, float2 world, Quaternion rotation, Quaternion meleeRotation, float2 meleeDir, float2 forward, bool shooter)
         {
             SpriteRenderer armsRenderer = arms[index];
-            bool melee = meleeBlend > 0f;
+            float fightBlend = math.max(meleeBlend, assaultBlend);
+            bool melee = fightBlend > 0f;
             if (armsRenderer == null)
             {
                 return melee;
@@ -698,7 +813,7 @@ namespace Marchlands.View
             }
 
             float2 reach = melee
-                ? meleeDirection * (Thrust(index) * style.ThrustLength * math.smoothstep(0f, 1f, meleeBlend))
+                ? meleeDir * (Thrust(index) * style.ThrustLength * math.smoothstep(0f, 1f, fightBlend))
                 : forward * (style.AimReach * math.smoothstep(0f, 1f, aimBlend));
             armsRenderer.transform.SetPositionAndRotation(new Vector3(world.x + reach.x, world.y + reach.y, 0f), melee ? meleeRotation : rotation);
             return true;

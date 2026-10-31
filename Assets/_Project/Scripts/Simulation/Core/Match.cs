@@ -34,6 +34,7 @@ namespace Marchlands.Simulation.Core
         private readonly PlayerState[] players = new PlayerState[SideCount];
         private int nextVillageId = 1;
         private readonly List<Building> buildings = new List<Building>();
+        private readonly List<BlockhouseRuin> ruins = new List<BlockhouseRuin>();
         private readonly List<Village> lastTickCaptures = new List<Village>();
         private readonly List<Reinforcement> lastTickReinforcements = new List<Reinforcement>();
         private readonly List<Squad> lastTickFormedSquads = new List<Squad>();
@@ -247,6 +248,19 @@ namespace Marchlands.Simulation.Core
             var depot = new Building(nextBuildingId++, BuildingType.ArtilleryDepot, side, position, Settings.buildings.depotBuildTime, Settings.buildings.depotHealth);
             buildings.Add(depot);
             return depot;
+        }
+
+        /// <summary>Руины разрушенных блокгаузов, которые ещё не начали отстраивать.</summary>
+        public IReadOnlyList<BlockhouseRuin> BlockhouseRuins => ruins;
+
+        /// <summary>Закладывает блокгауз на месте руин: его строят рабочие из штаба (см. RepairSystem).</summary>
+        internal Building RebuildBlockhouse(BlockhouseRuin ruin)
+        {
+            ruins.Remove(ruin);
+            var blockhouse = new Building(nextBuildingId++, BuildingType.Blockhouse, ruin.Owner, ruin.Position,
+                Settings.buildings.blockhouseRebuildTime, Settings.buildings.blockhouseHealth);
+            buildings.Add(blockhouse);
+            return blockhouse;
         }
 
         /// <summary>Ставит блокгауз стороны (есть с начала матча и уже построен).</summary>
@@ -484,6 +498,11 @@ namespace Marchlands.Simulation.Core
             if (building.Type != BuildingType.Headquarters)
             {
                 buildings.Remove(building);
+            }
+
+            if (building.Type == BuildingType.Blockhouse)
+            {
+                ruins.Add(new BlockhouseRuin(building.Owner, building.Position));
             }
         }
 

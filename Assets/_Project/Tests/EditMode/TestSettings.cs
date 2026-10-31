@@ -232,6 +232,7 @@ namespace Marchlands.Tests.EditMode
                     sentryHitChance = 0.2f,
                     sentryRange = 10f,
                     blockhouseHealth = 250f,
+                    blockhouseRebuildTime = 40f,
                     blockhouseShots = 6,
                     blockhouseInterval = 6f,
                     blockhouseHitChance = 0.22f,

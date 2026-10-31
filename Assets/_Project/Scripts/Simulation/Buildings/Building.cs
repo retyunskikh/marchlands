@@ -91,6 +91,9 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Чинят ли здание рабочие из штаба в этом тике.</summary>
         public bool IsRepairing { get; internal set; }
 
+        /// <summary>У здания работают рабочие из штаба: чинят его или строят (видны на поле).</summary>
+        public bool HasWorkers { get; internal set; }
+
         /// <summary>Сколько секунд здание не получало урона.</summary>
         internal float SinceDamage { get; set; }
 

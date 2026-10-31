@@ -25,7 +25,12 @@ namespace Marchlands.Simulation.Buildings
                 Building building = match.Buildings[i];
                 if (!building.IsBuilt)
                 {
-                    building.BuildRemaining -= deltaTime;
+                    // Блокгауз отстраивают рабочие из штаба: враг рядом — стройка стоит.
+                    if (building.Type != BuildingType.Blockhouse || building.HasWorkers)
+                    {
+                        building.BuildRemaining -= deltaTime;
+                    }
+
                     if (building.BuildRemaining <= TimerEpsilon)
                     {
                         building.BuildRemaining = 0f;

@@ -51,6 +51,7 @@ namespace Marchlands.View
         private sealed class Worker
         {
             public SpriteRenderer Renderer;
+            public SpriteRenderer Hammer;
             public float2 Position;
             public float2 Post;
             public bool Returning;
@@ -107,6 +108,7 @@ namespace Marchlands.View
         public void Initialize(Match match)
         {
             this.match = match;
+            squadViews.BuildingSize = style.SizeOf;
             radiusPreview = CreatePreview("Build Radius", style.CircleSprite, style.BodySortingOrder - 2);
             sitePreview = CreatePreview("Barracks Site", style.SquareSprite, style.OverlaySortingOrder);
             sitePreview.transform.localScale = new Vector3(style.BarracksSize.x, style.BarracksSize.y, 1f);
@@ -514,7 +516,7 @@ namespace Marchlands.View
 
             foreach (Building building in match.Buildings)
             {
-                if (!building.IsRepairing || crews.ContainsKey(building.Id))
+                if (!building.HasWorkers || crews.ContainsKey(building.Id))
                 {
                     continue;
                 }
@@ -532,9 +534,18 @@ namespace Marchlands.View
                     SpriteRenderer renderer = CreatePreview($"Worker {building.Id} {i}", sprite, style.BodySortingOrder + 5);
                     renderer.color = style.WorkerColor;
                     renderer.transform.localScale = Vector3.one * squadViews.Style.SoldierScale;
+                    SpriteRenderer hammer = null;
+                    if (style.HammerSprite != null)
+                    {
+                        hammer = CreatePreview($"Hammer {building.Id} {i}", style.HammerSprite, style.BodySortingOrder + 6);
+                        hammer.color = Color.white;
+                        hammer.transform.localScale = Vector3.one * style.HammerScale;
+                    }
+
                     crew.Add(new Worker
                     {
                         Renderer = renderer,
+                        Hammer = hammer,
                         Position = gate,
                         Post = GetWorkerPost(building, gate, i),
                         Step = new WalkerStep(building.Id * 31 + i)
@@ -550,7 +561,7 @@ namespace Marchlands.View
             {
                 Building building = match.FindBuilding(pair.Key);
                 Building headquarters = building != null ? match.GetHeadquarters(building.Owner) : null;
-                bool working = building != null && building.IsRepairing;
+                bool working = building != null && building.HasWorkers;
                 float2 home = headquarters != null ? GetHeadquartersGate(headquarters) : pair.Value[0].Position;
                 bool allHome = true;
                 for (int i = 0; i < pair.Value.Count; i++)
@@ -563,6 +574,7 @@ namespace Marchlands.View
                     float2 look = toGoal;
                     float2 shown = worker.Position;
                     bool walking = distance > step && distance > 1e-3f;
+                    bool hammering = false;
                     if (walking)
                     {
                         worker.Position += toGoal / distance * step;
@@ -578,11 +590,13 @@ namespace Marchlands.View
                             look = building.Position - goal;
                             float2 toWall = math.normalizesafe(look);
                             shown = goal + toWall * (math.sin(Time.time * style.WorkerBobRate + i * 1.7f) * style.WorkerBob);
+                            hammering = true;
                         }
                     }
 
                     allHome &= worker.Returning && distance <= step;
                     worker.Step.Apply(worker.Renderer, shown, FacingOf(look), walking, look, null, null, null, squadViews.Style);
+                    RenderHammer(worker, shown, look, hammering, i);
                 }
 
                 if (allHome || headquarters == null)
@@ -595,11 +609,43 @@ namespace Marchlands.View
             {
                 foreach (Worker worker in crews[id])
                 {
+                    if (worker.Hammer != null)
+                    {
+                        Destroy(worker.Hammer.gameObject);
+                    }
+
                     Destroy(worker.Renderer.gameObject);
                 }
 
                 crews.Remove(id);
             }
+        }
+
+        /// <summary>
+        /// Молоток в правой руке: на ходу несут на плече (смотрит вперёд), у стены машут — замах назад и удар по стене
+        /// в такт качанию рабочего.
+        /// </summary>
+        private void RenderHammer(Worker worker, float2 position, float2 look, bool hammering, int index)
+        {
+            if (worker.Hammer == null)
+            {
+                return;
+            }
+
+            float2 forward = math.normalizesafe(look, new float2(0f, 1f));
+            float2 right = new float2(forward.y, -forward.x);
+            Vector2 hand = style.HammerHand;
+            float2 at = position + forward * hand.y + right * hand.x;
+            float heading = math.degrees(math.atan2(forward.y, forward.x)) - 90f;
+            float swing = 0f;
+            if (hammering)
+            {
+                // Быстрый удар и медленный замах: |sin| сжат к нулю — молоток бьёт и отскакивает.
+                float wave = math.sin(Time.time * style.WorkerBobRate + index * 1.7f);
+                swing = (0.5f - 0.5f * wave) * style.HammerSwing;
+            }
+
+            worker.Hammer.transform.SetPositionAndRotation(new Vector3(at.x, at.y, 0f), Quaternion.Euler(0f, 0f, heading - 35f + swing));
         }
 
         /// <summary>Ворота штаба — середина стороны, обращённой к центру карты.</summary>

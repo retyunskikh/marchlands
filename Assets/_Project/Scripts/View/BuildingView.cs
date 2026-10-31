@@ -17,6 +17,7 @@ namespace Marchlands.View
         private BuildingViewStyle style;
         private Color sideColor;
         private Vector2 size;
+        private SpriteRenderer scaffold;
 
         private SpriteRenderer body;
         private SpriteRenderer inner;
@@ -99,6 +100,14 @@ namespace Marchlands.View
             rangeRing.sprite = style.CircleSprite;
             rangeRing.transform.localScale = Vector3.one * (Volley.Of(building, settings.buildings).Range * 2f);
             rangeRing.enabled = false;
+            if (style.ScaffoldSprite != null)
+            {
+                scaffold = CreateRenderer("Scaffold", style.BodySortingOrder + 4, style.ScaffoldColor);
+                scaffold.sprite = style.ScaffoldSprite;
+                scaffold.transform.localScale = new Vector3(size.x * style.ScaffoldPadding, size.y * style.ScaffoldPadding, 1f);
+                scaffold.enabled = !building.IsBuilt;
+            }
+
             CreateDamage();
         }
 
@@ -257,6 +266,12 @@ namespace Marchlands.View
             if (flag != null)
             {
                 flag.color = bodyColor;
+            }
+
+            // Пока здание строится, над ним строительные леса.
+            if (scaffold != null && scaffold.enabled == building.IsBuilt)
+            {
+                scaffold.enabled = !building.IsBuilt;
             }
 
             RenderAnnexes();

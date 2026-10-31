@@ -77,6 +77,25 @@ namespace Marchlands.View
         [SerializeField] private float marchStride = 0.6f;
         [Tooltip("То же для конницы: длина цикла скачка при скорости 1 u/s, u.")]
         [SerializeField] private float gallopStride = 0.75f;
+        [Header("Штурм здания")]
+        [Tooltip("За сколько секунд строй рассыпается вокруг здания на штурме (и собирается обратно), s.")]
+        [SerializeField] private float assaultBlendTime = 0.8f;
+        [Tooltip("Дуга, по которой штурмующие обступают здание со своей стороны, градусы (360 — кольцом).")]
+        [SerializeField] private float assaultArc = 220f;
+        [Tooltip("Насколько от стены стоит первая волна штурмующих, u.")]
+        [SerializeField] private float assaultStandOff = 0.35f;
+        [Tooltip("Насколько дальше от стены каждая следующая шеренга, u.")]
+        [SerializeField] private float assaultRankGap = 0.55f;
+        [Tooltip("Доля первой волны, что лезет на стены.")]
+        [SerializeField] private float assaultClimbShare = 0.3f;
+        [Tooltip("Цикл лазания: вскарабкался, повисел, сорвался, s.")]
+        [SerializeField] private float assaultClimbPeriod = 2.2f;
+        [Tooltip("Насколько лезущий заходит на здание от стены, u.")]
+        [SerializeField] private float assaultClimbDepth = 0.6f;
+        [Tooltip("Насколько лезущий крупнее наверху (он ближе к зрителю), доля.")]
+        [SerializeField] private float assaultClimbScale = 0.25f;
+        [Tooltip("Размах толкотни у стены вбок, u.")]
+        [SerializeField] private float assaultSway = 0.12f;
         [Tooltip("За сколько секунд походка появляется и стихает.")]
         [SerializeField] private float gaitBlendTime = 0.25f;
         [Tooltip("С какой скорости солдат шагает, а не стоит, u/s: при развороте строя шагают и фланги, и почти стоящая середина.")]
@@ -221,6 +240,16 @@ namespace Marchlands.View
         public float ThrustRate => thrustRate;
 
         /// <summary>Длина цикла шага рода войск при скорости <paramref name="speed"/>, u.</summary>
+        public float AssaultBlendTime => assaultBlendTime;
+        public float AssaultArc => assaultArc;
+        public float AssaultStandOff => assaultStandOff;
+        public float AssaultRankGap => assaultRankGap;
+        public float AssaultClimbShare => assaultClimbShare;
+        public float AssaultClimbPeriod => assaultClimbPeriod;
+        public float AssaultClimbDepth => assaultClimbDepth;
+        public float AssaultClimbScale => assaultClimbScale;
+        public float AssaultSway => assaultSway;
+
         public float GetStride(UnitType type, float speed)
         {
             float baseStride = type == UnitType.Cavalry ? gallopStride : marchStride;

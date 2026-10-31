@@ -213,6 +213,7 @@ MonoBehaviour:
       sentryHitChance: 0.2
       sentryRange: 10
       blockhouseHealth: 250
+      blockhouseRebuildTime: 45
       blockhouseShots: 6
       blockhouseInterval: 6
       blockhouseHitChance: 0.22

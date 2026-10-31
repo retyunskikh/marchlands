@@ -141,6 +141,20 @@ namespace Marchlands.View
         [Tooltip("Насколько рабочий «стучит молотком» — качается взад-вперёд, u.")]
         [SerializeField] private float workerBob = 0.08f;
         [SerializeField] private float workerBobRate = 9f;
+        [Tooltip("Молоток в руке рабочего: машет им у стены в такт качанию.")]
+        [SerializeField] private Sprite hammerSprite;
+        [SerializeField] private float hammerScale = 0.4f;
+        [Tooltip("Размах замаха молотком, градусы.")]
+        [SerializeField] private float hammerSwing = 60f;
+        [Tooltip("Насколько молоток впереди и правее рабочего (рука), u.")]
+        [SerializeField] private Vector2 hammerHand = new Vector2(0.12f, 0.1f);
+
+        [Header("Стройка")]
+        [Tooltip("Строительные леса над недостроенным зданием.")]
+        [SerializeField] private Sprite scaffoldSprite;
+        [Tooltip("Леса шире здания во столько раз.")]
+        [SerializeField] private float scaffoldPadding = 1.12f;
+        [SerializeField] private Color scaffoldColor = new Color(1f, 1f, 1f, 0.95f);
 
         [Header("Предпросмотр постройки")]
         [SerializeField] private Color buildRadiusColor = new Color(1f, 1f, 1f, 0.35f);
@@ -287,6 +301,20 @@ namespace Marchlands.View
         public float WorkerBob => workerBob;
 
         public float WorkerBobRate => workerBobRate;
+
+        public Sprite HammerSprite => hammerSprite;
+
+        public float HammerScale => hammerScale;
+
+        public float HammerSwing => hammerSwing;
+
+        public Vector2 HammerHand => hammerHand;
+
+        public Sprite ScaffoldSprite => scaffoldSprite;
+
+        public float ScaffoldPadding => scaffoldPadding;
+
+        public Color ScaffoldColor => scaffoldColor;
 
         /// <summary>Габариты здания этого типа.</summary>
         public Vector2 SizeOf(BuildingType type)

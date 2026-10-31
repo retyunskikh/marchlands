@@ -21,6 +21,9 @@ namespace Marchlands.View
 
         public SquadViewStyle Style => style;
 
+        /// <summary>Размер здания на экране по типу (его задаёт реестр зданий) — чтобы штурмующие обступали стены.</summary>
+        public System.Func<Marchlands.Simulation.Buildings.BuildingType, Vector2> BuildingSize { get; set; }
+
         public void Initialize(Match match)
         {
             this.match = match;
@@ -41,6 +44,7 @@ namespace Marchlands.View
             SyncViews();
             foreach (SquadView view in views.Values)
             {
+                view.BuildingSize = BuildingSize;
                 view.Render(alpha);
             }
         }
@@ -66,6 +70,7 @@ namespace Marchlands.View
                 viewObject.transform.SetParent(transform, false);
                 var view = viewObject.AddComponent<SquadView>();
                 view.Initialize(squad, match, style, casualties);
+                view.BuildingSize = BuildingSize;
                 view.SetSelected(squad == selected);
                 views.Add(squad.Id, view);
             }

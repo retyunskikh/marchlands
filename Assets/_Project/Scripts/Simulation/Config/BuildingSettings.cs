@@ -105,6 +105,12 @@ namespace Marchlands.Simulation.Config
         /// <summary>Здоровье блокгауза.</summary>
         public float blockhouseHealth;
 
+        /// <summary>
+        /// Сколько секунд рабочие из штаба заново ставят разрушенный блокгауз. Стройка начинается, когда у руин
+        /// repairDelay секунд нет врагов (базу отбили), и стоит, пока враг рядом.
+        /// </summary>
+        public float blockhouseRebuildTime;
+
         /// <summary>Сколько ружей стреляет одним залпом из блокгауза (из бойниц; стрелков не видно).</summary>
         public int blockhouseShots;
 
