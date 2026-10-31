@@ -19,7 +19,6 @@ namespace Marchlands.View
 
         [SerializeField] private Sprite squareSprite;
         [SerializeField] private Sprite discSprite;
-        [SerializeField] private Sprite treeSprite;
         [Tooltip("Цельные текстуры гор (вид сверху) и рек; растягиваются на полосу между полем и краем карты.")]
         [SerializeField] private Sprite northMountainsSprite;
         [SerializeField] private Sprite southMountainsSprite;
@@ -67,10 +66,24 @@ namespace Marchlands.View
         [SerializeField] private float roadEndFade = 1.2f;
 
         [Header("Рощи")]
-        [SerializeField] private Color forestFloorColor = new Color(0.28f, 0.42f, 0.22f);
-        [SerializeField] private Vector2 treeSize = new Vector2(1.8f, 2.6f);
+        [Tooltip("Виды деревьев (вид сверху, с тенью); в каждой роще один вид преобладает.")]
+        [SerializeField] private Sprite[] treeSprites;
+        [Tooltip("Какая доля деревьев рощи — её преобладающего вида.")]
+        [SerializeField, Range(0f, 1f)] private float dominantTreeShare = 0.5f;
+        [SerializeField] private Vector2 treeSize = new Vector2(1.6f, 3f);
+        [Tooltip("Насколько деревья различаются оттенком: крона темнеет или желтеет до этого цвета.")]
+        [SerializeField] private Color[] treeTints = { new Color(0.82f, 0.9f, 0.78f), new Color(1f, 0.97f, 0.82f) };
         [Tooltip("Сколько деревьев на квадратную единицу рощи.")]
         [SerializeField] private float treeDensity = 0.35f;
+        [Tooltip("Подлесок: мягкие пятна тёмной травы под деревьями, без чёткой границы.")]
+        [SerializeField] private Sprite undergrowthSprite;
+        [SerializeField] private Color undergrowthColor = new Color(0.2f, 0.32f, 0.14f, 0.45f);
+        [Tooltip("Сколько пятен подлеска на единицу радиуса рощи.")]
+        [SerializeField] private float undergrowthPerRadius = 2f;
+        [Tooltip("Размер пятна подлеска, доля радиуса рощи: от и до.")]
+        [SerializeField] private Vector2 undergrowthSize = new Vector2(0.7f, 1.2f);
+        [Tooltip("Сколько кустов по опушке на единицу радиуса рощи.")]
+        [SerializeField] private float edgeBushesPerRadius = 1.2f;
 
         [Header("Убранство поля (только вид)")]
         [Tooltip("Кусты — рисуются поверх травы, но под деревнями, зданиями и отрядами.")]
@@ -418,26 +431,76 @@ namespace Marchlands.View
             meshRenderer.sortingOrder = roadSortingOrder + roadIndex % 2;
         }
 
+        /// <summary>
+        /// Роща: неровный подлесок из мягких пятен, кусты по опушке и деревья разных видов, размеров и оттенков.
+        /// Чёткой границы нет, но замедление и укрытие действуют в радиусе рощи, как и прежде.
+        /// </summary>
         private void DrawForests(TerrainMap terrain)
         {
+            if (treeSprites == null || treeSprites.Length == 0)
+            {
+                return;
+            }
+
             int seed = 0;
             foreach (Forest forest in terrain.Forests)
             {
-                float diameter = forest.Radius * 2f;
-                Create("Forest Floor", discSprite, forestFloorColor, forestFloorSortingOrder, forest.Center, new Vector2(diameter, diameter), 0f);
+                DrawUndergrowth(forest, ref seed);
 
+                Sprite dominant = treeSprites[(int)(Hash01(++seed) * treeSprites.Length) % treeSprites.Length];
                 int trees = math.max(4, (int)(math.PI * forest.Radius * forest.Radius * treeDensity));
                 for (int i = 0; i < trees; i++)
                 {
                     float random = Hash01(++seed);
-                    float distance = forest.Radius * 0.85f * math.sqrt((i + 0.5f) / trees);
-                    float angle = i * GoldenAngle;
+                    // Подсолнух с лёгким разбросом — роща плотная, но без рядов и колец.
+                    float distance = forest.Radius * 0.85f * math.sqrt((i + 0.5f) / trees) + (Hash01(++seed) - 0.5f) * 0.6f;
+                    float angle = i * GoldenAngle + (Hash01(++seed) - 0.5f) * 0.4f;
                     float2 position = forest.Center + new float2(math.cos(angle), math.sin(angle)) * distance;
                     float size = math.lerp(treeSize.x, treeSize.y, random);
+                    Sprite sprite = Hash01(++seed) < dominantTreeShare
+                        ? dominant
+                        : treeSprites[(int)(Hash01(++seed) * treeSprites.Length) % treeSprites.Length];
+                    Color tint = treeTints != null && treeTints.Length > 0
+                        ? Color.Lerp(Color.white, treeTints[(int)(Hash01(++seed) * treeTints.Length) % treeTints.Length], Hash01(++seed))
+                        : Color.white;
                     // Нижние деревья рисуются поверх верхних — кроны перекрываются как в перспективе.
                     int order = treeSortingOrder + (int)((forest.Center.y + forest.Radius - position.y) * 2f);
-                    Create("Tree", treeSprite, Color.white, order, position, new Vector2(size, size), random * 40f - 20f);
+                    CreateStretched("Tree", sprite, order, position, new Vector2(size, size), 0f, tint);
                 }
+            }
+        }
+
+        /// <summary>Подлесок из мягких пятен в радиусе рощи и кусты по её опушке — край размыт, а не обведён кругом.</summary>
+        private void DrawUndergrowth(Forest forest, ref int seed)
+        {
+            if (undergrowthSprite != null)
+            {
+                int patches = math.max(3, (int)(forest.Radius * undergrowthPerRadius));
+                for (int i = 0; i < patches; i++)
+                {
+                    float distance = forest.Radius * 0.55f * math.sqrt(Hash01(++seed));
+                    float angle = Hash01(++seed) * math.PI * 2f;
+                    float2 position = forest.Center + new float2(math.cos(angle), math.sin(angle)) * distance;
+                    float size = forest.Radius * math.lerp(undergrowthSize.x, undergrowthSize.y, Hash01(++seed));
+                    CreateStretched("Undergrowth", undergrowthSprite, forestFloorSortingOrder, position,
+                        new Vector2(size, size * math.lerp(0.7f, 1f, Hash01(++seed))), Hash01(++seed) * 180f, undergrowthColor);
+                }
+            }
+
+            if (bushSprites == null || bushSprites.Length == 0)
+            {
+                return;
+            }
+
+            int bushes = (int)(forest.Radius * edgeBushesPerRadius);
+            for (int i = 0; i < bushes; i++)
+            {
+                float angle = (i + Hash01(++seed) * 0.8f) * math.PI * 2f / math.max(1, bushes);
+                float distance = forest.Radius * math.lerp(0.85f, 1.05f, Hash01(++seed));
+                float2 position = forest.Center + new float2(math.cos(angle), math.sin(angle)) * distance;
+                float size = math.lerp(bushSize.x, bushSize.y, Hash01(++seed));
+                Sprite sprite = bushSprites[(int)(Hash01(++seed) * bushSprites.Length) % bushSprites.Length];
+                CreateStretched("Edge Bush", sprite, bushSortingOrder, position, new Vector2(size, size), 0f, Color.white);
             }
         }
 

@@ -4424,7 +4424,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.View::Marchlands.View.TerrainView
   squareSprite: {fileID: 21300000, guid: 5f47f2ad9246ed441acf41244c86118e, type: 3}
   discSprite: {fileID: 21300000, guid: 0c4c11c45c291d142a331ea1609b0e7c, type: 3}
-  treeSprite: {fileID: 21300000, guid: 9001c2999d077a54f9180ada2b615352, type: 3}
   northMountainsSprite: {fileID: 21300000, guid: 3e19088d2182b6148b2dea0f430418b1, type: 3}
   southMountainsSprite: {fileID: 21300000, guid: f79f6e6bd3bf22b49a12d4d02b086e17, type: 3}
   westRiverSprite: {fileID: 21300000, guid: 4e3de2fd258661743a548216e62b9ecd, type: 3}
@@ -4450,9 +4449,24 @@ MonoBehaviour:
   roadSmoothStep: 0.4
   roadWidthJitter: 0.04
   roadEndFade: 1.2
-  forestFloorColor: {r: 0.28, g: 0.42, b: 0.22, a: 1}
+  treeSprites:
+  - {fileID: 21300000, guid: 36610838ce14a3548b11ee5c9f64c92c, type: 3}
+  - {fileID: 21300000, guid: 8c5bc1993fcc02d4a8d7275dac5533bb, type: 3}
+  - {fileID: 21300000, guid: d0e91f9cc63383946ac8b1739df7573c, type: 3}
+  - {fileID: 21300000, guid: 24d311232af720541a6e763ed354b262, type: 3}
+  - {fileID: 21300000, guid: 384297a9eeb8cd146b90b4656c625921, type: 3}
+  - {fileID: 21300000, guid: dff69612adf860545b0ff36e1fecf987, type: 3}
+  dominantTreeShare: 0.5
   treeSize: {x: 1.8, y: 2.6}
+  treeTints:
+  - {r: 0.82, g: 0.9, b: 0.78, a: 1}
+  - {r: 1, g: 0.97, b: 0.82, a: 1}
   treeDensity: 0.35
+  undergrowthSprite: {fileID: 21300000, guid: 97b291e999058ff43b006807bf6c1a11, type: 3}
+  undergrowthColor: {r: 0.2, g: 0.32, b: 0.14, a: 0.45}
+  undergrowthPerRadius: 2
+  undergrowthSize: {x: 0.7, y: 1.2}
+  edgeBushesPerRadius: 1.2
   bushSprites:
   - {fileID: 21300000, guid: 2f726e2b2f3316848b37e72611a1f3ff, type: 3}
   - {fileID: 21300000, guid: 1dc82d910c38e7445909cd0c9086d004, type: 3}
