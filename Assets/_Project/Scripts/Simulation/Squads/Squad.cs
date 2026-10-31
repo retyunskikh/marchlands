@@ -121,6 +121,18 @@ namespace Marchlands.Simulation.Squads
         /// </summary>
         internal float LimberShift { get; set; }
 
+        /// <summary>Отряд уже дошёл до точки приказа <see cref="ArrivedTarget"/> и только доворачивается.</summary>
+        internal bool HasArrived { get; set; }
+
+        internal float2 ArrivedTarget { get; set; }
+
+        /// <summary>Ближе всего, насколько отряд подходил к цели приказа, u, и сколько секунд с тех пор не продвинулся.</summary>
+        internal float BestDistance { get; set; } = float.MaxValue;
+
+        internal float StallTime { get; set; }
+
+        internal float2 StallTarget { get; set; }
+
         /// <summary>Пушка снята с передка и может стрелять.</summary>
         public bool IsGunReady => IsArtillery && !IsLimbered && LimberRemaining <= 0f;
 

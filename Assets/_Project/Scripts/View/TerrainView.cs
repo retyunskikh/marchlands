@@ -715,7 +715,7 @@ namespace Marchlands.View
         private const float MouthWaterOverlap = 0.3f;
 
         // Где кончается песок боковой реки — доля её ширины от середины русла (по картинке боковой реки).
-        private const float SideRiverSandShare = 0.28f;
+        private const float SideRiverSandShare = 0.36f;
 
         // Во сколько раз устье шире притока там, где впадает.
         private const float MouthFlare = 1.15f;

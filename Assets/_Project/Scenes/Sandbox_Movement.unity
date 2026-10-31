@@ -569,7 +569,7 @@ MonoBehaviour:
   eastRiverWaterMask: {fileID: 21300000, guid: 0d751405679c5d94f81f5802bacba6bc, type: 3}
   riverFlowSprite: {fileID: 21300000, guid: 7366c4396e7d522478beb2d629ce282b, type: 3}
   riverFlowSpeed: 0.8
-  riverExtension: 8
+  riverExtension: 40
   outerExtent: 40
   borderCanopySprite: {fileID: 21300000, guid: 25f26a19fe9f0ef49b8ae043d958efd1, type: 3}
   borderCanopyTile: 7
@@ -16925,6 +16925,8 @@ MonoBehaviour:
   balance: {fileID: 11400000, guid: 49be662d6d646434bba55014c3f78fed, type: 2}
   scenario: {fileID: 11400000, guid: 8361072e7a3988e48889c4bdc4faee1c, type: 2}
   maps: []
+  tutorialScenario: {fileID: 0}
+  tutorial: {fileID: 0}
   seed: 1
   targetFrameRate: 60
   terrainView: {fileID: 45945377}

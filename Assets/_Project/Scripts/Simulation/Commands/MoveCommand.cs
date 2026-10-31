@@ -46,6 +46,9 @@ namespace Marchlands.Simulation.Commands
             }
 
             squad.ClearRoute();
+            squad.HasArrived = false;
+            squad.BestDistance = float.MaxValue;
+            squad.StallTime = 0f;
             squad.Order = SquadOrder.Move(target, facing);
             if (AutoRoute)
             {

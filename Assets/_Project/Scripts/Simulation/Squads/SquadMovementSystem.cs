@@ -103,23 +103,33 @@ namespace Marchlands.Simulation.Squads
                 return;
             }
 
+            float2 push = FootprintPush(squad, match, squad.Position, half);
+            if (math.any(push != float2.zero) && !match.Terrain.IsWater(squad.Position + push))
+            {
+                squad.Position += push;
+            }
+        }
+
+        /// <summary>
+        /// Насколько сдвинуть строй с центром в <paramref name="center"/> (нынешний фронт), чтобы ни один его угол
+        /// не был в реке; на суше — ноль.
+        /// </summary>
+        private static float2 FootprintPush(Squad squad, Match match, float2 center, float2 half)
+        {
             float2 forward = Angles.Direction(squad.Facing) * half.y;
             float2 right = Angles.Right(squad.Facing) * half.x;
             float2 push = float2.zero;
             for (int corner = 0; corner < 4; corner++)
             {
-                float2 point = squad.Position + right * ((corner & 1) == 0 ? -1f : 1f) + forward * (corner < 2 ? -1f : 1f);
-                float2 shift = match.Terrain.WaterPush(point, squad.Position);
+                float2 point = center + right * ((corner & 1) == 0 ? -1f : 1f) + forward * (corner < 2 ? -1f : 1f);
+                float2 shift = match.Terrain.WaterPush(point, center);
                 if (math.lengthsq(shift) > math.lengthsq(push))
                 {
                     push = shift;
                 }
             }
 
-            if (math.any(push != float2.zero) && !match.Terrain.IsWater(squad.Position + push))
-            {
-                squad.Position += push;
-            }
+            return push;
         }
 
         /// <summary>Марш окончен: маршрут сброшен, отряд, перестроившийся для марша в колонну, разворачивается обратно.</summary>
@@ -233,7 +243,8 @@ namespace Marchlands.Simulation.Squads
             float2 normal = new float2(-axis.y, axis.x);
             float length = math.distance(bridge.BankA, bridge.BankB);
             float along = math.dot(squad.Position - bridge.BankA, axis);
-            float exit = approach + settings.rankSpacing;
+            // Вдоль оси держим, пока строй на настиле: от въезда, пока тыл сжатого строя не сошёл с моста.
+            float exit = FormationLayout.GetHalfExtents(squad, settings).y + settings.rankSpacing;
 
             // Цель на самом мосту — встать на оси против неё.
             float2 toGoal = goal - bridge.BankA;
@@ -246,9 +257,16 @@ namespace Marchlands.Simulation.Squads
             }
 
             // Иначе — вдоль оси к тому концу, куда ведёт путь, и за него, пока строй не раздастся.
-            bool forward = math.dot(steered - squad.Position, axis) >= 0f;
+            // Куда сходить с моста — на тот берег, откуда до цели без воды; оба подходят — к тому, ближе к которому цель.
+            // (По знаку направления на цель нельзя: цель сбоку от моста даёт случайный знак, и строй ходит туда-обратно.)
+            bool reachA = !match.Terrain.CrossesRiverBed(bridge.BankA, goal);
+            bool reachB = !match.Terrain.CrossesRiverBed(bridge.BankB, goal);
+            bool forward = reachA == reachB ? goalAlong >= length * 0.5f : reachB;
             float end = forward ? length + exit : -exit;
-            return math.abs(end - along) > settings.arrivalTolerance ? bridge.BankA + axis * end : steered;
+            // Держим вдоль оси, только пока центр строя над мостом (между берегами): сошёл на берег — дальше обычный
+            // путь. Иначе строй, свернувший к цели у самого выхода, снова попадал на ось и ходил туда-обратно.
+            bool onDeck = along > 0f && along < length;
+            return onDeck ? bridge.BankA + axis * end : steered;
         }
 
         /// <summary>Сжатый строй на мосту стоит вдоль настила: из двух направлений оси — ближайшее к желаемому.</summary>
@@ -273,10 +291,14 @@ namespace Marchlands.Simulation.Squads
                     BridgeApproach(squad, match.Settings.squads), out bridge);
         }
 
-        /// <summary>Как далеко от въезда на мост строй начинает сжиматься (по несжатой глубине), u.</summary>
+        /// <summary>
+        /// Как далеко от въезда на мост строй начинает сжиматься, u: глубина строя и ещё его полуширина — река у моста
+        /// может идти к дороге наискось, и широкая линия иначе упирается крылом в воду раньше, чем дойдёт до въезда.
+        /// </summary>
         private static float BridgeApproach(Squad squad, SquadSettings settings)
         {
-            return FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings).y + settings.rankSpacing;
+            float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings);
+            return half.y + half.x + settings.rankSpacing;
         }
 
         /// <summary>Атака вверх по склону холма медленнее.</summary>
@@ -288,6 +310,12 @@ namespace Marchlands.Simulation.Squads
         }
 
         private const float OverlapEpsilon = 1e-3f;
+
+        // Сколько секунд без продвижения к близкой цели — и отряд считает, что дошёл; какое сближение считается продвижением, u.
+        private const float StallSeconds = 3f;
+        private const float StallProgress = 0.1f;
+        private const float StallFacing = 30f;
+
 
         /// <summary>Наибольшее перекрытие строя с не бегущими врагами, u.</summary>
         private static float EnemyOverlap(Squad squad, Match match)
@@ -373,6 +401,17 @@ namespace Marchlands.Simulation.Squads
                 // У края карты цель — докуда строй дотягивается при нынешнем фронте: пока линия разворачивается,
                 // по диагонали она шире, край отжимает её от цели — и разворот не должен считаться «не дошёл».
                 float2 reachable = match.Terrain.Clamp(target, ProjectedHalfExtents(squad, squad.Facing, settings.squads));
+                // У реки — так же: строй в точке цели задел бы воду, его отталкивает на берег — цель там, куда отталкивает.
+                float2 footprint = FormationLayout.GetHalfExtents(squad, settings.squads);
+                if (!match.Terrain.IsNearFord(reachable, math.length(footprint)))
+                {
+                    float2 push = FootprintPush(squad, match, reachable, footprint);
+                    if (!match.Terrain.IsWater(reachable + push))
+                    {
+                        reachable += push;
+                    }
+                }
+
                 if (math.any(reachable != target))
                 {
                     // У края точность не нужна: иначе строй качается между «шагнуть» и «довернуть фронт».
@@ -381,8 +420,47 @@ namespace Marchlands.Simulation.Squads
                 }
             }
 
+            // Дошедший до цели доворачивается на месте: у реки или края карты строй при повороте чуть смещается —
+            // это не повод снова идти (иначе он топчется у цели).
+            if (!detour && squad.HasArrived && math.all(squad.ArrivedTarget == squad.Order.Target))
+            {
+                // Дошёл — дальше только доворачивается: у воды каждый поворот строя чуть сдвигает, куда его отталкивает,
+                // и шаг «к цели» после поворота превращал доворот в бесконечное качание.
+                arrival = float.MaxValue;
+            }
+
             float2 toTarget = target - squad.Position;
             float distance = math.length(toTarget);
+
+            // Рядом с целью, но несколько секунд не может подойти ближе (вода, край, тесно) — считаем, что дошёл:
+            // топтаться у недостижимой точки хуже, чем встать в паре шагов от неё.
+            if (!detour)
+            {
+                // Новая цель (новый приказ, продолженный марш) — простой считаем заново.
+                if (math.any(squad.StallTarget != squad.Order.Target))
+                {
+                    squad.StallTarget = squad.Order.Target;
+                    squad.BestDistance = float.MaxValue;
+                    squad.StallTime = 0f;
+                }
+
+                if (distance < squad.BestDistance - StallProgress)
+                {
+                    squad.BestDistance = distance;
+                    squad.StallTime = 0f;
+                }
+                else if (distance > 1e-3f && math.abs(Angles.Delta(squad.Facing, Angles.Of(toTarget))) <= StallFacing)
+                {
+                    // Простой считаем, только когда отряд смотрит на цель и пытается идти (не пока разворачивается).
+                    squad.StallTime += deltaTime;
+                }
+
+                float near = math.length(FormationLayout.GetHalfExtents(squad, settings.squads)) + settings.squads.rankSpacing;
+                if (squad.StallTime >= StallSeconds && distance <= near)
+                {
+                    arrival = math.max(arrival, distance);
+                }
+            }
 
             if (distance > arrival)
             {
@@ -444,6 +522,8 @@ namespace Marchlands.Simulation.Squads
                 return;
             }
 
+            squad.HasArrived = true;
+            squad.ArrivedTarget = squad.Order.Target;
             if (RotateTowards(squad, BridgeFacing(squad, match, squad.Order.FinalFacing), settings.squads.rotationSpeed, ref time))
             {
                 squad.Order = SquadOrder.None;

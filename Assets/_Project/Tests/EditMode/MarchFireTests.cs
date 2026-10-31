@@ -290,6 +290,26 @@ namespace Marchlands.Tests.EditMode
             Assert.Less(math.distance(squad.Position, to), 1f);
         }
 
+        [TestCase(4f, 10f, 90f)]
+        [TestCase(3f, -12f, 60f)]
+        [TestCase(-3.5f, 14f, -100f)]
+        public void Line_OrderedRightNextToRiver_StopsNearby_AndFinishes(float x, float y, float facing)
+        {
+            Match match = BridgeMap();
+            Squad squad = match.AddSquad(Side.France, new float2(x * 4f, y), 0f, Formation.Line);
+            var to = new float2(x, y);
+            match.Enqueue(new MoveCommand(squad.Id, to, facing));
+            int i = 0;
+            for (; i < 1500 && (i == 0 || squad.Order.Type != SquadOrderType.None); i++)
+            {
+                match.Tick();
+            }
+
+            Assert.AreEqual(SquadOrderType.None, squad.Order.Type, "Встал у реки и закончил приказ, а не топчется");
+            Assert.Less(math.distance(squad.Position, to), 8f, "Встал рядом с точкой");
+            Assert.IsFalse(match.Terrain.IsWater(squad.Position));
+        }
+
         [Test]
         public void WideLine_WadesThroughFord_WithoutStalling()
         {
