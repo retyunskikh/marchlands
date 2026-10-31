@@ -198,7 +198,7 @@ namespace Marchlands.UI
             float progress = !current ? -1f : interval > 0f ? 1f - building.HireRemaining / interval : 0f;
             int cost = BuildRules.GetHireCost(match.Settings.buildings, type);
             toggle.Show(string.Format(toggleFormat, unitName, cost), building.IsHiring(type), progress);
-            toggle.SetDisbandVisible(match.GetPlayer(building.Owner).GetReserve(type) > 0);
+            toggle.SetDisband(match.GetPlayer(building.Owner).GetReserve(type));
         }
 
         private void RefreshBuildToggle(HireToggle toggle, BuildingType type, string title, bool visible)

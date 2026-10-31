@@ -29,18 +29,49 @@ namespace Marchlands.Simulation.Buildings
                 }
 
                 building.SentryTimer = math.max(0f, building.SentryTimer - deltaTime);
+                float aimTime = math.min(match.Settings.combat.aimTime, settings.sentryInterval);
+                if (building.IsSentryAiming)
+                {
+                    building.SentryAimRemaining -= deltaTime;
+                    if (building.SentryAimRemaining > TimerEpsilon)
+                    {
+                        continue;
+                    }
+
+                    // Залп — по той же цели, если она ещё в дальности, иначе по ближайшей; нет никого — часовые снова наготове.
+                    Squad aimed = match.FindSquad(building.SentryAimTargetId);
+                    Squad target = IsValidTarget(building, aimed, settings.sentryRange) ? aimed : FindTarget(match, building, settings.sentryRange);
+                    building.SentryAimTargetId = 0;
+                    building.SentryAimRemaining = 0f;
+                    if (target != null)
+                    {
+                        Fire(match, building, target, events);
+                        // Прицеливание входит в интервал: при непрерывном огне залп идёт ровно раз в sentryInterval.
+                        building.SentryTimer = settings.sentryInterval - aimTime;
+                    }
+
+                    continue;
+                }
+
                 if (building.SentryTimer > TimerEpsilon)
                 {
                     continue;
                 }
 
-                Squad target = FindTarget(match, building, settings.sentryRange);
-                if (target != null)
+                // Часовые вскидывают ружья и целятся aimTime секунд — так видно, откуда сейчас ударят.
+                Squad found = FindTarget(match, building, settings.sentryRange);
+                if (found != null)
                 {
-                    Fire(match, building, target, events);
-                    building.SentryTimer = settings.sentryInterval;
+                    building.SentryAimTargetId = found.Id;
+                    building.SentryAimRemaining = aimTime;
                 }
             }
+        }
+
+        private static bool IsValidTarget(Building building, Squad squad, float range)
+        {
+            return squad != null && squad.Side != building.Owner && squad.Alive > 0 && !squad.IsRouting && !squad.IsWithdrawn
+                && math.distancesq(squad.Position, building.Position) <= range * range;
         }
 
         private static Squad FindTarget(Match match, Building building, float range)

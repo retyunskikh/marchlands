@@ -12,8 +12,10 @@ namespace Marchlands.Simulation.Combat
     {
         public VolleyEvent(
             int tick, int shooterId, Side shooterSide, int shooters, float distance, int casualties,
-            int targetId, int targetAliveBefore, float2 targetPosition, float targetFacing, Formation targetFormation)
+            int targetId, int targetAliveBefore, float2 targetPosition, float targetFacing, Formation targetFormation,
+            int shooterIndex = -1)
         {
+            ShooterIndex = shooterIndex;
             Tick = tick;
             ShooterId = shooterId;
             ShooterSide = shooterSide;
@@ -34,6 +36,9 @@ namespace Marchlands.Simulation.Combat
         public Side ShooterSide { get; }
 
         public int Shooters { get; }
+
+        /// <summary>Номер стрелка толпы при выстреле вразнобой (см. <see cref="SkirmishAim"/>); -1 — залп отряда.</summary>
+        public int ShooterIndex { get; }
 
         public float Distance { get; }
 

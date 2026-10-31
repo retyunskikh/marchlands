@@ -39,6 +39,7 @@ namespace Marchlands.Bootstrap
         [SerializeField] private BattleInputController input;
         [SerializeField] private OrderPanel orderPanel;
         [SerializeField] private SquadCard squadCard;
+        [SerializeField] private CampPanel campPanel;
         [SerializeField] private TopBar topBar;
         [SerializeField] private BuildPanel buildPanel;
         [SerializeField] private BuildingPanel buildingPanel;
@@ -72,7 +73,7 @@ namespace Marchlands.Bootstrap
             villageViews.Initialize(match, scenario.VillageLayouts, scenario.GetVillageDoors);
             buildingViews.Initialize(match);
             fireArc.Initialize(match);
-            volleyEffects.Initialize(match);
+            volleyEffects.Initialize(match, buildingViews);
             battleSounds.Initialize(match, scenario.PlayerSide);
             music.Initialize(match, scenario.PlayerSide);
             input.Initialize(match, scenario.PlayerSide);
@@ -86,9 +87,14 @@ namespace Marchlands.Bootstrap
             buildingPanel.Initialize(match, scenario.PlayerSide);
             formSquadPanel.Initialize(match, scenario.PlayerSide);
             gameMenu.Initialize(match, scenario.PlayerSide, music);
+            if (campPanel != null)
+            {
+                campPanel.Initialize(match, scenario.PlayerSide);
+            }
 
             input.SelectionChanged += OnSelectionChanged;
             input.BuildingSelectionChanged += OnBuildingSelectionChanged;
+            input.CampSelectionChanged += OnCampSelectionChanged;
             input.ChargeTargetingChanged += orderPanel.SetChargeTargeting;
             input.PlacementChanged += buildPanel.SetPlacementState;
             orderPanel.ChargeRequested += input.BeginChargeTargeting;
@@ -106,6 +112,7 @@ namespace Marchlands.Bootstrap
 
             input.SelectionChanged -= OnSelectionChanged;
             input.BuildingSelectionChanged -= OnBuildingSelectionChanged;
+            input.CampSelectionChanged -= OnCampSelectionChanged;
             if (orderPanel != null)
             {
                 input.ChargeTargetingChanged -= orderPanel.SetChargeTargeting;
@@ -221,6 +228,20 @@ namespace Marchlands.Bootstrap
         {
             buildingViews.SetSelected(building);
             buildingPanel.SetBuilding(building);
+        }
+
+        private void OnCampSelectionChanged(UnitType? type)
+        {
+            buildingViews.SetSelectedCamp(scenario.PlayerSide, type);
+            if (squadCard != null)
+            {
+                squadCard.SetCamp(scenario.PlayerSide, type);
+            }
+
+            if (campPanel != null)
+            {
+                campPanel.SetCamp(type);
+            }
         }
 
         private void OnSelectionChanged(Squad squad)

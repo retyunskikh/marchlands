@@ -9,6 +9,8 @@ namespace Marchlands.UI
     /// <summary>
     /// Карточка выделенного отряда слева внизу: воин рода войск в полный рост, название, численность (значок
     /// человечка и число), боевой дух полоской и числом и что отряд сейчас делает. Видна только при выделении.
+    /// Для выделенной группы толпы рекрутов — то же место, но с пометкой, что это не отряд: сколько ждут из нужных
+    /// на отряд, без боевого духа.
     /// </summary>
     public sealed class SquadCard : MonoBehaviour
     {
@@ -39,20 +41,68 @@ namespace Marchlands.UI
         [SerializeField] private string formingText = "Строятся";
         [SerializeField] private string reinforcingText = "Пополняются";
 
+        [Header("Толпа рекрутов")]
+        [Tooltip("Заголовок группы толпы: {0} — род войск.")]
+        [SerializeField] private string campTitleFormat = "{0}";
+        [SerializeField] private string campBarracksText = "Не отряд:\nждут\nу казармы";
+        [SerializeField] private string campStableText = "Не отряд:\nждут\nу конюшни";
+        [Tooltip("Цвет рамки карточки толпы: отличает её от карточки отряда.")]
+        [SerializeField] private Color campTint = new Color(0.82f, 0.78f, 0.7f);
+
         private Match match;
         private Squad squad;
+        private Side campSide;
+        private UnitType? campType;
+        private Image panelImage;
+        private Color panelColor;
 
         public void Initialize(Match match)
         {
             this.match = match;
+            panelImage = panel.GetComponent<Image>();
+            panelColor = panelImage != null ? panelImage.color : Color.white;
             SetSquad(null);
         }
 
         public void SetSquad(Squad squad)
         {
             this.squad = squad;
-            panel.SetActive(squad != null);
+            if (squad != null)
+            {
+                campType = null;
+            }
+
+            panel.SetActive(squad != null || campType.HasValue);
+            SetCampLook(false);
             Refresh();
+        }
+
+        /// <summary>Карточка группы толпы рекрутов этого рода войск; null — скрыть (если не выделен отряд).</summary>
+        public void SetCamp(Side side, UnitType? type)
+        {
+            campSide = side;
+            campType = type;
+            if (type.HasValue)
+            {
+                squad = null;
+            }
+
+            panel.SetActive(squad != null || type.HasValue);
+            SetCampLook(type.HasValue);
+            Refresh();
+        }
+
+        private void SetCampLook(bool camp)
+        {
+            if (moraleFill != null && moraleFill.transform.parent != null && moraleFill.transform.parent != panel.transform)
+            {
+                moraleFill.transform.parent.gameObject.SetActive(!camp);
+            }
+
+            if (panelImage != null)
+            {
+                panelImage.color = camp ? panelColor * campTint : panelColor;
+            }
         }
 
         private void Update()
@@ -62,7 +112,18 @@ namespace Marchlands.UI
 
         private void Refresh()
         {
-            if (squad == null || match == null)
+            if (match == null)
+            {
+                return;
+            }
+
+            if (squad == null && campType.HasValue)
+            {
+                RefreshCamp(campType.Value);
+                return;
+            }
+
+            if (squad == null)
             {
                 return;
             }
@@ -73,14 +134,8 @@ namespace Marchlands.UI
                 return;
             }
 
-            Sprite[] portraits = squad.Side == Side.France ? francePortraits : austriaPortraits;
-            int index = (int)squad.Type;
-            if (portraits != null && index < portraits.Length && portraits[index] != null && portrait.sprite != portraits[index])
-            {
-                portrait.sprite = portraits[index];
-            }
-
-            titleLabel.text = squad.Type == UnitType.Fusiliers ? fusiliersTitle : squad.Type == UnitType.Cavalry ? cavalryTitle : grenadiersTitle;
+            SetPortrait(squad.Side, squad.Type);
+            titleLabel.text = GetTitle(squad.Type);
 
             float morale = Mathf.Clamp(squad.Morale, 0f, MoraleMath.MaxMorale);
             float share = morale / MoraleMath.MaxMorale;
@@ -93,6 +148,30 @@ namespace Marchlands.UI
             strengthLabel.text = string.Format(strengthFormat, squad.Alive, UnitStats.Of(squad, match.Settings).squadSize);
             // Перезарядку показывает кнопка «Залп» — в карточке её нет.
             detailsLabel.text = string.Format(moraleFormat, Mathf.RoundToInt(morale)) + "\n" + GetActivity();
+        }
+
+        private void RefreshCamp(UnitType type)
+        {
+            SetPortrait(campSide, type);
+            titleLabel.text = string.Format(campTitleFormat, GetTitle(type));
+            int waiting = match.GetPlayer(campSide).GetReserve(type);
+            strengthLabel.text = string.Format(strengthFormat, waiting, match.Settings.Unit(type).squadSize);
+            detailsLabel.text = type == UnitType.Cavalry ? campStableText : campBarracksText;
+        }
+
+        private void SetPortrait(Side side, UnitType type)
+        {
+            Sprite[] portraits = side == Side.France ? francePortraits : austriaPortraits;
+            int index = (int)type;
+            if (portraits != null && index < portraits.Length && portraits[index] != null && portrait.sprite != portraits[index])
+            {
+                portrait.sprite = portraits[index];
+            }
+        }
+
+        private string GetTitle(UnitType type)
+        {
+            return type == UnitType.Fusiliers ? fusiliersTitle : type == UnitType.Cavalry ? cavalryTitle : grenadiersTitle;
         }
 
         private string GetActivity()

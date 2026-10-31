@@ -90,5 +90,12 @@ namespace Marchlands.Simulation.Buildings
 
         /// <summary>Сколько осталось до следующего залпа часовых, s.</summary>
         internal float SentryTimer { get; set; }
+
+        /// <summary>По кому целятся часовые (0 — не целятся); залп — через <see cref="SentryAimRemaining"/> секунд.</summary>
+        public int SentryAimTargetId { get; internal set; }
+
+        public float SentryAimRemaining { get; internal set; }
+
+        public bool IsSentryAiming => SentryAimTargetId != 0;
     }
 }

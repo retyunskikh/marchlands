@@ -16,6 +16,8 @@ namespace Marchlands.UI
         [SerializeField] private Button infoButton;
         [Tooltip("«Распустить» ждущих этого рода войск — у иконок найма; у иконок постройки не задана.")]
         [SerializeField] private Button disbandButton;
+        [Tooltip("Надпись на «Распустить»: {0} — сколько людей уйдёт.")]
+        [SerializeField] private string disbandFormat = "Распустить {0}";
         [SerializeField] private Color onColor = new Color(1f, 0.85f, 0.35f);
         [SerializeField] private Color offColor = new Color(0.95f, 0.92f, 0.82f);
         [SerializeField] private Color availableTint = Color.white;
@@ -27,12 +29,25 @@ namespace Marchlands.UI
 
         public Button DisbandButton => disbandButton;
 
-        /// <summary>«Распустить» видна, только когда у здания ждут люди этого рода войск.</summary>
-        public void SetDisbandVisible(bool visible)
+        /// <summary>«Распустить» над иконкой видна, только когда ждут люди этого рода войск, и пишет, сколько их уйдёт.</summary>
+        public void SetDisband(int waiting)
         {
-            if (disbandButton != null && disbandButton.gameObject.activeSelf != visible)
+            if (disbandButton == null)
+            {
+                return;
+            }
+
+            bool visible = waiting > 0;
+            if (disbandButton.gameObject.activeSelf != visible)
             {
                 disbandButton.gameObject.SetActive(visible);
+            }
+
+            Text text = disbandButton.GetComponentInChildren<Text>(true);
+            string value = string.Format(disbandFormat, waiting);
+            if (visible && text != null && text.text != value)
+            {
+                text.text = value;
             }
         }
 

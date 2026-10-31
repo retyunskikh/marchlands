@@ -56,8 +56,10 @@ namespace Marchlands.View
         private int slotsAlive = -1;
         private bool slotsChanging;
 
-        // 0 — стоит, 1 — идёт; меняется плавно, чтобы походка не обрывалась.
-        private float gaitBlend;
+        // У каждого солдата своя походка: 0 — стоит, 1 — идёт; меняется плавно, чтобы шаг не обрывался.
+        // Шагает тот, кто сдвинулся с места, — и на марше, и когда строй разворачивается или перестраивается на месте.
+        private readonly List<float> gaitBlends = new List<float>();
+        private readonly List<float2> lastWorld = new List<float2>();
 
         // 0 — обычный строй, 1 — полная свалка рукопашной; меняется плавно.
         private float meleeBlend;
@@ -104,7 +106,6 @@ namespace Marchlands.View
 
             Quaternion rotation = Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset);
             UpdateMelee(alpha, position);
-            UpdateGait();
             UpdateAim();
             int shooters = VolleyMath.Shooters(squad.Formation, squad.Alive, settings);
             float2 forward = Angles.Direction(facing);
@@ -130,9 +131,10 @@ namespace Marchlands.View
 
                 local = shownSlots[i] = math.lerp(shownSlots[i], local, regroup);
 
-                if (gaitBlend > 0f)
+                float gait = UpdateGait(i, FormationLayout.LocalToWorld(local, position, facing));
+                if (gait > 0f)
                 {
-                    local += GaitOffset(i, local);
+                    local += GaitOffset(i, local, gait);
                 }
 
                 float2 world = FormationLayout.LocalToWorld(local, position, facing);
@@ -145,7 +147,7 @@ namespace Marchlands.View
                 bool posed = RenderArms(i, world, rotation, meleeRotation, forward, slot < shooters);
                 if (!posed)
                 {
-                    RenderStep(i, local);
+                    RenderStep(i, local, gait);
                 }
             }
 
@@ -211,7 +213,6 @@ namespace Marchlands.View
             moraleFill.transform.localScale = new Vector3(width, size.y, 1f);
         }
 
-        /// <summary>Идёт ли отряд: сдвинулся за последний тик (бегущие и атакующие тоже идут).</summary>
         /// <summary>«Целься!»: стреляющие вскидывают ружья, пока отряд прицеливается, и опускают после залпа.</summary>
         private void UpdateAim()
         {
@@ -221,11 +222,27 @@ namespace Marchlands.View
             aimBlend = aiming ? math.min(1f, aimBlend + step) : math.max(0f, aimBlend - step);
         }
 
-        private void UpdateGait()
+        /// <summary>
+        /// Походка солдата: идёт, если его место на земле сдвигается быстрее stepMinSpeed — на марше, при развороте
+        /// строя (фланги проходят дугу, середина почти стоит), при перестроении и смыкании после потерь.
+        /// </summary>
+        private float UpdateGait(int index, float2 world)
         {
-            bool moving = math.distancesq(squad.PreviousPosition, squad.Position) > 1e-6f && !squad.IsInMelee;
-            float step = style.GaitBlendTime > 0f ? Time.deltaTime / style.GaitBlendTime : 1f;
-            gaitBlend = moving ? math.min(1f, gaitBlend + step) : math.max(0f, gaitBlend - step);
+            float delta = Time.deltaTime;
+            float blend = gaitBlends[index];
+            if (delta <= 0f)
+            {
+                return blend;
+            }
+
+            float2 last = lastWorld[index];
+            lastWorld[index] = world;
+            bool moving = !float.IsNaN(last.x) && !squad.IsInMelee
+                && math.distancesq(world, last) > style.StepMinSpeed * style.StepMinSpeed * delta * delta;
+            float step = style.GaitBlendTime > 0f ? delta / style.GaitBlendTime : 1f;
+            blend = moving ? math.min(1f, blend + step) : math.max(0f, blend - step);
+            gaitBlends[index] = blend;
+            return blend;
         }
 
         /// <summary>
@@ -233,11 +250,11 @@ namespace Marchlands.View
         /// Пехота марширует в ногу — у всех одна фаза; конница скачет —
         /// рывками вперёд-назад, по шеренгам с запаздыванием.
         /// </summary>
-        private float2 GaitOffset(int index, float2 local)
+        private float2 GaitOffset(int index, float2 local, float blend)
         {
             Vector2 gait = style.GetGait(squad.Type);
             float time = Time.time * gait.x * 2f * math.PI;
-            float amplitude = gait.y * math.smoothstep(0f, 1f, gaitBlend);
+            float amplitude = gait.y * math.smoothstep(0f, 1f, blend);
             switch (squad.Type)
             {
                 case UnitType.Cavalry:
@@ -319,7 +336,7 @@ namespace Marchlands.View
         /// Кадр шага: на ходу фигурка чередует «левой» и «правой» (у конницы — галоп), стоя — обычная.
         /// Пехота шагает в ногу, конница — волной по шеренгам (та же фаза, что у походки).
         /// </summary>
-        private void RenderStep(int index, float2 local)
+        private void RenderStep(int index, float2 local, float blend)
         {
             Sprite stand = fullSprites[index];
             if (stand == null)
@@ -328,7 +345,7 @@ namespace Marchlands.View
             }
 
             Sprite target = stand;
-            if (gaitBlend > 0.3f)
+            if (blend > 0.3f)
             {
                 Vector2 gait = style.GetGait(squad.Type);
                 float phase = GaitPhase(index, local);
@@ -584,6 +601,8 @@ namespace Marchlands.View
                 fullSprites.Add(drawn);
                 soldierRoles.Add(role);
                 shownSlots.Add(new float2(float.NaN, float.NaN));
+                gaitBlends.Add(0f);
+                lastWorld.Add(new float2(float.NaN, float.NaN));
                 if (drawn != null && style.TryGetMeleeSprites(squad.Side, squad.Type, role, out Sprite body, out Sprite armsSprite))
                 {
                     bodySprites.Add(body);
@@ -625,6 +644,8 @@ namespace Marchlands.View
                 fullSprites.RemoveAt(fallen);
                 soldierRoles.RemoveAt(fallen);
                 shownSlots.RemoveAt(fallen);
+                gaitBlends.RemoveAt(fallen);
+                lastWorld.RemoveAt(fallen);
             }
         }
 

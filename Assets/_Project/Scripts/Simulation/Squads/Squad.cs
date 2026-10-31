@@ -107,6 +107,14 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Накопленные дробные выстрелы стрельбы вразнобой.</summary>
         internal float SkirmishShots { get; set; }
 
+        /// <summary>Выстрелы вразнобой, которые готовятся (человек целится aimTime секунд, потом стреляет).</summary>
+        internal readonly System.Collections.Generic.List<SkirmishAim> SkirmishAimList = new System.Collections.Generic.List<SkirmishAim>();
+
+        public System.Collections.Generic.IReadOnlyList<SkirmishAim> SkirmishAims => SkirmishAimList;
+
+        /// <summary>Сколько выстрелов вразнобой отряд начал готовить — по нему выбирается следующий стрелок.</summary>
+        internal int SkirmishShotCount { get; set; }
+
         /// <summary>Толпа рекрутов, а не управляемый отряд.</summary>
         public bool IsCamp => Type == UnitType.Recruits;
 

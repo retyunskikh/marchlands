@@ -140,12 +140,17 @@ namespace Marchlands.Simulation.Combat
 
         /// <summary>
         /// Стрельба вразнобой: каждый стреляет сам, когда враг в эффективной дальности, раз в reloadTime.
-        /// Выстрелы тика — по одному, каждый попадает с вероятностью залпа на этой дистанции (с меткостью рода войск).
+        /// Выстрел сначала готовится: человек целится aimTime секунд (это видно), затем стреляет по ближайшему врагу
+        /// в эффективной дальности; если врага уже нет — выстрел пропадает. Попадание — с вероятностью залпа на этой
+        /// дистанции (с меткостью рода войск).
         /// </summary>
         private static void SkirmishFire(Match match, Squad squad, float deltaTime, List<VolleyEvent> events)
         {
             CombatSettings combat = match.Settings.combat;
-            Squad target = Targeting.FindTarget(match, squad, UnitStats.EffectiveRange(squad, match.Settings));
+            float range = UnitStats.EffectiveRange(squad, match.Settings);
+            FireReadyAims(match, squad, deltaTime, range, events);
+
+            Squad target = Targeting.FindTarget(match, squad, range);
             if (target == null || squad.Alive <= 0 || combat.reloadTime <= 0f)
             {
                 squad.SkirmishShots = 0f;
@@ -153,24 +158,53 @@ namespace Marchlands.Simulation.Combat
             }
 
             squad.SkirmishShots += squad.Alive / combat.reloadTime * deltaTime;
+            while (squad.SkirmishShots >= 1f)
+            {
+                squad.SkirmishShots -= 1f;
+                squad.SkirmishAimList.Add(new SkirmishAim(squad.SkirmishShotCount++, combat.aimTime));
+            }
+        }
+
+        private static void FireReadyAims(Match match, Squad squad, float deltaTime, float range, List<VolleyEvent> events)
+        {
+            List<SkirmishAim> aims = squad.SkirmishAimList;
+            for (int i = 0; i < aims.Count; i++)
+            {
+                SkirmishAim aim = aims[i];
+                float remaining = aim.Remaining - deltaTime;
+                if (remaining > TimerEpsilon)
+                {
+                    aims[i] = new SkirmishAim(aim.ShooterIndex, remaining);
+                    continue;
+                }
+
+                aims.RemoveAt(i);
+                i--;
+                Squad target = squad.Alive > 0 ? Targeting.FindTarget(match, squad, range) : null;
+                if (target != null && target.Alive > 0)
+                {
+                    FireSingleShot(match, squad, target, aim.ShooterIndex, events);
+                }
+            }
+        }
+
+        private static void FireSingleShot(Match match, Squad squad, Squad target, int shooterIndex, List<VolleyEvent> events)
+        {
+            CombatSettings combat = match.Settings.combat;
             UnitTypeSettings unit = UnitStats.Of(squad, match.Settings);
             float distance = FireGeometry.Distance(squad, target, match.Settings.squads);
             float scaledDistance = distance / unit.rangeMultiplier;
             float cover = (match.Terrain != null && match.Terrain.IsInForest(target.Position) ? match.Settings.terrain.forestCoverMultiplier : 1f)
                 * UnitStats.Of(target, match.Settings).targetHitMultiplier;
             float probability = VolleyMath.HitProbability(scaledDistance, false, target.Formation, combat, cover, unit.accuracyMultiplier);
-            while (squad.SkirmishShots >= 1f && target.Alive > 0)
-            {
-                squad.SkirmishShots -= 1f;
-                int aliveBefore = target.Alive;
-                int casualties = match.Random.NextFloat() < probability ? 1 : 0;
-                target.Alive -= casualties;
-                bool flank = MoraleMath.IsFlank(target, squad.Position, match.Settings.morale);
-                MoraleMath.ApplyLoss(target, casualties, aliveBefore, scaledDistance <= combat.pointBlankRange, flank, match.Settings);
-                events.Add(new VolleyEvent(
-                    match.CurrentTick, squad.Id, squad.Side, 1, distance, casualties,
-                    target.Id, aliveBefore, target.Position, target.Facing, target.Formation));
-            }
+            int aliveBefore = target.Alive;
+            int casualties = match.Random.NextFloat() < probability ? 1 : 0;
+            target.Alive -= casualties;
+            bool flank = MoraleMath.IsFlank(target, squad.Position, match.Settings.morale);
+            MoraleMath.ApplyLoss(target, casualties, aliveBefore, scaledDistance <= combat.pointBlankRange, flank, match.Settings);
+            events.Add(new VolleyEvent(
+                match.CurrentTick, squad.Id, squad.Side, 1, distance, casualties,
+                target.Id, aliveBefore, target.Position, target.Facing, target.Formation, shooterIndex));
         }
 
         private static void ApplyVolley(Match match, PendingVolley volley, List<VolleyEvent> events)

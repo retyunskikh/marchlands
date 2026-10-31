@@ -29,8 +29,12 @@ namespace Marchlands.View
         [SerializeField] private Color smokeColor = new Color(0.9f, 0.9f, 0.88f, 0.75f);
         [Tooltip("На каком расстоянии от центра здания в сторону цели стреляют часовые, u.")]
         [SerializeField] private float sentryFireOffset = 2.5f;
-        [Tooltip("Сколько клубов дыма даёт залп часовых.")]
+        [Tooltip("Сколько клубов дыма даёт залп часовых, если их фигурок не видно.")]
         [SerializeField] private int sentryPuffs = 3;
+        [Tooltip("Насколько впереди стрелка-одиночки (часовой, рекрут) встаёт клуб дыма, u.")]
+        [SerializeField] private float muzzleOffset = 0.45f;
+        [Tooltip("Размер клуба дыма одиночного выстрела относительно залпового.")]
+        [SerializeField] private float singlePuffScale = 0.75f;
 
         [Header("Звук")]
         [SerializeField] private AudioClip volleyClip;
@@ -41,13 +45,17 @@ namespace Marchlands.View
         [SerializeField] private float stereoWidth = 0.6f;
 
         private readonly List<AudioSource> voices = new List<AudioSource>();
+        private readonly List<float2> muzzles = new List<float2>();
+        private BuildingViewRegistry buildingViews;
 
         private Match match;
         private int nextVoice;
 
-        public void Initialize(Match match)
+        /// <param name="buildingViews">Откуда брать стрелков толпы рекрутов и часовых; null — дым по фронту и у стены.</param>
+        public void Initialize(Match match, BuildingViewRegistry buildingViews = null)
         {
             this.match = match;
+            this.buildingViews = buildingViews;
             // Система без собственной эмиссии: клубы выпускаются только через Emit при залпе.
             smoke.Play();
             for (int i = 0; i < audioVoices; i++)
@@ -65,11 +73,22 @@ namespace Marchlands.View
             foreach (VolleyEvent volley in volleys)
             {
                 Squad shooter = match.FindSquad(volley.ShooterId);
-                if (shooter != null)
+                if (shooter == null)
                 {
-                    EmitSmoke(shooter);
-                    PlaySound(shooter.Position, volley.Shooters);
+                    continue;
                 }
+
+                // Выстрел вразнобой из толпы: клуб дыма у того, кто стрелял, а не по всей толпе.
+                if (volley.ShooterIndex >= 0 && buildingViews != null && shooter.IsCamp
+                    && buildingViews.TryGetCampShooter(shooter, volley.ShooterIndex, out float2 at))
+                {
+                    EmitSingleShot(at, volley.TargetPosition);
+                    PlaySound(at, volley.Shooters);
+                    continue;
+                }
+
+                EmitSmoke(shooter);
+                PlaySound(shooter.Position, volley.Shooters);
             }
         }
 
@@ -78,6 +97,20 @@ namespace Marchlands.View
         {
             foreach (SentryVolley volley in volleys)
             {
+                // Видны часовые — у каждого свой клуб дыма перед ружьём.
+                muzzles.Clear();
+                buildingViews?.GetSentryMuzzles(volley.BuildingId, muzzles);
+                if (muzzles.Count > 0)
+                {
+                    foreach (float2 muzzle in muzzles)
+                    {
+                        EmitSingleShot(muzzle, volley.TargetPosition);
+                    }
+
+                    PlaySound(volley.BuildingPosition, volley.Shooters);
+                    continue;
+                }
+
                 float2 forward = math.normalizesafe(volley.TargetPosition - volley.BuildingPosition, new float2(1f, 0f));
                 float2 right = new float2(forward.y, -forward.x);
                 float2 origin = volley.BuildingPosition + forward * sentryFireOffset;
@@ -108,13 +141,21 @@ namespace Marchlands.View
             }
         }
 
-        private void EmitPuff(float2 position, float2 velocity)
+        /// <summary>Один выстрел: клуб дыма перед стрелком в сторону цели.</summary>
+        private void EmitSingleShot(float2 shooter, float2 target)
+        {
+            float2 forward = math.normalizesafe(target - shooter, new float2(1f, 0f));
+            float2 position = shooter + forward * (muzzleOffset + Random.Range(0f, 0.15f));
+            EmitPuff(position, forward * Random.Range(puffSpeed.x, puffSpeed.y), singlePuffScale);
+        }
+
+        private void EmitPuff(float2 position, float2 velocity, float scale = 1f)
         {
             var emit = new ParticleSystem.EmitParams
             {
                 position = new Vector3(position.x, position.y, 0f),
                 velocity = new Vector3(velocity.x, velocity.y, 0f),
-                startSize = Random.Range(puffSize.x, puffSize.y),
+                startSize = Random.Range(puffSize.x, puffSize.y) * scale,
                 startLifetime = smokeDuration * Random.Range(0.8f, 1f),
                 startColor = smokeColor,
                 rotation = Random.Range(0f, 360f),

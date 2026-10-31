@@ -31,6 +31,10 @@ namespace Marchlands.View
             public SpriteRenderer Renderer;
             public int SquadId;
             public float2 Position;
+            public WalkerStep Step;
+            public Sprite Stand;
+            public Sprite Walk0;
+            public Sprite Walk1;
         }
 
         /// <param name="layouts">Планы деревень карты по порядку деревень; null или пусто — общие раскладки стиля.</param>
@@ -96,7 +100,11 @@ namespace Marchlands.View
                 {
                     Renderer = spriteRenderer,
                     SquadId = squad.Id,
-                    Position = village.Position + new float2(offset.x, offset.y)
+                    Position = village.Position + new float2(offset.x, offset.y),
+                    Step = new WalkerStep(match.CurrentTick * 13 + squad.Id),
+                    Stand = sprite,
+                    Walk0 = squadViews.Style.GetWalkSprite(squad.Side, squad.Type, SoldierRole.Private, 0),
+                    Walk1 = squadViews.Style.GetWalkSprite(squad.Side, squad.Type, SoldierRole.Private, 1)
                 });
             }
         }
@@ -121,7 +129,8 @@ namespace Marchlands.View
                 float2 direction = toSquad / distance;
                 walker.Position += direction * step;
                 float angle = math.degrees(math.atan2(direction.y, direction.x)) - 90f;
-                walker.Renderer.transform.SetPositionAndRotation(new Vector3(walker.Position.x, walker.Position.y, 0f), Quaternion.Euler(0f, 0f, angle));
+                walker.Step.Apply(walker.Renderer, walker.Position, Quaternion.Euler(0f, 0f, angle), true, direction,
+                    walker.Stand, walker.Walk0, walker.Walk1, squadViews.Style);
             }
         }
 

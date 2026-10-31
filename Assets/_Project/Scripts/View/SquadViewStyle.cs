@@ -73,6 +73,10 @@ namespace Marchlands.View
         [SerializeField] private Vector2 gallopGait = new Vector2(2.4f, 0.09f);
         [Tooltip("За сколько секунд походка появляется и стихает.")]
         [SerializeField] private float gaitBlendTime = 0.25f;
+        [Tooltip("С какой скорости солдат шагает, а не стоит, u/s: при развороте строя шагают и фланги, и почти стоящая середина.")]
+        [SerializeField] private float stepMinSpeed = 0.12f;
+        [Tooltip("Одиночный пешеход (рекрут, пополнение, рабочий): шагов в секунду и покачивание вбок, u.")]
+        [SerializeField] private Vector2 walkerGait = new Vector2(2.2f, 0.03f);
 
         [Tooltip("Строй конницы: лошади шире и длиннее пехотинца (только вид).")]
         [SerializeField] private Vector2 cavalrySpacing = new Vector2(1.3f, 1.4f);
@@ -123,6 +127,10 @@ namespace Marchlands.View
         public float MeleeBlendTime => meleeBlendTime;
 
         public float GaitBlendTime => gaitBlendTime;
+
+        public float StepMinSpeed => stepMinSpeed;
+
+        public Vector2 WalkerGait => walkerGait;
 
         public bool ShowCount => showCount;
 

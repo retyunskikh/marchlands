@@ -50,6 +50,51 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void Sentries_AimBeforeVolley()
+        {
+            var settings = TestSettings.Create();
+            var match = new Match(3, settings);
+            Building headquarters = match.AddHeadquarters(Side.Austria, AustriaHq);
+            Squad target = match.AddSquad(Side.France, AustriaHq + new float2(-6f, 0f), 0f, Formation.Line);
+            var events = new List<SentryVolley>();
+
+            SentrySystem.Update(match, SimulationTime.TickDuration, events);
+            Assert.IsTrue(headquarters.IsSentryAiming, "Сначала часовые целятся");
+            Assert.AreEqual(target.Id, headquarters.SentryAimTargetId);
+            Assert.AreEqual(0, events.Count, "Залп не сразу");
+
+            int ticks = 0;
+            while (events.Count == 0 && ticks < 100)
+            {
+                SentrySystem.Update(match, SimulationTime.TickDuration, events);
+                ticks++;
+            }
+
+            Assert.AreEqual(TicksFor(settings.combat.aimTime), ticks, 1, "Залп через aimTime");
+            Assert.IsFalse(headquarters.IsSentryAiming);
+        }
+
+        [Test]
+        public void Sentries_AimCancelled_WhenTargetLeavesRange()
+        {
+            var settings = TestSettings.Create();
+            var match = new Match(3, settings);
+            Building headquarters = match.AddHeadquarters(Side.Austria, AustriaHq);
+            Squad target = match.AddSquad(Side.France, AustriaHq + new float2(-6f, 0f), 0f, Formation.Line);
+            var events = new List<SentryVolley>();
+
+            SentrySystem.Update(match, SimulationTime.TickDuration, events);
+            target.Position = AustriaHq + new float2(-40f, 0f);
+            for (int i = 0; i < TicksFor(2f); i++)
+            {
+                SentrySystem.Update(match, SimulationTime.TickDuration, events);
+            }
+
+            Assert.AreEqual(0, events.Count, "Стрелять не по кому — залпа нет");
+            Assert.IsFalse(headquarters.IsSentryAiming, "Часовые снова наготове");
+        }
+
+        [Test]
         public void Sentries_IgnoreEnemiesOutOfRange_AndBuildingsUnderConstruction()
         {
             var match = new Match(1, TestSettings.Create());

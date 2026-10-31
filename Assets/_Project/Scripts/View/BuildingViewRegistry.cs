@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Marchlands.Simulation.Buildings;
+using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Squads;
@@ -28,12 +29,22 @@ namespace Marchlands.View
         private readonly HashSet<int> assaulted = new HashSet<int>();
         private readonly List<int> finishedCrews = new List<int>();
 
+        // Фигурки толпы по сторонам (пехота: сначала фузилёры, потом гренадёры; конница — всадники):
+        // по ним выстрел вразнобой выбирает, кто из толпы целится и стреляет.
+        private readonly List<Waiter>[] infantryCampFigures = { new List<Waiter>(), new List<Waiter>() };
+        private readonly List<Waiter>[] cavalryCampFigures = { new List<Waiter>(), new List<Waiter>() };
+        private readonly HashSet<Waiter> aimingWaiters = new HashSet<Waiter>();
+
         /// <summary>Часовые на углах ограды здания; после залпа какое-то время смотрят на цель.</summary>
         private sealed class Sentries
         {
             public SpriteRenderer[] Figures;
+            public SpriteRenderer[] Arms;
+            public Sprite Stand;
+            public Sprite Body;
             public float AlertUntil;
             public float2 Target;
+            public float AimBlend;
         }
 
         /// <summary>Рабочий из штаба: идёт к повреждённому зданию, чинит его и возвращается в штаб.</summary>
@@ -43,6 +54,7 @@ namespace Marchlands.View
             public float2 Position;
             public float2 Post;
             public bool Returning;
+            public WalkerStep Step;
         }
 
         /// <summary>
@@ -57,6 +69,16 @@ namespace Marchlands.View
             public bool Shown;
             public int PathLength;
             public int Step;
+            public WalkerStep Stride;
+            public Sprite Stand;
+            public Sprite Walk0;
+            public Sprite Walk1;
+
+            // «Целься!» в толпе: тело без ружья и руки с ружьём, вынесенные вперёд (null — без позы).
+            public Sprite Body;
+            public SpriteRenderer Arms;
+            public float AimBlend;
+            public float2 AimTarget;
 
             public bool OnPath => Step < PathLength;
 
@@ -74,6 +96,9 @@ namespace Marchlands.View
 
         private Match match;
         private Building selected;
+        private Side selectedCampSide;
+        private UnitType? selectedCampType;
+        private SpriteRenderer campMarker;
         private SpriteRenderer radiusPreview;
         private SpriteRenderer sitePreview;
 
@@ -85,7 +110,17 @@ namespace Marchlands.View
             radiusPreview = CreatePreview("Build Radius", style.CircleSprite, style.BodySortingOrder - 2);
             sitePreview = CreatePreview("Barracks Site", style.SquareSprite, style.OverlaySortingOrder);
             sitePreview.transform.localScale = new Vector3(style.BarracksSize.x, style.BarracksSize.y, 1f);
+            campMarker = CreatePreview("Camp Selection", squadViews.Style.MarkerSprite, style.BodySortingOrder + 4);
+            campMarker.color = squadViews.Style.SelectionColor;
+            campMarker.enabled = false;
             HidePlacement();
+        }
+
+        /// <summary>Выделенная группа своей толпы рекрутов (род войск) подсвечивается рамкой, как отряд; null — снять.</summary>
+        public void SetSelectedCamp(Side side, UnitType? type)
+        {
+            selectedCampSide = side;
+            selectedCampType = type;
         }
 
         public void SetSelected(Building building)
@@ -143,6 +178,14 @@ namespace Marchlands.View
                             Destroy(figure.gameObject);
                         }
 
+                        foreach (SpriteRenderer arms in posts.Arms)
+                        {
+                            if (arms != null)
+                            {
+                                Destroy(arms.gameObject);
+                            }
+                        }
+
                         sentries.Remove(id);
                     }
                 }
@@ -166,6 +209,7 @@ namespace Marchlands.View
             RenderSentries();
             RenderWorkers();
 
+            campMarker.enabled = false;
             foreach (Side side in new[] { Side.France, Side.Austria })
             {
                 PlayerState player = match.GetPlayer(side);
@@ -174,9 +218,23 @@ namespace Marchlands.View
                 RenderWaiting(side, UnitType.Fusiliers, player.FusilierReserve, fusiliers[(int)side], 1f, -groupOffset);
                 RenderWaiting(side, UnitType.Grenadiers, player.GrenadierReserve, grenadiers[(int)side], 1f, groupOffset);
                 RenderWaiting(side, UnitType.Cavalry, player.CavalryReserve, riders[(int)side], 1.8f, 0f);
+                CollectCampFigures(side);
+                RenderCampAims(side, false);
+                RenderCampAims(side, true);
             }
 
             RenderLeaving();
+        }
+
+        /// <summary>Рамка вокруг мест группы толпы (в осях толпы: <paramref name="right"/> — поперёк, <paramref name="front"/> — вперёд).</summary>
+        private void PlaceCampMarker(float2 start, float2 right, float2 front, float2 min, float2 max, Quaternion rotation)
+        {
+            float padding = squadViews.Style.SelectionPadding;
+            float2 mid = (min + max) * 0.5f;
+            float2 center = start + right * mid.x + front * mid.y;
+            campMarker.enabled = true;
+            campMarker.transform.SetPositionAndRotation(new Vector3(center.x, center.y, 0f), rotation);
+            campMarker.transform.localScale = new Vector3(max.x - min.x + padding * 2f + 0.5f, max.y - min.y + padding * 2f + 0.5f, 1f);
         }
 
         /// <summary>Часовые, давшие залп за тик, поворачиваются к цели.</summary>
@@ -202,44 +260,243 @@ namespace Marchlands.View
                 return;
             }
 
-            var posts = new Sentries { Figures = new SpriteRenderer[count] };
+            var posts = new Sentries { Figures = new SpriteRenderer[count], Arms = new SpriteRenderer[count], Stand = sprite };
+            bool canPose = squadViews.Style.TryGetMeleeSprites(building.Owner, UnitType.Fusiliers, SoldierRole.Private, out Sprite body, out Sprite armsSprite);
+            posts.Body = canPose ? body : null;
             for (int i = 0; i < count; i++)
             {
                 SpriteRenderer figure = CreatePreview($"Sentry {building.Id} {i}", sprite, style.BodySortingOrder + 5);
                 figure.transform.localScale = Vector3.one * (squadViews.Style.SoldierScale * style.SentryScale);
                 posts.Figures[i] = figure;
+                if (canPose)
+                {
+                    SpriteRenderer arms = CreatePreview($"Sentry Arms {building.Id} {i}", armsSprite, style.BodySortingOrder + 6);
+                    arms.transform.localScale = figure.transform.localScale;
+                    arms.enabled = false;
+                    posts.Arms[i] = arms;
+                }
             }
 
             sentries.Add(building.Id, posts);
         }
 
-        /// <summary>Часовые стоят на постах построенного здания: смотрят наружу, а после залпа — на цель.</summary>
+        /// <summary>
+        /// Часовые стоят на постах построенного здания и смотрят наружу. Перед залпом вскидывают ружья к цели
+        /// («Целься!» — видно, откуда сейчас ударят), после залпа опускают и какое-то время смотрят на цель.
+        /// </summary>
         private void RenderSentries()
         {
+            SquadViewStyle squadStyle = squadViews.Style;
             foreach (KeyValuePair<int, Sentries> pair in sentries)
             {
                 Building building = match.FindBuilding(pair.Key);
                 bool shown = building != null && building.IsBuilt && !building.IsDestroyed;
                 Sentries posts = pair.Value;
+                Squad aimed = shown && building.IsSentryAiming ? match.FindSquad(building.SentryAimTargetId) : null;
+                if (aimed != null)
+                {
+                    posts.Target = aimed.Position;
+                    posts.AlertUntil = math.max(posts.AlertUntil, Time.time + style.SentryAlertTime);
+                }
+
+                posts.AimBlend = StepBlend(posts.AimBlend, aimed != null, squadStyle);
                 Vector2 size = style.SizeOf(building != null ? building.Type : BuildingType.Barracks);
                 float direction = building != null && building.Position.x > 0f ? -1f : 1f;
                 bool alert = Time.time < posts.AlertUntil;
+                bool posed = posts.Body != null && posts.AimBlend > 0f;
                 for (int i = 0; i < posts.Figures.Length; i++)
                 {
                     SpriteRenderer figure = posts.Figures[i];
+                    SpriteRenderer arms = posts.Arms[i];
                     figure.enabled = shown;
+                    if (arms != null)
+                    {
+                        arms.enabled = shown && posed;
+                    }
+
                     if (!shown)
                     {
                         continue;
                     }
 
-                    Vector2 post = style.SentryPosts[i];
-                    float2 local = new float2(post.x * size.x * direction, post.y * size.y);
-                    float2 position = building.Position + local;
-                    float2 look = alert ? posts.Target - position : local;
-                    figure.transform.SetPositionAndRotation(new Vector3(position.x, position.y, 0f), FacingOf(look));
+                    float2 position = GetSentryPosition(building, i, size, direction);
+                    float2 look = alert ? posts.Target - position : position - building.Position;
+                    Quaternion rotation = FacingOf(look);
+                    figure.transform.SetPositionAndRotation(new Vector3(position.x, position.y, 0f), rotation);
+                    Sprite sprite = posed ? posts.Body : posts.Stand;
+                    if (figure.sprite != sprite)
+                    {
+                        figure.sprite = sprite;
+                    }
+
+                    if (posed)
+                    {
+                        float2 reach = math.normalizesafe(look) * (squadStyle.AimReach * math.smoothstep(0f, 1f, posts.AimBlend));
+                        arms.transform.SetPositionAndRotation(new Vector3(position.x + reach.x, position.y + reach.y, 0f), rotation);
+                    }
                 }
             }
+        }
+
+        private float2 GetSentryPosition(Building building, int index, Vector2 size, float direction)
+        {
+            Vector2 post = style.SentryPosts[index];
+            return building.Position + new float2(post.x * size.x * direction, post.y * size.y);
+        }
+
+        /// <summary>
+        /// Где стоят часовые здания (для дыма их залпа); пусто — часовых не рисуют (тогда дым — у стены здания).
+        /// </summary>
+        public void GetSentryMuzzles(int buildingId, List<float2> positions)
+        {
+            positions.Clear();
+            Building building = match.FindBuilding(buildingId);
+            if (building == null || !sentries.TryGetValue(buildingId, out Sentries posts))
+            {
+                return;
+            }
+
+            Vector2 size = style.SizeOf(building.Type);
+            float direction = building.Position.x > 0f ? -1f : 1f;
+            for (int i = 0; i < posts.Figures.Length; i++)
+            {
+                positions.Add(GetSentryPosition(building, i, size, direction));
+            }
+        }
+
+        /// <summary>Плавное «вскинуть ружьё — опустить» за aimRaiseTime / aimLowerTime.</summary>
+        private static float StepBlend(float blend, bool aiming, SquadViewStyle squadStyle)
+        {
+            float time = aiming ? squadStyle.AimRaiseTime : squadStyle.AimLowerTime;
+            float step = time > 0f ? Time.deltaTime / time : 1f;
+            return aiming ? math.min(1f, blend + step) : math.max(0f, blend - step);
+        }
+
+        /// <summary>Видимые фигурки толпы стороны в постоянном порядке: пехота — фузилёры, потом гренадёры; конница отдельно.</summary>
+        private void CollectCampFigures(Side side)
+        {
+            List<Waiter> infantry = infantryCampFigures[(int)side];
+            infantry.Clear();
+            AddShown(fusiliers[(int)side], infantry);
+            AddShown(grenadiers[(int)side], infantry);
+            List<Waiter> cavalry = cavalryCampFigures[(int)side];
+            cavalry.Clear();
+            AddShown(riders[(int)side], cavalry);
+        }
+
+        private static void AddShown(List<Waiter> crowd, List<Waiter> into)
+        {
+            foreach (Waiter waiter in crowd)
+            {
+                if (waiter.Shown)
+                {
+                    into.Add(waiter);
+                }
+            }
+        }
+
+        /// <summary>Кто из толпы стреляет выстрелом с этим номером: номер разбрасывается по толпе, а не идёт подряд.</summary>
+        private static Waiter PickShooter(List<Waiter> figures, int shooterIndex)
+        {
+            if (figures.Count == 0)
+            {
+                return null;
+            }
+
+            int pick = (int)(Hash01(shooterIndex * 7 + 12345) * figures.Count);
+            return figures[math.min(pick, figures.Count - 1)];
+        }
+
+        /// <summary>
+        /// «Целься!» в толпе: тот, чей выстрел вразнобой готовится, поворачивается к ближайшему врагу и выносит ружьё вперёд;
+        /// после выстрела опускает его и снова смотрит вперёд.
+        /// </summary>
+        private void RenderCampAims(Side side, bool cavalry)
+        {
+            List<Waiter> figures = cavalry ? cavalryCampFigures[(int)side] : infantryCampFigures[(int)side];
+            Squad camp = FindCamp(side, cavalry);
+            aimingWaiters.Clear();
+            if (camp != null)
+            {
+                foreach (SkirmishAim aim in camp.SkirmishAims)
+                {
+                    Waiter shooter = PickShooter(figures, aim.ShooterIndex);
+                    if (shooter != null)
+                    {
+                        aimingWaiters.Add(shooter);
+                    }
+                }
+            }
+
+            Squad enemy = camp != null && aimingWaiters.Count > 0 ? FindNearestEnemy(camp) : null;
+            SquadViewStyle squadStyle = squadViews.Style;
+            foreach (Waiter waiter in figures)
+            {
+                bool aiming = enemy != null && aimingWaiters.Contains(waiter) && !waiter.OnPath;
+                waiter.AimBlend = StepBlend(waiter.AimBlend, aiming, squadStyle);
+                bool posed = waiter.AimBlend > 0f && waiter.Body != null && waiter.Arms != null;
+                if (waiter.Arms != null && waiter.Arms.enabled != posed)
+                {
+                    waiter.Arms.enabled = posed;
+                }
+
+                if (waiter.AimBlend <= 0f)
+                {
+                    continue;
+                }
+
+                if (aiming)
+                {
+                    waiter.AimTarget = enemy.Position;
+                }
+
+                float2 look = waiter.AimTarget - waiter.Position;
+                Quaternion rotation = FacingOf(look);
+                waiter.Renderer.transform.rotation = rotation;
+                if (!posed)
+                {
+                    continue;
+                }
+
+                waiter.Renderer.sprite = waiter.Body;
+                float2 reach = math.normalizesafe(look) * (squadStyle.AimReach * math.smoothstep(0f, 1f, waiter.AimBlend));
+                Vector3 at = waiter.Renderer.transform.position;
+                waiter.Arms.transform.SetPositionAndRotation(new Vector3(at.x + reach.x, at.y + reach.y, 0f), rotation);
+            }
+        }
+
+        private Squad FindNearestEnemy(Squad camp)
+        {
+            Squad best = null;
+            float bestDistance = float.MaxValue;
+            foreach (Squad squad in match.Squads)
+            {
+                if (squad.Side == camp.Side || squad.Alive <= 0 || squad.IsRouting)
+                {
+                    continue;
+                }
+
+                float distance = math.distancesq(squad.Position, camp.Position);
+                if (distance < bestDistance)
+                {
+                    best = squad;
+                    bestDistance = distance;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// Откуда выстрелил человек толпы с этим номером выстрела вразнобой — для дыма у него, а не по всей толпе.
+        /// false — толпу не рисуют.
+        /// </summary>
+        public bool TryGetCampShooter(Squad camp, int shooterIndex, out float2 position)
+        {
+            List<Waiter> figures = camp.IsCavalryCamp ? cavalryCampFigures[(int)camp.Side] : infantryCampFigures[(int)camp.Side];
+            Waiter shooter = shooterIndex >= 0 ? PickShooter(figures, shooterIndex) : null;
+            position = shooter != null ? shooter.Position : camp.Position;
+            return shooter != null;
         }
 
         /// <summary>
@@ -278,7 +535,8 @@ namespace Marchlands.View
                     {
                         Renderer = renderer,
                         Position = gate,
-                        Post = GetWorkerPost(building, gate, i)
+                        Post = GetWorkerPost(building, gate, i),
+                        Step = new WalkerStep(building.Id * 31 + i)
                     });
                 }
 
@@ -303,7 +561,8 @@ namespace Marchlands.View
                     float distance = math.length(toGoal);
                     float2 look = toGoal;
                     float2 shown = worker.Position;
-                    if (distance > step && distance > 1e-3f)
+                    bool walking = distance > step && distance > 1e-3f;
+                    if (walking)
                     {
                         worker.Position += toGoal / distance * step;
                         shown = worker.Position;
@@ -322,7 +581,7 @@ namespace Marchlands.View
                     }
 
                     allHome &= worker.Returning && distance <= step;
-                    worker.Renderer.transform.SetPositionAndRotation(new Vector3(shown.x, shown.y, 0f), FacingOf(look));
+                    worker.Step.Apply(worker.Renderer, shown, FacingOf(look), walking, look, null, null, null, squadViews.Style);
                 }
 
                 if (allHome || headquarters == null)
@@ -391,7 +650,7 @@ namespace Marchlands.View
                     crowd.RemoveAt(i);
                     if (home == null)
                     {
-                        Destroy(waiter.Renderer.gameObject);
+                        DestroyWaiter(waiter);
                         continue;
                     }
 
@@ -411,16 +670,31 @@ namespace Marchlands.View
             }
         }
 
+        private static void DestroyWaiter(Waiter waiter)
+        {
+            Destroy(waiter.Renderer.gameObject);
+            if (waiter.Arms != null)
+            {
+                Destroy(waiter.Arms.gameObject);
+            }
+        }
+
         private void RenderLeaving()
         {
             float step = style.RecruitWalkSpeed * Time.deltaTime;
             for (int i = leaving.Count - 1; i >= 0; i--)
             {
                 Waiter waiter = leaving[i];
+                waiter.AimBlend = 0f;
+                if (waiter.Arms != null)
+                {
+                    waiter.Arms.enabled = false;
+                }
+
                 Walk(waiter, waiter.Position, step, waiter.Renderer.transform.rotation);
                 if (!waiter.OnPath)
                 {
-                    Destroy(waiter.Renderer.gameObject);
+                    DestroyWaiter(waiter);
                     leaving.RemoveAt(i);
                 }
             }
@@ -430,13 +704,14 @@ namespace Marchlands.View
         /// Шаг к цели: по точкам пути, если они остались, иначе к <paramref name="target"/>. Идущий смотрит,
         /// куда идёт; дошедший до места — в <paramref name="standing"/>.
         /// </summary>
-        private static void Walk(Waiter waiter, float2 target, float step, Quaternion standing)
+        private void Walk(Waiter waiter, float2 target, float step, Quaternion standing)
         {
             float2 goal = waiter.OnPath ? waiter.NextPoint : target;
             float2 toGoal = goal - waiter.Position;
             float distance = math.length(toGoal);
             Quaternion facing = standing;
-            if (distance > step && distance > 1e-3f)
+            bool walking = distance > step && distance > 1e-3f;
+            if (walking)
             {
                 waiter.Position += toGoal / distance * step;
                 facing = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(toGoal.y, toGoal.x)) - 90f);
@@ -448,10 +723,12 @@ namespace Marchlands.View
                 {
                     waiter.Step++;
                     facing = waiter.Renderer.transform.rotation;
+                    walking = true;
                 }
             }
 
-            waiter.Renderer.transform.SetPositionAndRotation(new Vector3(waiter.Position.x, waiter.Position.y, 0f), facing);
+            waiter.Stride.Apply(waiter.Renderer, waiter.Position, facing, walking, toGoal,
+                waiter.Stand, waiter.Walk0, waiter.Walk1, squadViews.Style);
         }
 
         /// <summary>
@@ -499,13 +776,35 @@ namespace Marchlands.View
             {
                 SpriteRenderer person = CreatePreview($"Waiting {type} {side} {crowd.Count}", sprite, style.BodySortingOrder + 5);
                 person.transform.localScale = Vector3.one * squadViews.Style.SoldierScale;
-                crowd.Add(new Waiter { Renderer = person });
+                var waiter = new Waiter
+                {
+                    Renderer = person,
+                    Stride = new WalkerStep((int)side * 1000 + (int)type * 100 + crowd.Count),
+                    Stand = sprite,
+                    Walk0 = squadViews.Style.GetWalkSprite(side, type, SoldierRole.Private, 0),
+                    Walk1 = squadViews.Style.GetWalkSprite(side, type, SoldierRole.Private, 1)
+                };
+                if (type != UnitType.Cavalry
+                    && squadViews.Style.TryGetMeleeSprites(side, type, SoldierRole.Private, out Sprite body, out Sprite armsSprite))
+                {
+                    waiter.Body = body;
+                    waiter.Arms = CreatePreview($"Waiting Arms {type} {side} {crowd.Count}", armsSprite, style.BodySortingOrder + 6);
+                    waiter.Arms.transform.localScale = person.transform.localScale;
+                    waiter.Arms.enabled = false;
+                }
+
+                crowd.Add(waiter);
             }
 
             for (int i = shown; i < crowd.Count; i++)
             {
                 crowd[i].Renderer.enabled = false;
                 crowd[i].Shown = false;
+                crowd[i].AimBlend = 0f;
+                if (crowd[i].Arms != null)
+                {
+                    crowd[i].Arms.enabled = false;
+                }
             }
 
             if (shown == 0)
@@ -535,6 +834,9 @@ namespace Marchlands.View
             start += right * sideOffset;
             Quaternion rotation = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(front.y, front.x)) - 90f);
             float step = style.RecruitWalkSpeed * Time.deltaTime;
+            bool marked = selectedCampType == type && selectedCampSide == side;
+            float2 markMin = new float2(float.MaxValue, float.MaxValue);
+            float2 markMax = new float2(float.MinValue, float.MinValue);
             for (int i = 0; i < shown; i++)
             {
                 int row = i / perRow;
@@ -547,6 +849,8 @@ namespace Marchlands.View
                     (column - (perRow - 1) * 0.5f + jitterX * 0.6f) * style.RecruitsSpacing.x,
                     (row + jitterY * 0.5f) * style.RecruitsSpacing.y) * spread;
                 float2 world = start + right * local.x + front * local.y;
+                markMin = math.min(markMin, local);
+                markMax = math.max(markMax, local);
                 Waiter waiter = crowd[i];
                 if (!waiter.Shown)
                 {
@@ -565,6 +869,11 @@ namespace Marchlands.View
                 }
 
                 Walk(waiter, world, step, rotation);
+            }
+
+            if (marked)
+            {
+                PlaceCampMarker(start, right, front, markMin, markMax, rotation);
             }
         }
 

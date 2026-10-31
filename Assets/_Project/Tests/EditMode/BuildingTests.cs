@@ -360,6 +360,38 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void Camp_AimsEachShot_BeforeFiring()
+        {
+            Match match = CreateMatch();
+            BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 6f));
+            match.GetPlayer(Side.France).GrenadierReserve = 30;
+            match.Tick();
+            Squad camp = match.Squads.Single(s => s.IsCamp);
+            match.AddSquad(Side.Austria, camp.Position + new float2(0f, 6f), -90f, Formation.Line);
+
+            int firstAimTick = -1;
+            int firstShotTick = -1;
+            for (int i = 0; i < TicksFor(5f) && firstShotTick < 0; i++)
+            {
+                match.Tick();
+                if (firstAimTick < 0 && camp.SkirmishAims.Count > 0)
+                {
+                    firstAimTick = i;
+                }
+
+                if (match.LastTickVolleys.Any(v => v.ShooterId == camp.Id))
+                {
+                    firstShotTick = i;
+                    Assert.IsTrue(match.LastTickVolleys.Where(v => v.ShooterId == camp.Id).All(v => v.ShooterIndex >= 0),
+                        "У выстрела вразнобой известен стрелок");
+                }
+            }
+
+            Assert.GreaterOrEqual(firstAimTick, 0, "Рекрут вскидывает ружьё");
+            Assert.AreEqual(TicksFor(match.Settings.combat.aimTime), firstShotTick - firstAimTick, 1, "Выстрел через aimTime после прицеливания");
+        }
+
+        [Test]
         public void Headquarters_CannotHire()
         {
             Match match = CreateMatch();

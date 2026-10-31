@@ -47,6 +47,9 @@ namespace Marchlands.Input
         private bool isChargeTargeting;
 
         private Building selectedBuilding;
+
+        // Выделенная группа своей толпы рекрутов (род войск) — не отряд: её можно только распустить.
+        private UnitType? selectedCamp;
         private bool isPlacing;
         private BuildingType placementType;
         private float2? placementSite;
@@ -57,6 +60,9 @@ namespace Marchlands.Input
 
         /// <summary>Выделенное здание изменилось; null — выделение снято.</summary>
         public event Action<Building> BuildingSelectionChanged;
+
+        /// <summary>Выделена группа своей толпы рекрутов этого рода войск; null — выделение снято.</summary>
+        public event Action<UnitType?> CampSelectionChanged;
 
         /// <summary>Режим постановки здания: включён ли он, выбрано ли место и можно ли там поставить здание.</summary>
         public event Action<bool, bool, bool> PlacementChanged;
@@ -84,6 +90,7 @@ namespace Marchlands.Input
 
             Select(null);
             SelectBuilding(null);
+            SelectCamp(null);
             isPlacing = true;
             placementType = type;
             placementSite = null;
@@ -173,6 +180,12 @@ namespace Marchlands.Input
                 SelectBuilding(null);
             }
 
+            // Выделенную группу толпы могли распустить, собрать в отряд или перебить.
+            if (selectedCamp.HasValue && match.GetPlayer(playerSide).GetReserve(selectedCamp.Value) <= 0)
+            {
+                SelectCamp(null);
+            }
+
             if (isChargeTargeting && !ChargeRules.CanCharge(selected))
             {
                 SetChargeTargeting(false);
@@ -214,9 +227,17 @@ namespace Marchlands.Input
                 return;
             }
 
-            // Тап по своей толпе у казармы или конюшни открывает карточку здания — там её можно распустить.
+            // Тап по своей толпе у казармы или конюшни выделяет группу этого рода войск — её можно только распустить.
+            UnitType? camp = FindOwnCampTypeAt(world);
+            if (camp.HasValue)
+            {
+                hasPendingTap = false;
+                SelectCamp(camp);
+                return;
+            }
+
             // Вражеское здание показывает своё здоровье и часовых, когда отряд не выделен (иначе тап — часть приказа).
-            Building building = FindBuildingAt(world, own: true) ?? FindOwnCampBuildingAt(world)
+            Building building = FindBuildingAt(world, own: true)
                 ?? (selected == null ? FindBuildingAt(world, own: false) : null);
             if (building != null)
             {
@@ -225,9 +246,10 @@ namespace Marchlands.Input
                 return;
             }
 
-            if (selectedBuilding != null)
+            if (selectedBuilding != null || selectedCamp.HasValue)
             {
                 SelectBuilding(null);
+                SelectCamp(null);
                 return;
             }
 
@@ -485,20 +507,59 @@ namespace Marchlands.Input
             return best;
         }
 
-        /// <summary>Здание, у которого ждёт своя толпа рекрутов под пальцем.</summary>
-        private Building FindOwnCampBuildingAt(float2 world)
+        /// <summary>
+        /// Род войск группы своей толпы рекрутов под пальцем; null — толпы нет. У казармы фузилёры стоят левее середины
+        /// толпы, гренадёры правее (если ждут только одни — тап по толпе выделяет их).
+        /// </summary>
+        private UnitType? FindOwnCampTypeAt(float2 world)
         {
             float minHalfExtent = cameraController.PixelsToWorld(ScreenUnits.DpToPixels(config.MinTouchTarget)) * 0.5f;
             foreach (Squad squad in match.Squads)
             {
-                if (squad.Side == playerSide && squad.IsCamp && squad.Alive > 0
-                    && SquadFootprint.Of(squad, match.Settings.squads).Contains(world, minHalfExtent))
+                if (squad.Side != playerSide || !squad.IsCamp || squad.Alive <= 0
+                    || !SquadFootprint.Of(squad, match.Settings.squads).Contains(world, minHalfExtent))
                 {
-                    return BuildRules.GetFormingBuilding(match, playerSide, squad.IsCavalryCamp ? UnitType.Cavalry : UnitType.Grenadiers);
+                    continue;
                 }
+
+                if (squad.IsCavalryCamp)
+                {
+                    return UnitType.Cavalry;
+                }
+
+                var player = match.GetPlayer(playerSide);
+                if (player.GetReserve(UnitType.Grenadiers) <= 0)
+                {
+                    return UnitType.Fusiliers;
+                }
+
+                if (player.GetReserve(UnitType.Fusiliers) <= 0)
+                {
+                    return UnitType.Grenadiers;
+                }
+
+                float lateral = math.dot(world - squad.Position, Angles.Right(squad.Facing));
+                return lateral < 0f ? UnitType.Fusiliers : UnitType.Grenadiers;
             }
 
             return null;
+        }
+
+        private void SelectCamp(UnitType? type)
+        {
+            if (type == selectedCamp)
+            {
+                return;
+            }
+
+            if (type.HasValue)
+            {
+                Select(null);
+                SelectBuilding(null);
+            }
+
+            selectedCamp = type;
+            CampSelectionChanged?.Invoke(type);
         }
 
         private void SelectBuilding(Building building)
@@ -511,6 +572,7 @@ namespace Marchlands.Input
             if (building != null)
             {
                 Select(null);
+                SelectCamp(null);
             }
 
             selectedBuilding = building;
@@ -566,6 +628,7 @@ namespace Marchlands.Input
             if (squad != null)
             {
                 SelectBuilding(null);
+                SelectCamp(null);
             }
 
             selected = squad;
