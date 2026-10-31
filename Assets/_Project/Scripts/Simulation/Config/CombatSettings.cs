@@ -40,5 +40,11 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Множитель скорости марша во время перезарядки.</summary>
         public float reloadMoveSpeedMultiplier;
+
+        /// <summary>
+        /// Залп из колонны: стреляют все шеренги, каждая со своей дистанции (задние дальше от врага), и ещё
+        /// с этим множителем меткости — стреляют через головы впереди стоящих.
+        /// </summary>
+        public float columnVolleyAccuracyMultiplier;
     }
 }

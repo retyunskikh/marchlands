@@ -60,9 +60,9 @@ namespace Marchlands.Tests.EditMode
         }
 
         [TestCase(Formation.Line, 36, 36)]
-        [TestCase(Formation.Column, 36, 6)]
+        [TestCase(Formation.Column, 36, 36)]
         [TestCase(Formation.Column, 4, 4)]
-        public void Shooters_LineAllColumnFrontRank(Formation formation, int alive, int expected)
+        public void Shooters_AllFire_InLineAndColumn(Formation formation, int alive, int expected)
         {
             Assert.AreEqual(expected, VolleyMath.Shooters(formation, alive, settings.squads));
         }

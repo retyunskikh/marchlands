@@ -92,6 +92,8 @@ namespace Marchlands.Simulation.Morale
 
             squad.MoraleState = MoraleState.Routing;
             squad.Order = SquadOrder.None;
+            // Марш забыт: бегущий прокладывает свой путь — к своим.
+            squad.ClearRoute();
             squad.ChargeChecked = false;
             FireSystem.CancelAiming(squad);
             SquadMovementSystem.CancelFormationChange(squad);

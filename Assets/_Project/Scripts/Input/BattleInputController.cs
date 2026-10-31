@@ -384,8 +384,8 @@ namespace Marchlands.Input
                 isRotating = false;
                 rotationRing.SetDraggedFacing(null);
                 orderPreview.Hide();
-                // Поворот на месте: движение в свою же точку с новым фронтом.
-                match.Enqueue(new MoveCommand(selected.Id, selected.Position, FacingTowards(endScreen)));
+                // Поворот на месте; марш не отменяется, а откладывается, пока рядом враги.
+                match.Enqueue(new FaceCommand(selected.Id, FacingTowards(endScreen)));
                 return;
             }
 

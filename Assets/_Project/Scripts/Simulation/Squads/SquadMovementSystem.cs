@@ -31,6 +31,8 @@ namespace Marchlands.Simulation.Squads
                 return;
             }
 
+            TryResumeMarch(squad, match);
+
             bool reforming = squad.IsChangingFormation;
             // Перестраиваясь (в колонну или в линию), отряд с приказом движения сразу идёт к цели, но медленно.
             bool marchingWhileReforming = reforming && squad.Order.Type == SquadOrderType.Move;
@@ -82,6 +84,31 @@ namespace Marchlands.Simulation.Squads
             {
                 Commands.ChangeFormationCommand.Start(match, squad, restore.Value);
             }
+        }
+
+        /// <summary>
+        /// Отложенный марш продолжается, когда отряд ничем не занят (развернулся, рукопашная кончилась, не целится)
+        /// и ближе resumeMarchEnemyRadius нет не бегущих врагов.
+        /// </summary>
+        private static void TryResumeMarch(Squad squad, Match match)
+        {
+            if (!squad.SuspendedOrder.HasValue || squad.Order.Type != SquadOrderType.None || squad.FireState == FireState.Aiming)
+            {
+                return;
+            }
+
+            float radius = match.Settings.squads.resumeMarchEnemyRadius;
+            foreach (Squad other in match.Squads)
+            {
+                if (other.Side != squad.Side && !other.IsRouting && !other.IsWithdrawn && !other.IsCamp && other.Alive > 0
+                    && math.distancesq(other.Position, squad.Position) <= radius * radius)
+                {
+                    return;
+                }
+            }
+
+            squad.Order = squad.SuspendedOrder.Value;
+            squad.SuspendedOrder = null;
         }
 
         /// <summary>В реку вне переправ не войти: шаг в воду отменяется, отряд остаётся на берегу.</summary>
@@ -164,9 +191,22 @@ namespace Marchlands.Simulation.Squads
         {
             SimulationSettings settings = match.Settings;
             float time = deltaTime;
-            // Дальний марш — по точкам маршрута; если по пути река — сначала к переправе, дальше снова к цели.
+            // Колонна на марше поворачивает на ходу, как по изгибу дороги; линия разворачивается на месте и идёт прямо.
+            bool marchTurns = squad.Formation == Formation.Column && !squad.IsChangingFormation;
+
+            // Дальний марш — по точкам маршрута (отложенный марш маршрут не трогает); если по пути река — сначала
+            // к переправе, дальше снова к цели.
+            bool useRoute = !squad.SuspendedOrder.HasValue;
+            float reach = settings.squads.columnWaypointReach;
+            while (marchTurns && useRoute && reach > 0f && squad.RouteIndex < squad.Route.Count - 1
+                   && math.distance(squad.Position, squad.Route[squad.RouteIndex]) <= reach)
+            {
+                // Колонна срезает промежуточную точку и плавно заворачивает к следующей.
+                squad.RouteIndex++;
+            }
+
             float2 goal = squad.Order.Target;
-            bool waypoint = squad.RouteIndex < squad.Route.Count - 1;
+            bool waypoint = useRoute && squad.RouteIndex < squad.Route.Count - 1;
             if (waypoint)
             {
                 goal = squad.Route[squad.RouteIndex];
@@ -179,11 +219,6 @@ namespace Marchlands.Simulation.Squads
 
             if (distance > settings.squads.arrivalTolerance)
             {
-                if (!RotateTowards(squad, Angles.Of(toTarget), settings.squads.rotationSpeed, ref time))
-                {
-                    return;
-                }
-
                 float speed = UnitStats.Speed(squad, squad.Formation, settings) * speedMultiplier;
                 if (squad.FireState == FireState.Reloading)
                 {
@@ -191,20 +226,44 @@ namespace Marchlands.Simulation.Squads
                 }
 
                 speed *= match.TerrainSpeedMultiplier(squad.Position);
-                if (speed <= 0f)
+                float desired = Angles.Of(toTarget);
+                if (marchTurns && speed > 0f && CanTurnOnTheMove(squad, desired, distance, speed, settings.squads.rotationSpeed))
                 {
-                    return;
-                }
+                    float delta = Angles.Delta(squad.Facing, desired);
+                    float turn = math.min(math.abs(delta), settings.squads.rotationSpeed * time);
+                    squad.Facing = Angles.Normalize(squad.Facing + math.sign(delta) * turn);
+                    float marchStep = speed * time;
+                    if (marchStep < distance)
+                    {
+                        squad.Position += Angles.Direction(squad.Facing) * marchStep;
+                        return;
+                    }
 
-                float step = speed * time;
-                if (step < distance)
+                    squad.Position = target;
+                    time -= distance / speed;
+                }
+                else
                 {
-                    squad.Position += toTarget / distance * step;
-                    return;
-                }
+                    if (!RotateTowards(squad, desired, settings.squads.rotationSpeed, ref time))
+                    {
+                        return;
+                    }
 
-                squad.Position = target;
-                time -= distance / speed;
+                    if (speed <= 0f)
+                    {
+                        return;
+                    }
+
+                    float step = speed * time;
+                    if (step < distance)
+                    {
+                        squad.Position += toTarget / distance * step;
+                        return;
+                    }
+
+                    squad.Position = target;
+                    time -= distance / speed;
+                }
             }
 
             // Дошли до точки маршрута или переправы — приказ продолжается со следующего тика.
@@ -221,9 +280,31 @@ namespace Marchlands.Simulation.Squads
             if (RotateTowards(squad, squad.Order.FinalFacing, settings.squads.rotationSpeed, ref time))
             {
                 squad.Order = SquadOrder.None;
-                FinishRoute(squad, match);
+                // Развернулись на месте посреди марша — маршрут ждёт, пока рядом не станет врагов.
+                if (!squad.SuspendedOrder.HasValue)
+                {
+                    FinishRoute(squad, match);
+                }
             }
         }
+
+        /// <summary>
+        /// Дотянется ли колонна до точки, поворачивая на ходу: точка не позади и не внутри круга поворота
+        /// (радиус — скорость / угловая скорость). Иначе колонна сначала разворачивается на месте.
+        /// </summary>
+        private static bool CanTurnOnTheMove(Squad squad, float desired, float distance, float speed, float rotationSpeed)
+        {
+            float delta = math.abs(Angles.Delta(squad.Facing, desired));
+            if (delta >= 90f || rotationSpeed <= 0f)
+            {
+                return false;
+            }
+
+            float radius = speed / math.radians(rotationSpeed);
+            return distance >= 2f * radius * math.sin(math.radians(delta)) - TurnTolerance;
+        }
+
+        private const float TurnTolerance = 1e-3f;
 
         /// <summary>Разворот к центру цели и бег к ней; отряд останавливается при касании, не заходя внутрь.</summary>
         private static void UpdateCharge(Squad squad, Match match, float deltaTime)
@@ -284,11 +365,17 @@ namespace Marchlands.Simulation.Squads
             float distance;
             if (match.TryGetRetreatPoint(squad, out float2 retreatPoint))
             {
-                // Бегут к своим через переправу, если по прямой река.
-                float2 toPoint = Steer(squad, match, retreatPoint) - squad.Position;
+                // Бегут к своим по пути с учётом местности: по дороге, если она по пути, иначе полем, реку — только по переправе.
+                float2 goal = NextRoutPoint(squad, match, retreatPoint, out bool final);
+                float2 toPoint = Steer(squad, match, goal) - squad.Position;
                 distance = math.length(toPoint);
                 if (distance <= match.Settings.squads.arrivalTolerance)
                 {
+                    if (!final)
+                    {
+                        squad.RouteIndex++;
+                    }
+
                     return;
                 }
 
@@ -316,6 +403,41 @@ namespace Marchlands.Simulation.Squads
 
             float speed = match.Settings.morale.routSpeed * match.TerrainSpeedMultiplier(squad.Position);
             squad.Position += direction * math.min(speed * time, distance);
+        }
+
+        /// <summary>
+        /// Следующая точка пути бегства к <paramref name="retreatPoint"/>. Путь прокладывается один раз (и заново,
+        /// если точка отхода сменилась); близкие точки срезаются. Без поиска пути — прямо к точке отхода.
+        /// </summary>
+        private static float2 NextRoutPoint(Squad squad, Match match, float2 retreatPoint, out bool final)
+        {
+            final = true;
+            if (match.Pathfinder == null)
+            {
+                return retreatPoint;
+            }
+
+            if (squad.Route.Count == 0 || math.any(squad.RouteGoal != retreatPoint))
+            {
+                squad.Route.Clear();
+                squad.RouteIndex = 0;
+                squad.RouteGoal = retreatPoint;
+                if (!match.Pathfinder.FindPath(squad.Position, retreatPoint, squad.Route) || squad.Route.Count == 0)
+                {
+                    squad.Route.Clear();
+                    squad.Route.Add(retreatPoint);
+                }
+            }
+
+            float reach = match.Settings.squads.columnWaypointReach;
+            while (squad.RouteIndex < squad.Route.Count - 1 && math.distance(squad.Position, squad.Route[squad.RouteIndex]) <= reach)
+            {
+                squad.RouteIndex++;
+            }
+
+            int index = math.min(squad.RouteIndex, squad.Route.Count - 1);
+            final = index == squad.Route.Count - 1;
+            return final ? retreatPoint : squad.Route[index];
         }
 
         private static Squad FindNearestEnemy(Match match, Squad squad)

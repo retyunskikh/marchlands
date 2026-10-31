@@ -51,10 +51,19 @@ namespace Marchlands.Simulation.Combat
             return math.saturate(p);
         }
 
-        /// <summary>Сколько солдат стреляет: в линии — все, в колонне — только первая шеренга.</summary>
+        /// <summary>
+        /// Сколько солдат стреляет: все — и в линии, и в колонне (там задние шеренги бьют с большей дистанции
+        /// и хуже, см. <see cref="ColumnRankDistance"/>).
+        /// </summary>
         public static int Shooters(Formation formation, int alive, SquadSettings settings)
         {
-            return formation == Formation.Line ? alive : math.min(alive, settings.columnFrontWidth);
+            return alive;
+        }
+
+        /// <summary>Дистанция до цели у шеренги <paramref name="rank"/> колонны (0 — первая): дальше на шаг шеренг за каждую.</summary>
+        public static float ColumnRankDistance(float frontDistance, int rank, SquadSettings settings)
+        {
+            return frontDistance + rank * settings.rankSpacing;
         }
 
         /// <summary>Binomial(shooters, p) через <see cref="GameRandom"/>, но не больше живых в цели.</summary>

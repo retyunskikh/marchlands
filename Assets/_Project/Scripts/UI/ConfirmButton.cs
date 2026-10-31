@@ -29,6 +29,9 @@ namespace Marchlands.UI
 
         public bool IsArmed => armed;
 
+        /// <summary>Спрашивать ли «Точно?»; false — действие сразу по первому нажатию (кнопка остаётся красной).</summary>
+        public bool RequireConfirm { get; set; } = true;
+
         private void Awake()
         {
             button.onClick.AddListener(OnClick);
@@ -67,7 +70,7 @@ namespace Marchlands.UI
 
         private void OnClick()
         {
-            if (!armed)
+            if (!armed && RequireConfirm)
             {
                 armed = true;
                 armedUntil = Time.unscaledTime + confirmTime;

@@ -26,6 +26,8 @@ MonoBehaviour:
       formationChangeTime: 4
       reformMoveSpeedMultiplier: 0.4
       arrivalTolerance: 0.05
+      columnWaypointReach: 1.5
+      resumeMarchEnemyRadius: 15
     grenadiers:
       squadSize: 30
       minSquadSize: 10
@@ -87,6 +89,7 @@ MonoBehaviour:
       aimTime: 0.8
       reloadTime: 22
       reloadMoveSpeedMultiplier: 0.6
+      columnVolleyAccuracyMultiplier: 0.8
     morale:
       moraleShockFactor: 1.5
       pointBlankMoraleMultiplier: 1.5
@@ -129,6 +132,7 @@ MonoBehaviour:
       cavalrySquads: 1
       houseMargin: 10
       cavalryChargeDistance: 12
+      cavalryFlankDistance: 6
       opportunityVillageDistance: 15
       volleyDelayMin: 0
       volleyDelayMax: 2.5

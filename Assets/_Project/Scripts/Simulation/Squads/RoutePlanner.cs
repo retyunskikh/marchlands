@@ -41,7 +41,8 @@ namespace Marchlands.Simulation.Squads
 
             // Сравниваем путь по местности с прямым в одном и том же строю: маршрут нужен ради дороги или обхода
             // леса и реки, а не ради колонны. В чистом поле отряд идёт напрямую в своём строю.
-            Formation marching = Formation.Column;
+            // Конница строй не меняет: идёт по дороге тем строем, что есть.
+            Formation marching = squad.Type == UnitType.Cavalry ? squad.Formation : Formation.Column;
             float marchSpeed = math.max(0.01f, UnitStats.Speed(squad, marching, match.Settings));
             bool reform = squad.Formation != marching;
             // Перестроение в колонну на ходу идёт медленнее: пока строятся — скорость прежнего строя × reformMoveSpeedMultiplier.

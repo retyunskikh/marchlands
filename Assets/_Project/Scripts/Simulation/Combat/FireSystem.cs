@@ -129,18 +129,53 @@ namespace Marchlands.Simulation.Combat
             }
 
             int ready = VolleyMath.Shooters(shooter.Formation, shooter.Alive, match.Settings.squads);
-            // В дождь сырой порох: часть ружей даёт осечку и не стреляет.
-            int shooters = WeatherSystem.RollFired(match, ready);
             // Местность у цели: лес укрывает, брод открывает.
             float cover = match.Terrain != null ? match.Terrain.TargetHitMultiplier(target.Position, match.Settings.terrain) : 1f;
             // Дальнобойность (рода войск и холма) растягивает всю кривую попадания: при множителе 1.25 стрелок на 1.25 × d бьёт, как обычный на d.
             UnitTypeSettings unit = UnitStats.Of(shooter, match.Settings);
             float scaledDistance = distance / UnitStats.RangeMultiplier(shooter, match.Settings);
             cover *= UnitStats.Of(target, match.Settings).targetHitMultiplier;
-            float probability = VolleyMath.HitProbability(scaledDistance, shooter.IsFirstVolley, target.Formation, combat, cover, unit.accuracyMultiplier);
-            int casualties = VolleyMath.RollCasualties(match.Random, shooters, probability, target.Alive);
+            int shooters;
+            int casualties;
+            if (shooter.Formation == Formation.Column)
+            {
+                casualties = ColumnVolley(match, shooter, target, distance, cover, unit, out shooters);
+            }
+            else
+            {
+                // В дождь сырой порох: часть ружей даёт осечку и не стреляет.
+                shooters = WeatherSystem.RollFired(match, ready);
+                float probability = VolleyMath.HitProbability(scaledDistance, shooter.IsFirstVolley, target.Formation, combat, cover, unit.accuracyMultiplier);
+                casualties = VolleyMath.RollCasualties(match.Random, shooters, probability, target.Alive);
+            }
+
             bool pointBlank = scaledDistance <= combat.pointBlankRange;
             Pending.Add(new PendingVolley(shooter, target, shooters, distance, casualties, pointBlank, ready - shooters));
+        }
+
+        /// <summary>
+        /// Залп из колонны: стреляют все шеренги, но каждая со своей дистанции — задние дальше от врага и бьют хуже;
+        /// вдобавок меткость × columnVolleyAccuracyMultiplier (стреляют через головы своих). Осечки в дождь — по шеренгам.
+        /// </summary>
+        private static int ColumnVolley(Match match, Squad shooter, Squad target, float frontDistance, float cover, UnitTypeSettings unit, out int fired)
+        {
+            SimulationSettings settings = match.Settings;
+            FormationLayout.GetGrid(Formation.Column, shooter.Alive, settings.squads, out int files, out int ranks);
+            float rangeMultiplier = UnitStats.RangeMultiplier(shooter, settings);
+            float accuracy = unit.accuracyMultiplier * settings.combat.columnVolleyAccuracyMultiplier;
+            fired = 0;
+            int casualties = 0;
+            for (int rank = 0; rank < ranks; rank++)
+            {
+                int inRank = System.Math.Min(files, shooter.Alive - rank * files);
+                int rankFired = WeatherSystem.RollFired(match, inRank);
+                fired += rankFired;
+                float rankDistance = VolleyMath.ColumnRankDistance(frontDistance, rank, settings.squads) / rangeMultiplier;
+                float probability = VolleyMath.HitProbability(rankDistance, shooter.IsFirstVolley, target.Formation, settings.combat, cover, accuracy);
+                casualties += VolleyMath.RollCasualties(match.Random, rankFired, probability, target.Alive - casualties);
+            }
+
+            return casualties;
         }
 
         /// <summary>

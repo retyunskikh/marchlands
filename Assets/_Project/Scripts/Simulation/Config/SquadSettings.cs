@@ -47,5 +47,14 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Расстояние до точки, при котором отряд считается дошедшим, u.</summary>
         public float arrivalTolerance;
+
+        /// <summary>
+        /// Колонна на марше поворачивает на ходу и срезает промежуточные точки пути: ближе этого к точке — идёт
+        /// к следующей. Так же бегущие идут по точкам пути бегства, u.
+        /// </summary>
+        public float columnWaypointReach;
+
+        /// <summary>Отложенный марш (развернули на месте, рукопашная) продолжается, когда не бегущих врагов нет ближе этого, u.</summary>
+        public float resumeMarchEnemyRadius;
     }
 }

@@ -25,7 +25,9 @@ namespace Marchlands.Tests.EditMode
                     rotationSpeed = 45f,
                     formationChangeTime = 4f,
                     reformMoveSpeedMultiplier = 0.4f,
-                    arrivalTolerance = 0.05f
+                    arrivalTolerance = 0.05f,
+                    columnWaypointReach = 1.5f,
+                    resumeMarchEnemyRadius = 15f
                 },
                 combat = new CombatSettings
                 {
@@ -40,7 +42,8 @@ namespace Marchlands.Tests.EditMode
                     fireArcHalfAngle = 45f,
                     aimTime = 0.8f,
                     reloadTime = 14f,
-                    reloadMoveSpeedMultiplier = 0.6f
+                    reloadMoveSpeedMultiplier = 0.6f,
+                    columnVolleyAccuracyMultiplier = 0.8f
                 },
                 morale = new MoraleSettings
                 {
@@ -89,6 +92,7 @@ namespace Marchlands.Tests.EditMode
                     cavalrySquads = 1,
                     houseMargin = 10,
                     cavalryChargeDistance = 12f,
+                    cavalryFlankDistance = 8f,
                     opportunityVillageDistance = 15f,
                     volleyDelayMin = 0f,
                     volleyDelayMax = 2.5f

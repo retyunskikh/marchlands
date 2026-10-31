@@ -70,6 +70,19 @@ namespace Marchlands.View
         private float2 meleeContact;
         private float2 meleeDirection = new float2(0f, 1f);
 
+        // Колонна на марше изгибается по следу головы (см. ColumnTrail): 0 — прямоугольник, 1 — по следу.
+        private readonly ColumnTrail trail = new ColumnTrail();
+        private float bend;
+        private float2 lastCenter;
+        private bool hasLastCenter;
+        private float lastFacing;
+
+        // Сколько секунд колонна выпрямляется или изгибается заново (разворот на месте, перестроение).
+        private const float BendBlendTime = 0.5f;
+
+        // Центр сдвинулся за кадр меньше этого — колонна стоит (а если при этом поворачивается — разворот на месте), u.
+        private const float StillEpsilon = 1e-4f;
+
         public Squad Squad => squad;
 
         internal void Initialize(Squad squad, Match match, SquadViewStyle style, CasualtiesView casualties)
@@ -116,6 +129,7 @@ namespace Marchlands.View
                 Quaternion.Euler(0f, 0f, Angles.Of(meleeDirection) + SpriteFacingOffset), meleeBlend);
             float2 spacing = style.GetSpacing(squad.Type);
             float regroup = 1f - math.exp(-style.RegroupSpeed * Time.deltaTime);
+            float headY = UpdateTrail(position, facing, spacing, changing);
             for (int i = 0; i < soldiers.Count; i++)
             {
                 int slot = slotOrder[i];
@@ -134,20 +148,22 @@ namespace Marchlands.View
 
                 local = shownSlots[i] = math.lerp(shownSlots[i], local, regroup);
 
-                float gait = UpdateGait(i, FormationLayout.LocalToWorld(local, position, facing));
+                Quaternion soldierRotation = rotation;
+                float2 soldierForward = forward;
+                float gait = UpdateGait(i, ToWorld(local, position, facing, headY, ref soldierRotation, ref soldierForward));
                 if (gait > 0f)
                 {
                     local += GaitOffset(i, local, gait);
                 }
 
-                float2 world = FormationLayout.LocalToWorld(local, position, facing);
+                float2 world = ToWorld(local, position, facing, headY, ref soldierRotation, ref soldierForward);
                 if (meleeBlend > 0f)
                 {
                     world = ToMeleePosition(world, i);
                 }
 
-                soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), meleeBlend > 0f ? meleeRotation : rotation);
-                bool posed = RenderArms(i, world, rotation, meleeRotation, forward, slot < shooters);
+                soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), meleeBlend > 0f ? meleeRotation : soldierRotation);
+                bool posed = RenderArms(i, world, soldierRotation, meleeRotation, soldierForward, slot < shooters);
                 if (!posed)
                 {
                     RenderStep(i, local, gait);
@@ -195,11 +211,67 @@ namespace Marchlands.View
             RenderRing(ringCenter, alpha);
         }
 
+        /// <summary>
+        /// Ведёт след головы колонны и решает, насколько колонна изгибается по нему. Изгиб — только у колонны на марше;
+        /// при развороте на месте, перестроении, бегстве и в рукопашной колонна плавно выпрямляется, и след начинается
+        /// заново прямо за ней. Возвращает, где голова в локальных координатах (y фронта).
+        /// </summary>
+        private float UpdateTrail(float2 position, float facing, float2 spacing, bool changing)
+        {
+            float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings) * spacing;
+            float2 forward = Angles.Direction(facing);
+            float2 head = position + forward * half.y;
+            float length = half.y * 2f;
+
+            bool moving = hasLastCenter && math.distancesq(position, lastCenter) > StillEpsilon * StillEpsilon;
+            bool pivoting = hasLastCenter && !moving && math.abs(Angles.Delta(lastFacing, facing)) > 1e-3f;
+            lastCenter = position;
+            lastFacing = facing;
+            hasLastCenter = true;
+
+            bool column = squad.Formation == Formation.Column && !changing && !squad.IsRouting && meleeBlend <= 0f;
+            float target = column && !pivoting ? 1f : 0f;
+            bend = Mathf.MoveTowards(bend, target, Time.deltaTime / BendBlendTime);
+
+            if (bend <= 0f)
+            {
+                trail.Straighten(head, facing, length);
+            }
+            else if (moving)
+            {
+                trail.Advance(head, length + style.GetSpacing(squad.Type).y * settings.rankSpacing * 2f);
+            }
+
+            return half.y;
+        }
+
+        /// <summary>
+        /// Мировая позиция солдата с местом <paramref name="local"/>: в прямоугольнике строя или, у изогнутой колонны,
+        /// на следе головы — на своём расстоянии назад, сдвинутым вбок по нормали к следу; фигурка смотрит по следу.
+        /// </summary>
+        private float2 ToWorld(float2 local, float2 position, float facing, float headY, ref Quaternion rotation, ref float2 forward)
+        {
+            float2 rigid = FormationLayout.LocalToWorld(local, position, facing);
+            if (bend <= 0f)
+            {
+                return rigid;
+            }
+
+            trail.Sample(math.max(0f, headY - local.y), out float2 point, out float2 direction);
+            float2 right = new float2(direction.y, -direction.x);
+            float2 bent = point + right * local.x;
+            float blend = math.smoothstep(0f, 1f, bend);
+            float angle = Angles.Of(direction);
+            rotation = Quaternion.Slerp(rotation, Quaternion.Euler(0f, 0f, angle + SpriteFacingOffset), blend);
+            forward = math.normalizesafe(math.lerp(forward, direction, blend), forward);
+            return math.lerp(rigid, bent, blend);
+        }
+
         /// <summary>Пунктир оставшегося маршрута от отряда через точки пути к цели — только у выделенного.</summary>
         private void RenderRoute(float2 position)
         {
             int used = 0;
-            if (selectionMarker.enabled && squad.HasRoute && style.RouteDotSpacing > 0f)
+            if (selectionMarker.enabled && squad.HasRoute && !squad.IsRouting && style.RouteDotSpacing > 0f)
             {
                 float2 from = position;
                 float carry = style.RouteDotSpacing * 0.5f;

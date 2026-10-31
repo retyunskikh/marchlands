@@ -44,6 +44,9 @@ namespace Marchlands.UI
         [SerializeField] private string chargeText = "В штыки";
         [SerializeField] private string chargeTargetingText = "Выберите врага";
         [SerializeField] private string chargingText = "В атаку!";
+        [Tooltip("У конницы — не штыки, а атака в сабли.")]
+        [SerializeField] private string cavalryChargeText = "В атаку";
+        [SerializeField] private string cavalryChargingText = "Рубят!";
 
 
         [Header("Стоп")]
@@ -128,6 +131,13 @@ namespace Marchlands.UI
                 }
             }
 
+            // Конница строй не меняет — кнопки строя у неё нет.
+            bool cavalry = squad.Type == UnitType.Cavalry;
+            if (formationButton.gameObject.activeSelf == cavalry)
+            {
+                formationButton.gameObject.SetActive(!cavalry);
+            }
+
             // Во время перестроения кнопка разворачивает его обратно — ждать уже ненужного строя не надо.
             formationButton.interactable = obeys;
             formationLabel.text = squad.TargetFormation == Formation.Line ? toColumnText : toLineText;
@@ -138,7 +148,9 @@ namespace Marchlands.UI
 
             bool charging = squad.Order.Type == SquadOrderType.Charge || squad.Order.Type == SquadOrderType.Assault;
             chargeButton.interactable = ChargeRules.CanCharge(squad);
-            chargeLabel.text = isChargeTargeting ? chargeTargetingText : charging ? chargingText : chargeText;
+            chargeLabel.text = isChargeTargeting ? chargeTargetingText
+                : charging ? (cavalry ? cavalryChargingText : chargingText)
+                : cavalry ? cavalryChargeText : chargeText;
             chargeImage.color = isChargeTargeting || charging ? activeColor : normalColor;
 
             stopButton.interactable = obeys && squad.Order.Type != SquadOrderType.None;

@@ -189,6 +189,9 @@ namespace Marchlands.Simulation.Melee
 
             bool isFlank = MoraleMath.IsFlank(defender, attacker.Position, match.Settings.morale);
             match.AddEngagement(new MeleeEngagement(attacker, defender, match.CurrentTick, isFlank, isCharge));
+            // Шедшие маршем продолжат его, когда схватка кончится и рядом не будет врагов.
+            SuspendMarch(attacker);
+            SuspendMarch(defender);
             attacker.Order = SquadOrder.None;
             attacker.MeleeOpponents++;
             defender.MeleeOpponents++;
@@ -198,6 +201,14 @@ namespace Marchlands.Simulation.Melee
             FireSystem.CancelAiming(defender);
             FireSystem.CancelAiming(attacker);
             SquadMovementSystem.CancelFormationChange(defender);
+        }
+
+        private static void SuspendMarch(Squad squad)
+        {
+            if (squad.Order.Type == SquadOrderType.Move && !squad.SuspendedOrder.HasValue)
+            {
+                squad.SuspendedOrder = squad.Order;
+            }
         }
 
         private static void ApplyMeleeLosses(Match match, float deltaTime)

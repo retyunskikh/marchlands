@@ -18,12 +18,23 @@ namespace Marchlands.UI
         [SerializeField] private Button disbandButton;
         [Tooltip("Надпись на «Распустить»: {0} — сколько людей уйдёт.")]
         [SerializeField] private string disbandFormat = "Распустить {0}";
+        [Tooltip("Спрашивать ли подтверждение роспуска вторым нажатием (в казарме и конюшне — нет: и так видно, сколько уйдёт).")]
+        [SerializeField] private bool confirmDisband;
         [SerializeField] private Color onColor = new Color(1f, 0.85f, 0.35f);
         [SerializeField] private Color offColor = new Color(0.95f, 0.92f, 0.82f);
         [SerializeField] private Color availableTint = Color.white;
         [SerializeField] private Color unavailableTint = new Color(1f, 1f, 1f, 0.4f);
 
         public Button Button => button;
+
+        private void Awake()
+        {
+            ConfirmButton confirm = DisbandConfirm;
+            if (confirm != null)
+            {
+                confirm.RequireConfirm = confirmDisband;
+            }
+        }
 
         public Button InfoButton => infoButton;
 

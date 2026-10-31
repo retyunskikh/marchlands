@@ -139,7 +139,20 @@ namespace Marchlands.Simulation.Squads
             Route.Clear();
             RouteIndex = 0;
             RestoreFormation = null;
+            SuspendedOrder = null;
         }
+
+        /// <summary>
+        /// Отложенный приказ марша: отряд развернули на месте или втянули в рукопашную посреди марша. Когда рядом
+        /// не останется врагов, марш (с маршрутом) продолжится; null — откладывать нечего.
+        /// </summary>
+        internal SquadOrder? SuspendedOrder { get; set; }
+
+        /// <summary>Марш отложен и продолжится, когда рядом не будет врагов.</summary>
+        public bool IsMarchSuspended => SuspendedOrder.HasValue;
+
+        /// <summary>Куда проложен маршрут бегства (бегущий перепрокладывает его, если цель сменилась).</summary>
+        internal float2 RouteGoal { get; set; }
 
         /// <summary>Стоит ли центр отряда на холме (обновляется после движения): стреляет дальше.</summary>
         public bool IsOnHill { get; internal set; }

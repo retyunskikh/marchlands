@@ -6,6 +6,7 @@ using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Melee;
+using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
 
@@ -132,6 +133,12 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
+            // Стоящий заряженный отряд бьёт по бегущим, если они в эффективной дальности: пусть бегут дальше с потерями.
+            if (TryShootRouting(match, squad, brain))
+            {
+                return;
+            }
+
             // Рядом ничья или вражеская деревня, а врагов поблизости нет — сначала взять её.
             Village nearby = FindOpportunityVillage(match, squad);
             if (nearby != null)
@@ -183,9 +190,15 @@ namespace Marchlands.Simulation.AI
 
             float distance = FireGeometry.Distance(squad, target, match.Settings.squads);
 
-            // Пехота идёт в штыки на перезаряжающегося врага; конница бросается в сабли на любого, кто близко.
-            bool cavalry = squad.Type == UnitType.Cavalry;
-            bool chargeWindow = cavalry ? distance < ai.cavalryChargeDistance : target.FireState == FireState.Reloading && distance < ai.chargeDistance;
+            // Конница не атакует стрелков в лоб: заходит во фланг или тыл.
+            if (squad.Type == UnitType.Cavalry)
+            {
+                CavalryAttack(match, squad, target, brain, distance);
+                return;
+            }
+
+            // Пехота идёт в штыки на перезаряжающегося врага.
+            bool chargeWindow = target.FireState == FireState.Reloading && distance < ai.chargeDistance;
             if (chargeWindow
                 && squad.Morale > ai.chargeMinMorale
                 && ChargeRules.CanCharge(squad, target))
@@ -203,6 +216,68 @@ namespace Marchlands.Simulation.AI
 
             Approach(match, squad, target, brain);
         }
+
+        /// <summary>
+        /// Залп по бегущему врагу: отряд стоит (без приказа), заряжен, ближайшая цель в секторе — бегущий в эффективной дальности.
+        /// </summary>
+        private static bool TryShootRouting(Match match, Squad squad, SquadBrain brain)
+        {
+            if (squad.Order.Type != SquadOrderType.None || !VolleyRules.CanVolley(match, squad))
+            {
+                return false;
+            }
+
+            float range = UnitStats.EffectiveRange(squad, match.Settings);
+            Squad target = Targeting.FindTarget(match, squad, range);
+            if (target == null || !target.IsRouting)
+            {
+                return false;
+            }
+
+            // Бегущий быстро уходит: пока приказ ждёт исполнения и отряд целится, он может выйти из эффективной дальности.
+            Issue(match, brain, new VolleyCommand(squad.Id, UnitStats.MaxRange(squad, match.Settings)));
+            return true;
+        }
+
+        /// <summary>
+        /// Конница: если цель не стреляет (конница, толпа рекрутов), уже в рукопашной или конница у неё во фланге
+        /// или в тылу — атака; иначе заход в точку сбоку и чуть позади цели (со стороны, где конница уже есть).
+        /// </summary>
+        private static void CavalryAttack(Match match, Squad squad, Squad target, SquadBrain brain, float distance)
+        {
+            AiSettings ai = match.Settings.ai;
+            bool exposed = !UnitStats.CanFire(target, match.Settings) || target.IsInMelee
+                || MoraleMath.IsFlank(target, squad.Position, match.Settings.morale);
+            if (exposed && distance < ai.cavalryChargeDistance && squad.Morale > ai.chargeMinMorale
+                && ChargeRules.CanCharge(squad, target))
+            {
+                Issue(match, brain, new ChargeCommand(squad.Id, target.Id));
+                return;
+            }
+
+            float2 point = FlankPoint(target, squad, ai.cavalryFlankDistance, match.Settings.squads);
+            float2 toTarget = target.Position - point;
+            GoTo(match, squad, brain, point, math.lengthsq(toTarget) > 0f ? Angles.Of(toTarget) : squad.Facing);
+        }
+
+        /// <summary>
+        /// Точка во фланге цели, чуть позади её тыла, со стороны, где уже конница: в <paramref name="distance"/> от края
+        /// строя цели с учётом габаритов обоих — заходя, конница не задевает угол строя.
+        /// </summary>
+        public static float2 FlankPoint(Squad target, Squad cavalry, float distance, SquadSettings settings)
+        {
+            float2 forward = Angles.Direction(target.Facing);
+            float2 right = Angles.Right(target.Facing);
+            float2 targetHalf = FormationLayout.GetHalfExtents(target.Formation, target.Alive, settings);
+            float2 ownHalf = FormationLayout.GetHalfExtents(cavalry.Formation, cavalry.Alive, settings);
+            float ownRadius = math.max(ownHalf.x, ownHalf.y);
+            float side = math.dot(cavalry.Position - target.Position, right) < 0f ? -1f : 1f;
+            return target.Position + right * (side * (targetHalf.x + ownRadius + distance))
+                - forward * (targetHalf.y + distance * FlankPointBehind);
+        }
+
+        // Насколько точка захода позади центра цели (доля от расстояния сбоку): чтобы оказаться вне её фронта наверняка.
+        private const float FlankPointBehind = 0.25f;
 
         /// <summary>
         /// Держит текущую цель, пока она жива, не бежит и ближе <paramref name="radius"/>; иначе берёт ближайшего
