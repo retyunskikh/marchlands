@@ -131,6 +131,7 @@ namespace Marchlands.Bootstrap
                 volleyEffects.PlaySentries(match.LastTickSentryVolleys);
                 battleSounds.Play(match.LastTickCaptures);
                 villageViews.Play(match.LastTickReinforcements);
+                buildingViews.PlayDisbands(match.LastTickDisbands);
                 SelectFormedSquad();
             }
 

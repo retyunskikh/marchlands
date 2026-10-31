@@ -44,6 +44,16 @@ namespace Marchlands.View
         [SerializeField] private Sprite barracksBaseSprite;
         [Tooltip("Крыши казармы и караульни в оттенках серого — окрашиваются цветом стороны.")]
         [SerializeField] private Sprite barracksRoofSprite;
+        [Tooltip("Двери дома казармы, доля размера от центра (для ворот справа): отсюда выходят новые рекруты и сюда уходят распущенные.")]
+        [SerializeField] private Vector2[] barracksDoors =
+        {
+            new Vector2(-0.19f, 0f), new Vector2(-0.13f, 0f), new Vector2(-0.07f, 0f), new Vector2(-0.02f, 0f),
+            new Vector2(0.04f, 0f), new Vector2(0.1f, 0f), new Vector2(0.16f, 0f), new Vector2(0.22f, 0f)
+        };
+        [Tooltip("Ворота плаца казармы, доля размера от центра (для ворот справа).")]
+        [SerializeField] private Vector2 barracksGate = new Vector2(0.5f, 0f);
+        [Tooltip("На сколько до и после ворот рекрут проходит прямо сквозь них, u.")]
+        [SerializeField] private float gatePassDepth = 0.35f;
 
         [Header("Конюшня")]
         [Tooltip("Левада с изгородью, коновязь, сено. Ворота справа.")]
@@ -118,6 +128,12 @@ namespace Marchlands.View
         public float RecruitsGroupGap => recruitsGroupGap;
 
         public Sprite BarracksRoofSprite => barracksRoofSprite;
+
+        public Vector2[] BarracksDoors => barracksDoors;
+
+        public Vector2 BarracksGate => barracksGate;
+
+        public float GatePassDepth => gatePassDepth;
 
         public Sprite CircleSprite => circleSprite;
 

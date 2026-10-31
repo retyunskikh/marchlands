@@ -214,7 +214,8 @@ namespace Marchlands.Input
                 return;
             }
 
-            Building building = FindBuildingAt(world, own: true);
+            // Тап по своей толпе у казармы или конюшни открывает карточку здания — там её можно распустить.
+            Building building = FindBuildingAt(world, own: true) ?? FindOwnCampBuildingAt(world);
             if (building != null)
             {
                 hasPendingTap = false;
@@ -480,6 +481,22 @@ namespace Marchlands.Input
             }
 
             return best;
+        }
+
+        /// <summary>Здание, у которого ждёт своя толпа рекрутов под пальцем.</summary>
+        private Building FindOwnCampBuildingAt(float2 world)
+        {
+            float minHalfExtent = cameraController.PixelsToWorld(ScreenUnits.DpToPixels(config.MinTouchTarget)) * 0.5f;
+            foreach (Squad squad in match.Squads)
+            {
+                if (squad.Side == playerSide && squad.IsCamp && squad.Alive > 0
+                    && SquadFootprint.Of(squad, match.Settings.squads).Contains(world, minHalfExtent))
+                {
+                    return BuildRules.GetFormingBuilding(match, playerSide, squad.IsCavalryCamp ? UnitType.Cavalry : UnitType.Grenadiers);
+                }
+            }
+
+            return null;
         }
 
         private void SelectBuilding(Building building)

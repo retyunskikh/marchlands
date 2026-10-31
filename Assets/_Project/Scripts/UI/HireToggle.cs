@@ -14,6 +14,8 @@ namespace Marchlands.UI
         [SerializeField] private Text nameLabel;
         [SerializeField] private Image progressFill;
         [SerializeField] private Button infoButton;
+        [Tooltip("«Распустить» ждущих этого рода войск — у иконок найма; у иконок постройки не задана.")]
+        [SerializeField] private Button disbandButton;
         [SerializeField] private Color onColor = new Color(1f, 0.85f, 0.35f);
         [SerializeField] private Color offColor = new Color(0.95f, 0.92f, 0.82f);
         [SerializeField] private Color availableTint = Color.white;
@@ -22,6 +24,17 @@ namespace Marchlands.UI
         public Button Button => button;
 
         public Button InfoButton => infoButton;
+
+        public Button DisbandButton => disbandButton;
+
+        /// <summary>«Распустить» видна, только когда у здания ждут люди этого рода войск.</summary>
+        public void SetDisbandVisible(bool visible)
+        {
+            if (disbandButton != null && disbandButton.gameObject.activeSelf != visible)
+            {
+                disbandButton.gameObject.SetActive(visible);
+            }
+        }
 
         public void SetIcon(Sprite sprite)
         {

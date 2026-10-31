@@ -13,7 +13,7 @@ namespace Marchlands.UI
     /// Панель выделенного здания: название, состояние постройки или найма и иконки найма — у казармы гренадёры
     /// и фузилёры, у конюшни конница: воин своей стороны в полный рост и цена человека с монеткой. Нажатие иконки
     /// включает или выключает найм этого рода войск (включённая подсвечена, под ней — время до рекрута); «i»
-    /// открывает характеристики. У штаба — подписанные иконки постройки казармы, конюшни и дома. Видна только при выделении.
+    /// открывает характеристики, «Распустить» над иконкой отпускает ждущих этого рода войск. У штаба — подписанные иконки постройки казармы, конюшни и дома. Видна только при выделении.
     /// </summary>
     public sealed class BuildingPanel : MonoBehaviour
     {
@@ -103,6 +103,10 @@ namespace Marchlands.UI
         {
             toggle.Button.onClick.AddListener(() => OnToggle(type));
             toggle.InfoButton.onClick.AddListener(() => infoPanel.Show(type));
+            if (toggle.DisbandButton != null)
+            {
+                toggle.DisbandButton.onClick.AddListener(() => OnDisband(type));
+            }
         }
 
         private void Update()
@@ -156,6 +160,7 @@ namespace Marchlands.UI
             float progress = !current ? -1f : interval > 0f ? 1f - building.HireRemaining / interval : 0f;
             int cost = BuildRules.GetHireCost(match.Settings.buildings, type);
             toggle.Show(string.Format(toggleFormat, unitName, cost), building.IsHiring(type), progress);
+            toggle.SetDisbandVisible(match.GetPlayer(building.Owner).GetReserve(type) > 0);
         }
 
         private void RefreshBuildToggle(HireToggle toggle, BuildingType type, string title, bool visible)
@@ -254,6 +259,14 @@ namespace Marchlands.UI
             if (building != null)
             {
                 match.Enqueue(new BuildHouseCommand(building.Owner));
+            }
+        }
+
+        private void OnDisband(UnitType type)
+        {
+            if (building != null)
+            {
+                match.Enqueue(new DisbandReserveCommand(building.Owner, type));
             }
         }
 

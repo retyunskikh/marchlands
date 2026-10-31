@@ -36,6 +36,7 @@ namespace Marchlands.Simulation.Core
         private readonly List<Village> lastTickCaptures = new List<Village>();
         private readonly List<Reinforcement> lastTickReinforcements = new List<Reinforcement>();
         private readonly List<Squad> lastTickFormedSquads = new List<Squad>();
+        private readonly List<Disband> lastTickDisbands = new List<Disband>();
         private readonly float[] dominationTimes = new float[SideCount];
         private int nextBuildingId = 1;
         private readonly float2[] retreatPoints = new float2[SideCount];
@@ -88,6 +89,14 @@ namespace Marchlands.Simulation.Core
         internal void ReportFormed(Squad squad)
         {
             lastTickFormedSquads.Add(squad);
+        }
+
+        /// <summary>Распущенные за последний тик люди резерва — отображение уводит их в казарму.</summary>
+        public IReadOnlyList<Disband> LastTickDisbands => lastTickDisbands;
+
+        internal void ReportDisband(Disband disband)
+        {
+            lastTickDisbands.Add(disband);
         }
 
         internal void ReportReinforcement(Squad squad, Village village)
@@ -386,6 +395,7 @@ namespace Marchlands.Simulation.Core
             lastTickCaptures.Clear();
             lastTickReinforcements.Clear();
             lastTickFormedSquads.Clear();
+            lastTickDisbands.Clear();
             lastTickSentryVolleys.Clear();
 
             foreach (Squad squad in squads)

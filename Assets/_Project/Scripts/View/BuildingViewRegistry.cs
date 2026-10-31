@@ -10,7 +10,7 @@ namespace Marchlands.View
 {
     /// <summary>
     /// Держит по одному <see cref="BuildingView"/> на каждое здание матча; рисует предпросмотр постройки
-    /// и людей резерва, ждущих у казармы, где встанет новый отряд.
+    /// и людей резерва, ждущих у казармы, где встанет новый отряд: новые выходят из дома казармы, распущенные уходят в него.
     /// </summary>
     public sealed class BuildingViewRegistry : MonoBehaviour
     {
@@ -22,13 +22,33 @@ namespace Marchlands.View
         private readonly List<Waiter>[] fusiliers = { new List<Waiter>(), new List<Waiter>() };
         private readonly List<Waiter>[] grenadiers = { new List<Waiter>(), new List<Waiter>() };
         private readonly List<Waiter>[] riders = { new List<Waiter>(), new List<Waiter>() };
+        private readonly List<Waiter> leaving = new List<Waiter>();
 
-        /// <summary>Ждущий человек толпы: где он сейчас нарисован и показан ли (новый выходит из ворот).</summary>
+        /// <summary>
+        /// Человек у здания: где он сейчас нарисован, показан ли и какие точки пути ему осталось пройти.
+        /// Новый выходит из двери дома казармы через ворота к своему месту в толпе; распущенный уходит обратно в дом.
+        /// </summary>
         private sealed class Waiter
         {
+            public readonly float2[] Path = new float2[3];
             public SpriteRenderer Renderer;
             public float2 Position;
             public bool Shown;
+            public int PathLength;
+            public int Step;
+
+            public bool OnPath => Step < PathLength;
+
+            public float2 NextPoint => Path[Step];
+        }
+
+        /// <summary>Дверь, из которой выходят к толпе, и, у казармы, ворота плаца: точка до и после них.</summary>
+        private struct Route
+        {
+            public float2 Door;
+            public bool HasGate;
+            public float2 GateInside;
+            public float2 GateOutside;
         }
 
         private Match match;
@@ -111,6 +131,118 @@ namespace Marchlands.View
                 RenderWaiting(side, UnitType.Grenadiers, player.GrenadierReserve, grenadiers[(int)side], 1f, groupOffset);
                 RenderWaiting(side, UnitType.Cavalry, player.CavalryReserve, riders[(int)side], 1.8f, 0f);
             }
+
+            RenderLeaving();
+        }
+
+        /// <summary>Распущенные за тик люди уходят из толпы обратно в дом казармы или в конюшню.</summary>
+        public void PlayDisbands(IReadOnlyList<Disband> disbands)
+        {
+            foreach (Disband disband in disbands)
+            {
+                List<Waiter> crowd = disband.Type == UnitType.Cavalry ? riders[(int)disband.Side]
+                    : disband.Type == UnitType.Grenadiers ? grenadiers[(int)disband.Side] : fusiliers[(int)disband.Side];
+                Building home = BuildRules.GetFormingBuilding(match, disband.Side, disband.Type);
+                for (int i = crowd.Count - 1; i >= 0; i--)
+                {
+                    Waiter waiter = crowd[i];
+                    if (!waiter.Shown)
+                    {
+                        continue;
+                    }
+
+                    crowd.RemoveAt(i);
+                    if (home == null)
+                    {
+                        Destroy(waiter.Renderer.gameObject);
+                        continue;
+                    }
+
+                    // Тот же путь, что от двери к толпе, только обратно: к воротам, сквозь них и в дверь.
+                    Route route = GetRoute(home, waiter.Position, i);
+                    waiter.PathLength = 0;
+                    waiter.Step = 0;
+                    if (route.HasGate)
+                    {
+                        waiter.Path[waiter.PathLength++] = route.GateOutside;
+                        waiter.Path[waiter.PathLength++] = route.GateInside;
+                    }
+
+                    waiter.Path[waiter.PathLength++] = route.Door;
+                    leaving.Add(waiter);
+                }
+            }
+        }
+
+        private void RenderLeaving()
+        {
+            float step = style.RecruitWalkSpeed * Time.deltaTime;
+            for (int i = leaving.Count - 1; i >= 0; i--)
+            {
+                Waiter waiter = leaving[i];
+                Walk(waiter, waiter.Position, step, waiter.Renderer.transform.rotation);
+                if (!waiter.OnPath)
+                {
+                    Destroy(waiter.Renderer.gameObject);
+                    leaving.RemoveAt(i);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Шаг к цели: по точкам пути, если они остались, иначе к <paramref name="target"/>. Идущий смотрит,
+        /// куда идёт; дошедший до места — в <paramref name="standing"/>.
+        /// </summary>
+        private static void Walk(Waiter waiter, float2 target, float step, Quaternion standing)
+        {
+            float2 goal = waiter.OnPath ? waiter.NextPoint : target;
+            float2 toGoal = goal - waiter.Position;
+            float distance = math.length(toGoal);
+            Quaternion facing = standing;
+            if (distance > step && distance > 1e-3f)
+            {
+                waiter.Position += toGoal / distance * step;
+                facing = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(toGoal.y, toGoal.x)) - 90f);
+            }
+            else
+            {
+                waiter.Position = goal;
+                if (waiter.OnPath)
+                {
+                    waiter.Step++;
+                    facing = waiter.Renderer.transform.rotation;
+                }
+            }
+
+            waiter.Renderer.transform.SetPositionAndRotation(new Vector3(waiter.Position.x, waiter.Position.y, 0f), facing);
+        }
+
+        /// <summary>
+        /// У казармы — одна из дверей её дома (выбор по <paramref name="pick"/>) и ворота плаца; у конюшни — край
+        /// здания, обращённый к <paramref name="crowd"/>. Ворота смотрят к центру карты: здание справа отражено.
+        /// </summary>
+        private Route GetRoute(Building building, float2 crowd, int pick)
+        {
+            Vector2 size = building.Type == BuildingType.Stable ? style.StableSize : style.BarracksSize;
+            Vector2[] doors = style.BarracksDoors;
+            if (building.Type != BuildingType.Barracks || doors == null || doors.Length == 0)
+            {
+                float2 toCrowd = math.normalizesafe(crowd - building.Position, new float2(1f, 0f));
+                return new Route { Door = building.Position + toCrowd * (math.min(size.x, size.y) * 0.5f) };
+            }
+
+            float direction = building.Position.x > 0f ? -1f : 1f;
+            Vector2 door = doors[(int)((uint)(pick * 7 + building.Id * 3) % (uint)doors.Length)];
+            Vector2 gate = style.BarracksGate;
+            float2 gatePosition = building.Position + new float2(gate.x * size.x * direction, gate.y * size.y);
+            float2 through = new float2(direction * style.GatePassDepth, 0f);
+            return new Route
+            {
+                Door = building.Position + new float2(door.x * size.x * direction, door.y * size.y),
+                HasGate = true,
+                GateInside = gatePosition - through,
+                GateOutside = gatePosition + through
+            };
         }
 
         /// <summary>
@@ -165,10 +297,6 @@ namespace Marchlands.View
             float2 right = new float2(front.y, -front.x);
             start += right * sideOffset;
             Quaternion rotation = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(front.y, front.x)) - 90f);
-            // Ворота — сторона здания, обращённая к толпе.
-            Vector2 doorSize = barracks.Type == BuildingType.Stable ? style.StableSize : style.BarracksSize;
-            float2 toCrowd = math.normalizesafe(start - barracks.Position, front);
-            float2 door = barracks.Position + toCrowd * (math.min(doorSize.x, doorSize.y) * 0.5f);
             float step = style.RecruitWalkSpeed * Time.deltaTime;
             for (int i = 0; i < shown; i++)
             {
@@ -185,25 +313,21 @@ namespace Marchlands.View
                 Waiter waiter = crowd[i];
                 if (!waiter.Shown)
                 {
+                    // Новый человек выходит из дома: через ворота плаца к своему месту.
+                    Route route = GetRoute(barracks, start, i + match.CurrentTick);
                     waiter.Shown = true;
-                    waiter.Position = door;
+                    waiter.Position = route.Door;
                     waiter.Renderer.enabled = true;
+                    waiter.PathLength = 0;
+                    waiter.Step = 0;
+                    if (route.HasGate)
+                    {
+                        waiter.Path[waiter.PathLength++] = route.GateInside;
+                        waiter.Path[waiter.PathLength++] = route.GateOutside;
+                    }
                 }
 
-                float2 toSlot = world - waiter.Position;
-                float distance = math.length(toSlot);
-                Quaternion facing = rotation;
-                if (distance > step && distance > 1e-3f)
-                {
-                    waiter.Position += toSlot / distance * step;
-                    facing = Quaternion.Euler(0f, 0f, math.degrees(math.atan2(toSlot.y, toSlot.x)) - 90f);
-                }
-                else
-                {
-                    waiter.Position = world;
-                }
-
-                waiter.Renderer.transform.SetPositionAndRotation(new Vector3(waiter.Position.x, waiter.Position.y, 0f), facing);
+                Walk(waiter, world, step, rotation);
             }
         }
 
