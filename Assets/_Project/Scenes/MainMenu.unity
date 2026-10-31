@@ -1098,6 +1098,7 @@ MonoBehaviour:
   tensionRadius: 25
   calmDelay: 20
   checkInterval: 0.5
+  pauseFadeTime: 1
 --- !u!4 &1002012854
 Transform:
   m_ObjectHideFlags: 0

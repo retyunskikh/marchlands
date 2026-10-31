@@ -607,10 +607,13 @@ MonoBehaviour:
   frame: {fileID: 54454837}
   icon: {fileID: 899352619}
   label: {fileID: 1806554425}
+  nameLabel: {fileID: 0}
   progressFill: {fileID: 2049541966}
   infoButton: {fileID: 199925845}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &54454836
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -802,10 +805,13 @@ MonoBehaviour:
   frame: {fileID: 111163634}
   icon: {fileID: 309758625}
   label: {fileID: 1548981576}
+  nameLabel: {fileID: 0}
   progressFill: {fileID: 0}
   infoButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &111163633
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5057,6 +5063,7 @@ MonoBehaviour:
   tensionRadius: 25
   calmDelay: 20
   checkInterval: 0.5
+  pauseFadeTime: 1
 --- !u!4 &772763382
 Transform:
   m_ObjectHideFlags: 0
@@ -5441,10 +5448,13 @@ MonoBehaviour:
   frame: {fileID: 838762531}
   icon: {fileID: 402313743}
   label: {fileID: 1472435224}
+  nameLabel: {fileID: 0}
   progressFill: {fileID: 0}
   infoButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &838762530
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11479,10 +11489,13 @@ MonoBehaviour:
   frame: {fileID: 1057446152}
   icon: {fileID: 491123582}
   label: {fileID: 1880681379}
+  nameLabel: {fileID: 0}
   progressFill: {fileID: 0}
   infoButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &1057446151
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11673,7 +11686,7 @@ MonoBehaviour:
       cavalryBody: {fileID: 21300000, guid: 4f4bbb1eaaf7a1c43acb3456f8d7535e, type: 3}
       cavalryOfficerBody: {fileID: 21300000, guid: b6b85c0435c904e4ba9e1ef8f838cf3b, type: 3}
       cavalryArms: {fileID: 21300000, guid: c531a82a8e7ef1943a82bd80b90cc6c6, type: 3}
-    soldierScale: 1.4
+    soldierScale: 1.6
     recruitSprite: {fileID: 21300000, guid: 4a0c1c9d4f62148438c3abefbdc10e43, type: 3}
     meleeBlendTime: 0.6
     meleeCompress: 0.6
@@ -11884,13 +11897,15 @@ MonoBehaviour:
     progressBarOffset: 3.2
     progressBackground: {r: 0, g: 0, b: 0, a: 0.45}
     progressColor: {r: 1, g: 0.85, b: 0.45, a: 1}
-    captureColor: {r: 0.95, g: 0.25, b: 0.2, a: 1}
+    healthColor: {r: 0.95, g: 0.25, b: 0.2, a: 1}
     selectionColor: {r: 1, g: 0.9, b: 0.3, a: 0.35}
     selectionPadding: 0.5
     recruitsShownMax: 32
     recruitsOffset: 0.9
+    recruitWalkSpeed: 2.5
     recruitsSpacing: {x: 0.45, y: 0.45}
     recruitsPerRow: 8
+    recruitsGroupGap: 1
     buildRadiusColor: {r: 1, g: 1, b: 1, a: 0.35}
     validSiteColor: {r: 0.4, g: 1, b: 0.4, a: 0.6}
     invalidSiteColor: {r: 1, g: 0.3, b: 0.3, a: 0.6}
@@ -12330,6 +12345,7 @@ MonoBehaviour:
   headquartersTitle: "\u0428\u0442\u0430\u0431"
   barracksTitle: "\u041A\u0430\u0437\u0430\u0440\u043C\u0430"
   stableTitle: "\u041A\u043E\u043D\u044E\u0448\u043D\u044F"
+  houseTitle: "\u0414\u043E\u043C"
   headquartersStatus: "\u0417\u0434\u0435\u0441\u044C \u043D\u0435 \u043D\u0430\u043D\u0438\u043C\u0430\u044E\u0442"
   constructionFormat: "\u0421\u0442\u0440\u043E\u0438\u0442\u0441\u044F\u2026 {0}%"
   idleStatus: "\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0438\u043A\u043E\u043D\u043A\u0443,
@@ -12917,6 +12933,8 @@ MonoBehaviour:
   puffSize: {x: 1.1, y: 1.8}
   puffSpeed: {x: 0.15, y: 0.5}
   smokeColor: {r: 0.9, g: 0.9, b: 0.88, a: 0.75}
+  sentryFireOffset: 2.5
+  sentryPuffs: 3
   volleyClip: {fileID: 8300000, guid: 88cb9ceaaefd9d84a845b42764b0823c, type: 3}
   audioVoices: 4
   volumeRange: {x: 0.35, y: 1}
@@ -13359,10 +13377,13 @@ MonoBehaviour:
   frame: {fileID: 1435568600}
   icon: {fileID: 937232320}
   label: {fileID: 1177683080}
+  nameLabel: {fileID: 0}
   progressFill: {fileID: 979046057}
   infoButton: {fileID: 1534418301}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &1435568599
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13887,10 +13908,13 @@ MonoBehaviour:
   frame: {fileID: 1492640968}
   icon: {fileID: 1544926440}
   label: {fileID: 2145178230}
+  nameLabel: {fileID: 0}
   progressFill: {fileID: 1447708047}
   infoButton: {fileID: 167068668}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
+  availableTint: {r: 1, g: 1, b: 1, a: 1}
+  unavailableTint: {r: 1, g: 1, b: 1, a: 0.4}
 --- !u!114 &1492640967
 MonoBehaviour:
   m_ObjectHideFlags: 0

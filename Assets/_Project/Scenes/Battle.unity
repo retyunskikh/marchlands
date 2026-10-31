@@ -11400,7 +11400,7 @@ MonoBehaviour:
       cavalryBody: {fileID: 21300000, guid: 4f4bbb1eaaf7a1c43acb3456f8d7535e, type: 3}
       cavalryOfficerBody: {fileID: 21300000, guid: b6b85c0435c904e4ba9e1ef8f838cf3b, type: 3}
       cavalryArms: {fileID: 21300000, guid: c531a82a8e7ef1943a82bd80b90cc6c6, type: 3}
-    soldierScale: 1.4
+    soldierScale: 1.6
     recruitSprite: {fileID: 21300000, guid: 4a0c1c9d4f62148438c3abefbdc10e43, type: 3}
     meleeBlendTime: 0.6
     meleeCompress: 0.6
@@ -15943,6 +15943,7 @@ MonoBehaviour:
   tensionRadius: 25
   calmDelay: 20
   checkInterval: 0.5
+  pauseFadeTime: 1
 --- !u!4 &1860967856
 Transform:
   m_ObjectHideFlags: 0
