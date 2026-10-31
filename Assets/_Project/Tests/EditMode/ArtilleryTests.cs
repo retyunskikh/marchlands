@@ -200,12 +200,23 @@ namespace Marchlands.Tests.EditMode
             depot.BuildRemaining = 0f;
 
             match.Enqueue(new SetHiringCommand(depot.Id, UnitType.Artillery, true));
-            Run(match, match.Settings.buildings.gunnerHireInterval * match.Settings.artillery.squadSize + 1f);
+            Run(match, match.Settings.buildings.gunCrewHireInterval - 1f);
+            Assert.IsFalse(match.Squads.Any(s => s.IsArtillery), "Пока таймер не вышел, пушки нет");
+            Assert.AreEqual(0, match.GetPlayer(Side.France).ArtilleryReserve, "По одному пушкаря не нанимают");
 
-            // Пушку не собирают кнопкой: набрался расчёт — она сама встала у депо.
+            // Пушку нанимают сразу со всем расчётом: на этом тике платят за неё целиком.
+            int spent = 0;
+            for (int i = 0; i < TicksFor(2f) && !match.Squads.Any(s => s.IsArtillery); i++)
+            {
+                int before = match.GetPlayer(Side.France).Gold;
+                match.Tick();
+                spent = before - match.GetPlayer(Side.France).Gold;
+            }
+
             Squad gun = match.Squads.Single(s => s.IsArtillery);
             Assert.AreEqual(match.Settings.artillery.squadSize, gun.Alive);
-            Assert.Less(match.GetPlayer(Side.France).ArtilleryReserve, match.Settings.artillery.squadSize, "Расчёт ушёл из резерва в пушку");
+            Assert.AreEqual(0, match.GetPlayer(Side.France).ArtilleryReserve);
+            Assert.GreaterOrEqual(spent, match.Settings.buildings.gunCrewHireCost - 5, "Заплатили за пушку целиком");
             Assert.Less(math.distance(gun.Position, depot.Position), 10f, "Встала у депо");
         }
 

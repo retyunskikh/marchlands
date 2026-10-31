@@ -51,11 +51,11 @@ namespace Marchlands.Simulation.Config
         /// <summary>Здоровье артдепо.</summary>
         public float depotHealth;
 
-        /// <summary>Цена одного пушкаря.</summary>
-        public int gunnerHireCost;
+        /// <summary>Цена пушки: весь расчёт нанимается сразу.</summary>
+        public int gunCrewHireCost;
 
-        /// <summary>Раз в столько секунд артдепо с включённым наймом получает пушкаря, s.</summary>
-        public float gunnerHireInterval;
+        /// <summary>Раз в столько секунд артдепо с включённым наймом выставляет пушку с расчётом, s.</summary>
+        public float gunCrewHireInterval;
 
         /// <summary>Сколько мест (солдат на поле и рекрутов в резерве) даёт штаб.</summary>
         public int headquartersPopulation;

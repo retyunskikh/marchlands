@@ -136,7 +136,7 @@ namespace Marchlands.Simulation.Buildings
                 case UnitType.Cavalry:
                     return settings.cavalryHireCost;
                 case UnitType.Artillery:
-                    return settings.gunnerHireCost;
+                    return settings.gunCrewHireCost;
                 case UnitType.Grenadiers:
                     return settings.grenadierHireCost;
                 default:
@@ -152,7 +152,7 @@ namespace Marchlands.Simulation.Buildings
                 case UnitType.Cavalry:
                     return settings.cavalryHireInterval;
                 case UnitType.Artillery:
-                    return settings.gunnerHireInterval;
+                    return settings.gunCrewHireInterval;
                 case UnitType.Grenadiers:
                     return settings.grenadierHireInterval;
                 default:
@@ -233,7 +233,10 @@ namespace Marchlands.Simulation.Buildings
                 return HireWait.Full;
             }
 
-            if (!HasHousing(match, building.Owner))
+            // Пушку нанимают сразу с расчётом — места нужны на всех.
+            UnitType? upcoming = NextHireType(match, building);
+            int people = upcoming == UnitType.Artillery ? match.Settings.artillery.squadSize : 1;
+            if (!HasHousing(match, building.Owner, people))
             {
                 return HireWait.NoHousing;
             }
@@ -274,7 +277,13 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Есть ли место ещё для одного человека.</summary>
         public static bool HasHousing(Match match, Side side)
         {
-            return GetPopulation(match, side) < GetPopulationCapacity(match, side);
+            return HasHousing(match, side, 1);
+        }
+
+        /// <summary>Хватит ли мест ещё на <paramref name="people"/> человек.</summary>
+        public static bool HasHousing(Match match, Side side, int people)
+        {
+            return GetPopulation(match, side) + people <= GetPopulationCapacity(match, side);
         }
 
         /// <summary>Цена следующего дома: houseCost, и каждый следующий вдвое дороже.</summary>

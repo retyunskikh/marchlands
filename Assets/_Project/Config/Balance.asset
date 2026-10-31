@@ -197,8 +197,8 @@ MonoBehaviour:
       depotCost: 320
       depotBuildTime: 55
       depotHealth: 300
-      gunnerHireCost: 25
-      gunnerHireInterval: 10
+      gunCrewHireCost: 150
+      gunCrewHireInterval: 60
       headquartersPopulation: 100
       housePopulation: 30
       houseCost: 40
