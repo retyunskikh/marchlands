@@ -116,14 +116,14 @@ namespace Marchlands.Simulation.Buildings
                 probability *= settings.terrain.forestCoverMultiplier;
             }
 
-            int shooters = WeatherSystem.RollFired(match, volley.Shots);
+            // Дождь зданиям не мешает: порох у часовых и в блокгаузе под крышей, сухой.
+            int shooters = volley.Shots;
             int aliveBefore = target.Alive;
             int casualties = VolleyMath.RollCasualties(match.Random, shooters, math.saturate(probability), aliveBefore);
             target.Alive -= casualties;
             bool flank = MoraleMath.IsFlank(target, building.Position, settings.morale);
             MoraleMath.ApplyLoss(target, casualties, aliveBefore, false, flank, settings);
-            events.Add(new SentryVolley(building.Id, building.Owner, building.Position, shooters, casualties, target.Id, target.Position,
-                volley.Shots - shooters));
+            events.Add(new SentryVolley(building.Id, building.Owner, building.Position, shooters, casualties, target.Id, target.Position));
         }
     }
 }

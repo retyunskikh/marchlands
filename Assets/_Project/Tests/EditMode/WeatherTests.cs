@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
@@ -86,6 +87,29 @@ namespace Marchlands.Tests.EditMode
             }
 
             Assert.That((float)fired / ready, Is.EqualTo(0.67f).Within(0.04f));
+        }
+
+        [Test]
+        public void Rain_DoesNotStopSentriesAndBlockhouses()
+        {
+            var settings = TestSettings.Create();
+            settings.weather.rainFireChance = 0.67f;
+            var match = new Match(3, settings);
+            match.IsRaining = true;
+            match.AddHeadquarters(Side.Austria, new float2(30f, 0f));
+            match.AddBlockhouse(Side.Austria, new float2(30f, 20f));
+            match.AddSquad(Side.France, new float2(24f, 0f), 0f, Formation.Line, UnitType.Grenadiers, 100000);
+            match.AddSquad(Side.France, new float2(24f, 20f), 0f, Formation.Line, UnitType.Grenadiers, 100000);
+
+            var events = new List<SentryVolley>();
+            for (int i = 0; i < TicksFor(60f); i++)
+            {
+                SentrySystem.Update(match, SimulationTime.TickDuration, events);
+            }
+
+            Assert.Greater(events.Count, 10);
+            Assert.IsTrue(events.All(v => v.Misfires == 0), "Под крышей порох сухой — осечек нет");
+            Assert.IsTrue(events.All(v => v.Shooters == Volley.Of(match.FindBuilding(v.BuildingId), settings.buildings).Shots));
         }
 
         [Test]
