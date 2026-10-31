@@ -28,6 +28,8 @@ namespace Marchlands.Tests.EditMode
                     arrivalTolerance = 0.05f,
                     columnWaypointReach = 1.5f,
                     roadAlignMaxDetour = 1.5f,
+                    roadRouteGain = 1.3f,
+                    roadRouteMinShare = 0.5f,
                     resumeMarchEnemyRadius = 15f
                 },
                 combat = new CombatSettings
@@ -255,6 +257,7 @@ namespace Marchlands.Tests.EditMode
                     forestSpeedMultiplier = 0.6f,
                     forestCoverMultiplier = 0.7f,
                     pathCellSize = 2f,
+                    pathRoadPreference = 1f,
                     fordSpeedMultiplier = 0.5f,
                     fordTargetMultiplier = 1.3f,
                     hillRangeMultiplier = 1.2f,

@@ -16,6 +16,35 @@ namespace Marchlands.Simulation.Squads
     {
         private static readonly List<float2> Waypoints = new List<float2>();
 
+        // Шаг, с которым путь проверяется на дорогу, u.
+        private const float RoadSampleStep = 1f;
+
+        /// <summary>Какая доля длины найденного пути (<see cref="Waypoints"/>) идёт по дорогам.</summary>
+        private static float RoadShare(Match match, float2 from)
+        {
+            float halfWidth = match.Settings.terrain.roadHalfWidth;
+            float total = 0f;
+            float onRoad = 0f;
+            float2 previous = from;
+            foreach (float2 point in Waypoints)
+            {
+                float length = math.distance(previous, point);
+                int samples = math.max(1, (int)math.ceil(length / RoadSampleStep));
+                for (int i = 0; i < samples; i++)
+                {
+                    if (match.Terrain.IsOnRoad(math.lerp(previous, point, (i + 0.5f) / samples), halfWidth))
+                    {
+                        onRoad += length / samples;
+                    }
+                }
+
+                total += length;
+                previous = point;
+            }
+
+            return total > 0f ? onRoad / total : 0f;
+        }
+
         public static bool TryPlan(Match match, Squad squad, float2 target)
         {
             SquadSettings settings = match.Settings.squads;
@@ -54,7 +83,11 @@ namespace Marchlands.Simulation.Squads
             float routeTime = routeCost / marchSpeed + reformLoss;
             float straightCost = pathfinder.SegmentCost(squad.Position, target);
             float straightTime = straightCost / marchSpeed;
-            if (!float.IsInfinity(straightCost) && routeTime >= straightTime * settings.autoRouteGain)
+            // Путь в основном по дорогам берётся охотнее: по дороге в колонне быстрее, чем линией по полю.
+            float gain = RoadShare(match, squad.Position) >= settings.roadRouteMinShare && settings.roadRouteMinShare > 0f
+                ? math.max(settings.autoRouteGain, settings.roadRouteGain)
+                : settings.autoRouteGain;
+            if (!float.IsInfinity(straightCost) && routeTime >= straightTime * gain)
             {
                 return false;
             }

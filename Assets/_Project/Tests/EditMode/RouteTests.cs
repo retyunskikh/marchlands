@@ -71,6 +71,48 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void WindingRoad_IsTaken_EvenIfSlowerInSameFormation()
+        {
+            var settings = TestSettings.Create();
+            settings.terrain.roadSpeedMultiplier = 1.5f;
+            var match = new Match(1, settings);
+            var map = new TerrainMap(new float2(-60f, -50f), new float2(60f, 50f));
+            map.AddRoad(new List<float2> { new float2(-60f, 0f), new float2(-40f, 0f), new float2(0f, 40f), new float2(40f, 0f), new float2(60f, 0f) });
+            match.SetTerrain(map);
+            Squad squad = match.AddSquad(Side.France, new float2(-40f, 0f), 0f, Formation.Line);
+            match.Enqueue(new MoveCommand(squad.Id, new float2(40f, 0f), 0f, autoRoute: true));
+            match.Tick();
+
+            Assert.IsTrue(squad.HasRoute, "Петляющая дорога всё равно лучше, чем линией по полю");
+            Assert.AreEqual(Formation.Column, squad.TargetFormation);
+        }
+
+        [Test]
+        public void RoadPreference_PathFollowsRoad_EvenWhenFieldIsShorter()
+        {
+            var settings = TestSettings.Create();
+            settings.terrain.roadSpeedMultiplier = 1.5f;
+            settings.terrain.pathRoadPreference = 1.6f;
+            var match = new Match(1, settings);
+            var map = new TerrainMap(new float2(-60f, -50f), new float2(60f, 50f));
+            // Дорога уходит дугой в сторону: по времени поле не хуже, но с предпочтением путь идёт по ней.
+            map.AddRoad(new List<float2> { new float2(-50f, 0f), new float2(-30f, 0f), new float2(0f, 30f), new float2(30f, 0f), new float2(50f, 0f) });
+            match.SetTerrain(map);
+            Squad squad = match.AddSquad(Side.France, new float2(-30f, 0f), 0f, Formation.Line);
+            match.Enqueue(new MoveCommand(squad.Id, new float2(30f, 0f), 0f, autoRoute: true));
+            match.Tick();
+
+            Assert.IsTrue(squad.HasRoute, "Пошли по дороге");
+            bool viaBend = false;
+            foreach (float2 point in squad.RouteWaypoints)
+            {
+                viaBend |= math.distance(point, new float2(0f, 30f)) < 0.5f;
+            }
+
+            Assert.IsTrue(viaBend, "Путь идёт по дуге дороги, а не напрямик полем");
+        }
+
+        [Test]
         public void Column_IsFiveAbreast_Tight()
         {
             var settings = TestSettings.Create();

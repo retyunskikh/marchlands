@@ -334,6 +334,27 @@ namespace Marchlands.Simulation.Terrain
         /// Входит ли отряд с центром в <paramref name="point"/> на мост: центр в коридоре моста (не дальше
         /// <paramref name="lateral"/> от его оси вбок) и не дальше <paramref name="approach"/> от въезда за берегом.
         /// </summary>
+        /// <summary>Близко ли точка к броду: не дальше <paramref name="margin"/> от его круга или берегов.</summary>
+        public bool IsNearFord(float2 point, float margin)
+        {
+            foreach (Crossing crossing in crossings)
+            {
+                if (crossing.Type != CrossingType.Ford)
+                {
+                    continue;
+                }
+
+                float reach = crossing.Radius + margin;
+                if (math.distancesq(point, crossing.Center) <= reach * reach
+                    || DistanceToSegment(point, crossing.BankA, crossing.BankB) <= margin)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public bool IsEnteringBridge(float2 point, float lateral, float approach)
         {
             return TryGetBridge(point, lateral, approach, out _);
@@ -420,6 +441,27 @@ namespace Marchlands.Simulation.Terrain
             return false;
         }
 
+        /// <summary>Пересекает ли отрезок русло реки — где угодно, в том числе на переправе.</summary>
+        public bool CrossesRiverBed(float2 from, float2 to)
+        {
+            if (rivers.Count == 0)
+            {
+                return false;
+            }
+
+            float length = math.distance(from, to);
+            int samples = math.max(1, (int)math.ceil(length / WaterSampleStep));
+            for (int i = 0; i <= samples; i++)
+            {
+                if (DistanceToRivers(math.lerp(from, to, (float)i / samples)) < 0f)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Куда идти, чтобы попасть из <paramref name="from"/> в <paramref name="to"/>: напрямую, если по пути нет воды,
         /// иначе — к берегу самой выгодной переправы, по ней на другой берег и дальше к цели. Без состояния: решение
@@ -437,7 +479,10 @@ namespace Marchlands.Simulation.Terrain
         /// </summary>
         public float2 Steer(float2 from, float2 to, float leadIn, float tolerance)
         {
-            if (crossings.Count == 0 || !CrossesWater(from, to))
+            // С заходом по оси нужна ли переправа, решает само русло: прямая, задевшая лишь край круга моста,
+            // тоже идёт через мост — иначе отряд у въезда качается между «напрямую» и «к мосту».
+            bool crosses = leadIn > 0f ? CrossesRiverBed(from, to) : CrossesWater(from, to);
+            if (crossings.Count == 0 || !crosses)
             {
                 return to;
             }
@@ -455,6 +500,18 @@ namespace Marchlands.Simulation.Terrain
                 float2 exit = fromA && !fromB ? crossing.BankA
                     : fromB && !fromA ? crossing.BankB
                     : math.distancesq(crossing.BankA, to) < math.distancesq(crossing.BankB, to) ? crossing.BankA : crossing.BankB;
+
+                // Ещё на берегу у моста, но сбоку от оси — сначала на ось перед въездом, а не наискось через настил.
+                if (leadIn > 0f && crossing.Type == CrossingType.Bridge && !IsInRiverBand(from))
+                {
+                    float2 entry = math.all(exit == crossing.BankA) ? crossing.BankB : crossing.BankA;
+                    float2 outward = math.normalizesafe(entry - exit);
+                    float side = math.abs(math.dot(from - entry, new float2(-outward.y, outward.x)));
+                    if (side > tolerance && math.dot(from - entry, outward) > -tolerance)
+                    {
+                        return entry + outward * leadIn;
+                    }
+                }
                 return math.distancesq(from, exit) > 0.04f ? exit : to;
             }
 

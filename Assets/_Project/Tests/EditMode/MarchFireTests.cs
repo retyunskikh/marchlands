@@ -271,6 +271,64 @@ namespace Marchlands.Tests.EditMode
             Assert.Less(math.distance(squad.Position, to), 1f, "Встал в указанной точке");
         }
 
+        [TestCase(6f, -2.8f, 75f)]
+        [TestCase(6f, 2.8f, -75f)]
+        [TestCase(5f, -3.5f, 90f)]
+        [TestCase(8f, -3f, 150f)]
+        public void Line_BesideBridgehead_CrossesWithoutSpinning(float fromX, float fromY, float facing)
+        {
+            Match match = BridgeMap();
+            Squad squad = match.AddSquad(Side.France, new float2(fromX, fromY), facing, Formation.Line);
+            var to = new float2(-25f, 0.6f);
+            match.Enqueue(new MoveCommand(squad.Id, to, 180f));
+            for (int i = 0; i < 1500 && (i == 0 || squad.Order.Type != SquadOrderType.None); i++)
+            {
+                match.Tick();
+            }
+
+            Assert.AreEqual(SquadOrderType.None, squad.Order.Type, $"Перешёл мост, а не крутится у въезда: {squad.Position}");
+            Assert.Less(math.distance(squad.Position, to), 1f);
+        }
+
+        [Test]
+        public void WideLine_WadesThroughFord_WithoutStalling()
+        {
+            var match = new Match(1, TestSettings.Create());
+            var map = new TerrainMap(new float2(-50f, -30f), new float2(50f, 30f));
+            map.AddRiver(new List<float2> { new float2(0f, -40f), new float2(0f, 40f) }, 2f);
+            map.AddCrossing(new float2(0f, 0f), CrossingType.Ford);
+            match.SetTerrain(map);
+            Squad squad = match.AddSquad(Side.France, new float2(-16f, -6f), 0f, Formation.Line, 40);
+            var to = new float2(14f, 5f);
+            match.Enqueue(new MoveCommand(squad.Id, to, 0f));
+            for (int i = 0; i < 2000 && (i == 0 || squad.Order.Type != SquadOrderType.None); i++)
+            {
+                match.Tick();
+            }
+
+            Assert.AreEqual(SquadOrderType.None, squad.Order.Type, "Перешёл брод, а не топчется на берегу");
+            Assert.Less(math.distance(squad.Position, to), 1f);
+        }
+
+        [TestCase(0f, -20f)]
+        [TestCase(-10f, -12f)]
+        [TestCase(12f, -16f)]
+        public void Line_AtMapEdge_TurnsToFinalFacing_AndStops(float fromX, float fromY)
+        {
+            var match = new Match(1, TestSettings.Create());
+            match.SetTerrain(new TerrainMap(new float2(-50f, -30f), new float2(50f, 30f)));
+            Squad squad = match.AddSquad(Side.France, new float2(fromX, fromY), -90f, Formation.Line, 40);
+            // Точка у самого края, фронт — вдоль края: линия разворачивается у границы.
+            match.Enqueue(new MoveCommand(squad.Id, new float2(0f, -29f), 0f));
+            for (int i = 0; i < 1000 && (i == 0 || squad.Order.Type != SquadOrderType.None); i++)
+            {
+                match.Tick();
+            }
+
+            Assert.AreEqual(SquadOrderType.None, squad.Order.Type, "Развернулся и встал, а не крутится у края");
+            Assert.AreEqual(0f, squad.Facing, 1f);
+        }
+
         [Test]
         public void Line_OrderedOntoBridge_StopsAlongDeck()
         {

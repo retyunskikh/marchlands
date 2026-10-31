@@ -29,6 +29,8 @@ MonoBehaviour:
       arrivalTolerance: 0.05
       columnWaypointReach: 1.5
       roadAlignMaxDetour: 1.5
+      roadRouteGain: 1.3
+      roadRouteMinShare: 0.5
       resumeMarchEnemyRadius: 15
     grenadiers:
       squadSize: 30
@@ -232,6 +234,7 @@ MonoBehaviour:
       forestSpeedMultiplier: 0.6
       forestCoverMultiplier: 0.7
       pathCellSize: 2
+      pathRoadPreference: 1.6
       fordSpeedMultiplier: 0.5
       fordTargetMultiplier: 1.3
       hillRangeMultiplier: 1.2

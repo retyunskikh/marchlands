@@ -96,6 +96,13 @@ namespace Marchlands.Simulation.Squads
             }
 
             float2 half = FormationLayout.GetHalfExtents(squad, match.Settings.squads);
+            // Брод строй переходит вброд — у брода не выталкивать, иначе он топчется на берегу.
+            // На мост строй заходит по оси и сжатым (см. Steer) — над водой он и так не свешивается.
+            if (match.Terrain.IsNearFord(squad.Position, math.length(half)))
+            {
+                return;
+            }
+
             float2 forward = Angles.Direction(squad.Facing) * half.y;
             float2 right = Angles.Right(squad.Facing) * half.x;
             float2 push = float2.zero;
@@ -140,11 +147,22 @@ namespace Marchlands.Simulation.Squads
                 return;
             }
 
-            // Габариты без сжатия: по ним решаем, тесно ли отряду, — иначе сжатый строй тут же «помещался» бы обратно.
-            float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings);
             int files = math.max(1, (int)math.floor(bridgeHalf * 2f / FormationLayout.FileSpacing(squad.Formation, settings)));
-            bool entering = match.Terrain.IsEnteringBridge(squad.Position, math.max(half.x, bridgeHalf), BridgeApproach(squad, settings));
+            // Сжимается строй на оси моста (не дальше половины настила вбок) и только лицом вдоль моста: стоящий
+            // боком у въезда глубоким не становится — иначе он тылом залезал бы в реку. Уже сжатый остаётся сжатым,
+            // пока на оси (разворот на настиле не раздаёт его над водой).
+            bool entering = match.Terrain.TryGetBridge(squad.Position, bridgeHalf, BridgeApproach(squad, settings), out Terrain.Crossing bridge)
+                && (squad.FileLimit > 0 || IsAlongBridge(squad.Facing, bridge));
             squad.FileLimit = entering ? files : 0;
+        }
+
+        // Насколько фронт может отклоняться от оси моста, чтобы строй начал сжиматься, градусы.
+        private const float BridgeAlignAngle = 45f;
+
+        private static bool IsAlongBridge(float facing, Terrain.Crossing bridge)
+        {
+            float delta = math.abs(Angles.Delta(Angles.Of(bridge.Across), facing));
+            return delta <= BridgeAlignAngle || delta >= 180f - BridgeAlignAngle;
         }
 
         /// <summary>
@@ -349,10 +367,24 @@ namespace Marchlands.Simulation.Squads
 
             float2 target = Steer(squad, match, goal, out bool onBridge);
             bool detour = waypoint || (math.any(target != squad.Order.Target) && !onBridge);
+            float arrival = settings.squads.arrivalTolerance;
+            if (!detour && match.Terrain != null)
+            {
+                // У края карты цель — докуда строй дотягивается при нынешнем фронте: пока линия разворачивается,
+                // по диагонали она шире, край отжимает её от цели — и разворот не должен считаться «не дошёл».
+                float2 reachable = match.Terrain.Clamp(target, ProjectedHalfExtents(squad, squad.Facing, settings.squads));
+                if (math.any(reachable != target))
+                {
+                    // У края точность не нужна: иначе строй качается между «шагнуть» и «довернуть фронт».
+                    target = reachable;
+                    arrival = math.max(arrival, settings.squads.rankSpacing * 0.5f);
+                }
+            }
+
             float2 toTarget = target - squad.Position;
             float distance = math.length(toTarget);
 
-            if (distance > settings.squads.arrivalTolerance)
+            if (distance > arrival)
             {
                 float speed = UnitStats.Speed(squad, squad.Formation, settings) * speedMultiplier;
                 if (squad.FireState == FireState.Reloading)

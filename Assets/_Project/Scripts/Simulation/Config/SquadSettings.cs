@@ -63,6 +63,15 @@ namespace Marchlands.Simulation.Config
         /// </summary>
         public float roadAlignMaxDetour;
 
+        /// <summary>
+        /// Путь, который не меньше roadRouteMinShare своей длины идёт по дорогам, берётся, даже если в том же строю
+        /// он медленнее прямого — до roadRouteGain раз: по дороге в колонне всё равно быстрее, чем линией по полю.
+        /// </summary>
+        public float roadRouteGain;
+
+        /// <summary>Какая доля длины пути должна идти по дорогам, чтобы действовал roadRouteGain.</summary>
+        public float roadRouteMinShare;
+
         /// <summary>Отложенный марш (развернули на месте, рукопашная) продолжается, когда не бегущих врагов нет ближе этого, u.</summary>
         public float resumeMarchEnemyRadius;
     }

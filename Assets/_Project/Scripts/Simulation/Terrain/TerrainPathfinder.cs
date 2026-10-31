@@ -191,7 +191,13 @@ namespace Marchlands.Simulation.Terrain
                 }
             }
 
-            return map.SpeedMultiplier(point, settings);
+            float speed = map.SpeedMultiplier(point, settings);
+            if (settings.pathRoadPreference > 1f && map.IsOnRoad(point, settings.roadHalfWidth))
+            {
+                speed *= settings.pathRoadPreference;
+            }
+
+            return speed;
         }
 
         private void BuildPath(float2 from, float2 to, int goal, List<float2> waypoints)

@@ -21,6 +21,12 @@ namespace Marchlands.Simulation.Config
         /// <summary>Размер ячейки сетки поиска пути ИИ, u.</summary>
         public float pathCellSize;
 
+        /// <summary>
+        /// Насколько поиск пути предпочитает дороги сверх их скорости: время по дороге для него делится ещё и на это
+        /// число. Так путь идёт по дороге, даже если она петляет, — по ней ходят колонной, а не линией по полю.
+        /// </summary>
+        public float pathRoadPreference;
+
         /// <summary>Множитель скорости на броде.</summary>
         public float fordSpeedMultiplier;
 
