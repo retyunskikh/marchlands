@@ -86,7 +86,12 @@ namespace Marchlands.Simulation.Combat
         {
             if (gun.FireState == FireState.Reloading)
             {
-                gun.FireTimer -= deltaTime;
+                // Расчёт в рукопашной пушку не заряжает.
+                if (!gun.IsInMelee)
+                {
+                    gun.FireTimer -= deltaTime;
+                }
+
                 if (gun.FireTimer <= TimerEpsilon)
                 {
                     gun.FireTimer = 0f;

@@ -30,6 +30,21 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void Reload_StandsStill_WhileInMelee()
+        {
+            Match match = CombatTestScenarios.FacingLines(1, 6f, out Squad attacker, out Squad defender);
+            match.Enqueue(new ChargeCommand(attacker.Id, defender.Id));
+            RunUntilMelee(match, attacker);
+            attacker.FireState = FireState.Reloading;
+            attacker.FireTimer = 10f;
+            for (int i = 0; i < TicksFor(2f) && attacker.IsInMelee; i++)
+            {
+                match.Tick();
+                Assert.AreEqual(10f, attacker.FireTimer, 1e-4f, "В драке не перезаряжают");
+            }
+        }
+
+        [Test]
         public void Charge_RunsAtChargeSpeed()
         {
             Match match = CombatTestScenarios.FacingLines(1, 10f, out Squad attacker, out Squad defender);

@@ -1,6 +1,7 @@
 using System;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
+using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Melee;
 using Marchlands.Simulation.Squads;
@@ -43,6 +44,12 @@ namespace Marchlands.Input
         private bool hasPendingTap;
         private double pendingTapTime;
         private Vector2 pendingTapPosition;
+
+        // Первый тап по своему отряду при выделенном другом: второй тап по нему же отправит прежний отряд к этому.
+        private Squad squadTapFrom;
+        private Squad squadTapOn;
+        private double squadTapTime;
+        private Vector2 squadTapPosition;
 
         private bool isChargeTargeting;
 
@@ -231,7 +238,7 @@ namespace Marchlands.Input
             if (hit != null)
             {
                 hasPendingTap = false;
-                Select(hit);
+                HandleOwnSquadTap(hit, screenPosition);
                 return;
             }
 
@@ -295,6 +302,41 @@ namespace Marchlands.Input
             hasPendingTap = true;
             pendingTapTime = now;
             pendingTapPosition = screenPosition;
+        }
+
+        /// <summary>
+        /// Тап по своему отряду выделяет его. Двойной тап по нему при выделенном другом отряде — прежний отряд
+        /// идёт к этому и встаёт за ним, в затылок, тем же фронтом; выделенным остаётся тот, по кому тапали.
+        /// </summary>
+        private void HandleOwnSquadTap(Squad hit, Vector2 screenPosition)
+        {
+            double now = Time.realtimeSinceStartupAsDouble;
+            bool isDoubleTap = squadTapOn == hit
+                && now - squadTapTime <= config.DoubleTapMaxInterval
+                && Vector2.Distance(screenPosition, squadTapPosition) <= ScreenUnits.DpToPixels(config.DoubleTapMaxDistance);
+            if (isDoubleTap)
+            {
+                Squad mover = squadTapFrom;
+                squadTapOn = null;
+                squadTapFrom = null;
+                if (mover != null && mover != hit && match.FindSquad(mover.Id) != null && mover.CanReceiveOrders)
+                {
+                    SquadSettings settings = match.Settings.squads;
+                    float depth = FormationLayout.GetHalfExtents(hit, settings).y
+                        + FormationLayout.GetHalfExtents(mover.TargetFormation, mover.Alive, settings).y + settings.rankSpacing;
+                    float2 behind = hit.Position - Angles.Direction(hit.Facing) * depth;
+                    match.Enqueue(new MoveCommand(mover.Id, behind, hit.Facing, autoRoute: true));
+                }
+
+                Select(hit);
+                return;
+            }
+
+            squadTapFrom = selected != hit ? selected : null;
+            squadTapOn = hit;
+            squadTapTime = now;
+            squadTapPosition = screenPosition;
+            Select(hit);
         }
 
         /// <summary>

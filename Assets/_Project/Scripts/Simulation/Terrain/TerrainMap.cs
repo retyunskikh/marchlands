@@ -136,6 +136,117 @@ namespace Marchlands.Simulation.Terrain
             return false;
         }
 
+        /// <summary>
+        /// Путь по дороге — по её оси: точки пути у дороги (не дальше <paramref name="reach"/>) встают на осевую,
+        /// а между двумя такими точками одной дороги вставляются её изгибы, чтобы отряд шёл серединой дороги,
+        /// а не срезал по клеткам. Если по дороге заметно дальше (<paramref name="maxDetour"/> × напрямую), точки не трогаются.
+        /// </summary>
+        public void AlignToRoads(float2 from, List<float2> waypoints, float reach, float maxDetour)
+        {
+            if (roads.Count == 0 || waypoints.Count == 0)
+            {
+                return;
+            }
+
+            Aligned.Clear();
+            bool hasPrevious = TryNearestRoad(from, reach, out int previousRoad, out int previousSegment, out float2 previousPoint);
+            float2 previousRaw = from;
+            for (int i = 0; i < waypoints.Count; i++)
+            {
+                float2 raw = waypoints[i];
+                bool last = i == waypoints.Count - 1;
+                if (!TryNearestRoad(raw, reach, out int road, out int segment, out float2 onRoad))
+                {
+                    Aligned.Add(raw);
+                    hasPrevious = false;
+                    previousRaw = raw;
+                    continue;
+                }
+
+                if (hasPrevious && road == previousRoad && segment != previousSegment)
+                {
+                    float2[] points = roads[road];
+                    float alongRoad = 0f;
+                    float2 at = previousPoint;
+                    int step = segment > previousSegment ? 1 : -1;
+                    int first = step > 0 ? previousSegment + 1 : previousSegment;
+                    int end = step > 0 ? segment : segment + 1;
+                    for (int v = first; step > 0 ? v <= end : v >= end; v += step)
+                    {
+                        alongRoad += math.distance(at, points[v]);
+                        at = points[v];
+                    }
+
+                    alongRoad += math.distance(at, onRoad);
+                    if (alongRoad <= math.distance(previousPoint, onRoad) * maxDetour + reach)
+                    {
+                        for (int v = first; step > 0 ? v <= end : v >= end; v += step)
+                        {
+                            Aligned.Add(points[v]);
+                        }
+                    }
+                }
+
+                // Цель — та, что указал игрок; промежуточные точки — на оси дороги.
+                Aligned.Add(last ? raw : onRoad);
+                hasPrevious = true;
+                previousRoad = road;
+                previousSegment = segment;
+                previousPoint = onRoad;
+                previousRaw = raw;
+            }
+
+            waypoints.Clear();
+            float2 tail = from;
+            foreach (float2 point in Aligned)
+            {
+                if (math.distancesq(point, tail) > AlignEpsilon * AlignEpsilon)
+                {
+                    waypoints.Add(point);
+                    tail = point;
+                }
+            }
+
+            if (waypoints.Count == 0 || math.any(waypoints[waypoints.Count - 1] != Aligned[Aligned.Count - 1]))
+            {
+                waypoints.Add(Aligned[Aligned.Count - 1]);
+            }
+        }
+
+        private static readonly List<float2> Aligned = new List<float2>();
+        private const float AlignEpsilon = 0.3f;
+
+        /// <summary>Ближайшая точка оси дороги не дальше <paramref name="reach"/>: какая дорога, какой отрезок.</summary>
+        private bool TryNearestRoad(float2 point, float reach, out int road, out int segment, out float2 nearest)
+        {
+            road = -1;
+            segment = -1;
+            nearest = point;
+            float best = reach;
+            for (int r = 0; r < roads.Count; r++)
+            {
+                float2[] points = roads[r];
+                for (int i = 0; i + 1 < points.Length; i++)
+                {
+                    float2 a = points[i];
+                    float2 ab = points[i + 1] - a;
+                    float lengthSq = math.lengthsq(ab);
+                    float t = lengthSq > 0f ? math.saturate(math.dot(point - a, ab) / lengthSq) : 0f;
+                    float2 onSegment = a + ab * t;
+                    float distance = math.distance(point, onSegment);
+                    if (distance <= best)
+                    {
+                        best = distance;
+                        road = r;
+                        segment = i;
+                        nearest = onSegment;
+                    }
+                }
+            }
+
+            return road >= 0;
+        }
+
         public bool IsOnRoad(float2 point, float halfWidth)
         {
             foreach (float2[] road in roads)
@@ -225,6 +336,12 @@ namespace Marchlands.Simulation.Terrain
         /// </summary>
         public bool IsEnteringBridge(float2 point, float lateral, float approach)
         {
+            return TryGetBridge(point, lateral, approach, out _);
+        }
+
+        /// <summary>Мост, в коридоре которого точка (см. <see cref="IsEnteringBridge"/>).</summary>
+        public bool TryGetBridge(float2 point, float lateral, float approach, out Crossing bridge)
+        {
             foreach (Crossing crossing in crossings)
             {
                 if (crossing.Type != CrossingType.Bridge)
@@ -239,10 +356,12 @@ namespace Marchlands.Simulation.Terrain
                 float side = math.abs(math.dot(offset, new float2(-axis.y, axis.x)));
                 if (side <= lateral && along >= -approach && along <= length + approach)
                 {
+                    bridge = crossing;
                     return true;
                 }
             }
 
+            bridge = default;
             return false;
         }
 
@@ -308,6 +427,16 @@ namespace Marchlands.Simulation.Terrain
         /// </summary>
         public float2 Steer(float2 from, float2 to)
         {
+            return Steer(from, to, 0f, 0f);
+        }
+
+        /// <summary>
+        /// То же, но на мост заходят по его оси: кто подходит сбоку (дальше <paramref name="tolerance"/> от оси),
+        /// сначала выходит на ось в <paramref name="leadIn"/> от въезда — и на настил входит уже прямо,
+        /// а не углом, свешиваясь над водой.
+        /// </summary>
+        public float2 Steer(float2 from, float2 to, float leadIn, float tolerance)
+        {
             if (crossings.Count == 0 || !CrossesWater(from, to))
             {
                 return to;
@@ -331,6 +460,8 @@ namespace Marchlands.Simulation.Terrain
 
             float bestCost = float.MaxValue;
             float2 best = to;
+            int bestIndex = -1;
+            float2 bestFar = to;
             foreach (Crossing crossing in crossings)
             {
                 bool reachA = !CrossesWater(from, crossing.BankA);
@@ -354,6 +485,18 @@ namespace Marchlands.Simulation.Terrain
                 {
                     bestCost = cost;
                     best = near;
+                    bestFar = far;
+                    bestIndex = crossings.IndexOf(crossing);
+                }
+            }
+
+            if (bestIndex >= 0 && leadIn > 0f && crossings[bestIndex].Type == CrossingType.Bridge)
+            {
+                float2 outward = math.normalizesafe(best - bestFar);
+                float side = math.abs(math.dot(from - best, new float2(-outward.y, outward.x)));
+                if (side > tolerance)
+                {
+                    return best + outward * leadIn;
                 }
             }
 
@@ -375,6 +518,25 @@ namespace Marchlands.Simulation.Terrain
             float sign = math.dot(side - axis, across) >= 0f ? 1f : -1f;
             return axis + across * sign * (halfWidth + BankOffset);
         }
+
+        /// <summary>
+        /// На сколько сдвинуть точку, чтобы она вышла из реки (вне переправ) к кромке берега со стороны
+        /// <paramref name="side"/>; точка на суше — ноль.
+        /// </summary>
+        public float2 WaterPush(float2 point, float2 side)
+        {
+            if (!IsWater(point) || !TryNearestRiverPoint(point, out float2 axis, out float2 along, out float halfWidth))
+            {
+                return float2.zero;
+            }
+
+            float2 across = new float2(-along.y, along.x);
+            float sign = math.dot(side - axis, across) >= 0f ? 1f : -1f;
+            float offset = math.dot(point - axis, across);
+            return across * (sign * (halfWidth + WaterPushMargin) - offset);
+        }
+
+        private const float WaterPushMargin = 0.05f;
 
         private int CrossingAt(float2 point)
         {

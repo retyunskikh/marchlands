@@ -241,6 +241,52 @@ namespace Marchlands.Tests.EditMode
             Assert.AreEqual(0, squad.FileLimit, "За мостом раздался обратно");
         }
 
+        [TestCase(-14f, -12f, 12f, 10f)]
+        [TestCase(-10f, 14f, 14f, -12f)]
+        [TestCase(-12f, -16f, 8f, 16f)]
+        public void Line_ApproachingBridgeAtAngle_NoSoldierOverWater(float fromX, float fromY, float toX, float toY)
+        {
+            Match match = BridgeMap();
+            var from = new float2(fromX, fromY);
+            var to = new float2(toX, toY);
+            Squad squad = match.AddSquad(Side.France, from, Angles.Of(to - from), Formation.Line);
+            match.Enqueue(new MoveCommand(squad.Id, to, Angles.Of(to - from)));
+            var slots = new List<float2>();
+            bool crossed = false;
+            for (int i = 0; i < 1500 && (squad.Order.Type != SquadOrderType.None || i == 0); i++)
+            {
+                match.Tick();
+                FormationLayout.GetLocalSlots(squad.Formation, squad.Alive, match.Settings.squads, slots, squad.FileLimit);
+                foreach (float2 slot in slots)
+                {
+                    float2 world = FormationLayout.LocalToWorld(slot, squad.Position, squad.Facing);
+                    Assert.IsFalse(match.Terrain.IsWater(world), $"Солдат над водой на тике {i}: {world}");
+                }
+
+                crossed |= squad.Position.x > 0f;
+            }
+
+            Assert.IsTrue(crossed, "Перешёл реку");
+            Assert.AreEqual(SquadOrderType.None, squad.Order.Type, "Дошёл до цели");
+            Assert.Less(math.distance(squad.Position, to), 1f, "Встал в указанной точке");
+        }
+
+        [Test]
+        public void Line_OrderedOntoBridge_StopsAlongDeck()
+        {
+            Match match = BridgeMap();
+            Squad squad = match.AddSquad(Side.France, new float2(-14f, -6f), 0f, Formation.Line);
+            match.Enqueue(new MoveCommand(squad.Id, new float2(0f, 0.5f), 90f));
+            for (int i = 0; i < 1500 && (squad.Order.Type != SquadOrderType.None || i == 0); i++)
+            {
+                match.Tick();
+            }
+
+            Assert.AreEqual(SquadOrderType.None, squad.Order.Type, "Приказ выполнен, а не застрял");
+            Assert.Greater(squad.FileLimit, 0, "На мосту сжат");
+            Assert.Less(math.min(math.abs(Angles.Delta(squad.Facing, 0f)), 180f - math.abs(Angles.Delta(squad.Facing, 0f))), 1f, "Стоит вдоль настила, а не поперёк");
+        }
+
         [Test]
         public void SqueezedLine_FiresWeakerThanFullLine()
         {

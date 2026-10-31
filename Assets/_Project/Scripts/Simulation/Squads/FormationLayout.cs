@@ -38,11 +38,17 @@ namespace Marchlands.Simulation.Squads
             GetGrid(squad.Formation, squad.Alive, settings, out files, out ranks, squad.FileLimit);
         }
 
+        /// <summary>Интервал между солдатами в шеренге строя: колонна идёт плотнее, плечом к плечу.</summary>
+        public static float FileSpacing(Formation formation, SquadSettings settings)
+        {
+            return formation == Formation.Column && settings.columnFileSpacing > 0f ? settings.columnFileSpacing : settings.fileSpacing;
+        }
+
         /// <summary>Половины ширины (x) и глубины (y) прямоугольника, который занимает отряд.</summary>
         public static float2 GetHalfExtents(Formation formation, int alive, SquadSettings settings, int maxFiles = 0)
         {
             GetGrid(formation, alive, settings, out int files, out int ranks, maxFiles);
-            return new float2(files * settings.fileSpacing, ranks * settings.rankSpacing) * 0.5f;
+            return new float2(files * FileSpacing(formation, settings), ranks * settings.rankSpacing) * 0.5f;
         }
 
         /// <summary>Габариты отряда в его нынешнем строю с учётом сжатия.</summary>
@@ -59,6 +65,7 @@ namespace Marchlands.Simulation.Squads
         {
             result.Clear();
             GetGrid(formation, alive, settings, out int files, out int ranks, maxFiles);
+            float fileSpacing = FileSpacing(formation, settings);
 
             for (int i = 0; i < alive; i++)
             {
@@ -66,7 +73,7 @@ namespace Marchlands.Simulation.Squads
                 int file = i % files;
                 int soldiersInRank = math.min(files, alive - rank * files);
 
-                float x = (file - (soldiersInRank - 1) * 0.5f) * settings.fileSpacing;
+                float x = (file - (soldiersInRank - 1) * 0.5f) * fileSpacing;
                 float y = ((ranks - 1) * 0.5f - rank) * settings.rankSpacing;
                 result.Add(new float2(x, y));
             }

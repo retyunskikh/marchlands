@@ -31,6 +31,10 @@ namespace Marchlands.Simulation.Squads
                 return false;
             }
 
+            // По дороге — серединой: точки пути у дороги встают на её ось, изгибы дороги — в маршрут.
+            TerrainSettings terrain = match.Settings.terrain;
+            match.Terrain.AlignToRoads(squad.Position, Waypoints, terrain.roadHalfWidth + terrain.pathCellSize, settings.roadAlignMaxDetour);
+
             float routeCost = 0f;
             float2 previous = squad.Position;
             foreach (float2 point in Waypoints)

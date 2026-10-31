@@ -37,6 +37,52 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void RouteOnRoad_FollowsRoadAxisAndBends()
+        {
+            var settings = TestSettings.Create();
+            settings.terrain.roadSpeedMultiplier = 1.5f;
+            var match = new Match(1, settings);
+            var map = new TerrainMap(new float2(-60f, -30f), new float2(60f, 30f));
+            var bend = new float2(0f, 3f);
+            map.AddRoad(new List<float2> { new float2(-60f, 0f), bend, new float2(60f, 0f) });
+            for (float x = -20f; x <= 20f; x += 6f)
+            {
+                map.AddForest(new float2(x, 14f), 5f);
+            }
+
+            match.SetTerrain(map);
+            Squad squad = match.AddSquad(Side.France, new float2(-40f, 12f), 0f, Formation.Line);
+            match.Enqueue(new MoveCommand(squad.Id, new float2(40f, 12f), 0f, autoRoute: true));
+            match.Tick();
+
+            Assert.IsTrue(squad.HasRoute, "Маршрут проложен");
+            bool passesBend = false;
+            for (int i = 0; i < squad.RouteWaypoints.Count - 1; i++)
+            {
+                float2 point = squad.RouteWaypoints[i];
+                passesBend |= math.distance(point, bend) < 0.01f;
+                if (map.IsOnRoad(point, settings.terrain.roadHalfWidth + settings.terrain.pathCellSize))
+                {
+                    Assert.IsTrue(map.IsOnRoad(point, 0.01f), $"Точка пути {point} — на оси дороги");
+                }
+            }
+
+            Assert.IsTrue(passesBend, "Маршрут идёт через изгиб дороги");
+        }
+
+        [Test]
+        public void Column_IsFiveAbreast_Tight()
+        {
+            var settings = TestSettings.Create();
+            settings.squads.columnFrontWidth = 5;
+            settings.squads.columnFileSpacing = 0.4f;
+            FormationLayout.GetGrid(Formation.Column, 30, settings.squads, out int files, out int _);
+            Assert.AreEqual(5, files, "По 5 в ряд");
+            float2 half = FormationLayout.GetHalfExtents(Formation.Column, 30, settings.squads);
+            Assert.AreEqual(1f, half.x, 1e-4f, "Плечом к плечу — по columnFileSpacing");
+        }
+
+        [Test]
         public void LongOrder_UsesRoad_MarchesInColumn_AndRestoresLine()
         {
             Match match = ForestAndRoad(1.5f, out Squad squad);

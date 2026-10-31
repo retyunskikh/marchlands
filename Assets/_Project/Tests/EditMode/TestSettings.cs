@@ -27,6 +27,7 @@ namespace Marchlands.Tests.EditMode
                     reformMoveSpeedMultiplier = 0.4f,
                     arrivalTolerance = 0.05f,
                     columnWaypointReach = 1.5f,
+                    roadAlignMaxDetour = 1.5f,
                     resumeMarchEnemyRadius = 15f
                 },
                 combat = new CombatSettings

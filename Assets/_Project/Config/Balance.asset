@@ -17,8 +17,9 @@ MonoBehaviour:
       autoRouteMinDistance: 20
       autoRouteGain: 0.9
       lineRanks: 2
-      columnFrontWidth: 6
+      columnFrontWidth: 5
       fileSpacing: 0.7
+      columnFileSpacing: 0.6
       rankSpacing: 1.12
       lineSpeed: 1
       columnSpeed: 1.6
@@ -27,6 +28,7 @@ MonoBehaviour:
       reformMoveSpeedMultiplier: 0.4
       arrivalTolerance: 0.05
       columnWaypointReach: 1.5
+      roadAlignMaxDetour: 1.5
       resumeMarchEnemyRadius: 15
     grenadiers:
       squadSize: 30

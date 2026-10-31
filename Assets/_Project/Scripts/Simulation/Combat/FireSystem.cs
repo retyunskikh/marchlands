@@ -60,7 +60,12 @@ namespace Marchlands.Simulation.Combat
 
                 if (squad.FireState == FireState.Reloading)
                 {
-                    squad.FireTimer -= deltaTime;
+                    // В рукопашной не до перезарядки: таймер стоит, пока отряд дерётся.
+                    if (!squad.IsInMelee)
+                    {
+                        squad.FireTimer -= deltaTime;
+                    }
+
                     if (squad.FireTimer <= TimerEpsilon)
                     {
                         squad.FireTimer = 0f;

@@ -29,6 +29,8 @@ namespace Marchlands.UI
         [SerializeField] private Color volleyPaleTint = new Color(1f, 1f, 1f, 0.35f);
         [Tooltip("Подпись на бледной «Залп!», когда стрелять нельзя из-за своих в рукопашной с целью.")]
         [SerializeField] private string allyInMeleeText = "Свои\nв штыках";
+        [Tooltip("Подпись вместо секунд перезарядки, пока отряд в рукопашной: перезарядка стоит.")]
+        [SerializeField] private string fightingText = "Дерутся";
 
         [Header("Пушка")]
         [Tooltip("У пушки кнопка «Залп» переключает заряд: картинка пушки, подпись — чем заряжена.")]
@@ -135,7 +137,10 @@ namespace Marchlands.UI
             volleyButton.gameObject.SetActive(canFire);
             bool canVolley = gun ? obeys : VolleyRules.CanVolley(match, squad);
             volleyButton.interactable = canVolley;
-            volleyLabel.text = gun ? (squad.ShotMode == ShotMode.Canister ? canisterText : roundShotText) : GetVolleyText();
+            volleyLabel.text = gun
+                ? (squad.FireState == FireState.Reloading && squad.IsInMelee ? fightingText
+                    : squad.ShotMode == ShotMode.Canister ? canisterText : roundShotText)
+                : GetVolleyText();
             // У пушки — подпись заряда мелко внизу, под картинкой; у пехоты — крупные секунды перезарядки.
             int fontSize = gun ? Mathf.RoundToInt(volleyFontSize * gunLabelScale) : volleyFontSize;
             if (volleyLabel.fontSize != fontSize)
@@ -212,6 +217,11 @@ namespace Marchlands.UI
         {
             if (squad.FireState == FireState.Reloading)
             {
+                if (squad.IsInMelee)
+                {
+                    return fightingText;
+                }
+
                 return Mathf.CeilToInt(squad.FireTimer).ToString();
             }
 

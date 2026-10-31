@@ -146,7 +146,7 @@ namespace Marchlands.View
             float2 forward = Angles.Direction(facing);
             Quaternion meleeRotation = Quaternion.Slerp(rotation,
                 Quaternion.Euler(0f, 0f, Angles.Of(meleeDirection) + SpriteFacingOffset), meleeBlend);
-            float2 spacing = style.GetSpacing(squad.Type);
+            float2 spacing = GetSpacing();
             float regroup = 1f - math.exp(-style.RegroupSpeed * Time.deltaTime);
             float headY = UpdateTrail(position, facing, spacing, changing);
             frameTravel = 0f;
@@ -204,7 +204,7 @@ namespace Marchlands.View
                     half = math.lerp(half, FormationLayout.GetHalfExtents(squad.TargetFormation, squad.Alive, settings, squad.FileLimit), change);
                 }
 
-                half *= (float2)style.GetSpacing(squad.Type);
+                half *= (float2)GetSpacing();
 
                 Transform marker = selectionMarker.transform;
                 marker.SetPositionAndRotation(new Vector3(position.x, position.y, 0f), rotation);
@@ -258,7 +258,7 @@ namespace Marchlands.View
             }
 
             float2 forward = Angles.Direction(facing);
-            float halfDepth = FormationLayout.GetHalfExtents(squad, settings).y * style.GetSpacing(squad.Type).y;
+            float halfDepth = FormationLayout.GetHalfExtents(squad, settings).y * GetSpacing().y;
             float2 front = position + forward * halfDepth;
             if (limbered)
             {
@@ -314,7 +314,7 @@ namespace Marchlands.View
             }
             else if (moving)
             {
-                trail.Advance(head, length + style.GetSpacing(squad.Type).y * settings.rankSpacing * 2f);
+                trail.Advance(head, length + GetSpacing().y * settings.rankSpacing * 2f);
             }
 
             return half.y;
@@ -346,13 +346,13 @@ namespace Marchlands.View
         private void RenderRoute(float2 position)
         {
             int used = 0;
-            if (selectionMarker.enabled && squad.HasRoute && !squad.IsRouting && style.RouteDotSpacing > 0f)
+            if (selectionMarker.enabled && !squad.IsRouting && style.RouteDotSpacing > 0f && CollectRoute(position))
             {
                 float2 from = position;
                 float carry = style.RouteDotSpacing * 0.5f;
-                for (int i = squad.CurrentRouteIndex; i < squad.RouteWaypoints.Count && used < style.RouteDotsMax; i++)
+                for (int i = 0; i < routePoints.Count && used < style.RouteDotsMax; i++)
                 {
-                    float2 to = squad.RouteWaypoints[i];
+                    float2 to = routePoints[i];
                     float length = math.distance(from, to);
                     float along = carry;
                     while (along < length && used < style.RouteDotsMax)
@@ -382,10 +382,71 @@ namespace Marchlands.View
             }
         }
 
+        /// <summary>
+        /// Точки пути выделенного отряда: дальний марш — по маршруту; короткий переход — прямо к цели, а если по пути
+        /// река — через переправу. Разворот на месте пути не рисует.
+        /// </summary>
+        private bool CollectRoute(float2 position)
+        {
+            routePoints.Clear();
+            if (squad.HasRoute)
+            {
+                for (int i = squad.CurrentRouteIndex; i < squad.RouteWaypoints.Count; i++)
+                {
+                    routePoints.Add(squad.RouteWaypoints[i]);
+                }
+
+                return true;
+            }
+
+            if (squad.Order.Type != SquadOrderType.Move || math.distancesq(position, squad.Order.Target) < RouteMinDistance * RouteMinDistance)
+            {
+                return false;
+            }
+
+            float2 from = position;
+            float2 target = squad.Order.Target;
+            for (int i = 0; i < RouteMaxDetours && match.Terrain != null; i++)
+            {
+                float2 next = match.Terrain.Steer(from, target);
+                if (math.all(next == target) || math.distancesq(next, from) < RouteMinDistance * RouteMinDistance)
+                {
+                    break;
+                }
+
+                routePoints.Add(next);
+                from = next;
+            }
+
+            routePoints.Add(target);
+            return true;
+        }
+
+        private readonly List<float2> routePoints = new List<float2>();
+
+        // Ближе — путь не рисуется (это разворот на месте), u; и сколько переправ на пути показывать.
+        private const float RouteMinDistance = 0.3f;
+        private const int RouteMaxDetours = 4;
+
+        /// <summary>
+        /// Разрядка строя на экране. Сжатый на мосту строй не шире, чем считает симуляция (конница шире пехоты
+        /// на экране, но на настиле жмётся плотнее, а не свешивается над водой).
+        /// </summary>
+        private float2 GetSpacing()
+        {
+            float2 spacing = style.GetSpacing(squad.Type);
+            if (squad.FileLimit > 0)
+            {
+                spacing.x = math.min(spacing.x, 1f);
+            }
+
+            return spacing;
+        }
+
         /// <summary>Расстояние от центра отряда до его тыла.</summary>
         private float GetRearDistance()
         {
-            float halfDepth = FormationLayout.GetHalfExtents(squad, settings).y * style.GetSpacing(squad.Type).y;
+            float halfDepth = FormationLayout.GetHalfExtents(squad, settings).y * GetSpacing().y;
             return squad.IsRouting ? halfDepth * style.RoutSpread + style.RoutScatter : halfDepth;
         }
 
@@ -678,7 +739,8 @@ namespace Marchlands.View
             switch (squad.FireState)
             {
                 case FireState.Reloading:
-                    float remaining = math.max(0f, squad.FireTimer - alpha * SimulationTime.TickDuration);
+                    // В рукопашной перезарядка стоит — кольцо не ползёт.
+                    float remaining = math.max(0f, squad.FireTimer - (squad.IsInMelee ? 0f : alpha * SimulationTime.TickDuration));
                     filled = 1f - remaining / combat.reloadTime;
                     fillColor = style.RingReloadingColor;
                     break;
@@ -753,7 +815,7 @@ namespace Marchlands.View
         /// </summary>
         private void AssignSlotsByPosition()
         {
-            float2 spacing = style.GetSpacing(squad.Type);
+            float2 spacing = GetSpacing();
             shownLocal.Clear();
             for (int i = 0; i < soldiers.Count; i++)
             {

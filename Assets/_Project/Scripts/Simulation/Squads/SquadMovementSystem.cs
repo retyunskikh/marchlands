@@ -1,6 +1,7 @@
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Terrain;
 using Unity.Mathematics;
 
 namespace Marchlands.Simulation.Squads
@@ -80,6 +81,38 @@ namespace Marchlands.Simulation.Squads
             }
 
             StayOutOfWater(squad, match, position);
+            KeepFootprintDry(squad, match);
+        }
+
+        /// <summary>
+        /// Строй не свешивается над рекой: угол прямоугольника отряда в воде (вне моста) — отряд сдвигается
+        /// от реки ровно настолько, чтобы угол встал на берег. Так линия идёт вдоль берега, а не над водой.
+        /// </summary>
+        private static void KeepFootprintDry(Squad squad, Match match)
+        {
+            if (match.Terrain == null)
+            {
+                return;
+            }
+
+            float2 half = FormationLayout.GetHalfExtents(squad, match.Settings.squads);
+            float2 forward = Angles.Direction(squad.Facing) * half.y;
+            float2 right = Angles.Right(squad.Facing) * half.x;
+            float2 push = float2.zero;
+            for (int corner = 0; corner < 4; corner++)
+            {
+                float2 point = squad.Position + right * ((corner & 1) == 0 ? -1f : 1f) + forward * (corner < 2 ? -1f : 1f);
+                float2 shift = match.Terrain.WaterPush(point, squad.Position);
+                if (math.lengthsq(shift) > math.lengthsq(push))
+                {
+                    push = shift;
+                }
+            }
+
+            if (math.any(push != float2.zero) && !match.Terrain.IsWater(squad.Position + push))
+            {
+                squad.Position += push;
+            }
         }
 
         /// <summary>Марш окончен: маршрут сброшен, отряд, перестроившийся для марша в колонну, разворачивается обратно.</summary>
@@ -109,8 +142,8 @@ namespace Marchlands.Simulation.Squads
 
             // Габариты без сжатия: по ним решаем, тесно ли отряду, — иначе сжатый строй тут же «помещался» бы обратно.
             float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings);
-            int files = math.max(1, (int)math.floor(bridgeHalf * 2f / settings.fileSpacing));
-            bool entering = match.Terrain.IsEnteringBridge(squad.Position, math.max(half.x, bridgeHalf), half.y + settings.rankSpacing);
+            int files = math.max(1, (int)math.floor(bridgeHalf * 2f / FormationLayout.FileSpacing(squad.Formation, settings)));
+            bool entering = match.Terrain.IsEnteringBridge(squad.Position, math.max(half.x, bridgeHalf), BridgeApproach(squad, settings));
             squad.FileLimit = entering ? files : 0;
         }
 
@@ -148,10 +181,84 @@ namespace Marchlands.Simulation.Squads
             }
         }
 
-        /// <summary>Куда идти к <paramref name="goal"/>: напрямую или через переправу, если по пути река.</summary>
+        /// <summary>
+        /// Куда идти к <paramref name="goal"/>: напрямую или через переправу, если по пути река. На мост заходят
+        /// по оси (сбоку — сначала на ось перед въездом), а сжатый на мосту строй идёт только вдоль настила,
+        /// пока не сойдёт с него и не раздастся: углом строй свешивался бы над водой.
+        /// </summary>
         private static float2 Steer(Squad squad, Match match, float2 goal)
         {
-            return match.Terrain != null ? match.Terrain.Steer(squad.Position, goal) : goal;
+            return Steer(squad, match, goal, out _);
+        }
+
+        /// <param name="onBridge">Цель на самом мосту: возвращена её точка на оси настила — там и встать.</param>
+        private static float2 Steer(Squad squad, Match match, float2 goal, out bool onBridge)
+        {
+            onBridge = false;
+            if (match.Terrain == null)
+            {
+                return goal;
+            }
+
+            SquadSettings settings = match.Settings.squads;
+            float approach = BridgeApproach(squad, settings);
+            // Точка захода на ось — не ближе полуширины строя: иначе крыло линии на подходе свешивается над рекой.
+            float halfWidth = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings).x;
+            float leadIn = math.max(approach, halfWidth) + settings.rankSpacing;
+            float2 steered = match.Terrain.Steer(squad.Position, goal, leadIn, settings.fileSpacing * 0.5f);
+            if (!TryGetSqueezeBridge(squad, match, out Crossing bridge))
+            {
+                return steered;
+            }
+
+            float2 axis = bridge.Across;
+            float2 normal = new float2(-axis.y, axis.x);
+            float length = math.distance(bridge.BankA, bridge.BankB);
+            float along = math.dot(squad.Position - bridge.BankA, axis);
+            float exit = approach + settings.rankSpacing;
+
+            // Цель на самом мосту — встать на оси против неё.
+            float2 toGoal = goal - bridge.BankA;
+            float goalAlong = math.dot(toGoal, axis);
+            if (math.abs(math.dot(toGoal, normal)) <= match.Settings.terrain.bridgeHalfWidth
+                && goalAlong >= -exit && goalAlong <= length + exit)
+            {
+                onBridge = true;
+                return bridge.BankA + axis * goalAlong;
+            }
+
+            // Иначе — вдоль оси к тому концу, куда ведёт путь, и за него, пока строй не раздастся.
+            bool forward = math.dot(steered - squad.Position, axis) >= 0f;
+            float end = forward ? length + exit : -exit;
+            return math.abs(end - along) > settings.arrivalTolerance ? bridge.BankA + axis * end : steered;
+        }
+
+        /// <summary>Сжатый строй на мосту стоит вдоль настила: из двух направлений оси — ближайшее к желаемому.</summary>
+        private static float BridgeFacing(Squad squad, Match match, float desired)
+        {
+            if (!TryGetSqueezeBridge(squad, match, out Crossing bridge))
+            {
+                return desired;
+            }
+
+            float along = Angles.Of(bridge.Across);
+            float back = Angles.Normalize(along + 180f);
+            return math.abs(Angles.Delta(along, desired)) <= 90f ? along : back;
+        }
+
+        /// <summary>Мост, на котором строй сжат и стоит в коридоре настила.</summary>
+        private static bool TryGetSqueezeBridge(Squad squad, Match match, out Crossing bridge)
+        {
+            bridge = default;
+            return match.Terrain != null && squad.FileLimit > 0
+                && match.Terrain.TryGetBridge(squad.Position, match.Settings.terrain.bridgeHalfWidth,
+                    BridgeApproach(squad, match.Settings.squads), out bridge);
+        }
+
+        /// <summary>Как далеко от въезда на мост строй начинает сжиматься (по несжатой глубине), u.</summary>
+        private static float BridgeApproach(Squad squad, SquadSettings settings)
+        {
+            return FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings).y + settings.rankSpacing;
         }
 
         /// <summary>Атака вверх по склону холма медленнее.</summary>
@@ -240,8 +347,8 @@ namespace Marchlands.Simulation.Squads
                 goal = squad.Route[squad.RouteIndex];
             }
 
-            float2 target = Steer(squad, match, goal);
-            bool detour = waypoint || math.any(target != squad.Order.Target);
+            float2 target = Steer(squad, match, goal, out bool onBridge);
+            bool detour = waypoint || (math.any(target != squad.Order.Target) && !onBridge);
             float2 toTarget = target - squad.Position;
             float distance = math.length(toTarget);
 
@@ -297,7 +404,7 @@ namespace Marchlands.Simulation.Squads
             // Дошли до точки маршрута или переправы — приказ продолжается со следующего тика.
             if (detour)
             {
-                if (waypoint && math.all(target == goal))
+                if (waypoint && (math.all(target == goal) || onBridge))
                 {
                     squad.RouteIndex++;
                 }
@@ -305,7 +412,7 @@ namespace Marchlands.Simulation.Squads
                 return;
             }
 
-            if (RotateTowards(squad, squad.Order.FinalFacing, settings.squads.rotationSpeed, ref time))
+            if (RotateTowards(squad, BridgeFacing(squad, match, squad.Order.FinalFacing), settings.squads.rotationSpeed, ref time))
             {
                 squad.Order = SquadOrder.None;
                 // Развернулись на месте посреди марша — маршрут ждёт, пока рядом не станет врагов.

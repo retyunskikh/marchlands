@@ -27,6 +27,9 @@ namespace Marchlands.Simulation.Config
         /// <summary>Интервал между солдатами в шеренге, u.</summary>
         public float fileSpacing;
 
+        /// <summary>Интервал между солдатами в шеренге колонны (плечом к плечу, чтобы уместиться на дороге), u; 0 — как fileSpacing.</summary>
+        public float columnFileSpacing;
+
         /// <summary>Дистанция между шеренгами, u.</summary>
         public float rankSpacing;
 
@@ -53,6 +56,12 @@ namespace Marchlands.Simulation.Config
         /// к следующей. Так же бегущие идут по точкам пути бегства, u.
         /// </summary>
         public float columnWaypointReach;
+
+        /// <summary>
+        /// Маршрут по дороге идёт по её оси и изгибам, если так не дальше стольких длин прямого отрезка между точками
+        /// пути; иначе (дорога петляет в сторону) точки пути остаются как есть.
+        /// </summary>
+        public float roadAlignMaxDetour;
 
         /// <summary>Отложенный марш (развернули на месте, рукопашная) продолжается, когда не бегущих врагов нет ближе этого, u.</summary>
         public float resumeMarchEnemyRadius;
