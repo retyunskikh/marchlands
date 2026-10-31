@@ -149,6 +149,38 @@ namespace Marchlands.View
         [SerializeField] private int tuftSortingOrder = -72;
         [SerializeField] private int bushSortingOrder = -55;
 
+        /// <summary>Вид другого времени года: подменяет летние картинки и цвета сцены (до <see cref="Initialize"/>).</summary>
+        public void ApplySeason(SeasonPalette season)
+        {
+            if (season == null)
+            {
+                return;
+            }
+
+            patchColors = Pick(season.PatchColors, patchColors);
+            treeSprites = Pick(season.TreeSprites, treeSprites);
+            treeTints = Pick(season.TreeTints, treeTints);
+            bushSprites = Pick(season.BushSprites, bushSprites);
+            tuftSprites = Pick(season.TuftSprites, tuftSprites);
+            undergrowthColor = season.UndergrowthColor;
+            borderCanopySprite = season.BorderCanopySprite != null ? season.BorderCanopySprite : borderCanopySprite;
+            borderCanopyColor = season.BorderCanopyColor;
+            borderTreeShade = season.BorderTreeShade;
+            westRiverSprite = season.WestRiverSprite != null ? season.WestRiverSprite : westRiverSprite;
+            eastRiverSprite = season.EastRiverSprite != null ? season.EastRiverSprite : eastRiverSprite;
+            fieldRiverTexture = season.FieldRiverTexture != null ? season.FieldRiverTexture : fieldRiverTexture;
+            riverBankColor = season.RiverBankColor;
+            riverReedColor = season.RiverReedColor;
+            hillLightColor = season.HillLightColor;
+            hillShadowColor = season.HillShadowColor;
+            hillContourColor = season.HillContourColor;
+        }
+
+        private static T[] Pick<T>(T[] seasonal, T[] summer)
+        {
+            return seasonal != null && seasonal.Length > 0 ? seasonal : summer;
+        }
+
         /// <param name="size">Размер карты из сценария; не задан — как в настройках сцены.</param>
         public void Initialize(Match match, Vector2? size = null)
         {

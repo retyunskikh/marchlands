@@ -75,10 +75,21 @@ namespace Marchlands.Bootstrap
             {
                 // Размер карты — из сценария: фон, край леса и границы камеры (вверх-вниз — до опушки).
                 Vector2 size = scenario.MapSize;
+                terrainView.ApplySeason(scenario.Season);
                 terrainView.Initialize(match, size);
+                if (scenario.Season != null && Camera.main != null)
+                {
+                    Camera.main.backgroundColor = scenario.Season.OutsideColor;
+                }
+
                 if (background != null)
                 {
                     SpriteRenderer backgroundRenderer = background.GetComponent<SpriteRenderer>();
+                    if (scenario.Season != null && backgroundRenderer != null)
+                    {
+                        backgroundRenderer.color = scenario.Season.FieldColor;
+                    }
+
                     Vector2 spriteSize = backgroundRenderer != null && backgroundRenderer.sprite != null ? (Vector2)backgroundRenderer.sprite.bounds.size : Vector2.one;
                     background.localScale = new Vector3(size.x / spriteSize.x, size.y / spriteSize.y, 1f);
                 }

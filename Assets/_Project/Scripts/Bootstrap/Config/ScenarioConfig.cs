@@ -45,6 +45,9 @@ namespace Marchlands.Bootstrap.Config
         [Tooltip("Размер всей карты с краями (лес, реки по бокам), u; проходимая зона — terrainMin–terrainMax.")]
         [SerializeField] private Vector2 mapSize = new Vector2(120f, 80f);
 
+        [Tooltip("Время года: картинки и цвета местности; пусто — лето, как в сцене.")]
+        [SerializeField] private Marchlands.View.SeasonPalette season;
+
         [Header("Рельеф (большие карты)")]
         [Tooltip("Реки через поле: вплавь непроходимы.")]
         [SerializeField] private List<RiverSpawn> rivers = new List<RiverSpawn>();
@@ -83,6 +86,8 @@ namespace Marchlands.Bootstrap.Config
         public IReadOnlyList<RoadSpawn> Roads => roads;
 
         public Vector2 MapSize => mapSize;
+
+        public Marchlands.View.SeasonPalette Season => season;
 
         public IReadOnlyList<RiverSpawn> Rivers => rivers;
 

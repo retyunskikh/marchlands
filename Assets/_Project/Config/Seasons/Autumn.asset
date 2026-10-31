@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a35d811e2608c9f43b4a60d4a03aead4, type: 3}
+  m_Name: Autumn
+  m_EditorClassIdentifier: Game.View::Marchlands.View.SeasonPalette
+  fieldColor: {r: 0.561, g: 0.525, b: 0.306, a: 1}
+  outsideColor: {r: 0.27, g: 0.2, b: 0.12, a: 1}
+  patchColors:
+  - {r: 0.82, g: 0.62, b: 0.3, a: 0.18}
+  - {r: 0.42, g: 0.3, b: 0.15, a: 0.16}
+  - {r: 0.6, g: 0.6, b: 0.3, a: 0.14}
+  treeSprites:
+  - {fileID: 21300000, guid: a83e72d7e98563e479e39a956154e3be, type: 3}
+  - {fileID: 21300000, guid: ae4b3f99d56ea97419c6bcd5edf4fd1b, type: 3}
+  - {fileID: 21300000, guid: d429204e3439de8418da233b6e6f795f, type: 3}
+  - {fileID: 21300000, guid: 2fba9f98562d62f42a55017974dafcb5, type: 3}
+  - {fileID: 21300000, guid: 0e0643c74560d8c4590aacf581e24f4e, type: 3}
+  - {fileID: 21300000, guid: 384297a9eeb8cd146b90b4656c625921, type: 3}
+  - {fileID: 21300000, guid: dff69612adf860545b0ff36e1fecf987, type: 3}
+  treeTints:
+  - {r: 1, g: 0.92, b: 0.85, a: 1}
+  - {r: 1, g: 1, b: 0.9, a: 1}
+  bushSprites:
+  - {fileID: 21300000, guid: 3404c04419be25743867f411ff0427b2, type: 3}
+  - {fileID: 21300000, guid: db88cdad1d2c5dc4a84a830d8a47adc5, type: 3}
+  - {fileID: 21300000, guid: ceab59406cb88614ca0ea59798bab4a3, type: 3}
+  tuftSprites:
+  - {fileID: 21300000, guid: a40ee52b4469fbc4fb2814e5b07b81b7, type: 3}
+  - {fileID: 21300000, guid: c4a70264ac39bd043bd429de7af113e0, type: 3}
+  - {fileID: 21300000, guid: a40ee52b4469fbc4fb2814e5b07b81b7, type: 3}
+  - {fileID: 21300000, guid: 739bb3a85ea34af4191697479ab95827, type: 3}
+  - {fileID: 21300000, guid: 8eaa7e49694965748a7c43c0c340419c, type: 3}
+  - {fileID: 21300000, guid: 739bb3a85ea34af4191697479ab95827, type: 3}
+  - {fileID: 21300000, guid: 211507d256d49de489126f7a9d197916, type: 3}
+  undergrowthColor: {r: 0.36, g: 0.24, b: 0.11, a: 0.45}
+  borderCanopySprite: {fileID: 21300000, guid: 3c6be9c1345997541ab964424baa18a7, type: 3}
+  borderCanopyColor: {r: 0.95, g: 0.9, b: 0.84, a: 1}
+  borderTreeShade: {r: 0.68, g: 0.6, b: 0.52, a: 1}
+  westRiverSprite: {fileID: 21300000, guid: 927455e2b5dffaa488ef7ac5548e0986, type: 3}
+  eastRiverSprite: {fileID: 21300000, guid: fa7358d74c9507a409d7f8d6745b0c30, type: 3}
+  fieldRiverTexture: {fileID: 2800000, guid: fee559501a7761d4fb726d54d4e2ebfc, type: 3}
+  riverBankColor: {r: 0.62, g: 0.55, b: 0.38, a: 1}
+  riverReedColor: {r: 0.5, g: 0.4, b: 0.2, a: 0.55}
+  hillLightColor: {r: 0.95, g: 0.8, b: 0.5, a: 0.22}
+  hillShadowColor: {r: 0.25, g: 0.16, b: 0.06, a: 0.2}
+  hillContourColor: {r: 0.4, g: 0.28, b: 0.14, a: 0.22}
