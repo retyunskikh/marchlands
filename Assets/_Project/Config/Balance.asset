@@ -184,3 +184,9 @@ MonoBehaviour:
       forestSpeedMultiplier: 0.6
       forestCoverMultiplier: 0.7
       pathCellSize: 2
+    weather:
+      dryTimeMin: 150
+      dryTimeMax: 330
+      rainTimeMin: 50
+      rainTimeMax: 100
+      rainFireChance: 0.67

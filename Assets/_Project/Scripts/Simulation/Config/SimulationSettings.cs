@@ -20,6 +20,7 @@ namespace Marchlands.Simulation.Config
         public BuildingSettings buildings = new BuildingSettings();
         public VictorySettings victory = new VictorySettings();
         public TerrainSettings terrain = new TerrainSettings();
+        public WeatherSettings weather = new WeatherSettings();
 
         public UnitTypeSettings Unit(UnitType type)
         {

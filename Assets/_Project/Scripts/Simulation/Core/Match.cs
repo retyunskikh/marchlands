@@ -68,6 +68,14 @@ namespace Marchlands.Simulation.Core
         /// <summary>Залпы, произошедшие в последнем выполненном тике.</summary>
         public IReadOnlyList<VolleyEvent> LastTickVolleys => lastTickVolleys;
 
+        /// <summary>Идёт ли дождь: порох сырой, часть ружей даёт осечку.</summary>
+        public bool IsRaining { get; internal set; }
+
+        /// <summary>Сколько секунд до смены погоды.</summary>
+        internal float WeatherTimer { get; set; }
+
+        internal bool WeatherStarted { get; set; }
+
         /// <summary>Залпы часовых зданий за последний выполненный тик.</summary>
         public IReadOnlyList<SentryVolley> LastTickSentryVolleys => lastTickSentryVolleys;
 
@@ -413,6 +421,7 @@ namespace Marchlands.Simulation.Core
             }
 
             RecruitCampSystem.Update(this);
+            WeatherSystem.Update(this, deltaTime);
 
             foreach (IMatchController controller in controllers)
             {

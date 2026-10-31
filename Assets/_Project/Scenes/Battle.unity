@@ -2869,6 +2869,65 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.8}
   m_EffectDistance: {x: 2, y: -2}
   m_UseGraphicAlpha: 1
+--- !u!1 &536889723
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 536889725}
+  - component: {fileID: 536889724}
+  m_Layer: 0
+  m_Name: Rain
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &536889724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 536889723}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 953906981a53c4741852973cd60be007, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.View::Marchlands.View.RainView
+  streakSprite: {fileID: 21300000, guid: 5f47f2ad9246ed441acf41244c86118e, type: 3}
+  splashSprite: {fileID: 21300000, guid: b6cb92c132d19f947854d3db7c821888, type: 3}
+  fadeTime: 4
+  streakCount: 220
+  streakSize: {x: 0.05, y: 0.0022}
+  streakSpeed: {x: 1.3, y: 1.9}
+  wind: 0.28
+  streakColor: {r: 0.82, g: 0.88, b: 0.95, a: 0.38}
+  splashCount: 70
+  splashSize: 0.022
+  splashLife: 0.45
+  splashColor: {r: 0.85, g: 0.9, b: 1, a: 0.45}
+  overlayColor: {r: 0.16, g: 0.2, b: 0.28, a: 0.22}
+  volume: 0.35
+  sortingOrder: 300
+--- !u!4 &536889725
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 536889723}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &542593813
 GameObject:
   m_ObjectHideFlags: 0
@@ -13551,6 +13610,11 @@ MonoBehaviour:
   volumeRange: {x: 0.35, y: 1}
   pitchRange: {x: 0.9, y: 1.08}
   stereoWidth: 0.6
+  rainLowPass: 2200
+  rainPitch: 0.88
+  maxMisfireClicks: 4
+  misfireVolume: 0.5
+  misfirePuffScale: 0.3
 --- !u!4 &1314512049
 Transform:
   m_ObjectHideFlags: 0
@@ -14834,6 +14898,7 @@ MonoBehaviour:
   buildingViews: {fileID: 1074154134}
   fireArc: {fileID: 752603559}
   volleyEffects: {fileID: 1314512048}
+  rainView: {fileID: 536889724}
   battleSounds: {fileID: 860145238}
   music: {fileID: 1860967855}
   input: {fileID: 1001721332}
@@ -18547,3 +18612,4 @@ SceneRoots:
   - {fileID: 1860967856}
   - {fileID: 700990254}
   - {fileID: 1143609756}
+  - {fileID: 536889725}

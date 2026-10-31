@@ -17,8 +17,9 @@ namespace Marchlands.Simulation.Combat
 
         private readonly struct PendingVolley
         {
-            public PendingVolley(Squad shooter, Squad target, int shooters, float distance, int casualties, bool pointBlank)
+            public PendingVolley(Squad shooter, Squad target, int shooters, float distance, int casualties, bool pointBlank, int misfires)
             {
+                Misfires = misfires;
                 Shooter = shooter;
                 Target = target;
                 Shooters = shooters;
@@ -38,6 +39,8 @@ namespace Marchlands.Simulation.Combat
             public int Casualties { get; }
 
             public bool PointBlank { get; }
+
+            public int Misfires { get; }
         }
 
         private static readonly List<PendingVolley> Pending = new List<PendingVolley>();
@@ -125,7 +128,9 @@ namespace Marchlands.Simulation.Combat
                 distance = FireGeometry.Distance(shooter, target, match.Settings.squads);
             }
 
-            int shooters = VolleyMath.Shooters(shooter.Formation, shooter.Alive, match.Settings.squads);
+            int ready = VolleyMath.Shooters(shooter.Formation, shooter.Alive, match.Settings.squads);
+            // В дождь сырой порох: часть ружей даёт осечку и не стреляет.
+            int shooters = WeatherSystem.RollFired(match, ready);
             bool inCover = match.Terrain != null && match.Terrain.IsInForest(target.Position);
             float cover = inCover ? match.Settings.terrain.forestCoverMultiplier : 1f;
             // Дальнобойность рода войск растягивает всю кривую попадания: при множителе 1.25 стрелок на 1.25 × d бьёт, как обычный на d.
@@ -135,7 +140,7 @@ namespace Marchlands.Simulation.Combat
             float probability = VolleyMath.HitProbability(scaledDistance, shooter.IsFirstVolley, target.Formation, combat, cover, unit.accuracyMultiplier);
             int casualties = VolleyMath.RollCasualties(match.Random, shooters, probability, target.Alive);
             bool pointBlank = scaledDistance <= combat.pointBlankRange;
-            Pending.Add(new PendingVolley(shooter, target, shooters, distance, casualties, pointBlank));
+            Pending.Add(new PendingVolley(shooter, target, shooters, distance, casualties, pointBlank, ready - shooters));
         }
 
         /// <summary>
@@ -193,6 +198,15 @@ namespace Marchlands.Simulation.Combat
             CombatSettings combat = match.Settings.combat;
             UnitTypeSettings unit = UnitStats.Of(squad, match.Settings);
             float distance = FireGeometry.Distance(squad, target, match.Settings.squads);
+            if (WeatherSystem.RollFired(match, 1) == 0)
+            {
+                // Осечка: порох отсырел, выстрела нет.
+                events.Add(new VolleyEvent(
+                    match.CurrentTick, squad.Id, squad.Side, 0, distance, 0,
+                    target.Id, target.Alive, target.Position, target.Facing, target.Formation, shooterIndex, 1));
+                return;
+            }
+
             float scaledDistance = distance / unit.rangeMultiplier;
             float cover = (match.Terrain != null && match.Terrain.IsInForest(target.Position) ? match.Settings.terrain.forestCoverMultiplier : 1f)
                 * UnitStats.Of(target, match.Settings).targetHitMultiplier;
@@ -227,7 +241,7 @@ namespace Marchlands.Simulation.Combat
 
             events.Add(new VolleyEvent(
                 match.CurrentTick, shooter.Id, shooter.Side, volley.Shooters, volley.Distance, casualties,
-                target.Id, aliveBefore, target.Position, target.Facing, target.Formation));
+                target.Id, aliveBefore, target.Position, target.Facing, target.Formation, -1, volley.Misfires));
         }
     }
 }

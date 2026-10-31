@@ -34,6 +34,7 @@ namespace Marchlands.Bootstrap
         [SerializeField] private BuildingViewRegistry buildingViews;
         [SerializeField] private FireArcView fireArc;
         [SerializeField] private VolleyEffectsView volleyEffects;
+        [SerializeField] private RainView rainView;
         [SerializeField] private BattleSoundsView battleSounds;
         [SerializeField] private MusicDirector music;
         [SerializeField] private BattleInputController input;
@@ -74,6 +75,10 @@ namespace Marchlands.Bootstrap
             buildingViews.Initialize(match);
             fireArc.Initialize(match);
             volleyEffects.Initialize(match, buildingViews);
+            if (rainView != null)
+            {
+                rainView.Initialize(match);
+            }
             battleSounds.Initialize(match, scenario.PlayerSide);
             music.Initialize(match, scenario.PlayerSide);
             input.Initialize(match, scenario.PlayerSide);

@@ -6,8 +6,10 @@ namespace Marchlands.Simulation.Buildings
     /// <summary>Запись о залпе часовых здания для отображения: откуда стреляли, по кому и с каким итогом.</summary>
     public readonly struct SentryVolley
     {
-        public SentryVolley(int buildingId, Side side, float2 buildingPosition, int shooters, int casualties, int targetId, float2 targetPosition)
+        public SentryVolley(int buildingId, Side side, float2 buildingPosition, int shooters, int casualties, int targetId, float2 targetPosition,
+            int misfires = 0)
         {
+            Misfires = misfires;
             BuildingId = buildingId;
             Side = side;
             BuildingPosition = buildingPosition;
@@ -24,6 +26,9 @@ namespace Marchlands.Simulation.Buildings
         public float2 BuildingPosition { get; }
 
         public int Shooters { get; }
+
+        /// <summary>Сколько ружей дали осечку в дождь; <see cref="Shooters"/> — сколько выстрелило.</summary>
+        public int Misfires { get; }
 
         public int Casualties { get; }
 
