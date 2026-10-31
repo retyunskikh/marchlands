@@ -180,7 +180,10 @@ namespace Marchlands.Tests.EditMode
                     sentryHitChance = 0.2f,
                     sentryRange = 10f,
                     assaultRange = 3.5f,
-                    assaultDamage = 0.5f
+                    assaultDamage = 0.5f,
+                    repairDelay = 15f,
+                    repairRate = 5f,
+                    repairEnemyRadius = 12f
                 },
                 victory = new VictorySettings
                 {

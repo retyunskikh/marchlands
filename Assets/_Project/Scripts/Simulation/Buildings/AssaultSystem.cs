@@ -37,6 +37,8 @@ namespace Marchlands.Simulation.Buildings
                 }
 
                 target.Health -= squad.Alive * settings.assaultDamage * UnitStats.Of(squad, match.Settings).meleeMultiplier * deltaTime;
+                target.SinceDamage = 0f;
+                target.IsRepairing = false;
                 if (target.Health <= 0f)
                 {
                     match.DestroyBuilding(target);

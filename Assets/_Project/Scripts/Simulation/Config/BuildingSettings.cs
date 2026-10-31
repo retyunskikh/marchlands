@@ -93,5 +93,14 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Сколько здоровья здания снимает в секунду один солдат штурмующего отряда (× meleeMultiplier рода войск).</summary>
         public float assaultDamage;
+
+        /// <summary>Через столько секунд без урона рабочие из штаба начинают чинить здание, s.</summary>
+        public float repairDelay;
+
+        /// <summary>Сколько здоровья в секунду восстанавливают рабочие.</summary>
+        public float repairRate;
+
+        /// <summary>Пока не бегущий враг ближе этого к центру здания, его не чинят, u.</summary>
+        public float repairEnemyRadius;
     }
 }

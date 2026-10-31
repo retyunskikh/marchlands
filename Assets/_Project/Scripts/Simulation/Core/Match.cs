@@ -429,6 +429,7 @@ namespace Marchlands.Simulation.Core
 
             MeleeSystem.Update(this, deltaTime);
             AssaultSystem.Update(this, deltaTime);
+            RepairSystem.Update(this, deltaTime);
             MoraleSystem.Update(this, deltaTime);
             MeleeSystem.RemoveFinished(this);
             CaptureSystem.Update(this, deltaTime);

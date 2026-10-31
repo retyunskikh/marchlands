@@ -215,7 +215,9 @@ namespace Marchlands.Input
             }
 
             // Тап по своей толпе у казармы или конюшни открывает карточку здания — там её можно распустить.
-            Building building = FindBuildingAt(world, own: true) ?? FindOwnCampBuildingAt(world);
+            // Вражеское здание показывает своё здоровье и часовых, когда отряд не выделен (иначе тап — часть приказа).
+            Building building = FindBuildingAt(world, own: true) ?? FindOwnCampBuildingAt(world)
+                ?? (selected == null ? FindBuildingAt(world, own: false) : null);
             if (building != null)
             {
                 hasPendingTap = false;

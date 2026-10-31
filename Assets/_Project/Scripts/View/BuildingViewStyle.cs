@@ -1,4 +1,5 @@
 using System;
+using Marchlands.Simulation.Buildings;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -84,6 +85,56 @@ namespace Marchlands.View
         [SerializeField] private int recruitsPerRow = 5;
         [Tooltip("Фузилёры и гренадёры ждут двумя группами по сторонам от середины толпы; промежуток между группами, u.")]
         [SerializeField] private float recruitsGroupGap = 1f;
+
+        [Header("Повреждения")]
+        [Tooltip("Цвет, в который темнеет здание по мере потери здоровья (у разрушенного почти до конца — полностью).")]
+        [SerializeField] private Color damagedTint = new Color(0.45f, 0.38f, 0.32f);
+        [Tooltip("Места дыма, огня и проломов, доля размера от центра (для ворот справа).")]
+        [SerializeField] private Vector2[] damageSpots =
+        {
+            new Vector2(-0.25f, 0.25f), new Vector2(0.2f, 0.3f), new Vector2(0.05f, -0.2f), new Vector2(-0.3f, -0.25f)
+        };
+        [Tooltip("Ниже этой доли здоровья здание дымит и в крыше появляются проломы.")]
+        [SerializeField] private float smokeHealth = 0.66f;
+        [Tooltip("Ниже этой доли здоровья здание горит.")]
+        [SerializeField] private float fireHealth = 0.33f;
+        [SerializeField] private Sprite smokeSprite;
+        [SerializeField] private Color smokeColor = new Color(0.18f, 0.17f, 0.16f, 0.85f);
+        [Tooltip("Размер клуба дыма: у основания и в конце подъёма, u.")]
+        [SerializeField] private Vector2 smokeSize = new Vector2(1.1f, 2.8f);
+        [Tooltip("На сколько поднимается клуб дыма, u.")]
+        [SerializeField] private float smokeRise = 1.4f;
+        [Tooltip("За сколько секунд клуб дыма поднимается и тает, s.")]
+        [SerializeField] private float smokePeriod = 2.6f;
+        [SerializeField] private Color fireColor = new Color(1f, 0.55f, 0.15f, 0.9f);
+        [SerializeField] private float fireSize = 0.9f;
+        [SerializeField] private Color holeColor = new Color(0.08f, 0.06f, 0.05f, 0.95f);
+        [SerializeField] private float holeSize = 1.1f;
+
+        [Header("Часовые")]
+        [Tooltip("Круг дальности часовых — у выделенного здания и у здания, на которое идёт штурм.")]
+        [SerializeField] private Color sentryRangeColor = new Color(1f, 0.35f, 0.25f, 0.35f);
+        [Tooltip("Посты часовых на углах ограды, доля размера от центра.")]
+        [SerializeField] private Vector2[] sentryPosts =
+        {
+            new Vector2(0.47f, 0.43f), new Vector2(0.47f, -0.43f), new Vector2(-0.47f, 0.43f), new Vector2(-0.47f, -0.43f)
+        };
+        [Tooltip("Сколько секунд после залпа часовой смотрит на цель, s.")]
+        [SerializeField] private float sentryAlertTime = 3f;
+        [Tooltip("Размер часового относительно солдата отряда.")]
+        [SerializeField] private float sentryScale = 0.9f;
+
+        [Header("Рабочие")]
+        [SerializeField] private Color workerColor = new Color(0.78f, 0.62f, 0.42f);
+        [SerializeField] private int workersPerBuilding = 3;
+        [SerializeField] private float workerSpeed = 2f;
+        [Tooltip("На сколько рабочий отходит от стены здания, u.")]
+        [SerializeField] private float workerStandOff = 0.3f;
+        [Tooltip("Угол между рабочими у здания, градусы.")]
+        [SerializeField] private float workerSpread = 35f;
+        [Tooltip("Насколько рабочий «стучит молотком» — качается взад-вперёд, u.")]
+        [SerializeField] private float workerBob = 0.08f;
+        [SerializeField] private float workerBobRate = 9f;
 
         [Header("Предпросмотр постройки")]
         [SerializeField] private Color buildRadiusColor = new Color(1f, 1f, 1f, 0.35f);
@@ -174,6 +225,68 @@ namespace Marchlands.View
         public Color ValidSiteColor => validSiteColor;
 
         public Color InvalidSiteColor => invalidSiteColor;
+
+        public Color DamagedTint => damagedTint;
+
+        public Vector2[] DamageSpots => damageSpots;
+
+        public float SmokeHealth => smokeHealth;
+
+        public float FireHealth => fireHealth;
+
+        public Sprite SmokeSprite => smokeSprite;
+
+        public Color SmokeColor => smokeColor;
+
+        public Vector2 SmokeSize => smokeSize;
+
+        public float SmokeRise => smokeRise;
+
+        public float SmokePeriod => smokePeriod;
+
+        public Color FireColor => fireColor;
+
+        public float FireSize => fireSize;
+
+        public Color HoleColor => holeColor;
+
+        public float HoleSize => holeSize;
+
+        public Color SentryRangeColor => sentryRangeColor;
+
+        public Vector2[] SentryPosts => sentryPosts;
+
+        public float SentryAlertTime => sentryAlertTime;
+
+        public float SentryScale => sentryScale;
+
+        public Color WorkerColor => workerColor;
+
+        public int WorkersPerBuilding => workersPerBuilding;
+
+        public float WorkerSpeed => workerSpeed;
+
+        public float WorkerStandOff => workerStandOff;
+
+        public float WorkerSpread => workerSpread;
+
+        public float WorkerBob => workerBob;
+
+        public float WorkerBobRate => workerBobRate;
+
+        /// <summary>Габариты здания этого типа.</summary>
+        public Vector2 SizeOf(BuildingType type)
+        {
+            switch (type)
+            {
+                case BuildingType.Headquarters:
+                    return headquartersSize;
+                case BuildingType.Stable:
+                    return stableSize;
+                default:
+                    return barracksSize;
+            }
+        }
 
         public int BodySortingOrder => bodySortingOrder;
 

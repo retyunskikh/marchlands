@@ -83,7 +83,7 @@ namespace Marchlands.Bootstrap
             }
             topBar.Initialize(match, scenario.PlayerSide);
             buildPanel.Initialize(match, scenario.PlayerSide);
-            buildingPanel.Initialize(match);
+            buildingPanel.Initialize(match, scenario.PlayerSide);
             formSquadPanel.Initialize(match, scenario.PlayerSide);
             gameMenu.Initialize(match, scenario.PlayerSide, music);
 
@@ -129,6 +129,7 @@ namespace Marchlands.Bootstrap
                 match.Tick();
                 volleyEffects.Play(match.LastTickVolleys);
                 volleyEffects.PlaySentries(match.LastTickSentryVolleys);
+                buildingViews.PlaySentries(match.LastTickSentryVolleys);
                 battleSounds.Play(match.LastTickCaptures);
                 villageViews.Play(match.LastTickReinforcements);
                 buildingViews.PlayDisbands(match.LastTickDisbands);

@@ -303,6 +303,7 @@ MonoBehaviour:
   nameLabel: {fileID: 0}
   progressFill: {fileID: 2049541966}
   infoButton: {fileID: 199925845}
+  disbandButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
   availableTint: {r: 1, g: 1, b: 1, a: 1}
@@ -631,6 +632,7 @@ MonoBehaviour:
   nameLabel: {fileID: 0}
   progressFill: {fileID: 0}
   infoButton: {fileID: 0}
+  disbandButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
   availableTint: {r: 1, g: 1, b: 1, a: 1}
@@ -2760,6 +2762,12 @@ MonoBehaviour:
   grenadiersName: "\u0413\u0440\u0435\u043D\u0430\u0434\u0451\u0440\u044B"
   fusiliersName: "\u0424\u0443\u0437\u0438\u043B\u0451\u0440\u044B"
   cavalryName: "\u041A\u043E\u043D\u043D\u0438\u0446\u0430"
+  enemyTitleFormat: "{0} \u043F\u0440\u043E\u0442\u0438\u0432\u043D\u0438\u043A\u0430"
+  enemyStatusFormat: "\u0417\u0434\u043E\u0440\u043E\u0432\u044C\u0435 {0}/{1} \xB7
+    \u0447\u0430\u0441\u043E\u0432\u044B\u0435: {2} \u0440\u0443\u0436\u044C\u044F,
+    \u0434\u0430\u043B\u044C\u043D\u043E\u0441\u0442\u044C {3}"
+  damagedFormat: "\u0417\u0434\u043E\u0440\u043E\u0432\u044C\u0435 {0}/{1}"
+  repairingText: " \xB7 \u0447\u0438\u043D\u044F\u0442 \u0440\u0430\u0431\u043E\u0447\u0438\u0435"
 --- !u!224 &445444263
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5342,6 +5350,7 @@ MonoBehaviour:
   nameLabel: {fileID: 0}
   progressFill: {fileID: 0}
   infoButton: {fileID: 0}
+  disbandButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
   availableTint: {r: 1, g: 1, b: 1, a: 1}
@@ -11672,6 +11681,7 @@ MonoBehaviour:
   nameLabel: {fileID: 0}
   progressFill: {fileID: 0}
   infoButton: {fileID: 0}
+  disbandButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
   availableTint: {r: 1, g: 1, b: 1, a: 1}
@@ -13516,6 +13526,7 @@ MonoBehaviour:
   nameLabel: {fileID: 0}
   progressFill: {fileID: 979046057}
   infoButton: {fileID: 1534418301}
+  disbandButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
   availableTint: {r: 1, g: 1, b: 1, a: 1}
@@ -14047,6 +14058,7 @@ MonoBehaviour:
   nameLabel: {fileID: 0}
   progressFill: {fileID: 1447708047}
   infoButton: {fileID: 167068668}
+  disbandButton: {fileID: 0}
   onColor: {r: 1, g: 0.85, b: 0.35, a: 1}
   offColor: {r: 0.95, g: 0.92, b: 0.82, a: 1}
   availableTint: {r: 1, g: 1, b: 1, a: 1}
@@ -16693,6 +16705,17 @@ MonoBehaviour:
     - {x: 1.4, y: -3.3}
     barracksBaseSprite: {fileID: 21300000, guid: 383fa761e0e3369489715081e93e62af, type: 3}
     barracksRoofSprite: {fileID: 21300000, guid: 45f55e9492a9db444b92443694ed4d53, type: 3}
+    barracksDoors:
+    - {x: -0.19, y: 0}
+    - {x: -0.13, y: 0}
+    - {x: -0.07, y: 0}
+    - {x: -0.02, y: 0}
+    - {x: 0.04, y: 0}
+    - {x: 0.1, y: 0}
+    - {x: 0.16, y: 0}
+    - {x: 0.22, y: 0}
+    barracksGate: {x: 0.5, y: 0}
+    gatePassDepth: 0.35
     stableBaseSprite: {fileID: 21300000, guid: c2d350cd9bba69c4e8dde9907600c988, type: 3}
     stableRoofSprite: {fileID: 21300000, guid: 1ce157f28052fc948989486089ea00b0, type: 3}
     constructionAlpha: 0.45
@@ -16709,6 +16732,38 @@ MonoBehaviour:
     recruitsSpacing: {x: 0.45, y: 0.45}
     recruitsPerRow: 8
     recruitsGroupGap: 1
+    damagedTint: {r: 0.45, g: 0.38, b: 0.32, a: 1}
+    damageSpots:
+    - {x: -0.25, y: 0.25}
+    - {x: 0.2, y: 0.3}
+    - {x: 0.05, y: -0.2}
+    - {x: -0.3, y: -0.25}
+    smokeHealth: 0.66
+    fireHealth: 0.33
+    smokeSprite: {fileID: 21300000, guid: 701b6f8414b7b094b86a948332ef0561, type: 3}
+    smokeColor: {r: 0.18, g: 0.17, b: 0.16, a: 0.85}
+    smokeSize: {x: 1.1, y: 2.8}
+    smokeRise: 1.4
+    smokePeriod: 2.6
+    fireColor: {r: 1, g: 0.55, b: 0.15, a: 0.9}
+    fireSize: 0.9
+    holeColor: {r: 0.08, g: 0.06, b: 0.05, a: 0.95}
+    holeSize: 1.1
+    sentryRangeColor: {r: 1, g: 0.35, b: 0.25, a: 0.35}
+    sentryPosts:
+    - {x: 0.47, y: 0.43}
+    - {x: 0.47, y: -0.43}
+    - {x: -0.47, y: 0.43}
+    - {x: -0.47, y: -0.43}
+    sentryAlertTime: 3
+    sentryScale: 0.9
+    workerColor: {r: 0.78, g: 0.62, b: 0.42, a: 1}
+    workersPerBuilding: 3
+    workerSpeed: 2
+    workerStandOff: 0.3
+    workerSpread: 35
+    workerBob: 0.08
+    workerBobRate: 9
     buildRadiusColor: {r: 1, g: 1, b: 1, a: 0.35}
     validSiteColor: {r: 0.4, g: 1, b: 0.4, a: 0.6}
     invalidSiteColor: {r: 1, g: 0.3, b: 0.3, a: 0.6}

@@ -82,6 +82,12 @@ namespace Marchlands.Simulation.Buildings
 
         public bool IsDestroyed => Health <= 0f;
 
+        /// <summary>Чинят ли здание рабочие из штаба в этом тике.</summary>
+        public bool IsRepairing { get; internal set; }
+
+        /// <summary>Сколько секунд здание не получало урона.</summary>
+        internal float SinceDamage { get; set; }
+
         /// <summary>Сколько осталось до следующего залпа часовых, s.</summary>
         internal float SentryTimer { get; set; }
     }

@@ -1,6 +1,7 @@
 using System;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
+using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
 using UnityEngine;
@@ -13,7 +14,8 @@ namespace Marchlands.UI
     /// Панель выделенного здания: название, состояние постройки или найма и иконки найма — у казармы гренадёры
     /// и фузилёры, у конюшни конница: воин своей стороны в полный рост и цена человека с монеткой. Нажатие иконки
     /// включает или выключает найм этого рода войск (включённая подсвечена, под ней — время до рекрута); «i»
-    /// открывает характеристики, «Распустить» над иконкой отпускает ждущих этого рода войск. У штаба — подписанные иконки постройки казармы, конюшни и дома. Видна только при выделении.
+    /// открывает характеристики, «Распустить» над иконкой отпускает ждущих этого рода войск. Вражеское здание — только
+    /// название, здоровье и часовые. У повреждённого своего здания в строке состояния — здоровье и идёт ли починка. У штаба — подписанные иконки постройки казармы, конюшни и дома. Видна только при выделении.
     /// </summary>
     public sealed class BuildingPanel : MonoBehaviour
     {
@@ -59,16 +61,25 @@ namespace Marchlands.UI
         [SerializeField] private string grenadiersName = "Гренадёры";
         [SerializeField] private string fusiliersName = "Фузилёры";
         [SerializeField] private string cavalryName = "Конница";
+        [Tooltip("Название вражеского здания: {0} — название.")]
+        [SerializeField] private string enemyTitleFormat = "{0} противника";
+        [Tooltip("Строка вражеского здания: {0} — здоровье, {1} — из скольких, {2} — часовых, {3} — их дальность.")]
+        [SerializeField] private string enemyStatusFormat = "Здоровье {0}/{1} · часовые: {2} ружья, дальность {3}";
+        [Tooltip("Строка повреждённого своего здания: {0} — здоровье, {1} — из скольких.")]
+        [SerializeField] private string damagedFormat = "Здоровье {0}/{1}";
+        [SerializeField] private string repairingText = " · чинят рабочие";
 
         private Match match;
+        private Side playerSide;
         private Building building;
 
         /// <summary>В карточке штаба нажата иконка постройки здания этого типа.</summary>
         public event Action<BuildingType> BuildRequested;
 
-        public void Initialize(Match match)
+        public void Initialize(Match match, Side playerSide)
         {
             this.match = match;
+            this.playerSide = playerSide;
             Bind(grenadiersToggle, UnitType.Grenadiers);
             Bind(fusiliersToggle, UnitType.Fusiliers);
             Bind(cavalryToggle, UnitType.Cavalry);
@@ -121,18 +132,45 @@ namespace Marchlands.UI
                 return;
             }
 
+            bool own = building.Owner == playerSide;
             bool stable = building.Type == BuildingType.Stable;
             bool barracks = building.Type == BuildingType.Barracks;
-            titleLabel.text = stable ? stableTitle : barracks ? barracksTitle : headquartersTitle;
-            RefreshToggle(grenadiersToggle, UnitType.Grenadiers, grenadiersName, barracks);
-            RefreshToggle(fusiliersToggle, UnitType.Fusiliers, fusiliersName, barracks);
-            RefreshToggle(cavalryToggle, UnitType.Cavalry, cavalryName, stable);
-            bool headquarters = building.Type == BuildingType.Headquarters;
+            string title = stable ? stableTitle : barracks ? barracksTitle : headquartersTitle;
+            titleLabel.text = own ? title : string.Format(enemyTitleFormat, title);
+            RefreshToggle(grenadiersToggle, UnitType.Grenadiers, grenadiersName, own && barracks);
+            RefreshToggle(fusiliersToggle, UnitType.Fusiliers, fusiliersName, own && barracks);
+            RefreshToggle(cavalryToggle, UnitType.Cavalry, cavalryName, own && stable);
+            bool headquarters = own && building.Type == BuildingType.Headquarters;
             RefreshBuildToggle(buildBarracksToggle, BuildingType.Barracks, barracksTitle, headquarters);
             RefreshBuildToggle(buildStableToggle, BuildingType.Stable, stableTitle, headquarters);
             RefreshHouseToggle(headquarters);
+            if (!own)
+            {
+                statusLabel.text = GetEnemyStatus();
+                return;
+            }
+
+            if (building.Health < building.MaxHealth)
+            {
+                statusLabel.text = GetDamagedStatus();
+                return;
+            }
+
             statusLabel.text = headquarters && buildHouseToggle != null ? GetPopulationStatus()
                 : headquarters && buildBarracksToggle != null ? headquartersBuildStatus : GetStatus(barracks || stable);
+        }
+
+        private string GetEnemyStatus()
+        {
+            BuildingSettings settings = match.Settings.buildings;
+            return string.Format(enemyStatusFormat, Mathf.CeilToInt(building.Health), Mathf.RoundToInt(building.MaxHealth),
+                building.IsBuilt ? settings.sentryShots : 0, settings.sentryRange);
+        }
+
+        private string GetDamagedStatus()
+        {
+            string text = string.Format(damagedFormat, Mathf.CeilToInt(building.Health), Mathf.RoundToInt(building.MaxHealth));
+            return building.IsRepairing ? text + repairingText : text;
         }
 
         private void RefreshToggle(HireToggle toggle, UnitType type, string unitName, bool visible)

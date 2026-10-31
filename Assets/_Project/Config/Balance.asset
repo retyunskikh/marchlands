@@ -137,7 +137,7 @@ MonoBehaviour:
       barracksCost: 120
       barracksBuildTime: 30
       buildRadiusFromHQ: 16
-      buildingSpacing: 5
+      buildingSpacing: 7
       hireCost: 3
       hireInterval: 3
       grenadierHireCost: 5
@@ -153,8 +153,8 @@ MonoBehaviour:
       houseBuildTime: 15
       maxHouses: 4
       annexSpacing: 2.5
-      spawnOffset: 6
-      campOffset: 4.5
+      spawnOffset: 7.5
+      campOffset: 5
       headquartersHealth: 600
       barracksHealth: 300
       stableHealth: 300
@@ -162,8 +162,11 @@ MonoBehaviour:
       sentryInterval: 6
       sentryHitChance: 0.2
       sentryRange: 10
-      assaultRange: 3.5
+      assaultRange: 4.2
       assaultDamage: 0.5
+      repairDelay: 15
+      repairRate: 5
+      repairEnemyRadius: 12
     victory:
       dominationShare: 1
       dominationTime: 180

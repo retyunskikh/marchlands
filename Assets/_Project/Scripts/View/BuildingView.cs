@@ -25,6 +25,12 @@ namespace Marchlands.View
         private SpriteRenderer progressFill;
         private SpriteRenderer healthBackground;
         private SpriteRenderer healthFill;
+        private SpriteRenderer rangeRing;
+        private SpriteRenderer[] holes = new SpriteRenderer[0];
+        private SpriteRenderer[] fires = new SpriteRenderer[0];
+        private SpriteRenderer[] smokes = new SpriteRenderer[0];
+        private Vector2[] spots = new Vector2[0];
+        private bool selected;
         private float barsTop;
         private SpriteRenderer flag;
         private Color innerColor;
@@ -82,6 +88,43 @@ namespace Marchlands.View
             healthBackground.transform.localPosition = new Vector3(0f, HealthBarY, 0f);
             healthBackground.transform.localScale = new Vector3(style.ProgressBarSize.x, style.ProgressBarSize.y, 1f);
             healthFill = CreateRenderer("Health Fill", style.OverlaySortingOrder + 1, style.HealthColor);
+
+            rangeRing = CreateRenderer("Sentry Range", style.BodySortingOrder - 2, style.SentryRangeColor);
+            rangeRing.sprite = style.CircleSprite;
+            rangeRing.transform.localScale = Vector3.one * (settings.buildings.sentryRange * 2f);
+            rangeRing.enabled = false;
+            CreateDamage();
+        }
+
+        /// <summary>Проломы в крыше, огонь и дым на местах повреждений; видны, когда здание потеряло достаточно здоровья.</summary>
+        private void CreateDamage()
+        {
+            Vector2[] normalized = style.DamageSpots;
+            if (normalized == null)
+            {
+                return;
+            }
+
+            float direction = building.Position.x > 0f ? -1f : 1f;
+            spots = new Vector2[normalized.Length];
+            holes = new SpriteRenderer[normalized.Length];
+            fires = new SpriteRenderer[normalized.Length];
+            smokes = new SpriteRenderer[normalized.Length];
+            for (int i = 0; i < normalized.Length; i++)
+            {
+                spots[i] = new Vector2(normalized[i].x * size.x * direction, normalized[i].y * size.y);
+                holes[i] = CreateRenderer($"Hole {i}", style.BodySortingOrder + 2, style.HoleColor);
+                holes[i].sprite = style.SmokeSprite != null ? style.SmokeSprite : style.SquareSprite;
+                holes[i].transform.localPosition = spots[i];
+                holes[i].transform.localRotation = Quaternion.Euler(0f, 0f, i * 47f);
+                holes[i].transform.localScale = Vector3.one * style.HoleSize;
+                fires[i] = CreateRenderer($"Fire {i}", style.BodySortingOrder + 3, style.FireColor);
+                fires[i].sprite = style.SmokeSprite != null ? style.SmokeSprite : style.SquareSprite;
+                fires[i].transform.localPosition = spots[i];
+                smokes[i] = CreateRenderer($"Smoke {i}", style.BodySortingOrder + 4, style.SmokeColor);
+                smokes[i].sprite = style.SmokeSprite != null ? style.SmokeSprite : style.SquareSprite;
+                holes[i].enabled = fires[i].enabled = smokes[i].enabled = false;
+            }
         }
 
         /// <summary>
@@ -183,13 +226,20 @@ namespace Marchlands.View
 
         internal void SetSelected(bool selected)
         {
+            this.selected = selected;
             selection.enabled = selected;
         }
 
-        internal void Render(Match match)
+        /// <param name="underAssault">На здание идёт штурм: видны полоска здоровья и круг дальности часовых.</param>
+        internal void Render(Match match, bool underAssault)
         {
-            Color bodyColor = sideColor;
-            Color shownInnerColor = innerColor;
+            float health = building.MaxHealth > 0f ? math.saturate(building.Health / building.MaxHealth) : 1f;
+            // Повреждённое здание темнеет.
+            Color tint = Color.Lerp(style.DamagedTint, Color.white, health);
+            Color bodyColor = sideColor * tint;
+            bodyColor.a = sideColor.a;
+            Color shownInnerColor = innerColor * tint;
+            shownInnerColor.a = innerColor.a;
             if (!building.IsBuilt)
             {
                 bodyColor.a *= style.ConstructionAlpha;
@@ -204,7 +254,9 @@ namespace Marchlands.View
             }
 
             RenderAnnexes();
-            RenderHealth();
+            RenderDamage(health);
+            RenderHealth(health, underAssault || selected);
+            rangeRing.enabled = building.IsBuilt && settings.buildings.sentryShots > 0 && (underAssault || selected);
             float progress = -1f;
             if (!building.IsBuilt)
             {
@@ -227,11 +279,55 @@ namespace Marchlands.View
         /// <summary>Над полоской постройки или найма.</summary>
         private float HealthBarY => barsTop + style.ProgressBarSize.y * 1.6f;
 
-        /// <summary>Полоска здоровья видна, только когда здание повреждено.</summary>
-        private void RenderHealth()
+        /// <summary>Полоска здоровья видна у повреждённого здания, у выделенного и у того, на которое идёт штурм.</summary>
+        private void RenderHealth(float health, bool always)
         {
-            float health = building.MaxHealth > 0f && building.Health < building.MaxHealth ? building.Health / building.MaxHealth : -1f;
-            RenderBar(healthBackground, healthFill, health, HealthBarY);
+            bool shown = always || health < 1f;
+            RenderBar(healthBackground, healthFill, shown ? health : -1f, HealthBarY);
+        }
+
+        /// <summary>
+        /// Ниже smokeHealth в крыше проломы и над ними дым (чем меньше здоровья, тем больше мест), ниже fireHealth —
+        /// горит везде. Клубы дыма поднимаются и тают по кругу, огонь дрожит.
+        /// </summary>
+        private void RenderDamage(float health)
+        {
+            int damaged = health >= style.SmokeHealth || spots.Length == 0
+                ? 0
+                : health < style.FireHealth
+                    ? spots.Length
+                    : math.max(1, (int)math.ceil(spots.Length * (style.SmokeHealth - health) / math.max(1e-3f, style.SmokeHealth - style.FireHealth)));
+            bool burning = health < style.FireHealth;
+            float time = Time.time;
+            for (int i = 0; i < spots.Length; i++)
+            {
+                bool shown = i < damaged;
+                holes[i].enabled = shown;
+                smokes[i].enabled = shown;
+                fires[i].enabled = shown && burning;
+                if (!shown)
+                {
+                    continue;
+                }
+
+                float phase = time / math.max(0.1f, style.SmokePeriod) + i * 0.37f;
+                float t = phase - math.floor(phase);
+                Vector2 drift = new Vector2(math.sin(phase * 2.1f + i) * 0.2f, t * style.SmokeRise);
+                smokes[i].transform.localPosition = spots[i] + drift;
+                smokes[i].transform.localScale = Vector3.one * math.lerp(style.SmokeSize.x, style.SmokeSize.y, t);
+                Color smoke = style.SmokeColor;
+                smoke.a *= (1f - t) * math.saturate(t * 4f);
+                smokes[i].color = smoke;
+
+                if (burning)
+                {
+                    float flicker = 0.8f + 0.3f * math.sin(time * 13f + i * 2f) * math.sin(time * 7f + i);
+                    fires[i].transform.localScale = Vector3.one * (style.FireSize * flicker);
+                    Color fire = style.FireColor;
+                    fire.a *= 0.75f + 0.25f * flicker;
+                    fires[i].color = fire;
+                }
+            }
         }
 
         /// <param name="value">Доля заполнения; отрицательная — полоска скрыта.</param>

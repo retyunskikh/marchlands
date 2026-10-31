@@ -23,6 +23,27 @@ namespace Marchlands.View
         private readonly List<Waiter>[] grenadiers = { new List<Waiter>(), new List<Waiter>() };
         private readonly List<Waiter>[] riders = { new List<Waiter>(), new List<Waiter>() };
         private readonly List<Waiter> leaving = new List<Waiter>();
+        private readonly Dictionary<int, Sentries> sentries = new Dictionary<int, Sentries>();
+        private readonly Dictionary<int, List<Worker>> crews = new Dictionary<int, List<Worker>>();
+        private readonly HashSet<int> assaulted = new HashSet<int>();
+        private readonly List<int> finishedCrews = new List<int>();
+
+        /// <summary>Часовые на углах ограды здания; после залпа какое-то время смотрят на цель.</summary>
+        private sealed class Sentries
+        {
+            public SpriteRenderer[] Figures;
+            public float AlertUntil;
+            public float2 Target;
+        }
+
+        /// <summary>Рабочий из штаба: идёт к повреждённому зданию, чинит его и возвращается в штаб.</summary>
+        private sealed class Worker
+        {
+            public SpriteRenderer Renderer;
+            public float2 Position;
+            public float2 Post;
+            public bool Returning;
+        }
 
         /// <summary>
         /// Человек у здания: где он сейчас нарисован, показан ли и какие точки пути ему осталось пройти.
@@ -91,6 +112,7 @@ namespace Marchlands.View
                 view.Initialize(building, match.Settings, style, squadViews.Style.GetSideColor(building.Owner));
                 view.SetSelected(building == selected);
                 views.Add(building.Id, view);
+                CreateSentries(building);
             }
 
             // Разрушенные казармы и конюшни исчезают с карты (за кадр могло пройти несколько тиков).
@@ -114,13 +136,35 @@ namespace Marchlands.View
 
                     Destroy(views[id].gameObject);
                     views.Remove(id);
+                    if (sentries.TryGetValue(id, out Sentries posts))
+                    {
+                        foreach (SpriteRenderer figure in posts.Figures)
+                        {
+                            Destroy(figure.gameObject);
+                        }
+
+                        sentries.Remove(id);
+                    }
+                }
+            }
+
+            // На здание идёт штурм, если хоть один отряд получил приказ его атаковать.
+            assaulted.Clear();
+            foreach (Squad squad in match.Squads)
+            {
+                if (squad.Order.Type == SquadOrderType.Assault)
+                {
+                    assaulted.Add(squad.Order.TargetBuildingId);
                 }
             }
 
             foreach (BuildingView view in views.Values)
             {
-                view.Render(match);
+                view.Render(match, assaulted.Contains(view.Building.Id));
             }
+
+            RenderSentries();
+            RenderWorkers();
 
             foreach (Side side in new[] { Side.France, Side.Austria })
             {
@@ -133,6 +177,199 @@ namespace Marchlands.View
             }
 
             RenderLeaving();
+        }
+
+        /// <summary>Часовые, давшие залп за тик, поворачиваются к цели.</summary>
+        public void PlaySentries(IReadOnlyList<SentryVolley> volleys)
+        {
+            foreach (SentryVolley volley in volleys)
+            {
+                if (sentries.TryGetValue(volley.BuildingId, out Sentries posts))
+                {
+                    posts.AlertUntil = Time.time + style.SentryAlertTime;
+                    posts.Target = volley.TargetPosition;
+                }
+            }
+        }
+
+        private void CreateSentries(Building building)
+        {
+            Vector2[] postsShape = style.SentryPosts;
+            int count = math.min(match.Settings.buildings.sentryShots, postsShape?.Length ?? 0);
+            Sprite sprite = squadViews.Style.GetSoldierSprite(building.Owner, UnitType.Fusiliers, SoldierRole.Private);
+            if (count <= 0 || sprite == null)
+            {
+                return;
+            }
+
+            var posts = new Sentries { Figures = new SpriteRenderer[count] };
+            for (int i = 0; i < count; i++)
+            {
+                SpriteRenderer figure = CreatePreview($"Sentry {building.Id} {i}", sprite, style.BodySortingOrder + 5);
+                figure.transform.localScale = Vector3.one * (squadViews.Style.SoldierScale * style.SentryScale);
+                posts.Figures[i] = figure;
+            }
+
+            sentries.Add(building.Id, posts);
+        }
+
+        /// <summary>Часовые стоят на постах построенного здания: смотрят наружу, а после залпа — на цель.</summary>
+        private void RenderSentries()
+        {
+            foreach (KeyValuePair<int, Sentries> pair in sentries)
+            {
+                Building building = match.FindBuilding(pair.Key);
+                bool shown = building != null && building.IsBuilt && !building.IsDestroyed;
+                Sentries posts = pair.Value;
+                Vector2 size = style.SizeOf(building != null ? building.Type : BuildingType.Barracks);
+                float direction = building != null && building.Position.x > 0f ? -1f : 1f;
+                bool alert = Time.time < posts.AlertUntil;
+                for (int i = 0; i < posts.Figures.Length; i++)
+                {
+                    SpriteRenderer figure = posts.Figures[i];
+                    figure.enabled = shown;
+                    if (!shown)
+                    {
+                        continue;
+                    }
+
+                    Vector2 post = style.SentryPosts[i];
+                    float2 local = new float2(post.x * size.x * direction, post.y * size.y);
+                    float2 position = building.Position + local;
+                    float2 look = alert ? posts.Target - position : local;
+                    figure.transform.SetPositionAndRotation(new Vector3(position.x, position.y, 0f), FacingOf(look));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Пока здание чинят, у него работают рабочие из штаба: выходят из ворот штаба, становятся у стены со стороны
+        /// штаба и «стучат молотками»; когда починка кончилась (или прервалась), возвращаются в штаб и исчезают.
+        /// </summary>
+        private void RenderWorkers()
+        {
+            Sprite sprite = squadViews.Style.RecruitSprite;
+            if (sprite == null)
+            {
+                return;
+            }
+
+            foreach (Building building in match.Buildings)
+            {
+                if (!building.IsRepairing || crews.ContainsKey(building.Id))
+                {
+                    continue;
+                }
+
+                Building headquarters = match.GetHeadquarters(building.Owner);
+                if (headquarters == null)
+                {
+                    continue;
+                }
+
+                float2 gate = GetHeadquartersGate(headquarters);
+                var crew = new List<Worker>();
+                for (int i = 0; i < style.WorkersPerBuilding; i++)
+                {
+                    SpriteRenderer renderer = CreatePreview($"Worker {building.Id} {i}", sprite, style.BodySortingOrder + 5);
+                    renderer.color = style.WorkerColor;
+                    renderer.transform.localScale = Vector3.one * squadViews.Style.SoldierScale;
+                    crew.Add(new Worker
+                    {
+                        Renderer = renderer,
+                        Position = gate,
+                        Post = GetWorkerPost(building, gate, i)
+                    });
+                }
+
+                crews.Add(building.Id, crew);
+            }
+
+            float step = style.WorkerSpeed * Time.deltaTime;
+            finishedCrews.Clear();
+            foreach (KeyValuePair<int, List<Worker>> pair in crews)
+            {
+                Building building = match.FindBuilding(pair.Key);
+                Building headquarters = building != null ? match.GetHeadquarters(building.Owner) : null;
+                bool working = building != null && building.IsRepairing;
+                float2 home = headquarters != null ? GetHeadquartersGate(headquarters) : pair.Value[0].Position;
+                bool allHome = true;
+                for (int i = 0; i < pair.Value.Count; i++)
+                {
+                    Worker worker = pair.Value[i];
+                    worker.Returning |= !working;
+                    float2 goal = worker.Returning ? home : worker.Post;
+                    float2 toGoal = goal - worker.Position;
+                    float distance = math.length(toGoal);
+                    float2 look = toGoal;
+                    float2 shown = worker.Position;
+                    if (distance > step && distance > 1e-3f)
+                    {
+                        worker.Position += toGoal / distance * step;
+                        shown = worker.Position;
+                    }
+                    else
+                    {
+                        worker.Position = goal;
+                        shown = goal;
+                        if (!worker.Returning)
+                        {
+                            // У стены: лицом к зданию, качается, будто стучит молотком.
+                            look = building.Position - goal;
+                            float2 toWall = math.normalizesafe(look);
+                            shown = goal + toWall * (math.sin(Time.time * style.WorkerBobRate + i * 1.7f) * style.WorkerBob);
+                        }
+                    }
+
+                    allHome &= worker.Returning && distance <= step;
+                    worker.Renderer.transform.SetPositionAndRotation(new Vector3(shown.x, shown.y, 0f), FacingOf(look));
+                }
+
+                if (allHome || headquarters == null)
+                {
+                    finishedCrews.Add(pair.Key);
+                }
+            }
+
+            foreach (int id in finishedCrews)
+            {
+                foreach (Worker worker in crews[id])
+                {
+                    Destroy(worker.Renderer.gameObject);
+                }
+
+                crews.Remove(id);
+            }
+        }
+
+        /// <summary>Ворота штаба — середина стороны, обращённой к центру карты.</summary>
+        private float2 GetHeadquartersGate(Building headquarters)
+        {
+            float direction = headquarters.Position.x > 0f ? -1f : 1f;
+            return headquarters.Position + new float2(direction * style.HeadquartersSize.x * 0.5f, 0f);
+        }
+
+        /// <summary>Место рабочего у стены здания со стороны штаба; рабочие стоят веером через workerSpread градусов.</summary>
+        private float2 GetWorkerPost(Building building, float2 gate, int index)
+        {
+            Vector2 size = style.SizeOf(building.Type);
+            float2 toGate = math.normalizesafe(gate - building.Position, new float2(1f, 0f));
+            float angle = math.radians((index - (style.WorkersPerBuilding - 1) * 0.5f) * style.WorkerSpread);
+            float2 direction = new float2(
+                toGate.x * math.cos(angle) - toGate.y * math.sin(angle),
+                toGate.x * math.sin(angle) + toGate.y * math.cos(angle));
+            // Луч из центра до края прямоугольника здания и чуть дальше.
+            float reach = math.min(
+                math.abs(direction.x) > 1e-3f ? size.x * 0.5f / math.abs(direction.x) : float.MaxValue,
+                math.abs(direction.y) > 1e-3f ? size.y * 0.5f / math.abs(direction.y) : float.MaxValue);
+            return building.Position + direction * (reach + style.WorkerStandOff);
+        }
+
+        private static Quaternion FacingOf(float2 direction)
+        {
+            return math.lengthsq(direction) < 1e-6f
+                ? Quaternion.identity
+                : Quaternion.Euler(0f, 0f, math.degrees(math.atan2(direction.y, direction.x)) - 90f);
         }
 
         /// <summary>Распущенные за тик люди уходят из толпы обратно в дом казармы или в конюшню.</summary>
