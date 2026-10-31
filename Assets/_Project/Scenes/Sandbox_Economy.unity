@@ -15034,22 +15034,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.View::Marchlands.View.TerrainView
   squareSprite: {fileID: 21300000, guid: 5f47f2ad9246ed441acf41244c86118e, type: 3}
   discSprite: {fileID: 21300000, guid: 0c4c11c45c291d142a331ea1609b0e7c, type: 3}
-  northMountainsSprite: {fileID: 21300000, guid: 3e19088d2182b6148b2dea0f430418b1, type: 3}
-  southMountainsSprite: {fileID: 21300000, guid: f79f6e6bd3bf22b49a12d4d02b086e17, type: 3}
   westRiverSprite: {fileID: 21300000, guid: 4e3de2fd258661743a548216e62b9ecd, type: 3}
   eastRiverSprite: {fileID: 21300000, guid: b61a6ef4cfacef345a8513a08da88452, type: 3}
   westRiverWaterMask: {fileID: 21300000, guid: 59288dbee676e6542b0ff22baf90dbc7, type: 3}
   eastRiverWaterMask: {fileID: 21300000, guid: 0d751405679c5d94f81f5802bacba6bc, type: 3}
   riverFlowSprite: {fileID: 21300000, guid: 7366c4396e7d522478beb2d629ce282b, type: 3}
   riverFlowSpeed: 0.8
-  mountainExtension: 8
+  riverExtension: 8
   westOuterForestSprite: {fileID: 21300000, guid: b370f6c2579e8594a8b84d8118db500d, type: 3}
   eastOuterForestSprite: {fileID: 21300000, guid: 5a4e87907c39e384e8a896c91b6b0f9e, type: 3}
-  fogSprite: {fileID: 21300000, guid: 59fccc4cf2bd69541b74d7fbffec853c, type: 3}
-  fogColor: {r: 0.8, g: 0.83, b: 0.86, a: 0.95}
   outerExtent: 40
-  fogInset: 3
-  fogDepth: 10
+  borderCanopySprite: {fileID: 21300000, guid: 25f26a19fe9f0ef49b8ae043d958efd1, type: 3}
+  borderCanopyTile: 7
+  borderCanopyColor: {r: 0.82, g: 0.9, b: 0.8, a: 1}
+  borderEdgeDepth: 8
+  borderEdgeJitter: 2
+  borderTreeSpacing: 1.3
+  borderTreeSize: {x: 2, y: 3.4}
+  borderTreeShade: {r: 0.55, g: 0.66, b: 0.55, a: 1}
   mapSize: {x: 120, y: 80}
   roadWidth: 2.6
   roadColor: {r: 0.66, g: 0.56, b: 0.38, a: 1}

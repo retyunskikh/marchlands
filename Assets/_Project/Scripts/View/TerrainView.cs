@@ -5,11 +5,13 @@ using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Terrain;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Marchlands.View
 {
     /// <summary>
-    /// Местность полной карты: реки слева и справа, горы сверху и снизу, грунтовые дороги, рощи и кусты с травой на поле.
+    /// Местность полной карты: реки слева и справа, сплошной непроходимый лес сверху и снизу, грунтовые дороги,
+    /// рощи и кусты с травой на поле.
     /// Рисуется один раз при старте — местность в бою не меняется. Без местности ничего не рисует.
     /// </summary>
     public sealed class TerrainView : MonoBehaviour
@@ -19,9 +21,7 @@ namespace Marchlands.View
 
         [SerializeField] private Sprite squareSprite;
         [SerializeField] private Sprite discSprite;
-        [Tooltip("Цельные текстуры гор (вид сверху) и рек; растягиваются на полосу между полем и краем карты.")]
-        [SerializeField] private Sprite northMountainsSprite;
-        [SerializeField] private Sprite southMountainsSprite;
+        [Tooltip("Цельные текстуры рек; растягиваются на полосу между полем и краем карты.")]
         [SerializeField] private Sprite westRiverSprite;
         [SerializeField] private Sprite eastRiverSprite;
         [Tooltip("Течение: маски воды рек (по форме русла) и тайловые блики, плывущие на север.")]
@@ -31,20 +31,30 @@ namespace Marchlands.View
         [SerializeField] private float riverFlowSpeed = 0.8f;
 
         [Header("За краем карты")]
-        [Tooltip("Насколько горы выходят за край карты вверх и вниз, u: запас для перехода в туман.")]
-        [SerializeField] private float mountainExtension = 8f;
+        [Tooltip("Насколько реки выходят за край карты вверх и вниз, u: текут сквозь лес до края видимого.")]
+        [FormerlySerializedAs("mountainExtension")]
+        [SerializeField] private float riverExtension = 8f;
         [Tooltip("Лес за реками с опушкой у реки: полотно 44 × 160 u от края поля наружу — игрок не видит пустоты.")]
         [SerializeField] private Sprite westOuterForestSprite;
         [SerializeField] private Sprite eastOuterForestSprite;
-        [Tooltip("Вертикальный градиент тумана (прозрачный внизу), в который уходят горы.")]
-        [SerializeField] private Sprite fogSprite;
-        [SerializeField] private Color fogColor = new Color(0.78f, 0.81f, 0.84f);
-        [Tooltip("Насколько за край карты тянутся лес и туман, u.")]
+        [Tooltip("Насколько за край карты тянется лес, u — дальше, чем может показать камера.")]
         [SerializeField] private float outerExtent = 40f;
-        [Tooltip("За сколько до края карты начинается туман над горами, u.")]
-        [SerializeField] private float fogInset = 2.5f;
-        [Tooltip("Глубина перехода тумана от прозрачного к плотному, u.")]
-        [SerializeField] private float fogDepth = 6f;
+
+        [Header("Лес сверху и снизу (непроходимая граница)")]
+        [Tooltip("Тайловый полог сплошного леса (вид сверху).")]
+        [SerializeField] private Sprite borderCanopySprite;
+        [Tooltip("Сколько юнитов занимает один повтор полога.")]
+        [SerializeField] private float borderCanopyTile = 7f;
+        [SerializeField] private Color borderCanopyColor = new Color(0.82f, 0.9f, 0.8f);
+        [Tooltip("Глубина опушки из отдельных деревьев от края поля, u; дальше — сплошной полог.")]
+        [SerializeField] private float borderEdgeDepth = 8f;
+        [Tooltip("Насколько неровная опушка: на сколько юнитов деревья выступают к полю и отступают.")]
+        [SerializeField] private float borderEdgeJitter = 2f;
+        [Tooltip("Шаг сетки деревьев опушки, u.")]
+        [SerializeField] private float borderTreeSpacing = 1.3f;
+        [SerializeField] private Vector2 borderTreeSize = new Vector2(2f, 3.4f);
+        [Tooltip("Деревья опушки темнеют вглубь леса до этого оттенка — переходят в сплошной полог без шва.")]
+        [SerializeField] private Color borderTreeShade = new Color(0.55f, 0.66f, 0.55f);
 
         [Header("Размер карты (как у фона)")]
         [SerializeField] private Vector2 mapSize = new Vector2(120f, 80f);
@@ -125,8 +135,7 @@ namespace Marchlands.View
 
             DrawOuterForest(terrain);
             DrawRivers(terrain);
-            DrawMountains(terrain);
-            DrawFog();
+            DrawBorderForest(terrain);
             DrawRoads(terrain);
             DrawForests(terrain);
             DrawDecor(match);
@@ -224,7 +233,7 @@ namespace Marchlands.View
             return true;
         }
 
-        /// <summary>Реки слева и справа: полоса от края поля до края карты, по всей высоте — вместе с горами, сквозь них.</summary>
+        /// <summary>Реки слева и справа: полоса от края поля до края карты, по всей высоте — сквозь лес сверху и снизу.</summary>
         private void DrawRivers(TerrainMap terrain)
         {
             float halfMapX = mapSize.x * 0.5f;
@@ -235,9 +244,9 @@ namespace Marchlands.View
                 if (width > 0f)
                 {
                     Sprite sprite = side > 0f ? eastRiverSprite : westRiverSprite;
-                    // Река идёт до самого края — сквозь горы (поверх них) в туман.
+                    // Река идёт до самого края видимого — сквозь лес (поверх его полога).
                     var center = new Vector2(edge + side * width * 0.5f, 0f);
-                    var size = new Vector2(width, mapSize.y + mountainExtension * 2f);
+                    var size = new Vector2(width, mapSize.y + riverExtension * 2f);
                     CreateStretched("River", sprite, borderSortingOrder + 4, center, size);
                     DrawRiverFlow(side > 0f ? eastRiverWaterMask : westRiverWaterMask, center, size);
                 }
@@ -274,20 +283,100 @@ namespace Marchlands.View
             flow.AddComponent<RiverFlow>().Initialize(riverFlowSpeed, period);
         }
 
-        /// <summary>Горы сверху и снизу: предгорья с рваным краем у поля, хребты и снежные вершины к краю карты.</summary>
-        private void DrawMountains(TerrainMap terrain)
+        /// <summary>
+        /// Сверху и снизу — явно непроходимый сплошной лес, уходящий за край видимого: у поля неровная опушка из отдельных
+        /// деревьев шести видов (с подлеском и кустами), дальше — сплошной полог. Реки текут сквозь него поверх полога.
+        /// </summary>
+        private void DrawBorderForest(TerrainMap terrain)
         {
+            float halfMapX = mapSize.x * 0.5f;
             float halfMapY = mapSize.y * 0.5f;
+            int seed = 50021;
             foreach (float side in new[] { -1f, 1f })
             {
                 float edge = side > 0f ? terrain.BoundsMax.y : terrain.BoundsMin.y;
-                float depth = halfMapY - math.abs(edge) + mountainExtension;
-                if (depth > 0f)
+                float outer = side * (halfMapY + outerExtent);
+
+                // Полог — от середины опушки до края видимого и шире карты: под деревьями опушки не просвечивает трава.
+                if (borderCanopySprite != null)
                 {
-                    Sprite sprite = side > 0f ? northMountainsSprite : southMountainsSprite;
-                    CreateStretched("Mountains", sprite, borderSortingOrder + 3, new Vector2(0f, edge + side * depth * 0.5f), new Vector2(mapSize.x, depth));
+                    float start = edge + side * borderEdgeDepth * 0.4f;
+                    float depth = math.abs(outer - start);
+                    CreateTiled("Border Canopy", borderCanopySprite, borderSortingOrder + 2,
+                        new Vector2(0f, (start + outer) * 0.5f), new Vector2(mapSize.x + outerExtent * 2f, depth), borderCanopyTile, borderCanopyColor);
+                }
+
+                if (treeSprites == null || treeSprites.Length == 0 || borderTreeSpacing <= 0f)
+                {
+                    continue;
+                }
+
+                // Опушка — только между реками: за реками лес свой.
+                float minX = -halfMapX - borderTreeSpacing, maxX = halfMapX + borderTreeSpacing;
+                float riverLeft = terrain.BoundsMin.x, riverRight = terrain.BoundsMax.x;
+                for (float x = minX; x <= maxX; x += borderTreeSpacing)
+                {
+                    // Неровный край: опушка то выступает к полю, то отступает.
+                    float wave = Mathf.PerlinNoise(x * 0.12f, side * 17.3f + 3.1f) * 2f - 1f;
+                    float edgeLine = edge + side * (borderEdgeJitter * (0.5f + 0.5f * wave));
+                    float refY = side > 0f ? edge + borderEdgeDepth + borderEdgeJitter : edgeLine;
+                    for (float d = 0f; d <= borderEdgeDepth; d += borderTreeSpacing)
+                    {
+                        float2 jitter = new float2(Hash01(++seed), Hash01(++seed)) - 0.5f;
+                        float2 position = new float2(x + jitter.x * borderTreeSpacing, edgeLine + side * (d + jitter.y * borderTreeSpacing * 0.8f));
+                        if (position.x < riverLeft - 0.5f || position.x > riverRight + 0.5f)
+                        {
+                            continue;
+                        }
+
+                        float size = math.lerp(borderTreeSize.x, borderTreeSize.y, Hash01(++seed));
+                        Sprite sprite = treeSprites[(int)(Hash01(++seed) * treeSprites.Length) % treeSprites.Length];
+                        Color tint = treeTints != null && treeTints.Length > 0
+                            ? Color.Lerp(Color.white, treeTints[(int)(Hash01(++seed) * treeTints.Length) % treeTints.Length], Hash01(++seed))
+                            : Color.white;
+                        // Чем глубже в лес, тем темнее — у самой опушки деревья тоже чуть притенены: лес сплошной и тёмный.
+                        tint *= Color.Lerp(Color.Lerp(Color.white, borderTreeShade, 0.35f), borderTreeShade, d / borderEdgeDepth);
+                        tint.a = 1f;
+                        // Нижние деревья поверх верхних, как в рощах.
+                        int order = treeSortingOrder + math.max(0, (int)((refY - position.y) * 2f));
+                        CreateStretched("Border Tree", sprite, order, position, new Vector2(size, size), 0f, tint);
+                    }
+
+                    // У самой опушки — тёмный подлесок и кусты: край размыт.
+                    float2 rim = new float2(x, edgeLine - side * 0.3f);
+                    if (undergrowthSprite != null)
+                    {
+                        float patch = borderTreeSpacing * 2.2f;
+                        CreateStretched("Border Undergrowth", undergrowthSprite, forestFloorSortingOrder, rim + new float2(0f, side * 0.8f),
+                            new Vector2(patch, patch * 0.8f), Hash01(++seed) * 180f, undergrowthColor);
+                    }
+
+                    if (bushSprites != null && bushSprites.Length > 0 && Hash01(++seed) < 0.45f
+                        && rim.x > riverLeft + 1f && rim.x < riverRight - 1f)
+                    {
+                        float bush = math.lerp(bushSize.x, bushSize.y, Hash01(++seed));
+                        Sprite sprite = bushSprites[(int)(Hash01(++seed) * bushSprites.Length) % bushSprites.Length];
+                        CreateStretched("Border Bush", sprite, bushSortingOrder, rim - new float2(0f, side * Hash01(++seed) * 0.6f), new Vector2(bush, bush), 0f, Color.white);
+                    }
                 }
             }
+        }
+
+        /// <summary>Повторяющаяся текстура на прямоугольник: один повтор — <paramref name="tile"/> юнитов.</summary>
+        private void CreateTiled(string objectName, Sprite sprite, int sortingOrder, Vector2 position, Vector2 size, float tile, Color color)
+        {
+            var child = new GameObject(objectName);
+            child.transform.SetParent(transform, false);
+            child.transform.position = position;
+            Vector2 spriteSize = sprite.bounds.size;
+            float scale = tile / math.max(spriteSize.x, 1e-3f);
+            child.transform.localScale = new Vector3(scale, scale, 1f);
+            var spriteRenderer = child.AddComponent<SpriteRenderer>();
+            spriteRenderer.sprite = sprite;
+            spriteRenderer.drawMode = SpriteDrawMode.Tiled;
+            spriteRenderer.size = size / scale;
+            spriteRenderer.color = color;
+            spriteRenderer.sortingOrder = sortingOrder;
         }
 
         /// <summary>
@@ -307,27 +396,6 @@ namespace Marchlands.View
                 float edge = side > 0f ? terrain.BoundsMax.x : terrain.BoundsMin.x;
                 Vector2 size = sprite.bounds.size;
                 CreateStretched("Outer Forest", sprite, borderSortingOrder - 1, new Vector2(edge + side * size.x * 0.5f, 0f), size);
-            }
-        }
-
-        /// <summary>Горы сверху и снизу уходят в туман: градиент от середины гор и сплошной туман дальше.</summary>
-        private void DrawFog()
-        {
-            if (fogSprite == null)
-            {
-                return;
-            }
-
-            float halfY = mapSize.y * 0.5f;
-            float width = mapSize.x + outerExtent * 2f;
-            foreach (float side in new[] { -1f, 1f })
-            {
-                float start = halfY - fogInset;
-                CreateStretched("Fog", fogSprite, borderSortingOrder + 10,
-                    new Vector2(0f, side * (start + fogDepth * 0.5f)), new Vector2(width, fogDepth), side > 0f ? 0f : 180f, Color.white);
-                float solid = outerExtent;
-                Create("Fog Solid", squareSprite, fogColor, borderSortingOrder + 10,
-                    new Vector2(0f, side * (start + fogDepth + solid * 0.5f)), new Vector2(width, solid), 0f);
             }
         }
 
@@ -527,7 +595,7 @@ namespace Marchlands.View
             spriteRenderer.sortingOrder = sortingOrder;
         }
 
-        /// <summary>Детерминированное псевдослучайное число в [0, 1) — горы и деревья стоят одинаково при каждом запуске.</summary>
+        /// <summary>Детерминированное псевдослучайное число в [0, 1) — деревья и кусты стоят одинаково при каждом запуске.</summary>
         private static float Hash01(int value)
         {
             uint hash = (uint)value * 2654435761u;
