@@ -11,6 +11,18 @@ namespace Marchlands.Simulation.Config
         /// <summary>Время постройки казармы, s.</summary>
         public float barracksBuildTime;
 
+        /// <summary>Цена усиления казармы (казарма у стороны одна — её усиливают, а не строят вторую).</summary>
+        public int barracksUpgradeCost;
+
+        /// <summary>Сколько секунд усиливают казарму; в это время она не нанимает, s.</summary>
+        public float barracksUpgradeTime;
+
+        /// <summary>Во сколько раз быстрее нанимает усиленная казарма.</summary>
+        public float barracksUpgradeHireSpeed;
+
+        /// <summary>Сколько ружей в залпе часовых усиленной казармы.</summary>
+        public int upgradedSentryShots;
+
         /// <summary>Казарму можно ставить не дальше этого от своего штаба, u.</summary>
         public float buildRadiusFromHQ;
 

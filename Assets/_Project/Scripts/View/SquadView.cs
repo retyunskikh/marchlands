@@ -83,7 +83,7 @@ namespace Marchlands.View
         private float2 assaultFrom = new float2(0f, -1f);
         private int frameRanks;
 
-        internal System.Func<BuildingType, Vector2> BuildingSize { get; set; }
+        internal System.Func<Building, Vector2> BuildingSize { get; set; }
         private float aimBlend;
         private float2 meleeContact;
         private float2 meleeDirection = new float2(0f, 1f);
@@ -536,7 +536,7 @@ namespace Marchlands.View
             else
             {
                 center = targetBuilding.Position;
-                Vector2 size = BuildingSize != null ? BuildingSize(targetBuilding.Type) : new Vector2(2f, 2f);
+                Vector2 size = BuildingSize != null ? BuildingSize(targetBuilding) : new Vector2(2f, 2f);
                 half = new float2(size.x, size.y) * 0.5f;
             }
 
@@ -718,7 +718,7 @@ namespace Marchlands.View
             if (storming)
             {
                 assaultCenter = target.Position;
-                Vector2 size = BuildingSize != null ? BuildingSize(target.Type) : new Vector2(2f, 2f);
+                Vector2 size = BuildingSize != null ? BuildingSize(target) : new Vector2(2f, 2f);
                 assaultHalf = new float2(size.x, size.y) * 0.5f;
                 float2 away = position - assaultCenter;
                 if (math.lengthsq(away) > 1e-6f)

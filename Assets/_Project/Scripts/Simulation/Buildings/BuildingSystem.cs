@@ -49,7 +49,17 @@ namespace Marchlands.Simulation.Buildings
                     }
                 }
 
-                if (building.IsHiringAny)
+                // Усиление казармы: строят рабочие, найм в это время стоит.
+                if (building.IsUpgrading)
+                {
+                    building.UpgradeRemaining -= deltaTime;
+                    if (building.UpgradeRemaining <= TimerEpsilon)
+                    {
+                        building.UpgradeRemaining = 0f;
+                        building.Level++;
+                    }
+                }
+                else if (building.IsHiringAny)
                 {
                     Hire(match, building, settings, deltaTime);
                 }

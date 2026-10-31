@@ -29,7 +29,7 @@ namespace Marchlands.Simulation.Buildings
                     && workers;
                 building.IsRepairing = repairing;
                 // Отстраиваемый блокгауз строят рабочие: при враге рядом стройка стоит (см. BuildingSystem).
-                building.HasWorkers = repairing || (!building.IsBuilt && workers);
+                building.HasWorkers = repairing || ((!building.IsBuilt || building.IsUpgrading) && workers);
                 if (repairing)
                 {
                     building.Health = math.min(building.MaxHealth, building.Health + settings.repairRate * deltaTime);

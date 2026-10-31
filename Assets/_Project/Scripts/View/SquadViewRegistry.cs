@@ -22,7 +22,7 @@ namespace Marchlands.View
         public SquadViewStyle Style => style;
 
         /// <summary>Размер здания на экране по типу (его задаёт реестр зданий) — чтобы штурмующие обступали стены.</summary>
-        public System.Func<Marchlands.Simulation.Buildings.BuildingType, Vector2> BuildingSize { get; set; }
+        public System.Func<Marchlands.Simulation.Buildings.Building, Vector2> BuildingSize { get; set; }
 
         public void Initialize(Match match)
         {

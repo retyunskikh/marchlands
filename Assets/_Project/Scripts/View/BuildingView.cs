@@ -52,7 +52,7 @@ namespace Marchlands.View
             bool isStable = building.Type == BuildingType.Stable;
             bool isDepot = building.Type == BuildingType.ArtilleryDepot;
             bool isBlockhouse = building.Type == BuildingType.Blockhouse;
-            size = style.SizeOf(building.Type);
+            size = style.SizeOf(building);
 
             selection = CreateRenderer("Selection", style.BodySortingOrder - 1, style.SelectionColor);
             selection.transform.localScale = new Vector3(size.x + style.SelectionPadding * 2f, size.y + style.SelectionPadding * 2f, 1f);
@@ -105,7 +105,7 @@ namespace Marchlands.View
                 scaffold = CreateRenderer("Scaffold", style.BodySortingOrder + 4, style.ScaffoldColor);
                 scaffold.sprite = style.ScaffoldSprite;
                 scaffold.transform.localScale = new Vector3(size.x * style.ScaffoldPadding, size.y * style.ScaffoldPadding, 1f);
-                scaffold.enabled = !building.IsBuilt;
+                scaffold.enabled = !building.IsBuilt || building.IsUpgrading;
             }
 
             CreateDamage();
@@ -268,10 +268,11 @@ namespace Marchlands.View
                 flag.color = bodyColor;
             }
 
-            // Пока здание строится, над ним строительные леса.
-            if (scaffold != null && scaffold.enabled == building.IsBuilt)
+            // Пока здание строится или его усиливают, над ним строительные леса.
+            bool scaffolding = !building.IsBuilt || building.IsUpgrading;
+            if (scaffold != null && scaffold.enabled != scaffolding)
             {
-                scaffold.enabled = !building.IsBuilt;
+                scaffold.enabled = scaffolding;
             }
 
             RenderAnnexes();
@@ -287,6 +288,11 @@ namespace Marchlands.View
             {
                 float buildTime = settings.buildings.houseBuildTime;
                 progress = buildTime > 0f ? 1f - building.HouseBuildRemaining / buildTime : -1f;
+            }
+            else if (building.IsUpgrading)
+            {
+                float upgradeTime = settings.buildings.barracksUpgradeTime;
+                progress = upgradeTime > 0f ? 1f - building.UpgradeRemaining / upgradeTime : -1f;
             }
             else if (building.IsOrderingGun)
             {

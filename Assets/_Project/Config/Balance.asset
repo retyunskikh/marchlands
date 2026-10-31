@@ -185,8 +185,12 @@ MonoBehaviour:
     buildings:
       barracksCost: 120
       barracksBuildTime: 30
-      buildRadiusFromHQ: 16
-      buildingSpacing: 7
+      barracksUpgradeCost: 200
+      barracksUpgradeTime: 40
+      barracksUpgradeHireSpeed: 2
+      upgradedSentryShots: 7
+      buildRadiusFromHQ: 19
+      buildingSpacing: 9
       hireCost: 3
       hireInterval: 3
       grenadierHireCost: 5
@@ -209,22 +213,22 @@ MonoBehaviour:
       houseBuildTime: 15
       maxHouses: 4
       annexSpacing: 2.5
-      spawnOffset: 7.5
-      campOffset: 5
+      spawnOffset: 9
+      campOffset: 6
       headquartersHealth: 600
       barracksHealth: 300
       stableHealth: 300
       sentryShots: 4
       sentryInterval: 6
       sentryHitChance: 0.2
-      sentryRange: 10
+      sentryRange: 11
       blockhouseHealth: 250
       blockhouseRebuildTime: 45
       blockhouseShots: 6
       blockhouseInterval: 6
       blockhouseHitChance: 0.22
-      blockhouseRange: 11
-      assaultRange: 4.2
+      blockhouseRange: 12
+      assaultRange: 5.2
       assaultDamage: 0.5
       repairDelay: 15
       repairRate: 5
@@ -250,3 +254,4 @@ MonoBehaviour:
       rainTimeMin: 50
       rainTimeMax: 100
       rainFireChance: 0.67
+      rainSpeedMultiplier: 0.85

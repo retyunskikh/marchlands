@@ -61,6 +61,42 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void SecondBarracks_IsRefused()
+        {
+            Match match = CreateMatch();
+            match.GetPlayer(Side.France).Gold = 1000;
+            BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 8f));
+            match.Enqueue(new BuildBarracksCommand(Side.France, FranceHq + new float2(-12f, 4f)));
+            match.Tick();
+            Assert.AreEqual(1, match.Buildings.Count(b => b.Type == BuildingType.Barracks && b.Owner == Side.France), "Казарма одна");
+        }
+
+        [Test]
+        public void BarracksUpgrade_PausesHiring_ThenHiresTwiceAsFast_WithMoreSentries()
+        {
+            Match match = CreateMatch();
+            match.GetPlayer(Side.France).Gold = 2000;
+            Building barracks = BuildReadyBarracks(match, Side.France, FranceHq + new float2(0f, 8f));
+            float normal = BuildRules.GetHireInterval(match, barracks);
+            int sentries = Volley.Of(barracks, match.Settings.buildings).Shots;
+
+            match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Fusiliers, true));
+            match.Enqueue(new UpgradeBarracksCommand(barracks.Id));
+            match.Tick();
+            Assert.IsTrue(barracks.IsUpgrading);
+            int reserve = match.GetPlayer(Side.France).FusilierReserve;
+            RunTicks(match, TicksFor(match.Settings.buildings.barracksUpgradeTime - 1f));
+            Assert.AreEqual(reserve, match.GetPlayer(Side.France).FusilierReserve, "Пока усиливают, не нанимает");
+
+            RunTicks(match, TicksFor(2f));
+            Assert.IsTrue(barracks.IsUpgraded);
+            Assert.AreEqual(normal / match.Settings.buildings.barracksUpgradeHireSpeed, BuildRules.GetHireInterval(match, barracks), 1e-4f,
+                "Нанимает вдвое быстрее");
+            Assert.Greater(Volley.Of(barracks, match.Settings.buildings).Shots, sentries, "Часовых больше");
+            Assert.IsFalse(BuildRules.CanUpgrade(match, barracks), "Дважды не усиливают");
+        }
+
+        [Test]
         public void BuildBarracks_OutsideRadius_IsRefused()
         {
             Match match = CreateMatch();

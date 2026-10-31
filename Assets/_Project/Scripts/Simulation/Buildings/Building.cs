@@ -91,6 +91,16 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Чинят ли здание рабочие из штаба в этом тике.</summary>
         public bool IsRepairing { get; internal set; }
 
+        /// <summary>Уровень здания: 1 — обычное, 2 — усиленная казарма.</summary>
+        public int Level { get; internal set; } = 1;
+
+        /// <summary>Сколько осталось усиливать казарму, s; 0 — не усиливают.</summary>
+        public float UpgradeRemaining { get; internal set; }
+
+        public bool IsUpgrading => UpgradeRemaining > 0f;
+
+        public bool IsUpgraded => Level > 1;
+
         /// <summary>Сколько осталось готовить заказанную в артдепо пушку, s; 0 — пушку не готовят.</summary>
         public float GunOrderRemaining { get; internal set; }
 

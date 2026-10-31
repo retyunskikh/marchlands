@@ -120,10 +120,13 @@ namespace Marchlands.View
         [Header("Часовые")]
         [Tooltip("Круг дальности часовых — у выделенного здания и у здания, на которое идёт штурм.")]
         [SerializeField] private Color sentryRangeColor = new Color(1f, 0.35f, 0.25f, 0.35f);
-        [Tooltip("Посты часовых на углах ограды, доля размера от центра.")]
+        [Tooltip("Во сколько раз крупнее усиленная казарма.")]
+        [SerializeField] private float upgradedScale = 1.2f;
+        [Tooltip("Посты часовых (сначала углы ограды, потом середины стен — у усиленной казармы), доля размера от центра.")]
         [SerializeField] private Vector2[] sentryPosts =
         {
-            new Vector2(0.47f, 0.43f), new Vector2(0.47f, -0.43f), new Vector2(-0.47f, 0.43f), new Vector2(-0.47f, -0.43f)
+            new Vector2(0.47f, 0.43f), new Vector2(0.47f, -0.43f), new Vector2(-0.47f, 0.43f), new Vector2(-0.47f, -0.43f),
+            new Vector2(0f, 0.47f), new Vector2(0f, -0.47f), new Vector2(0.5f, 0f), new Vector2(-0.5f, 0f)
         };
         [Tooltip("Сколько секунд после залпа часовой смотрит на цель, s.")]
         [SerializeField] private float sentryAlertTime = 3f;
@@ -141,13 +144,9 @@ namespace Marchlands.View
         [Tooltip("Насколько рабочий «стучит молотком» — качается взад-вперёд, u.")]
         [SerializeField] private float workerBob = 0.08f;
         [SerializeField] private float workerBobRate = 9f;
-        [Tooltip("Молоток в руке рабочего: машет им у стены в такт качанию.")]
-        [SerializeField] private Sprite hammerSprite;
-        [SerializeField] private float hammerScale = 0.4f;
-        [Tooltip("Размах замаха молотком, градусы.")]
-        [SerializeField] private float hammerSwing = 60f;
-        [Tooltip("Насколько молоток впереди и правее рабочего (рука), u.")]
-        [SerializeField] private Vector2 hammerHand = new Vector2(0.12f, 0.1f);
+        [Tooltip("Рабочий с молотком в руке: молоток занесён (на ходу и в замахе) и опущен на стену (удар).")]
+        [SerializeField] private Sprite workerRaiseSprite;
+        [SerializeField] private Sprite workerStrikeSprite;
 
         [Header("Стройка")]
         [Tooltip("Строительные леса над недостроенным зданием.")]
@@ -302,13 +301,9 @@ namespace Marchlands.View
 
         public float WorkerBobRate => workerBobRate;
 
-        public Sprite HammerSprite => hammerSprite;
+        public Sprite WorkerRaiseSprite => workerRaiseSprite;
 
-        public float HammerScale => hammerScale;
-
-        public float HammerSwing => hammerSwing;
-
-        public Vector2 HammerHand => hammerHand;
+        public Sprite WorkerStrikeSprite => workerStrikeSprite;
 
         public Sprite ScaffoldSprite => scaffoldSprite;
 
@@ -317,6 +312,13 @@ namespace Marchlands.View
         public Color ScaffoldColor => scaffoldColor;
 
         /// <summary>Габариты здания этого типа.</summary>
+        /// <summary>Размер здания с учётом усиления: усиленная казарма крупнее.</summary>
+        public Vector2 SizeOf(Building building)
+        {
+            Vector2 size = SizeOf(building.Type);
+            return building.IsUpgraded ? size * upgradedScale : size;
+        }
+
         public Vector2 SizeOf(BuildingType type)
         {
             switch (type)

@@ -204,6 +204,10 @@ namespace Marchlands.Tests.EditMode
                 {
                     barracksCost = 120,
                     barracksBuildTime = 30f,
+                    barracksUpgradeCost = 200,
+                    barracksUpgradeTime = 40f,
+                    barracksUpgradeHireSpeed = 2f,
+                    upgradedSentryShots = 7,
                     buildRadiusFromHQ = 10f,
                     buildingSpacing = 3f,
                     hireCost = 2,

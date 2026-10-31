@@ -28,7 +28,8 @@ namespace Marchlands.Simulation.Buildings
         {
             return building.Type == BuildingType.Blockhouse
                 ? new Volley(settings.blockhouseShots, settings.blockhouseInterval, settings.blockhouseHitChance, settings.blockhouseRange)
-                : new Volley(settings.sentryShots, settings.sentryInterval, settings.sentryHitChance, settings.sentryRange);
+                : new Volley(building.IsUpgraded ? settings.upgradedSentryShots : settings.sentryShots,
+                    settings.sentryInterval, settings.sentryHitChance, settings.sentryRange);
         }
     }
 }

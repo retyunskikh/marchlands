@@ -36,6 +36,34 @@ namespace Marchlands.Tests.EditMode
             return timeline;
         }
 
+        /// <summary>Сколько прошёл отряд за 5 секунд марша — в дождь или в сухую погоду.</summary>
+        private static float MarchDistance(bool rain)
+        {
+            var settings = TestSettings.Create();
+            settings.weather.rainSpeedMultiplier = 0.8f;
+            // Погода не меняется сама за время опыта.
+            settings.weather.dryTimeMin = settings.weather.dryTimeMax = 10000f;
+            settings.weather.rainTimeMin = settings.weather.rainTimeMax = 10000f;
+            var match = new Match(1, settings);
+            match.IsRaining = rain;
+            Squad squad = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
+            match.Enqueue(new MoveCommand(squad.Id, new float2(0f, 100f), 90f));
+            for (int i = 0; i < TicksFor(5f); i++)
+            {
+                match.Tick();
+            }
+
+            return squad.Position.y;
+        }
+
+        [Test]
+        public void Rain_SlowsEveryone()
+        {
+            float dry = MarchDistance(false);
+            float wet = MarchDistance(true);
+            Assert.AreEqual(dry * 0.8f, wet, dry * 0.02f, "В дождь идут медленнее");
+        }
+
         [Test]
         public void Rain_ComesAndGoes_Deterministically()
         {

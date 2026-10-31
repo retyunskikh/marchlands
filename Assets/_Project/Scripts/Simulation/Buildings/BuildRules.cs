@@ -65,7 +65,35 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Казарму и конюшню ставят по одним правилам: в радиусе штаба и не впритык к другим.</summary>
         public static bool CanBuild(Match match, Side side, BuildingType type, float2 point)
         {
-            return type != BuildingType.Headquarters && CanAfford(match, side, type) && IsValidBarracksSite(match, side, point);
+            return type != BuildingType.Headquarters && !IsAtLimit(match, side, type) && CanAfford(match, side, type)
+                && IsValidBarracksSite(match, side, point);
+        }
+
+        /// <summary>Казарма у стороны одна: вторую не строят — существующую усиливают.</summary>
+        public static bool IsAtLimit(Match match, Side side, BuildingType type)
+        {
+            if (type != BuildingType.Barracks)
+            {
+                return false;
+            }
+
+            foreach (Building building in match.Buildings)
+            {
+                if (building.Owner == side && building.Type == BuildingType.Barracks && !building.IsDestroyed)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Можно ли усилить казарму: своя построенная, ещё не усилена и не усиливается, золота хватает.</summary>
+        public static bool CanUpgrade(Match match, Building barracks)
+        {
+            return barracks != null && barracks.Type == BuildingType.Barracks && barracks.IsBuilt && !barracks.IsDestroyed
+                && !barracks.IsUpgraded && !barracks.IsUpgrading
+                && match.GetPlayer(barracks.Owner).Gold >= match.Settings.buildings.barracksUpgradeCost;
         }
 
         public static bool CanBuildBarracks(Match match, Side side, float2 point)
@@ -232,7 +260,11 @@ namespace Marchlands.Simulation.Buildings
 
         public static float GetHireInterval(Match match, Building building)
         {
-            return GetHireInterval(match.Settings.buildings, GetUpcomingHireType(match, building));
+            float interval = GetHireInterval(match.Settings.buildings, GetUpcomingHireType(match, building));
+            // Усиленная казарма нанимает быстрее.
+            return building.IsUpgraded && match.Settings.buildings.barracksUpgradeHireSpeed > 0f
+                ? interval / match.Settings.buildings.barracksUpgradeHireSpeed
+                : interval;
         }
 
         /// <summary>Сколько людей рода войск может ждать: на maxWaitingSquads отрядов.</summary>

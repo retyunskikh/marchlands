@@ -18,5 +18,8 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Доля ружей, которые в дождь всё же стреляют (остальные — осечка), 0–1.</summary>
         public float rainFireChance;
+
+        /// <summary>Во сколько раз медленнее идут, бегут в атаку и бегут все отряды под дождём (раскисшая земля).</summary>
+        public float rainSpeedMultiplier;
     }
 }

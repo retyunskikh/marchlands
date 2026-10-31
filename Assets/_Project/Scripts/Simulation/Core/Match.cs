@@ -133,9 +133,11 @@ namespace Marchlands.Simulation.Core
         }
 
         /// <summary>Множитель скорости местности в точке; на ровном поле — 1.</summary>
+        /// <summary>Множитель скорости в точке: местность и погода (в дождь все идут медленнее — грязь).</summary>
         public float TerrainSpeedMultiplier(float2 point)
         {
-            return Terrain == null ? 1f : math.max(0f, Terrain.SpeedMultiplier(point, Settings.terrain));
+            float terrain = Terrain == null ? 1f : math.max(0f, Terrain.SpeedMultiplier(point, Settings.terrain));
+            return IsRaining && Settings.weather.rainSpeedMultiplier > 0f ? terrain * Settings.weather.rainSpeedMultiplier : terrain;
         }
 
         /// <summary>Проверяются ли условия победы. В песочницах выключены.</summary>

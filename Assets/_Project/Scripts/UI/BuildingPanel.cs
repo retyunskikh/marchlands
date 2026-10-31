@@ -33,6 +33,11 @@ namespace Marchlands.UI
         [SerializeField] private HireToggle buildDepotToggle;
         [Tooltip("Иконка дома-пристройки в карточке штаба: +housePopulation мест.")]
         [SerializeField] private HireToggle buildHouseToggle;
+        [Tooltip("Усиление казармы (казарма у стороны одна).")]
+        [SerializeField] private HireToggle upgradeToggle;
+        [SerializeField] private string upgradeTitle = "Усилить";
+        [SerializeField] private string upgradedTitle = "Усилена";
+        [SerializeField] private string upgradingStatus = "Казарму усиливают — найм стоит";
         [Tooltip("{0} — население, {1} — мест.")]
         [SerializeField] private string populationFormat = "Население: {0}/{1}";
         [Tooltip("{0} — процент постройки дома.")]
@@ -113,6 +118,11 @@ namespace Marchlands.UI
                 buildStableToggle.Button.onClick.AddListener(() => BuildRequested?.Invoke(BuildingType.Stable));
             }
 
+            if (upgradeToggle != null)
+            {
+                upgradeToggle.Button.onClick.AddListener(OnUpgrade);
+            }
+
             if (buildHouseToggle != null)
             {
                 buildHouseToggle.Button.onClick.AddListener(OnBuildHouse);
@@ -179,6 +189,7 @@ namespace Marchlands.UI
             RefreshBuildToggle(buildStableToggle, BuildingType.Stable, stableTitle, headquarters);
             RefreshBuildToggle(buildDepotToggle, BuildingType.ArtilleryDepot, depotTitle, headquarters);
             RefreshHouseToggle(headquarters);
+            RefreshUpgradeToggle(own && barracks);
             if (!own)
             {
                 statusLabel.text = GetEnemyStatus();
@@ -188,6 +199,12 @@ namespace Marchlands.UI
             if (building.Health < building.MaxHealth)
             {
                 statusLabel.text = GetDamagedStatus();
+                return;
+            }
+
+            if (barracks && building.IsUpgrading)
+            {
+                statusLabel.text = upgradingStatus;
                 return;
             }
 
@@ -307,7 +324,8 @@ namespace Marchlands.UI
                 return;
             }
 
-            bool affordable = BuildRules.CanAfford(match, building.Owner, type);
+            // Казарма у стороны одна: построена — значок бледный.
+            bool affordable = BuildRules.CanAfford(match, building.Owner, type) && !BuildRules.IsAtLimit(match, building.Owner, type);
             toggle.Button.interactable = affordable;
             toggle.SetAvailable(affordable);
             toggle.SetName(title);
@@ -338,6 +356,44 @@ namespace Marchlands.UI
                     return noGoldStatus;
                 default:
                     return hiringStatus;
+            }
+        }
+
+        /// <summary>«Усилить» в карточке своей казармы: цена; пока усиливают — полоска; усиленная — «Усилена».</summary>
+        private void RefreshUpgradeToggle(bool visible)
+        {
+            if (upgradeToggle == null)
+            {
+                return;
+            }
+
+            visible &= building.IsBuilt;
+            if (upgradeToggle.gameObject.activeSelf != visible)
+            {
+                upgradeToggle.gameObject.SetActive(visible);
+            }
+
+            if (!visible)
+            {
+                return;
+            }
+
+            int cost = match.Settings.buildings.barracksUpgradeCost;
+            bool can = BuildRules.CanUpgrade(match, building);
+            upgradeToggle.Button.interactable = can;
+            upgradeToggle.SetName(building.IsUpgraded ? upgradedTitle : upgradeTitle);
+            upgradeToggle.SetAvailable(can || building.IsUpgrading || building.IsUpgraded);
+            float time = match.Settings.buildings.barracksUpgradeTime;
+            float progress = building.IsUpgrading && time > 0f ? 1f - building.UpgradeRemaining / time : -1f;
+            upgradeToggle.Show(building.IsUpgraded ? string.Empty : string.Format(buildFormat, string.Empty, cost),
+                building.IsUpgrading || building.IsUpgraded, progress);
+        }
+
+        private void OnUpgrade()
+        {
+            if (building != null)
+            {
+                match.Enqueue(new UpgradeBarracksCommand(building.Id));
             }
         }
 

@@ -62,6 +62,18 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
+            // Разбогатев (хватает и на усиление, и на отряд гренадёров), усиливает казарму.
+            foreach (Building barracks in match.Buildings)
+            {
+                int reserve = match.Settings.buildings.grenadierHireCost * match.Settings.grenadiers.squadSize;
+                if (barracks.Owner == Side && BuildRules.CanUpgrade(match, barracks)
+                    && match.GetPlayer(Side).Gold >= match.Settings.buildings.barracksUpgradeCost + reserve)
+                {
+                    Issue(match, new UpgradeBarracksCommand(barracks.Id));
+                    return;
+                }
+            }
+
             // Мест почти нет — первым делом дом, иначе найм встанет.
             int freePlaces = BuildRules.GetPopulationCapacity(match, Side) - BuildRules.GetPopulation(match, Side);
             if (freePlaces < ai.houseMargin && BuildRules.CanBuildHouse(match, Side))
