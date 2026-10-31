@@ -44,8 +44,8 @@ namespace Marchlands.UI
         [Header("Толпа рекрутов")]
         [Tooltip("Заголовок группы толпы: {0} — род войск.")]
         [SerializeField] private string campTitleFormat = "{0}";
-        [SerializeField] private string campBarracksText = "Не отряд:\nждут\nу казармы";
-        [SerializeField] private string campStableText = "Не отряд:\nждут\nу конюшни";
+        [SerializeField] private string campBarracksText = "Не отряд:\nждут у казармы";
+        [SerializeField] private string campStableText = "Не отряд:\nждут у конюшни";
         [Tooltip("Цвет рамки карточки толпы: отличает её от карточки отряда.")]
         [SerializeField] private Color campTint = new Color(0.82f, 0.78f, 0.7f);
 
@@ -155,7 +155,8 @@ namespace Marchlands.UI
             SetPortrait(campSide, type);
             titleLabel.text = string.Format(campTitleFormat, GetTitle(type));
             int waiting = match.GetPlayer(campSide).GetReserve(type);
-            strengthLabel.text = string.Format(strengthFormat, waiting, match.Settings.Unit(type).squadSize);
+            // Толпа — не отряд: просто сколько людей ждут, без «из скольких».
+            strengthLabel.text = waiting.ToString();
             detailsLabel.text = type == UnitType.Cavalry ? campStableText : campBarracksText;
         }
 

@@ -15,6 +15,8 @@ namespace Marchlands.UI
         [SerializeField] private GameObject panel;
         [SerializeField] private Button disbandButton;
         [SerializeField] private Text disbandLabel;
+        [Tooltip("Роспуск необратим — подтверждение вторым нажатием.")]
+        [SerializeField] private ConfirmButton disbandConfirm;
         [Tooltip("{0} — сколько людей будет распущено.")]
         [SerializeField] private string disbandFormat = "Распустить\n{0}";
 
@@ -26,7 +28,14 @@ namespace Marchlands.UI
         {
             this.match = match;
             this.side = side;
-            disbandButton.onClick.AddListener(OnDisband);
+            if (disbandConfirm != null)
+            {
+                disbandConfirm.Confirmed += OnDisband;
+            }
+            else
+            {
+                disbandButton.onClick.AddListener(OnDisband);
+            }
             SetCamp(null);
         }
 
@@ -50,7 +59,11 @@ namespace Marchlands.UI
             }
 
             string text = string.Format(disbandFormat, match.GetPlayer(side).GetReserve(type.Value));
-            if (disbandLabel.text != text)
+            if (disbandConfirm != null)
+            {
+                disbandConfirm.SetText(text);
+            }
+            else if (disbandLabel.text != text)
             {
                 disbandLabel.text = text;
             }

@@ -117,7 +117,11 @@ namespace Marchlands.UI
         {
             toggle.Button.onClick.AddListener(() => OnToggle(type));
             toggle.InfoButton.onClick.AddListener(() => infoPanel.Show(type, building != null ? building.Owner : playerSide));
-            if (toggle.DisbandButton != null)
+            if (toggle.DisbandConfirm != null)
+            {
+                toggle.DisbandConfirm.Confirmed += () => OnDisband(type);
+            }
+            else if (toggle.DisbandButton != null)
             {
                 toggle.DisbandButton.onClick.AddListener(() => OnDisband(type));
             }

@@ -29,6 +29,9 @@ namespace Marchlands.UI
 
         public Button DisbandButton => disbandButton;
 
+        /// <summary>Подтверждение роспуска вторым нажатием; null — кнопка без подтверждения.</summary>
+        public ConfirmButton DisbandConfirm => disbandButton != null ? disbandButton.GetComponent<ConfirmButton>() : null;
+
         /// <summary>«Распустить» над иконкой видна, только когда ждут люди этого рода войск, и пишет, сколько их уйдёт.</summary>
         public void SetDisband(int waiting)
         {
@@ -43,8 +46,15 @@ namespace Marchlands.UI
                 disbandButton.gameObject.SetActive(visible);
             }
 
-            Text text = disbandButton.GetComponentInChildren<Text>(true);
             string value = string.Format(disbandFormat, waiting);
+            ConfirmButton confirm = DisbandConfirm;
+            if (confirm != null)
+            {
+                confirm.SetText(value);
+                return;
+            }
+
+            Text text = disbandButton.GetComponentInChildren<Text>(true);
             if (visible && text != null && text.text != value)
             {
                 text.text = value;

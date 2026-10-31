@@ -113,8 +113,6 @@ namespace Marchlands.View
         [SerializeField] private Color fordStoneColor = new Color(0.62f, 0.6f, 0.55f);
         [SerializeField] private Color bridgeColor = new Color(0.5f, 0.36f, 0.22f);
         [SerializeField] private Color bridgeRailColor = new Color(0.32f, 0.22f, 0.13f);
-        [Tooltip("Ширина моста, u.")]
-        [SerializeField] private float bridgeWidth = 3.2f;
         [Tooltip("Холм: освещённый склон, тень и горизонтали.")]
         [SerializeField] private Color hillLightColor = new Color(0.86f, 0.84f, 0.5f, 0.22f);
         [SerializeField] private Color hillShadowColor = new Color(0.12f, 0.2f, 0.06f, 0.2f);
@@ -453,28 +451,10 @@ namespace Marchlands.View
                 }
                 else
                 {
-                    // Мост: настил вдоль дороги, что через него идёт (иначе — поперёк реки), доски и перила.
-                    if (TryRoadDirection(terrain, crossing.Center, crossing.Radius * 1.5f, out float2 roadDirection))
-                    {
-                        across = math.dot(roadDirection, across) < 0f ? -roadDirection : roadDirection;
-                        angle = math.degrees(math.atan2(across.y, across.x));
-                    }
-
-                    float deck = length + 1.2f;
-                    Create("Bridge", squareSprite, bridgeColor, borderSortingOrder - 2, (Vector2)crossing.Center, new Vector2(deck, bridgeWidth), angle);
-                    float2 along = new float2(-across.y, across.x);
-                    int planks = (int)(deck / 0.45f);
-                    for (int i = 0; i < planks; i++)
-                    {
-                        float2 at = crossing.Center + across * ((i + 0.5f) / planks - 0.5f) * deck;
-                        Create("Plank", squareSprite, bridgeColor * 0.8f, borderSortingOrder - 1, (Vector2)at, new Vector2(0.06f, bridgeWidth * 0.96f), angle);
-                    }
-
-                    foreach (float sign in new[] { -1f, 1f })
-                    {
-                        float2 rail = crossing.Center + along * (sign * (bridgeWidth * 0.5f - 0.1f));
-                        Create("Rail", squareSprite, bridgeRailColor, borderSortingOrder, (Vector2)rail, new Vector2(deck, 0.22f), angle);
-                    }
+                    // Мост продолжает дорогу: переправа стоит на пересечении дороги с рекой и вытянута вдоль дороги
+                    // (берега переправы — по дороге). Настил шириной с дорогу, каменные устои на берегах, тень на воде,
+                    // поперечные доски и перила со столбиками.
+                    DrawBridge(crossing.Center, across, length);
                 }
             }
         }
@@ -537,28 +517,65 @@ namespace Marchlands.View
             meshRenderer.sortingOrder = borderSortingOrder - 4;
         }
 
-        /// <summary>Направление дороги, ближайшей к точке (не дальше <paramref name="radius"/>); false — дорог рядом нет.</summary>
-        private static bool TryRoadDirection(TerrainMap terrain, float2 point, float radius, out float2 direction)
+        /// <summary>
+        /// Горбатый деревянный мост «коромыслом»: настил поперечными полосами — к середине светлее и чуть шире
+        /// (выше, ближе к солнцу), к концам темнее; тень на воде под серединой отходит дальше; перила изгибаются
+        /// вместе с настилом. На концах дорога плавно насыпана на мост — земляной въезд сходит на нет к середине.
+        /// </summary>
+        private void DrawBridge(float2 center, float2 across, float length)
         {
-            direction = float2.zero;
-            float best = radius;
-            foreach (float2[] road in terrain.Roads)
+            float angle = math.degrees(math.atan2(across.y, across.x));
+            float2 along = new float2(-across.y, across.x);
+            float width = roadWidth + 0.3f;
+            float deck = length + 1.4f;
+            int slices = math.max(8, (int)(deck / 0.42f));
+            float slice = deck / slices;
+
+            for (int i = 0; i < slices; i++)
             {
-                for (int i = 0; i + 1 < road.Length; i++)
+                float t = (i + 0.5f) / slices;
+                float hump = math.sin(t * math.PI);
+                float2 at = center + across * ((t - 0.5f) * deck);
+
+                // Тень: чем выше настил, тем дальше она падает.
+                Create("Bridge Shadow", squareSprite, new Color(0f, 0.04f, 0.08f, 0.32f), borderSortingOrder - 3,
+                    (Vector2)(at + new float2(0.2f, -0.25f) * (0.6f + hump * 1.4f)), new Vector2(slice * 1.05f, width), angle);
+
+                // Доска настила: середина горба светлее и чуть шире, у каждой доски — тёмный шов.
+                float boardWidth = width * (1f + 0.08f * hump);
+                Color board = bridgeColor * math.lerp(0.72f, 1.18f, hump) * (0.94f + 0.08f * ((i * 7) % 3) / 2f);
+                board.a = 1f;
+                Create("Plank", squareSprite, board, borderSortingOrder - 1, (Vector2)at, new Vector2(slice * 1.02f, boardWidth), angle);
+                Create("Seam", squareSprite, bridgeColor * 0.55f, borderSortingOrder, (Vector2)(at - across * (slice * 0.5f)),
+                    new Vector2(0.04f, boardWidth * 0.94f), angle);
+
+                // Перила по краям изгибаются вместе с настилом; столбики — через одну доску.
+                foreach (float sign in new[] { -1f, 1f })
                 {
-                    float2 ab = road[i + 1] - road[i];
-                    float lengthSq = math.lengthsq(ab);
-                    float t = lengthSq > 0f ? math.saturate(math.dot(point - road[i], ab) / lengthSq) : 0f;
-                    float distance = math.distance(point, road[i] + ab * t);
-                    if (distance <= best && lengthSq > 0f)
+                    float2 rail = at + along * (sign * (boardWidth * 0.5f - 0.05f));
+                    Create("Rail", squareSprite, bridgeRailColor * math.lerp(0.8f, 1.1f, hump), borderSortingOrder + 1, (Vector2)rail,
+                        new Vector2(slice * 1.05f, 0.13f), angle);
+                    if (i % 3 == 0 && i > 1 && i < slices - 2)
                     {
-                        best = distance;
-                        direction = math.normalize(ab);
+                        Create("Post", squareSprite, bridgeRailColor * 0.7f, borderSortingOrder + 2, (Vector2)rail, new Vector2(0.2f, 0.22f), angle);
                     }
                 }
             }
 
-            return math.lengthsq(direction) > 0f;
+            // Въезды: земля дороги насыпана на концы моста и сходит на нет к середине.
+            Sprite soft = patchSprite != null ? patchSprite : discSprite;
+            foreach (float end in new[] { -1f, 1f })
+            {
+                for (int k = 0; k < 4; k++)
+                {
+                    float fade = k / 4f;
+                    float2 at = center + across * (end * (deck * 0.5f - 0.2f - fade * deck * 0.12f));
+                    Color dirt = roadColor * 0.95f;
+                    dirt.a = (1f - fade) * 0.75f;
+                    CreateStretched("Bridge Ramp", soft, borderSortingOrder + 1, (Vector2)at,
+                        new Vector2(1.9f, width * (1.15f - 0.2f * fade)), angle, dirt);
+                }
+            }
         }
 
         /// <summary>Лента из кругов и прямоугольников вдоль линии: ровные края и скруглённые изгибы.</summary>

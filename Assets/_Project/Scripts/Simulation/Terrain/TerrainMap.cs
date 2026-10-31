@@ -82,6 +82,16 @@ namespace Marchlands.Simulation.Terrain
                 return;
             }
 
+            // Рядом дорога пересекает реку — переправа ровно на пересечении и вдоль дороги: мост продолжает дорогу.
+            if (TryRoadCrossing(point, out float2 at, out float2 roadDirection, out float2 riverDirection, out float riverHalfWidth))
+            {
+                float sine = math.max(0.35f, math.abs(roadDirection.x * riverDirection.y - roadDirection.y * riverDirection.x));
+                float reach = riverHalfWidth / sine + BankOffset;
+                crossings.Add(new Crossing(at, at - roadDirection * reach, at + roadDirection * reach,
+                    riverHalfWidth / sine + CrossingMargin, type));
+                return;
+            }
+
             float2 across = new float2(-along.y, along.x);
             float bank = halfWidth + BankOffset;
             crossings.Add(new Crossing(center, center - across * bank, center + across * bank, halfWidth + CrossingMargin, type));
@@ -363,6 +373,67 @@ namespace Marchlands.Simulation.Terrain
             }
 
             return false;
+        }
+
+        /// <summary>Ближайшее к точке (не дальше 10 u) пересечение дороги с рекой: где, направления дороги и реки, полуширина реки.</summary>
+        private bool TryRoadCrossing(float2 point, out float2 at, out float2 roadDirection, out float2 riverDirection, out float halfWidth)
+        {
+            const float SearchRadius = 10f;
+            at = point;
+            roadDirection = riverDirection = float2.zero;
+            halfWidth = 0f;
+            float best = SearchRadius * SearchRadius;
+            foreach (float2[] road in roads)
+            {
+                for (int i = 0; i + 1 < road.Length; i++)
+                {
+                    foreach (River river in rivers)
+                    {
+                        for (int j = 0; j + 1 < river.Points.Length; j++)
+                        {
+                            if (!TryIntersect(road[i], road[i + 1], river.Points[j], river.Points[j + 1], out float2 hit))
+                            {
+                                continue;
+                            }
+
+                            float distance = math.distancesq(hit, point);
+                            if (distance < best)
+                            {
+                                best = distance;
+                                at = hit;
+                                roadDirection = math.normalize(road[i + 1] - road[i]);
+                                riverDirection = math.normalize(river.Points[j + 1] - river.Points[j]);
+                                halfWidth = river.HalfWidth;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return math.lengthsq(roadDirection) > 0f;
+        }
+
+        private static bool TryIntersect(float2 a, float2 b, float2 c, float2 d, out float2 hit)
+        {
+            hit = float2.zero;
+            float2 r = b - a;
+            float2 s = d - c;
+            float denominator = r.x * s.y - r.y * s.x;
+            if (math.abs(denominator) < 1e-6f)
+            {
+                return false;
+            }
+
+            float2 ac = c - a;
+            float t = (ac.x * s.y - ac.y * s.x) / denominator;
+            float u = (ac.x * r.y - ac.y * r.x) / denominator;
+            if (t < 0f || t > 1f || u < 0f || u > 1f)
+            {
+                return false;
+            }
+
+            hit = a + r * t;
+            return true;
         }
 
         private bool TryNearestRiverPoint(float2 point, out float2 nearest, out float2 along, out float halfWidth)
