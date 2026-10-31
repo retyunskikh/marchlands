@@ -246,6 +246,34 @@ namespace Marchlands.Simulation.Melee
                 casualties = math.min(casualties, aliveBefore);
                 squad.Alive = aliveBefore - casualties;
                 MoraleMath.ApplyLoss(squad, casualties, aliveBefore, false, IsHitInFlank(match, squad), match.Settings);
+                CreditKills(match, squad, casualties);
+            }
+        }
+
+        /// <summary>Убитых в рукопашной ставят в заслугу противникам по схватке — поровну.</summary>
+        private static void CreditKills(Match match, Squad victim, int casualties)
+        {
+            int opponents = 0;
+            foreach (MeleeEngagement engagement in match.Engagements)
+            {
+                if (engagement.Involves(victim))
+                {
+                    opponents++;
+                }
+            }
+
+            if (opponents == 0)
+            {
+                return;
+            }
+
+            float share = (float)casualties / opponents;
+            foreach (MeleeEngagement engagement in match.Engagements)
+            {
+                if (engagement.Involves(victim))
+                {
+                    MoraleMath.ApplyKills(engagement.Attacker == victim ? engagement.Defender : engagement.Attacker, share, match.Settings);
+                }
             }
         }
 

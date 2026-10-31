@@ -28,8 +28,17 @@ namespace Marchlands.Simulation.Config
         /// <summary>Разовая прибавка морали, когда рядом обратился в бегство враг.</summary>
         public float enemyRoutBonus;
 
-        /// <summary>Восстановление морали, в секунду.</summary>
+        /// <summary>Восстановление морали в спокойствии, в секунду.</summary>
         public float moraleRegen;
+
+        /// <summary>Медленное восстановление всегда, даже в бою (кроме бегущих), в секунду.</summary>
+        public float moraleBaseRegen;
+
+        /// <summary>Прибавка морали стрелку или бойцу за каждого убитого врага.</summary>
+        public float killMoraleGain;
+
+        /// <summary>Прибавка морали за каждого человека, пришедшего пополнением из деревни.</summary>
+        public float reinforceMoraleGain;
 
         /// <summary>Сколько секунд без потерь нужно для восстановления, s.</summary>
         public float moraleCalmTime;

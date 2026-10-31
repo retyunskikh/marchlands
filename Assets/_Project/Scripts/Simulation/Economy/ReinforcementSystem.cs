@@ -1,3 +1,4 @@
+using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
@@ -39,6 +40,8 @@ namespace Marchlands.Simulation.Economy
                 squad.ReinforceTimer = 0f;
                 squad.ReinforceProgress = 0f;
                 squad.Alive++;
+                // Подошли свои — отряд приободрился.
+                MoraleMath.ApplyGain(squad, match.Settings.morale.reinforceMoraleGain);
                 squad.IsReinforcing = squad.Alive < UnitStats.Of(squad, match.Settings).squadSize;
                 match.ReportReinforcement(squad, village);
             }

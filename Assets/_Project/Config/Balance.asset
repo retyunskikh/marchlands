@@ -95,6 +95,9 @@ MonoBehaviour:
       enemyRoutRadius: 12
       enemyRoutBonus: 15
       moraleRegen: 2
+      moraleBaseRegen: 0.25
+      killMoraleGain: 0.8
+      reinforceMoraleGain: 3
       moraleCalmTime: 10
       calmEnemyRadius: 10
       routThreshold: 15

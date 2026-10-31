@@ -55,10 +55,9 @@ namespace Marchlands.Simulation.Morale
                 }
 
                 squad.TimeSinceLoss += deltaTime;
-                if (IsCalm(match, squad))
-                {
-                    squad.Morale = math.min(MoraleMath.MaxMorale, squad.Morale + settings.moraleRegen * deltaTime);
-                }
+                // В спокойствии дух восстанавливается быстро, в бою — медленно, но всегда.
+                float regen = IsCalm(match, squad) ? math.max(settings.moraleRegen, settings.moraleBaseRegen) : settings.moraleBaseRegen;
+                squad.Morale = math.min(MoraleMath.MaxMorale, squad.Morale + regen * deltaTime);
             }
         }
 

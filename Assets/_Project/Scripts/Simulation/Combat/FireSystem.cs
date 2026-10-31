@@ -216,6 +216,7 @@ namespace Marchlands.Simulation.Combat
             target.Alive -= casualties;
             bool flank = MoraleMath.IsFlank(target, squad.Position, match.Settings.morale);
             MoraleMath.ApplyLoss(target, casualties, aliveBefore, scaledDistance <= combat.pointBlankRange, flank, match.Settings);
+            MoraleMath.ApplyKills(squad, casualties, match.Settings);
             events.Add(new VolleyEvent(
                 match.CurrentTick, squad.Id, squad.Side, 1, distance, casualties,
                 target.Id, aliveBefore, target.Position, target.Facing, target.Formation, shooterIndex));
@@ -238,6 +239,8 @@ namespace Marchlands.Simulation.Combat
 
             bool flank = MoraleMath.IsFlank(target, shooter.Position, match.Settings.morale);
             MoraleMath.ApplyLoss(target, casualties, aliveBefore, volley.PointBlank, flank, match.Settings);
+            // Удачный залп ободряет стрелков.
+            MoraleMath.ApplyKills(shooter, casualties, match.Settings);
 
             events.Add(new VolleyEvent(
                 match.CurrentTick, shooter.Id, shooter.Side, volley.Shooters, volley.Distance, casualties,

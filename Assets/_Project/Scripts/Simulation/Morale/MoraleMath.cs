@@ -48,6 +48,23 @@ namespace Marchlands.Simulation.Morale
             return loss;
         }
 
+        /// <summary>Прибавляет мораль (не выше максимума); бегущим и толпе рекрутов — нет.</summary>
+        internal static void ApplyGain(Squad squad, float gain)
+        {
+            if (gain <= 0f || squad == null || squad.IsRouting || squad.IsCamp || squad.Alive <= 0)
+            {
+                return;
+            }
+
+            squad.Morale = math.min(MaxMorale, squad.Morale + gain);
+        }
+
+        /// <summary>Убил врагов — дух крепнет: killMoraleGain за каждого.</summary>
+        internal static void ApplyKills(Squad squad, float kills, SimulationSettings settings)
+        {
+            ApplyGain(squad, kills * settings.morale.killMoraleGain);
+        }
+
         /// <summary>Снимает мораль за потери с учётом рода войск (гренадёры крепче).</summary>
         internal static void ApplyLoss(Squad squad, int casualties, int aliveBefore, bool pointBlank, bool flank, SimulationSettings settings)
         {
