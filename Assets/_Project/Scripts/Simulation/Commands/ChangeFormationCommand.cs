@@ -23,8 +23,20 @@ namespace Marchlands.Simulation.Commands
         public void Execute(Match match)
         {
             Squad squad = match.FindSquad(SquadId);
-            if (squad == null || !squad.CanReceiveOrders || squad.TargetFormation == Formation
-                || (!squad.IsChangingFormation && squad.Formation == Formation))
+            if (squad == null || !squad.CanReceiveOrders)
+            {
+                return;
+            }
+
+            // Строй выбран вручную — после марша не возвращать прежний.
+            squad.RestoreFormation = null;
+            Start(match, squad, Formation);
+        }
+
+        /// <summary>Начинает перестроение (или разворачивает начатое обратно). Без проверки, слушается ли отряд.</summary>
+        internal static void Start(Match match, Squad squad, Formation Formation)
+        {
+            if (squad.TargetFormation == Formation || (!squad.IsChangingFormation && squad.Formation == Formation))
             {
                 return;
             }

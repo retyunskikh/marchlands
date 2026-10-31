@@ -29,6 +29,7 @@ namespace Marchlands.Simulation.Commands
             }
 
             FireSystem.CancelAiming(squad);
+            squad.ClearRoute();
             squad.Order = SquadOrder.Assault(target.Id);
         }
     }

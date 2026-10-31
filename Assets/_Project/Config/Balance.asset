@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Bootstrap::Marchlands.Bootstrap.Config.BalanceConfig
   simulation:
     squads:
+      autoRouteMinDistance: 20
+      autoRouteGain: 0.9
       lineRanks: 2
       columnFrontWidth: 6
       fileSpacing: 0.7
@@ -28,7 +30,7 @@ MonoBehaviour:
       squadSize: 30
       minSquadSize: 10
       speedMultiplier: 0.9
-      accuracyMultiplier: 1
+      accuracyMultiplier: 1.15
       rangeMultiplier: 1
       moraleLossMultiplier: 0.8
       meleeMultiplier: 1.25
@@ -182,7 +184,7 @@ MonoBehaviour:
       dominationShare: 1
       dominationTime: 180
     terrain:
-      roadSpeedMultiplier: 1.25
+      roadSpeedMultiplier: 1.5
       roadHalfWidth: 1.5
       forestSpeedMultiplier: 0.6
       forestCoverMultiplier: 0.7

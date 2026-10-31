@@ -115,6 +115,32 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Сколько выстрелов вразнобой отряд начал готовить — по нему выбирается следующий стрелок.</summary>
         internal int SkirmishShotCount { get; set; }
 
+        /// <summary>
+        /// Маршрут дальнего приказа движения (точки пути по местности, последняя — цель приказа); пустой — идти напрямую.
+        /// </summary>
+        internal readonly System.Collections.Generic.List<float2> Route = new System.Collections.Generic.List<float2>();
+
+        /// <summary>К какой точке маршрута отряд идёт сейчас.</summary>
+        internal int RouteIndex { get; set; }
+
+        /// <summary>В какой строй вернуться, дойдя до цели (отряд перестроился в колонну для марша); null — не менять.</summary>
+        internal Formation? RestoreFormation { get; set; }
+
+        /// <summary>Точки маршрута, которые отряду ещё предстоит пройти (для отображения).</summary>
+        public System.Collections.Generic.IReadOnlyList<float2> RouteWaypoints => Route;
+
+        public int CurrentRouteIndex => RouteIndex;
+
+        public bool HasRoute => Route.Count > 0 && RouteIndex < Route.Count;
+
+        /// <summary>Сбрасывает маршрут и возврат строя — новый приказ отменяет марш.</summary>
+        internal void ClearRoute()
+        {
+            Route.Clear();
+            RouteIndex = 0;
+            RestoreFormation = null;
+        }
+
         /// <summary>Стоит ли центр отряда на холме (обновляется после движения): стреляет дальше.</summary>
         public bool IsOnHill { get; internal set; }
 

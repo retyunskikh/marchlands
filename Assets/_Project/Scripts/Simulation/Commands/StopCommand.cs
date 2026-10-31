@@ -18,6 +18,7 @@ namespace Marchlands.Simulation.Commands
             Squad squad = match.FindSquad(SquadId);
             if (squad != null && squad.CanReceiveOrders)
             {
+                squad.ClearRoute();
                 squad.Order = SquadOrder.None;
             }
         }

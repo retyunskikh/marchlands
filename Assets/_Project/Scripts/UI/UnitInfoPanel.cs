@@ -8,17 +8,25 @@ using UnityEngine.UI;
 
 namespace Marchlands.UI
 {
-    /// <summary>Окно характеристик рода войск: открывается кнопкой «i» у иконки найма, закрывается кнопкой или тапом.</summary>
+    /// <summary>
+    /// Окно характеристик рода войск: слева — большой портрет воина своей стороны, справа — описание и характеристики.
+    /// Открывается кнопкой «i» у иконки найма, закрывается кнопкой или тапом.
+    /// </summary>
     public sealed class UnitInfoPanel : MonoBehaviour
     {
         [SerializeField] private GameObject panel;
         [SerializeField] private Text titleLabel;
         [SerializeField] private Text bodyLabel;
         [SerializeField] private Button closeButton;
+        [Tooltip("Большой портрет воина слева.")]
+        [SerializeField] private Image portrait;
+        [Tooltip("Портреты по порядку: гренадёр, фузилёр, всадник.")]
+        [SerializeField] private Sprite[] francePortraits = new Sprite[3];
+        [SerializeField] private Sprite[] austriaPortraits = new Sprite[3];
         [SerializeField] private string grenadiersTitle = "Гренадёры";
         [SerializeField] private string fusiliersTitle = "Фузилёры";
         [SerializeField] private string cavalryTitle = "Конница";
-        [SerializeField] private string grenadiersNote = "Отборная пехота: крепкая мораль, сильны в штыковой. Дороже фузилёров и нанимаются вдвое дольше.";
+        [SerializeField] private string grenadiersNote = "Отборная пехота: метче стреляют, крепкая мораль, сильны в штыковой. Дороже фузилёров и нанимаются вдвое дольше.";
         [SerializeField] private string fusiliersNote = "Основная линейная пехота: дёшевы и быстро набираются, но уступают гренадёрам в стойкости и штыковой.";
         [SerializeField] private string cavalryNote = "Дорогая и быстрая, страшна в атаке в сабли. Стрелять не может.";
 
@@ -33,8 +41,15 @@ namespace Marchlands.UI
             Hide();
         }
 
-        public void Show(UnitType type)
+        public void Show(UnitType type, Side side)
         {
+            Sprite[] portraits = side == Side.France ? francePortraits : austriaPortraits;
+            if (portrait != null && portraits != null && (int)type < portraits.Length && portraits[(int)type] != null)
+            {
+                portrait.sprite = portraits[(int)type];
+                portrait.preserveAspect = true;
+            }
+
             SimulationSettings settings = match.Settings;
             UnitTypeSettings unit = settings.Unit(type);
             bool cavalry = type == UnitType.Cavalry;

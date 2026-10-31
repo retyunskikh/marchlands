@@ -4,15 +4,22 @@ using Unity.Mathematics;
 
 namespace Marchlands.Simulation.Commands
 {
-    /// <summary>Идти к точке и встать фронтом в заданном направлении. Заменяет текущий приказ.</summary>
+    /// <summary>
+    /// Идти к точке и встать фронтом в заданном направлении. Заменяет текущий приказ. С <see cref="AutoRoute"/>
+    /// дальний приказ прокладывается по местности: отряд сам идёт к дороге, в колонне, если так быстрее.
+    /// </summary>
     public sealed class MoveCommand : ICommand
     {
-        public MoveCommand(int squadId, float2 target, float finalFacing)
+        public MoveCommand(int squadId, float2 target, float finalFacing, bool autoRoute = false)
         {
             SquadId = squadId;
             Target = target;
             FinalFacing = finalFacing;
+            AutoRoute = autoRoute;
         }
+
+        /// <summary>Прокладывать ли дальний путь по местности (приказы игрока); ИИ ведёт отряды по своим точкам пути.</summary>
+        public bool AutoRoute { get; }
 
         public int SquadId { get; }
 
@@ -38,7 +45,12 @@ namespace Marchlands.Simulation.Commands
                 target = match.Terrain.OutOfWater(target, squad.Position);
             }
 
+            squad.ClearRoute();
             squad.Order = SquadOrder.Move(target, facing);
+            if (AutoRoute)
+            {
+                RoutePlanner.TryPlan(match, squad, target);
+            }
         }
     }
 }

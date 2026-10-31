@@ -29,6 +29,9 @@ namespace Marchlands.View
         private readonly List<float2> shownLocal = new List<float2>();
         private readonly List<SpriteRenderer> ringSegments = new List<SpriteRenderer>();
 
+        // Пунктир маршрута дальнего марша у выделенного отряда: куда он пойдёт (к дороге, по ней, к цели).
+        private readonly List<SpriteRenderer> routeDots = new List<SpriteRenderer>();
+
         private Squad squad;
         private Match match;
         private SquadSettings settings;
@@ -151,6 +154,8 @@ namespace Marchlands.View
                 }
             }
 
+            RenderRoute(position);
+
             if (selectionMarker.enabled)
             {
                 float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings);
@@ -188,6 +193,46 @@ namespace Marchlands.View
                 new Vector3(countAt.x, countAt.y, 0f), squad.Alive, UnitStats.Of(squad, match.Settings).squadSize, true,
                 squad.IsReinforcing ? squad.ReinforceProgress : -1f);
             RenderRing(ringCenter, alpha);
+        }
+
+        /// <summary>Пунктир оставшегося маршрута от отряда через точки пути к цели — только у выделенного.</summary>
+        private void RenderRoute(float2 position)
+        {
+            int used = 0;
+            if (selectionMarker.enabled && squad.HasRoute && style.RouteDotSpacing > 0f)
+            {
+                float2 from = position;
+                float carry = style.RouteDotSpacing * 0.5f;
+                for (int i = squad.CurrentRouteIndex; i < squad.RouteWaypoints.Count && used < style.RouteDotsMax; i++)
+                {
+                    float2 to = squad.RouteWaypoints[i];
+                    float length = math.distance(from, to);
+                    float along = carry;
+                    while (along < length && used < style.RouteDotsMax)
+                    {
+                        float2 dot = math.lerp(from, to, along / length);
+                        if (used == routeDots.Count)
+                        {
+                            SpriteRenderer renderer = CreateRenderer("Route Dot", style.MarkerSprite, style.RouteDotColor, style.MarkerSortingOrder);
+                            renderer.transform.localScale = Vector3.one * style.RouteDotSize;
+                            routeDots.Add(renderer);
+                        }
+
+                        routeDots[used].enabled = true;
+                        routeDots[used].transform.SetPositionAndRotation(new Vector3(dot.x, dot.y, 0f), Quaternion.Euler(0f, 0f, 45f));
+                        used++;
+                        along += style.RouteDotSpacing;
+                    }
+
+                    carry = along - length;
+                    from = to;
+                }
+            }
+
+            for (int i = used; i < routeDots.Count; i++)
+            {
+                routeDots[i].enabled = false;
+            }
         }
 
         /// <summary>Расстояние от центра отряда до его тыла.</summary>

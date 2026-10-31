@@ -116,7 +116,7 @@ namespace Marchlands.UI
         private void Bind(HireToggle toggle, UnitType type)
         {
             toggle.Button.onClick.AddListener(() => OnToggle(type));
-            toggle.InfoButton.onClick.AddListener(() => infoPanel.Show(type));
+            toggle.InfoButton.onClick.AddListener(() => infoPanel.Show(type, building != null ? building.Owner : playerSide));
             if (toggle.DisbandButton != null)
             {
                 toggle.DisbandButton.onClick.AddListener(() => OnDisband(type));

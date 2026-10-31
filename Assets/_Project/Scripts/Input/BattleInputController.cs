@@ -274,7 +274,7 @@ namespace Marchlands.Input
                 hasPendingTap = false;
                 float2 toTarget = world - selected.Position;
                 float facing = math.lengthsq(toTarget) > 0f ? Angles.Of(toTarget) : selected.Facing;
-                match.Enqueue(new MoveCommand(selected.Id, world, facing));
+                match.Enqueue(new MoveCommand(selected.Id, world, facing, autoRoute: true));
                 return;
             }
 
@@ -400,13 +400,13 @@ namespace Marchlands.Input
             if (destinationLocked)
             {
                 destinationLocked = false;
-                match.Enqueue(new MoveCommand(selected.Id, lockedDestination, lockedFacing));
+                match.Enqueue(new MoveCommand(selected.Id, lockedDestination, lockedFacing, autoRoute: true));
                 return;
             }
 
             float2 from = cameraController.ScreenToWorld(startScreen);
             float2 to = cameraController.ScreenToWorld(endScreen);
-            match.Enqueue(new MoveCommand(selected.Id, to, Angles.Of(to - from)));
+            match.Enqueue(new MoveCommand(selected.Id, to, Angles.Of(to - from), autoRoute: true));
         }
 
         private void OnDragCancelled()

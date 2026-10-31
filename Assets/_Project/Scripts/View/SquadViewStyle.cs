@@ -86,6 +86,12 @@ namespace Marchlands.View
         [Tooltip("Насколько рамка выделения шире габаритов отряда с каждой стороны, u.")]
         [SerializeField] private float selectionPadding = 0.3f;
         [SerializeField] private int markerSortingOrder = 10;
+        [Header("Маршрут дальнего марша")]
+        [Tooltip("Пунктир маршрута у выделенного отряда: шаг точек, u, их размер и цвет.")]
+        [SerializeField] private float routeDotSpacing = 1.2f;
+        [SerializeField] private float routeDotSize = 0.28f;
+        [SerializeField] private Color routeDotColor = new Color(1f, 0.92f, 0.45f, 0.75f);
+        [SerializeField] private int routeDotsMax = 160;
         [SerializeField] private int soldierSortingOrder = 20;
 
         [Header("Кольцо перезарядки")]
@@ -234,6 +240,14 @@ namespace Marchlands.View
         public float SelectionPadding => selectionPadding;
 
         public int MarkerSortingOrder => markerSortingOrder;
+
+        public float RouteDotSpacing => routeDotSpacing;
+
+        public float RouteDotSize => routeDotSize;
+
+        public Color RouteDotColor => routeDotColor;
+
+        public int RouteDotsMax => routeDotsMax;
 
         public int SoldierSortingOrder => soldierSortingOrder;
 

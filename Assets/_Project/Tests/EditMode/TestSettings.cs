@@ -20,6 +20,8 @@ namespace Marchlands.Tests.EditMode
                     rankSpacing = 0.8f,
                     lineSpeed = 1.0f,
                     columnSpeed = 1.6f,
+                    autoRouteMinDistance = 20f,
+                    autoRouteGain = 0.9f,
                     rotationSpeed = 45f,
                     formationChangeTime = 4f,
                     reformMoveSpeedMultiplier = 0.4f,

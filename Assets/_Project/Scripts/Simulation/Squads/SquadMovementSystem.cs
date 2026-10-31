@@ -73,6 +73,17 @@ namespace Marchlands.Simulation.Squads
             StayOutOfWater(squad, match, position);
         }
 
+        /// <summary>Марш окончен: маршрут сброшен, отряд, перестроившийся для марша в колонну, разворачивается обратно.</summary>
+        private static void FinishRoute(Squad squad, Match match)
+        {
+            Formation? restore = squad.RestoreFormation;
+            squad.ClearRoute();
+            if (restore.HasValue)
+            {
+                Commands.ChangeFormationCommand.Start(match, squad, restore.Value);
+            }
+        }
+
         /// <summary>В реку вне переправ не войти: шаг в воду отменяется, отряд остаётся на берегу.</summary>
         private static void StayOutOfWater(Squad squad, Match match, float2 before)
         {
@@ -153,9 +164,16 @@ namespace Marchlands.Simulation.Squads
         {
             SimulationSettings settings = match.Settings;
             float time = deltaTime;
-            // Если по пути река — сначала к переправе (точка пути), дальше снова к цели приказа.
-            float2 target = Steer(squad, match, squad.Order.Target);
-            bool detour = math.any(target != squad.Order.Target);
+            // Дальний марш — по точкам маршрута; если по пути река — сначала к переправе, дальше снова к цели.
+            float2 goal = squad.Order.Target;
+            bool waypoint = squad.RouteIndex < squad.Route.Count - 1;
+            if (waypoint)
+            {
+                goal = squad.Route[squad.RouteIndex];
+            }
+
+            float2 target = Steer(squad, match, goal);
+            bool detour = waypoint || math.any(target != squad.Order.Target);
             float2 toTarget = target - squad.Position;
             float distance = math.length(toTarget);
 
@@ -189,15 +207,21 @@ namespace Marchlands.Simulation.Squads
                 time -= distance / speed;
             }
 
-            // Дошли до точки переправы — приказ продолжается со следующего тика.
+            // Дошли до точки маршрута или переправы — приказ продолжается со следующего тика.
             if (detour)
             {
+                if (waypoint && math.all(target == goal))
+                {
+                    squad.RouteIndex++;
+                }
+
                 return;
             }
 
             if (RotateTowards(squad, squad.Order.FinalFacing, settings.squads.rotationSpeed, ref time))
             {
                 squad.Order = SquadOrder.None;
+                FinishRoute(squad, match);
             }
         }
 

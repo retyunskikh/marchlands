@@ -9,6 +9,15 @@ namespace Marchlands.Simulation.Config
     [Serializable]
     public sealed class SquadSettings
     {
+        /// <summary>Приказ движения игрока дальше этого прокладывается по местности (дороги, обход лесов и рек), u.</summary>
+        public float autoRouteMinDistance;
+
+        /// <summary>
+        /// Маршрут (в колонне, с перестроением) берётся, если он быстрее прямого пути в нынешнем строю хотя бы
+        /// в столько раз (0.9 — на 10%); иначе отряд идёт напрямую.
+        /// </summary>
+        public float autoRouteGain;
+
         /// <summary>Число шеренг в линии.</summary>
         public int lineRanks;
 
