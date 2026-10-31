@@ -35,6 +35,8 @@ namespace Marchlands.UI
         [SerializeField] private Sprite gunIcon;
         [SerializeField] private string roundShotText = "Ядро";
         [SerializeField] private string canisterText = "Картечь";
+        [Tooltip("Размер подписи заряда относительно цифр перезарядки.")]
+        [SerializeField] private float gunLabelScale = 0.32f;
 
         [Header("Строй")]
         [SerializeField] private Button formationButton;
@@ -71,6 +73,8 @@ namespace Marchlands.UI
         private bool isChargeTargeting;
         private Image chargeImage;
         private Sprite volleySprite;
+        private int volleyFontSize;
+        private TextAnchor volleyAlignment;
         private Vector3 chargeHome;
         private bool chargeMoved;
 
@@ -82,6 +86,8 @@ namespace Marchlands.UI
             this.match = match;
             chargeImage = chargeButton.GetComponent<Image>();
             volleySprite = volleyIcon != null ? volleyIcon.sprite : null;
+            volleyFontSize = volleyLabel.fontSize;
+            volleyAlignment = volleyLabel.alignment;
             chargeHome = chargeButton.transform.localPosition;
             volleyButton.onClick.AddListener(OnVolley);
             formationButton.onClick.AddListener(OnFormation);
@@ -130,6 +136,13 @@ namespace Marchlands.UI
             bool canVolley = gun ? obeys : VolleyRules.CanVolley(match, squad);
             volleyButton.interactable = canVolley;
             volleyLabel.text = gun ? (squad.ShotMode == ShotMode.Canister ? canisterText : roundShotText) : GetVolleyText();
+            // У пушки — подпись заряда мелко внизу, под картинкой; у пехоты — крупные секунды перезарядки.
+            int fontSize = gun ? Mathf.RoundToInt(volleyFontSize * gunLabelScale) : volleyFontSize;
+            if (volleyLabel.fontSize != fontSize)
+            {
+                volleyLabel.fontSize = fontSize;
+                volleyLabel.alignment = gun ? TextAnchor.LowerCenter : volleyAlignment;
+            }
             if (volleyIcon != null)
             {
                 Sprite icon = gun && gunIcon != null ? gunIcon : volleySprite;
@@ -230,7 +243,10 @@ namespace Marchlands.UI
             float stopRight = stopCorners[2].x;
             float chargeHalf = (chargeCorners[2].x - chargeCorners[0].x) * 0.5f;
             Vector3 stopCenter = (stopCorners[0] + stopCorners[2]) * 0.5f;
-            charge.position = new Vector3(stopRight + cavalryChargeGap * scale + chargeHalf, stopCenter.y, charge.position.z);
+            // Опорная точка кнопки может быть не в центре — ставим по центру, сохраняя смещение до опорной точки.
+            Vector3 pivotOffset = charge.position - (chargeCorners[0] + chargeCorners[2]) * 0.5f;
+            var center = new Vector3(stopRight + cavalryChargeGap * scale + chargeHalf, stopCenter.y, charge.position.z);
+            charge.position = center + new Vector3(pivotOffset.x, pivotOffset.y, 0f);
         }
 
         private void OnVolley()

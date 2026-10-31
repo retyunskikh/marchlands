@@ -65,6 +65,12 @@ namespace Marchlands.View
         private readonly List<float> gaitBlends = new List<float>();
         private readonly List<float2> lastWorld = new List<float2>();
 
+        // Фаза шага отряда (в циклах): растёт с пройденным путём, а не со временем — шаг в такт скорости.
+        private float gaitPhase;
+        private float gaitSpeed;
+        private float frameTravel;
+        private int frameMovers;
+
         // 0 — обычный строй, 1 — полная свалка рукопашной; меняется плавно.
         private float meleeBlend;
         private float aimBlend;
@@ -143,6 +149,8 @@ namespace Marchlands.View
             float2 spacing = style.GetSpacing(squad.Type);
             float regroup = 1f - math.exp(-style.RegroupSpeed * Time.deltaTime);
             float headY = UpdateTrail(position, facing, spacing, changing);
+            frameTravel = 0f;
+            frameMovers = 0;
             for (int i = 0; i < soldiers.Count; i++)
             {
                 int slot = slotOrder[i];
@@ -184,6 +192,7 @@ namespace Marchlands.View
                 }
             }
 
+            AdvanceGaitPhase();
             RenderGun(position, facing, alpha);
             RenderRoute(position);
 
@@ -420,6 +429,12 @@ namespace Marchlands.View
 
             float2 last = lastWorld[index];
             lastWorld[index] = world;
+            if (!float.IsNaN(last.x))
+            {
+                frameTravel += math.distance(world, last);
+                frameMovers++;
+            }
+
             bool moving = !float.IsNaN(last.x) && !squad.IsInMelee
                 && math.distancesq(world, last) > style.StepMinSpeed * style.StepMinSpeed * delta * delta;
             float step = style.GaitBlendTime > 0f ? delta / style.GaitBlendTime : 1f;
@@ -429,6 +444,27 @@ namespace Marchlands.View
         }
 
         /// <summary>
+        /// Фаза шага растёт на пройденный солдатами путь (в среднем за кадр), делённый на длину шага: быстрее идут —
+        /// чаще шагают, стоят — шаг замирает. Скорость сглажена, чтобы шаг не дёргался от неровных кадров.
+        /// </summary>
+        private void AdvanceGaitPhase()
+        {
+            float delta = Time.deltaTime;
+            if (delta <= 0f || frameMovers == 0)
+            {
+                return;
+            }
+
+            float speed = frameTravel / frameMovers / delta;
+            gaitSpeed = math.lerp(gaitSpeed, speed, 1f - math.exp(-GaitSpeedSmoothing * delta));
+            gaitPhase += gaitSpeed / style.GetStride(squad.Type, gaitSpeed) * delta;
+            gaitPhase -= math.floor(gaitPhase);
+        }
+
+        // Насколько быстро сглаженная скорость шага догоняет настоящую, 1/s.
+        private const float GaitSpeedSmoothing = 8f;
+
+        /// <summary>
         /// Смещение солдата в строю от походки (вид сверху: покачивание с ноги на ногу и рывки вперёд).
         /// Пехота марширует в ногу — у всех одна фаза; конница скачет —
         /// рывками вперёд-назад, по шеренгам с запаздыванием.
@@ -436,7 +472,7 @@ namespace Marchlands.View
         private float2 GaitOffset(int index, float2 local, float blend)
         {
             Vector2 gait = style.GetGait(squad.Type);
-            float time = Time.time * gait.x * 2f * math.PI;
+            float time = gaitPhase * 2f * math.PI;
             float amplitude = gait.y * math.smoothstep(0f, 1f, blend);
             switch (squad.Type)
             {
@@ -532,7 +568,7 @@ namespace Marchlands.View
             {
                 Vector2 gait = style.GetGait(squad.Type);
                 float phase = GaitPhase(index, local);
-                int frame = math.sin(Time.time * gait.x * 2f * math.PI + phase) >= 0f ? 0 : 1;
+                int frame = math.sin(gaitPhase * 2f * math.PI + phase) >= 0f ? 0 : 1;
                 Sprite walk = style.GetWalkSprite(squad.Side, squad.Type, soldierRoles[index], frame);
                 if (walk != null)
                 {

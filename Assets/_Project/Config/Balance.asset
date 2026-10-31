@@ -54,16 +54,16 @@ MonoBehaviour:
       targetHitMultiplier: 1
     cavalry:
       squadSize: 16
-      minSquadSize: 6
+      minSquadSize: 4
       speedMultiplier: 2.2
       accuracyMultiplier: 1
       rangeMultiplier: 1
-      moraleLossMultiplier: 1
+      moraleLossMultiplier: 0.5
       meleeMultiplier: 2
       canFire: 0
       skirmishFire: 0
       chargeBonusMultiplier: 2
-      targetHitMultiplier: 1.3
+      targetHitMultiplier: 0.85
     recruits:
       squadSize: 0
       minSquadSize: 0

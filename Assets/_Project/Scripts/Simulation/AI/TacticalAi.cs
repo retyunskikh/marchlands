@@ -107,6 +107,12 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
+            // В штыковой заряженный залп не упускают: в упор он самый страшный.
+            if (TryCloseVolley(match, squad, brain))
+            {
+                return;
+            }
+
             if (!squad.CanReceiveOrders || squad.Order.Type == SquadOrderType.Charge)
             {
                 return;
@@ -274,6 +280,41 @@ namespace Marchlands.Simulation.AI
 
         // Пушка ИИ доворачивает ствол, когда цель ушла дальше этой доли сектора от оси.
         private const float GunTurnShare = 0.6f;
+
+        /// <summary>
+        /// Залп в штыковой: отряд дерётся врукопашную, сам бежит в атаку или на него бегут в штыки, а он заряжен
+        /// и цель в эффективной дальности — залп сразу, без случайной задержки.
+        /// </summary>
+        private static bool TryCloseVolley(Match match, Squad squad, SquadBrain brain)
+        {
+            bool close = squad.IsInMelee || squad.Order.Type == SquadOrderType.Charge || IsBeingCharged(match, squad);
+            if (!close || !VolleyRules.CanVolley(match, squad))
+            {
+                return false;
+            }
+
+            float range = UnitStats.EffectiveRange(squad, match.Settings);
+            if (Targeting.FindTarget(match, squad, range) == null)
+            {
+                return false;
+            }
+
+            Issue(match, brain, new VolleyCommand(squad.Id, range));
+            return true;
+        }
+
+        private static bool IsBeingCharged(Match match, Squad squad)
+        {
+            foreach (Squad other in match.Squads)
+            {
+                if (other.Side != squad.Side && other.Order.Type == SquadOrderType.Charge && other.Order.TargetSquadId == squad.Id)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Залп по бегущему врагу: отряд стоит (без приказа), заряжен, ближайшая цель в секторе — бегущий в эффективной дальности.

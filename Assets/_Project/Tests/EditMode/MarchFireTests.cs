@@ -329,6 +329,28 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void Ai_FiresAtChargingEnemy_BeforeContact()
+        {
+            var match = new Match(2, TestSettings.Create());
+            Squad attacker = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
+            Squad ai = match.AddSquad(Side.Austria, new float2(0f, 8f), -90f, Formation.Line);
+            match.AddController(new TacticalAi(Side.Austria));
+            match.Enqueue(new ChargeCommand(attacker.Id, ai.Id));
+
+            bool fired = false;
+            for (int i = 0; i < 60 && !fired; i++)
+            {
+                match.Tick();
+                foreach (VolleyEvent volley in match.LastTickVolleys)
+                {
+                    fired |= volley.ShooterId == ai.Id;
+                }
+            }
+
+            Assert.IsTrue(fired, "ИИ дал залп по бегущим на него в штыки");
+        }
+
+        [Test]
         public void Cavalry_IgnoresFormationChange()
         {
             var match = new Match(1, TestSettings.Create());

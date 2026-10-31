@@ -1,6 +1,7 @@
 using System;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Marchlands.View
@@ -71,6 +72,11 @@ namespace Marchlands.View
         [SerializeField] private Vector2 marchGait = new Vector2(1.8f, 0.035f);
         [Tooltip("Конница скачет: скачков в секунду, рывок вперёд-назад, u.")]
         [SerializeField] private Vector2 gallopGait = new Vector2(2.4f, 0.09f);
+        [Tooltip("Длина полного цикла шага (левой-правой) пехоты при скорости 1 u/s; с ростом скорости шаг длиннее (× √скорости) — "
+            + "частота шагов растёт медленнее скорости, и ноги не скользят по земле, u.")]
+        [SerializeField] private float marchStride = 0.6f;
+        [Tooltip("То же для конницы: длина цикла скачка при скорости 1 u/s, u.")]
+        [SerializeField] private float gallopStride = 0.75f;
         [Tooltip("За сколько секунд походка появляется и стихает.")]
         [SerializeField] private float gaitBlendTime = 0.25f;
         [Tooltip("С какой скорости солдат шагает, а не стоит, u/s: при развороте строя шагают и фланги, и почти стоящая середина.")]
@@ -213,6 +219,13 @@ namespace Marchlands.View
         public float AimLowerTime => aimLowerTime;
 
         public float ThrustRate => thrustRate;
+
+        /// <summary>Длина цикла шага рода войск при скорости <paramref name="speed"/>, u.</summary>
+        public float GetStride(UnitType type, float speed)
+        {
+            float baseStride = type == UnitType.Cavalry ? gallopStride : marchStride;
+            return math.max(0.05f, baseStride * math.sqrt(math.max(speed, 0.25f)));
+        }
 
         /// <summary>Множитель раскладки строя по осям (поперёк фронта, вдоль) для рода войск.</summary>
         public Vector2 GetSpacing(UnitType type)
