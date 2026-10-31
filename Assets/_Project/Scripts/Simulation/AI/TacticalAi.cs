@@ -46,6 +46,9 @@ namespace Marchlands.Simulation.AI
             public float FireDistance;
             public int VillageId;
 
+            /// <summary>С какого тика отряд может дать залп по цели на дистанции огня; -1 — задержка ещё не выбрана.</summary>
+            public int VolleyReadyTick = -1;
+
             /// <summary>До этого тика отряд ждёт исполнения прошлого приказа и не получает новых.</summary>
             public int BusyUntilTick = -1;
 
@@ -126,6 +129,16 @@ namespace Marchlands.Simulation.AI
             {
                 brain.Stance = Stance.Retreat;
                 KeepRetreating(match, squad, brain);
+                return;
+            }
+
+            // Рядом ничья или вражеская деревня, а врагов поблизости нет — сначала взять её.
+            Village nearby = FindOpportunityVillage(match, squad);
+            if (nearby != null)
+            {
+                brain.VillageId = nearby.Id;
+                brain.VolleyReadyTick = -1;
+                GoToVillage(match, squad, nearby, brain);
                 return;
             }
 
@@ -230,6 +243,7 @@ namespace Marchlands.Simulation.AI
             if (changed)
             {
                 brain.FireDistance = RollFireDistance(match, squad);
+                brain.VolleyReadyTick = -1;
             }
 
             return best;
@@ -322,6 +336,7 @@ namespace Marchlands.Simulation.AI
             {
                 brain.TargetId = target.Id;
                 brain.FireDistance = RollFireDistance(match, squad);
+                brain.VolleyReadyTick = -1;
             }
 
             return target;
@@ -338,6 +353,48 @@ namespace Marchlands.Simulation.AI
 
             float maxDistance = UnitStats.EffectiveRange(squad, match.Settings) - match.Settings.squads.arrivalTolerance;
             return match.Random.Range(UnitStats.PointBlankRange(squad, match.Settings), maxDistance);
+        }
+
+        /// <summary>
+        /// Ничья или вражеская деревня ближе aiOpportunityVillageDistance к отряду, если ни у отряда, ни у деревни
+        /// нет не бегущих врагов ближе aiEngageRadius (толпы рекрутов не в счёт); null — такой нет.
+        /// </summary>
+        private Village FindOpportunityVillage(Match match, Squad squad)
+        {
+            AiSettings ai = match.Settings.ai;
+            Village best = null;
+            float bestDistance = ai.opportunityVillageDistance * ai.opportunityVillageDistance;
+            foreach (Village village in match.Villages)
+            {
+                if (village.Owner == Side)
+                {
+                    continue;
+                }
+
+                float distance = math.distancesq(village.Position, squad.Position);
+                if (distance <= bestDistance && !HasEnemyNear(match, squad.Position, ai.engageRadius)
+                    && !HasEnemyNear(match, village.Position, ai.engageRadius))
+                {
+                    best = village;
+                    bestDistance = distance;
+                }
+            }
+
+            return best;
+        }
+
+        private bool HasEnemyNear(Match match, float2 position, float radius)
+        {
+            foreach (Squad other in match.Squads)
+            {
+                if (other.Side != Side && !other.IsRouting && !other.IsCamp && other.Alive > 0
+                    && math.distancesq(other.Position, position) <= radius * radius)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -462,9 +519,26 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
-            if (VolleyRules.CanVolley(match, squad))
+            if (!VolleyRules.CanVolley(match, squad))
             {
-                Issue(match, brain, new VolleyCommand(squad.Id, UnitStats.EffectiveRange(squad, match.Settings)));
+                brain.VolleyReadyTick = -1;
+                return;
+            }
+
+            // Залп — не сразу: ИИ медлит случайное время, и игрок не может каждый раз выстрелить за миг до него.
+            AiSettings ai = match.Settings.ai;
+            if (brain.VolleyReadyTick < 0)
+            {
+                float delay = ai.volleyDelayMax > ai.volleyDelayMin ? match.Random.Range(ai.volleyDelayMin, ai.volleyDelayMax) : ai.volleyDelayMin;
+                brain.VolleyReadyTick = match.CurrentTick + SecondsToTicks(delay);
+            }
+
+            // До следующего раздумья ждать дольше, чем осталось, — приказ уходит сейчас, с точным оставшимся ожиданием.
+            int remaining = brain.VolleyReadyTick - match.CurrentTick;
+            if (remaining < math.max(1, SecondsToTicks(ai.thinkInterval)))
+            {
+                brain.VolleyReadyTick = -1;
+                Issue(match, brain, new VolleyCommand(squad.Id, UnitStats.EffectiveRange(squad, match.Settings)), math.max(0, remaining));
             }
         }
 
@@ -567,9 +641,9 @@ namespace Marchlands.Simulation.AI
         }
 
         /// <summary>Ставит приказ с задержкой реакции; до его исполнения отряд новых приказов не получает.</summary>
-        private static void Issue(Match match, SquadBrain brain, ICommand command)
+        private static void Issue(Match match, SquadBrain brain, ICommand command, int extraTicks = 0)
         {
-            int executeAt = match.CurrentTick + SecondsToTicks(match.Settings.ai.reactionDelay);
+            int executeAt = match.CurrentTick + SecondsToTicks(match.Settings.ai.reactionDelay) + extraTicks;
             match.Enqueue(executeAt, command);
             brain.BusyUntilTick = executeAt;
         }

@@ -2,6 +2,7 @@ using System.Linq;
 using Marchlands.Simulation.AI;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Core;
+using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Squads;
 using NUnit.Framework;
 using Unity.Mathematics;
@@ -54,6 +55,57 @@ namespace Marchlands.Tests.EditMode
 
                 Assert.IsTrue(fired, $"seed {seed}: ИИ так и не выстрелил");
             }
+        }
+
+        [Test]
+        public void Ai_VolleyMoment_IsUnpredictable()
+        {
+            var firstVolleyTicks = new System.Collections.Generic.List<int>();
+            for (ulong seed = 1; seed <= 30; seed++)
+            {
+                Match match = AiAgainstDummy(seed, 5f, out Squad ai, out _);
+                for (int tick = 0; tick < TicksFor(10f); tick++)
+                {
+                    match.Tick();
+                    if (match.LastTickVolleys.Any(v => v.ShooterId == ai.Id))
+                    {
+                        firstVolleyTicks.Add(tick);
+                        break;
+                    }
+                }
+            }
+
+            Assert.AreEqual(30, firstVolleyTicks.Count, "ИИ стреляет в каждом бою");
+            AiSettingsCheck(firstVolleyTicks);
+        }
+
+        private static void AiSettingsCheck(System.Collections.Generic.List<int> ticks)
+        {
+            var settings = TestSettings.Create();
+            int earliest = TicksFor(settings.ai.reactionDelay + settings.combat.aimTime + settings.ai.volleyDelayMin);
+            Assert.GreaterOrEqual(ticks.Min(), earliest - 1, "Не раньше реакции и прицеливания");
+            Assert.GreaterOrEqual(ticks.Distinct().Count(), 6, "Момент залпа разный от боя к бою");
+            Assert.GreaterOrEqual(ticks.Max() - ticks.Min(), TicksFor((settings.ai.volleyDelayMax - settings.ai.volleyDelayMin) * 0.6f),
+                "Разброс момента залпа — на большую часть volleyDelay");
+        }
+
+        [Test]
+        public void Ai_CapturesNearbyVillage_WhenNoEnemyClose_EvenIfThreatElsewhere()
+        {
+            var match = new Match(1, TestSettings.Create());
+            match.AddHeadquarters(Side.Austria, new float2(0f, 40f));
+            Village village = match.AddVillage(new float2(8f, 0f));
+            Squad ai = match.AddSquad(Side.Austria, float2.zero, 0f, Formation.Column);
+            // Угроза у штаба ИИ, но далеко от отряда и деревни.
+            match.AddSquad(Side.France, new float2(0f, 55f), -90f, Formation.Line);
+            match.AddController(new TacticalAi(Side.Austria));
+
+            RunTicks(match, TicksFor(3f));
+            Assert.AreEqual(SquadOrderType.Move, ai.Order.Type, "Идёт к деревне");
+            Assert.Less(math.distance(ai.Order.Target, village.Position), 0.5f);
+
+            RunTicks(match, TicksFor(30f));
+            Assert.AreEqual(Side.Austria, village.Owner, "Деревня взята");
         }
 
         [Test]

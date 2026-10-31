@@ -83,7 +83,10 @@ namespace Marchlands.Tests.EditMode
                     directApproachDistance = 12f,
                     cavalrySquads = 1,
                     houseMargin = 10,
-                    cavalryChargeDistance = 12f
+                    cavalryChargeDistance = 12f,
+                    opportunityVillageDistance = 15f,
+                    volleyDelayMin = 0f,
+                    volleyDelayMax = 2.5f
                 },
                 grenadiers = new UnitTypeSettings
                 {

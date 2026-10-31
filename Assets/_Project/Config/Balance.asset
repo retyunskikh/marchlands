@@ -124,6 +124,9 @@ MonoBehaviour:
       cavalrySquads: 1
       houseMargin: 10
       cavalryChargeDistance: 12
+      opportunityVillageDistance: 15
+      volleyDelayMin: 0
+      volleyDelayMax: 2.5
     economy:
       captureRadius: 5
       captureTime: 15

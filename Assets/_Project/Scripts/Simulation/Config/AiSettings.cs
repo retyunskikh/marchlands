@@ -44,5 +44,19 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Конница ИИ бросается в атаку на врага ближе этой дистанции (от фронта), u.</summary>
         public float cavalryChargeDistance;
+
+        /// <summary>
+        /// Ничья или вражеская деревня ближе этого к отряду, а врагов рядом нет — отряд сначала захватывает её,
+        /// даже если шёл к другой цели, u.
+        /// </summary>
+        public float opportunityVillageDistance;
+
+        /// <summary>
+        /// Выйдя на дистанцию огня, ИИ медлит со залпом случайное время в этих пределах (через GameRandom) —
+        /// момент его залпа нельзя предсказать по секундам, s.
+        /// </summary>
+        public float volleyDelayMin;
+
+        public float volleyDelayMax;
     }
 }
