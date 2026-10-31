@@ -133,6 +133,13 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
+            // Пушки воюют по-своему: встают на дистанции выстрела ядром и бьют сами.
+            if (squad.IsArtillery)
+            {
+                GunThink(match, squad, brain);
+                return;
+            }
+
             // Стоящий заряженный отряд бьёт по бегущим, если они в эффективной дальности: пусть бегут дальше с потерями.
             if (TryShootRouting(match, squad, brain))
             {
@@ -216,6 +223,57 @@ namespace Marchlands.Simulation.AI
 
             Approach(match, squad, target, brain);
         }
+
+        /// <summary>
+        /// Пушка ИИ: цель — ближайший не бегущий враг. Дальше ~roundShotRange — подъехать на artilleryRange от него;
+        /// ближе — стоять (пушка сама снимется с передка и будет бить), при необходимости развернуться к цели.
+        /// Враг ближе canisterRange — картечь, иначе ядро.
+        /// </summary>
+        private void GunThink(Match match, Squad gun, SquadBrain brain)
+        {
+            Config.GunSettings guns = match.Settings.guns;
+            Squad target = SelectTarget(match, gun, brain, float.MaxValue);
+            if (target == null)
+            {
+                if (gun.Order.Type == SquadOrderType.Move)
+                {
+                    Issue(match, brain, new StopCommand(gun.Id));
+                }
+
+                return;
+            }
+
+            float distance = math.distance(gun.Position, target.Position);
+            ShotMode mode = FireGeometry.Distance(gun, target, match.Settings.squads) <= guns.canisterRange ? ShotMode.Canister : ShotMode.RoundShot;
+            if (gun.ShotMode != mode)
+            {
+                Issue(match, brain, new SetShotModeCommand(gun.Id, mode));
+                return;
+            }
+
+            float2 toTarget = target.Position - gun.Position;
+            if (distance > guns.roundShotRange - match.Settings.ai.repathDistance)
+            {
+                float2 direction = math.normalizesafe(toTarget, Angles.Direction(gun.Facing));
+                GoTo(match, gun, brain, target.Position - direction * match.Settings.ai.artilleryRange, Angles.Of(direction));
+                return;
+            }
+
+            if (gun.Order.Type == SquadOrderType.Move && ArtillerySystem.WantsToMove(gun, match.Settings.squads))
+            {
+                Issue(match, brain, new StopCommand(gun.Id));
+                return;
+            }
+
+            float facing = Angles.Of(toTarget);
+            if (math.abs(Angles.Delta(gun.Facing, facing)) > guns.fireArcHalfAngle * GunTurnShare && gun.Order.Type == SquadOrderType.None)
+            {
+                Issue(match, brain, new MoveCommand(gun.Id, gun.Position, facing));
+            }
+        }
+
+        // Пушка ИИ доворачивает ствол, когда цель ушла дальше этой доли сектора от оси.
+        private const float GunTurnShare = 0.6f;
 
         /// <summary>
         /// Залп по бегущему врагу: отряд стоит (без приказа), заряжен, ближайшая цель в секторе — бегущий в эффективной дальности.
@@ -342,7 +400,7 @@ namespace Marchlands.Simulation.AI
                 float bestDistance = float.MaxValue;
                 foreach (Squad own in match.Squads)
                 {
-                    if (own.Side != Side || own.IsCamp || !own.CanReceiveOrders || defenders.ContainsKey(own.Id)
+                    if (own.Side != Side || own.IsCamp || own.IsArtillery || !own.CanReceiveOrders || defenders.ContainsKey(own.Id)
                         || (brains.TryGetValue(own.Id, out SquadBrain brain) && brain.Stance == Stance.Retreat)
                         || IsEngagedWithOther(match, own, threat))
                     {

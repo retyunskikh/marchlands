@@ -18,6 +18,7 @@ namespace Marchlands.UI
         [SerializeField] private Button fusiliersButton;
         [SerializeField] private Button grenadiersButton;
         [SerializeField] private Button cavalryButton;
+        [SerializeField] private Button artilleryButton;
         [SerializeField] private AudioSource audioSource;
         [SerializeField] private AudioClip formClip;
         [SerializeField] private float formVolume = 0.9f;
@@ -26,6 +27,7 @@ namespace Marchlands.UI
         [SerializeField] private string grenadiersName = "Гренадёры";
         [SerializeField] private string fusiliersName = "Фузилёры";
         [SerializeField] private string cavalryName = "Конница";
+        [SerializeField] private string artilleryName = "Пушки";
         [SerializeField] private Color readyTint = Color.white;
         [SerializeField] private Color waitingTint = new Color(1f, 1f, 1f, 0.4f);
 
@@ -43,6 +45,11 @@ namespace Marchlands.UI
                 cavalryButton.onClick.AddListener(() => Form(UnitType.Cavalry));
             }
 
+            if (artilleryButton != null)
+            {
+                artilleryButton.onClick.AddListener(() => Form(UnitType.Artillery));
+            }
+
             // Без штаба (песочницы) нанимать негде — счётчики не нужны.
             gameObject.SetActive(match.GetHeadquarters(playerSide) != null);
         }
@@ -58,7 +65,12 @@ namespace Marchlands.UI
             Refresh(fusiliersButton, UnitType.Fusiliers, fusiliersName, true);
             if (cavalryButton != null)
             {
-                Refresh(cavalryButton, UnitType.Cavalry, cavalryName, HasStable());
+                Refresh(cavalryButton, UnitType.Cavalry, cavalryName, Has(BuildingType.Stable));
+            }
+
+            if (artilleryButton != null)
+            {
+                Refresh(artilleryButton, UnitType.Artillery, artilleryName, Has(BuildingType.ArtilleryDepot));
             }
         }
 
@@ -90,11 +102,11 @@ namespace Marchlands.UI
             }
         }
 
-        private bool HasStable()
+        private bool Has(BuildingType type)
         {
             foreach (Building building in match.Buildings)
             {
-                if (building.Owner == playerSide && building.Type == BuildingType.Stable)
+                if (building.Owner == playerSide && building.Type == type)
                 {
                     return true;
                 }

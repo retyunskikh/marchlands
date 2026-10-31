@@ -11,7 +11,15 @@ namespace Marchlands.Simulation.Buildings
     {
         public static int GetCost(Match match, BuildingType type)
         {
-            return type == BuildingType.Stable ? match.Settings.buildings.stableCost : match.Settings.buildings.barracksCost;
+            switch (type)
+            {
+                case BuildingType.Stable:
+                    return match.Settings.buildings.stableCost;
+                case BuildingType.ArtilleryDepot:
+                    return match.Settings.buildings.depotCost;
+                default:
+                    return match.Settings.buildings.barracksCost;
+            }
         }
 
         public static bool CanAfford(Match match, Side side, BuildingType type)
@@ -68,13 +76,22 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Найм включается в построенной казарме или конюшне.</summary>
         public static bool CanHire(Building building)
         {
-            return building != null && (building.Type == BuildingType.Barracks || building.Type == BuildingType.Stable) && building.IsBuilt;
+            return building != null && building.IsBuilt
+                && (building.Type == BuildingType.Barracks || building.Type == BuildingType.Stable || building.Type == BuildingType.ArtilleryDepot);
         }
 
-        /// <summary>Где формируется отряд рода войск: конница — у конюшни, пехота — у казармы.</summary>
+        /// <summary>Где формируется отряд рода войск: конница — у конюшни, пушки — у артдепо, пехота — у казармы.</summary>
         public static BuildingType GetHomeType(UnitType type)
         {
-            return type == UnitType.Cavalry ? BuildingType.Stable : BuildingType.Barracks;
+            switch (type)
+            {
+                case UnitType.Cavalry:
+                    return BuildingType.Stable;
+                case UnitType.Artillery:
+                    return BuildingType.ArtilleryDepot;
+                default:
+                    return BuildingType.Barracks;
+            }
         }
 
         /// <summary>Здание, у которого встаёт новый отряд: первое построенное здание нужного типа; null — нет ни одного.</summary>
@@ -118,6 +135,8 @@ namespace Marchlands.Simulation.Buildings
             {
                 case UnitType.Cavalry:
                     return settings.cavalryHireCost;
+                case UnitType.Artillery:
+                    return settings.gunnerHireCost;
                 case UnitType.Grenadiers:
                     return settings.grenadierHireCost;
                 default:
@@ -132,6 +151,8 @@ namespace Marchlands.Simulation.Buildings
             {
                 case UnitType.Cavalry:
                     return settings.cavalryHireInterval;
+                case UnitType.Artillery:
+                    return settings.gunnerHireInterval;
                 case UnitType.Grenadiers:
                     return settings.grenadierHireInterval;
                 default:
@@ -159,7 +180,9 @@ namespace Marchlands.Simulation.Buildings
                 }
             }
 
-            return building.Type == BuildingType.Stable ? UnitType.Cavalry : UnitType.Fusiliers;
+            return building.Type == BuildingType.Stable ? UnitType.Cavalry
+                : building.Type == BuildingType.ArtilleryDepot ? UnitType.Artillery
+                : UnitType.Fusiliers;
         }
 
         public static int GetHireCost(Match match, Building building)
@@ -178,8 +201,8 @@ namespace Marchlands.Simulation.Buildings
             return match.Settings.buildings.maxWaitingSquads * match.Settings.Unit(type).squadSize;
         }
 
-        /// <summary>Очерёдность найма: фузилёры, гренадёры, конница.</summary>
-        internal static readonly UnitType[] HireOrder = { UnitType.Fusiliers, UnitType.Grenadiers, UnitType.Cavalry };
+        /// <summary>Очерёдность найма: фузилёры, гренадёры, конница, пушкари.</summary>
+        internal static readonly UnitType[] HireOrder = { UnitType.Fusiliers, UnitType.Grenadiers, UnitType.Cavalry, UnitType.Artillery };
 
         /// <summary>Кого нанять следующим: включённый род войск, у которого ещё есть место, начиная с очередного; null — некого.</summary>
         internal static UnitType? NextHireType(Match match, Building building)

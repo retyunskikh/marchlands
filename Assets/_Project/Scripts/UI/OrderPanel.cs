@@ -27,6 +27,14 @@ namespace Marchlands.UI
         [SerializeField] private Image reloadTrack;
         [SerializeField] private Color volleyReadyTint = Color.white;
         [SerializeField] private Color volleyPaleTint = new Color(1f, 1f, 1f, 0.35f);
+        [Tooltip("Подпись на бледной «Залп!», когда стрелять нельзя из-за своих в рукопашной с целью.")]
+        [SerializeField] private string allyInMeleeText = "Свои\nв штыках";
+
+        [Header("Пушка")]
+        [Tooltip("У пушки кнопка «Залп» переключает заряд: картинка пушки, подпись — чем заряжена.")]
+        [SerializeField] private Sprite gunIcon;
+        [SerializeField] private string roundShotText = "Ядро";
+        [SerializeField] private string canisterText = "Картечь";
 
         [Header("Строй")]
         [SerializeField] private Button formationButton;
@@ -44,6 +52,8 @@ namespace Marchlands.UI
         [SerializeField] private string chargeText = "В штыки";
         [SerializeField] private string chargeTargetingText = "Выберите врага";
         [SerializeField] private string chargingText = "В атаку!";
+        [Tooltip("У конницы «В атаку» стоит справа от «Стоп» с таким зазором, u экрана.")]
+        [SerializeField] private float cavalryChargeGap = 16f;
         [Tooltip("У конницы — не штыки, а атака в сабли.")]
         [SerializeField] private string cavalryChargeText = "В атаку";
         [SerializeField] private string cavalryChargingText = "Рубят!";
@@ -60,6 +70,9 @@ namespace Marchlands.UI
         private Squad squad;
         private bool isChargeTargeting;
         private Image chargeImage;
+        private Sprite volleySprite;
+        private Vector3 chargeHome;
+        private bool chargeMoved;
 
         /// <summary>Нажата «В штыки»: нужно выбрать врага на поле.</summary>
         public event Action ChargeRequested;
@@ -68,6 +81,8 @@ namespace Marchlands.UI
         {
             this.match = match;
             chargeImage = chargeButton.GetComponent<Image>();
+            volleySprite = volleyIcon != null ? volleyIcon.sprite : null;
+            chargeHome = chargeButton.transform.localPosition;
             volleyButton.onClick.AddListener(OnVolley);
             formationButton.onClick.AddListener(OnFormation);
             chargeButton.onClick.AddListener(OnCharge);
@@ -107,15 +122,22 @@ namespace Marchlands.UI
             }
 
             bool obeys = squad.CanReceiveOrders;
+            bool gun = squad.IsArtillery;
 
-            // Конница не стреляет — кнопок огня у неё нет.
-            bool canFire = UnitStats.CanFire(squad, match.Settings);
+            // Конница не стреляет — кнопок огня у неё нет. У пушки на месте «Залпа» — выбор заряда.
+            bool canFire = UnitStats.CanFire(squad, match.Settings) || gun;
             volleyButton.gameObject.SetActive(canFire);
-            bool canVolley = VolleyRules.CanVolley(match, squad);
+            bool canVolley = gun ? obeys : VolleyRules.CanVolley(match, squad);
             volleyButton.interactable = canVolley;
-            volleyLabel.text = GetVolleyText();
+            volleyLabel.text = gun ? (squad.ShotMode == ShotMode.Canister ? canisterText : roundShotText) : GetVolleyText();
             if (volleyIcon != null)
             {
+                Sprite icon = gun && gunIcon != null ? gunIcon : volleySprite;
+                if (volleyIcon.sprite != icon)
+                {
+                    volleyIcon.sprite = icon;
+                }
+
                 volleyIcon.color = canVolley ? volleyReadyTint : volleyPaleTint;
             }
 
@@ -123,7 +145,7 @@ namespace Marchlands.UI
             {
                 bool reloading = squad.FireState == FireState.Reloading;
                 reloadFill.enabled = reloading;
-                float reloadTime = match.Settings.combat.reloadTime;
+                float reloadTime = gun ? match.Settings.guns.reloadTime : match.Settings.combat.reloadTime;
                 reloadFill.fillAmount = reloading && reloadTime > 0f ? 1f - squad.FireTimer / reloadTime : 0f;
                 if (reloadTrack != null)
                 {
@@ -133,9 +155,22 @@ namespace Marchlands.UI
 
             // Конница строй не меняет — кнопки строя у неё нет.
             bool cavalry = squad.Type == UnitType.Cavalry;
-            if (formationButton.gameObject.activeSelf == cavalry)
+            if (!gun && formationButton.gameObject.activeSelf == cavalry)
             {
                 formationButton.gameObject.SetActive(!cavalry);
+            }
+
+            // Пушка в атаку не ходит; у конницы «В атаку» — справа от «Стоп».
+            if (chargeButton.gameObject.activeSelf == gun)
+            {
+                chargeButton.gameObject.SetActive(!gun);
+            }
+
+            PlaceChargeButton(cavalry);
+
+            if (gun && formationButton.gameObject.activeSelf)
+            {
+                formationButton.gameObject.SetActive(false);
             }
 
             // Во время перестроения кнопка разворачивает его обратно — ждать уже ненужного строя не надо.
@@ -156,18 +191,63 @@ namespace Marchlands.UI
             stopButton.interactable = obeys && squad.Order.Type != SquadOrderType.None;
         }
 
-        /// <summary>На «Залпе» только секунды перезарядки; остальное показывают кольцо и яркость мушкета.</summary>
+        /// <summary>
+        /// На «Залпе» секунды перезарядки; если стрелять нельзя из-за своих в рукопашной с целью — так и написано.
+        /// Остальное показывают кольцо и яркость мушкета.
+        /// </summary>
         private string GetVolleyText()
         {
-            return squad.FireState == FireState.Reloading ? Mathf.CeilToInt(squad.FireTimer).ToString() : string.Empty;
+            if (squad.FireState == FireState.Reloading)
+            {
+                return Mathf.CeilToInt(squad.FireTimer).ToString();
+            }
+
+            return VolleyRules.GetBlock(match, squad) == VolleyBlock.AllyInMelee ? allyInMeleeText : string.Empty;
+        }
+
+        /// <summary>У конницы кнопка атаки встаёт справа от «Стоп» (залпа и строя у неё нет), у остальных — на своё место.</summary>
+        private void PlaceChargeButton(bool cavalry)
+        {
+            if (cavalry == chargeMoved)
+            {
+                return;
+            }
+
+            chargeMoved = cavalry;
+            if (!cavalry)
+            {
+                chargeButton.transform.localPosition = chargeHome;
+                return;
+            }
+
+            var stop = (RectTransform)stopButton.transform;
+            var charge = (RectTransform)chargeButton.transform;
+            var stopCorners = new Vector3[4];
+            stop.GetWorldCorners(stopCorners);
+            var chargeCorners = new Vector3[4];
+            charge.GetWorldCorners(chargeCorners);
+            float scale = stop.lossyScale.x;
+            float stopRight = stopCorners[2].x;
+            float chargeHalf = (chargeCorners[2].x - chargeCorners[0].x) * 0.5f;
+            Vector3 stopCenter = (stopCorners[0] + stopCorners[2]) * 0.5f;
+            charge.position = new Vector3(stopRight + cavalryChargeGap * scale + chargeHalf, stopCenter.y, charge.position.z);
         }
 
         private void OnVolley()
         {
-            if (squad != null)
+            if (squad == null)
             {
-                match.Enqueue(new VolleyCommand(squad.Id));
+                return;
             }
+
+            if (squad.IsArtillery)
+            {
+                ShotMode next = squad.ShotMode == ShotMode.Canister ? ShotMode.RoundShot : ShotMode.Canister;
+                match.Enqueue(new SetShotModeCommand(squad.Id, next));
+                return;
+            }
+
+            match.Enqueue(new VolleyCommand(squad.Id));
         }
 
         private void OnFormation()

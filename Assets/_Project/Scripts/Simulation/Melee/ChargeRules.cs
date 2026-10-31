@@ -9,7 +9,8 @@ namespace Marchlands.Simulation.Melee
     {
         public static bool CanCharge(Squad squad)
         {
-            return squad != null && squad.Alive > 0 && squad.CanReceiveOrders && !squad.IsChangingFormation;
+            // Расчёт пушки в атаку не ходит — только отбивается.
+            return squad != null && squad.Alive > 0 && squad.CanReceiveOrders && !squad.IsChangingFormation && !squad.IsArtillery;
         }
 
         public static bool CanCharge(Squad squad, Squad target)

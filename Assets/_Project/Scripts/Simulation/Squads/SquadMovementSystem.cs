@@ -34,6 +34,12 @@ namespace Marchlands.Simulation.Squads
 
             TryResumeMarch(squad, match);
 
+            // Пушка едет только на передке: пока её снимают или берут на передок, стоит.
+            if (squad.IsArtillery && Combat.ArtillerySystem.WantsToMove(squad, settings) && (!squad.IsLimbered || squad.IsLimbering))
+            {
+                return;
+            }
+
             bool reforming = squad.IsChangingFormation;
             // Перестраиваясь (в колонну или в линию), отряд с приказом движения сразу идёт к цели, но медленно.
             bool marchingWhileReforming = reforming && squad.Order.Type == SquadOrderType.Move;

@@ -18,6 +18,9 @@ namespace Marchlands.View
         private float2 head;
         private bool valid;
 
+        /// <summary>След уже заведён (до первого <see cref="Straighten"/> его нет).</summary>
+        public bool IsValid => valid;
+
         /// <summary>
         /// Новое положение головы. Не дальше <paramref name="keepLength"/> назад след хранится; дальше — обрезается.
         /// </summary>

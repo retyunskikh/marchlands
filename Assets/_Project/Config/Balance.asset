@@ -76,6 +76,35 @@ MonoBehaviour:
       skirmishFire: 1
       chargeBonusMultiplier: 1
       targetHitMultiplier: 1
+    artillery:
+      squadSize: 6
+      minSquadSize: 3
+      speedMultiplier: 0.9
+      accuracyMultiplier: 1
+      rangeMultiplier: 1
+      moraleLossMultiplier: 1
+      meleeMultiplier: 0.5
+      canFire: 0
+      skirmishFire: 0
+      chargeBonusMultiplier: 1
+      targetHitMultiplier: 0.7
+    guns:
+      limberTime: 4
+      reloadTime: 12
+      aimTime: 1
+      fireArcHalfAngle: 25
+      roundShotMinRange: 6
+      roundShotRange: 32
+      roundShotSpread: 0.06
+      roundShotLateralSpread: 0.02
+      ricochetLength: 10
+      roundShotKillChance: 0.6
+      roundShotBuildingDamage: 40
+      roundShotBuildingRadius: 3
+      canisterRange: 10
+      canisterBalls: 36
+      canisterHitNear: 0.3
+      canisterHitFar: 0.04
     combat:
       maxRange: 12
       effectiveRange: 7
@@ -130,6 +159,8 @@ MonoBehaviour:
       defenseRadius: 20
       directApproachDistance: 12
       cavalrySquads: 1
+      artilleryGuns: 1
+      artilleryRange: 22
       houseMargin: 10
       cavalryChargeDistance: 12
       cavalryFlankDistance: 6
@@ -159,6 +190,11 @@ MonoBehaviour:
       stableBuildTime: 40
       cavalryHireCost: 6
       cavalryHireInterval: 4.5
+      depotCost: 180
+      depotBuildTime: 40
+      depotHealth: 300
+      gunnerHireCost: 15
+      gunnerHireInterval: 6
       headquartersPopulation: 100
       housePopulation: 30
       houseCost: 40

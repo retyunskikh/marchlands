@@ -637,6 +637,12 @@ namespace Marchlands.View
         {
             foreach (Disband disband in disbands)
             {
+                // Пушкари у депо толпой не стоят — уводить некого.
+                if (disband.Type == UnitType.Artillery)
+                {
+                    continue;
+                }
+
                 List<Waiter> crowd = disband.Type == UnitType.Cavalry ? riders[(int)disband.Side]
                     : disband.Type == UnitType.Grenadiers ? grenadiers[(int)disband.Side] : fusiliers[(int)disband.Side];
                 Building home = BuildRules.GetFormingBuilding(match, disband.Side, disband.Type);
@@ -738,7 +744,7 @@ namespace Marchlands.View
         /// </summary>
         private Route GetRoute(Building building, float2 crowd, int pick)
         {
-            Vector2 size = building.Type == BuildingType.Stable ? style.StableSize : style.BarracksSize;
+            Vector2 size = style.SizeOf(building.Type);
             Vector2[] doors = style.BarracksDoors;
             if (building.Type != BuildingType.Barracks || doors == null || doors.Length == 0)
             {
@@ -827,7 +833,7 @@ namespace Marchlands.View
             else
             {
                 front = new float2(barracks.Position.x > 0f ? -1f : 1f, 0f);
-                Vector2 buildingSize = barracks.Type == BuildingType.Stable ? style.StableSize : style.BarracksSize;
+                Vector2 buildingSize = style.SizeOf(barracks.Type);
                 start = barracks.Position + front * (buildingSize.x * 0.5f + style.RecruitsOffset);
             }
 
@@ -903,7 +909,7 @@ namespace Marchlands.View
         /// <summary>Круг допустимого радиуса вокруг штаба и, если место выбрано, силуэт здания зелёным или красным.</summary>
         public void ShowPlacement(Vector2 headquarters, Vector2? site, bool valid, BuildingType type)
         {
-            Vector2 size = type == BuildingType.Stable ? style.StableSize : style.BarracksSize;
+            Vector2 size = style.SizeOf(type);
             sitePreview.transform.localScale = new Vector3(size.x, size.y, 1f);
             radiusPreview.enabled = true;
             radiusPreview.transform.position = headquarters;

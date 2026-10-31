@@ -109,7 +109,9 @@ namespace Marchlands.Input
             {
                 match.Enqueue(placementType == BuildingType.Stable
                     ? new BuildStableCommand(playerSide, placementSite.Value)
-                    : (ICommand)new BuildBarracksCommand(playerSide, placementSite.Value));
+                    : placementType == BuildingType.ArtilleryDepot
+                        ? new BuildDepotCommand(playerSide, placementSite.Value)
+                        : (ICommand)new BuildBarracksCommand(playerSide, placementSite.Value));
             }
 
             CancelPlacement();
@@ -231,6 +233,18 @@ namespace Marchlands.Input
                 hasPendingTap = false;
                 Select(hit);
                 return;
+            }
+
+            // Тап по врагу при выбранной пушке — указать ей цель.
+            if (selected != null && selected.IsArtillery)
+            {
+                Squad enemy = FindSquadAt(world, own: false);
+                if (enemy != null)
+                {
+                    hasPendingTap = false;
+                    match.Enqueue(new TargetCommand(selected.Id, enemy.Id));
+                    return;
+                }
             }
 
             // Тап по своей толпе у казармы или конюшни выделяет группу этого рода войск — её можно только распустить.

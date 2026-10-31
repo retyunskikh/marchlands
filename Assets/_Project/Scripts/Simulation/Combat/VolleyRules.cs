@@ -12,6 +12,34 @@ namespace Marchlands.Simulation.Combat
                 && Targeting.FindTarget(match, squad, UnitStats.MaxRange(squad, match.Settings)) != null;
         }
 
+        /// <summary>Почему залп невозможен; <see cref="VolleyBlock.None"/> — возможен.</summary>
+        public static VolleyBlock GetBlock(Match match, Squad squad)
+        {
+            if (!CanStartAiming(match, squad))
+            {
+                return VolleyBlock.NotReady;
+            }
+
+            float range = UnitStats.MaxRange(squad, match.Settings);
+            if (Targeting.FindTarget(match, squad, range) != null)
+            {
+                return VolleyBlock.None;
+            }
+
+            // Цели нет, но враг в секторе и дальности есть — значит, он в чужой свалке рукопашной.
+            foreach (Squad other in match.Squads)
+            {
+                if (other.Side != squad.Side && other.Alive > 0 && other.IsInMelee
+                    && FireGeometry.IsInSector(squad, other.Position, match.Settings)
+                    && FireGeometry.Distance(squad, other, match.Settings.squads) <= range)
+                {
+                    return VolleyBlock.AllyInMelee;
+                }
+            }
+
+            return VolleyBlock.NoTarget;
+        }
+
         internal static bool CanStartAiming(Match match, Squad squad)
         {
             // Конница и бегущие не стреляют; бегущие в штыки дают залп на подходе, дерущиеся — в упор по своему противнику.

@@ -101,6 +101,26 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Толпа рекрутов — у конюшни (резерв конницы), иначе у казармы (пехотный резерв).</summary>
         public bool IsCavalryCamp { get; internal set; }
 
+        /// <summary>Пушка с расчётом.</summary>
+        public bool IsArtillery => Type == UnitType.Artillery;
+
+        /// <summary>Чем заряжена пушка.</summary>
+        public Combat.ShotMode ShotMode { get; internal set; } = Combat.ShotMode.RoundShot;
+
+        /// <summary>Пушка на передке: может ехать, но не стрелять. Новая пушка выезжает на передке.</summary>
+        public bool IsLimbered { get; internal set; } = true;
+
+        /// <summary>Сколько осталось снимать пушку с передка или брать на передок, s; 0 — не меняют.</summary>
+        public float LimberRemaining { get; internal set; }
+
+        public bool IsLimbering => LimberRemaining > 0f;
+
+        /// <summary>Пушка снята с передка и может стрелять.</summary>
+        public bool IsGunReady => IsArtillery && !IsLimbered && LimberRemaining <= 0f;
+
+        /// <summary>Цель, указанная пушке игроком; 0 — бить по ближайшему.</summary>
+        public int PreferredTargetId { get; internal set; }
+
         /// <summary>Численность толпы рекрутов после последней сверки с резервом; разница — погибшие.</summary>
         internal int SyncedAlive { get; set; }
 

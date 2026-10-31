@@ -49,6 +49,7 @@ namespace Marchlands.View
 
             bool isHeadquarters = building.Type == BuildingType.Headquarters;
             bool isStable = building.Type == BuildingType.Stable;
+            bool isDepot = building.Type == BuildingType.ArtilleryDepot;
             bool isBlockhouse = building.Type == BuildingType.Blockhouse;
             size = style.SizeOf(building.Type);
 
@@ -56,9 +57,11 @@ namespace Marchlands.View
             selection.transform.localScale = new Vector3(size.x + style.SelectionPadding * 2f, size.y + style.SelectionPadding * 2f, 1f);
             selection.enabled = false;
 
+            // Артдепо — такой же навес, как у конюшни, но во дворе пушки и пирамиды ядер.
             Sprite baseSprite = isHeadquarters ? style.HeadquartersBaseSprite : isStable ? style.StableBaseSprite
+                : isDepot ? style.DepotBaseSprite
                 : isBlockhouse ? style.BlockhouseBaseSprite : style.BarracksBaseSprite;
-            Sprite roofSprite = isHeadquarters ? style.HeadquartersRoofSprite : isStable ? style.StableRoofSprite
+            Sprite roofSprite = isHeadquarters ? style.HeadquartersRoofSprite : isStable || isDepot ? style.StableRoofSprite
                 : isBlockhouse ? style.BlockhouseRoofSprite : style.BarracksRoofSprite;
             if (baseSprite != null && roofSprite != null)
             {

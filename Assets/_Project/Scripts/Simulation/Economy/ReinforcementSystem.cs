@@ -50,6 +50,7 @@ namespace Marchlands.Simulation.Economy
         private static bool CanReinforce(Match match, Squad squad)
         {
             return squad.Type != UnitType.Cavalry
+                && !squad.IsArtillery
                 && !squad.IsRouting
                 && !squad.IsWithdrawn
                 && squad.Alive > 0

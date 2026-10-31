@@ -43,6 +43,20 @@ namespace Marchlands.Simulation.Config
         /// <summary>Раз в столько секунд конюшня с включённым наймом получает всадника, s.</summary>
         public float cavalryHireInterval;
 
+        public int depotCost;
+
+        /// <summary>Время постройки артдепо, s.</summary>
+        public float depotBuildTime;
+
+        /// <summary>Здоровье артдепо.</summary>
+        public float depotHealth;
+
+        /// <summary>Цена одного пушкаря.</summary>
+        public int gunnerHireCost;
+
+        /// <summary>Раз в столько секунд артдепо с включённым наймом получает пушкаря, s.</summary>
+        public float gunnerHireInterval;
+
         /// <summary>Сколько мест (солдат на поле и рекрутов в резерве) даёт штаб.</summary>
         public int headquartersPopulation;
 

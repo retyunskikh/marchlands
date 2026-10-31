@@ -39,6 +39,12 @@ namespace Marchlands.Simulation.Config
         /// <summary>Сколько отрядов конницы держит ИИ.</summary>
         public int cavalrySquads;
 
+        /// <summary>Сколько пушек держит ИИ (0 — артдепо не строит).</summary>
+        public int artilleryGuns;
+
+        /// <summary>С какого расстояния пушка ИИ бьёт ядром: подходит к цели на это расстояние и встаёт, u.</summary>
+        public float artilleryRange;
+
         /// <summary>ИИ закладывает дом, когда свободных мест остаётся меньше этого.</summary>
         public int houseMargin;
 

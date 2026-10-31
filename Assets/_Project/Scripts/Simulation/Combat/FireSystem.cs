@@ -52,6 +52,12 @@ namespace Marchlands.Simulation.Combat
 
             foreach (Squad squad in match.Squads)
             {
+                // Пушки заряжает и наводит ArtillerySystem.
+                if (squad.IsArtillery)
+                {
+                    continue;
+                }
+
                 if (squad.FireState == FireState.Reloading)
                 {
                     squad.FireTimer -= deltaTime;

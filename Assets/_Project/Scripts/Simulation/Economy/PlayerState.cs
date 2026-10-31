@@ -6,7 +6,7 @@ namespace Marchlands.Simulation.Economy
     /// <summary>Казна и резервы стороны: у каждого рода войск — свой запас людей, ждущих у казарм и конюшен.</summary>
     public sealed class PlayerState
     {
-        private readonly int[] reserves = new int[3];
+        private readonly int[] reserves = new int[5];
 
         internal PlayerState(Side side, int gold)
         {
@@ -37,6 +37,13 @@ namespace Marchlands.Simulation.Economy
         {
             get => reserves[(int)UnitType.Cavalry];
             internal set => reserves[(int)UnitType.Cavalry] = value;
+        }
+
+        /// <summary>Пушкари, ждущие у артдепо: из них составляются пушки.</summary>
+        public int ArtilleryReserve
+        {
+            get => reserves[(int)UnitType.Artillery];
+            internal set => reserves[(int)UnitType.Artillery] = value;
         }
 
         /// <summary>Резерв, из которого формируется отряд этого рода войск.</summary>

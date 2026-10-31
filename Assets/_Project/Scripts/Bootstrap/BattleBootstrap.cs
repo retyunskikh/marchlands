@@ -161,6 +161,7 @@ namespace Marchlands.Bootstrap
                 match.Tick();
                 volleyEffects.Play(match.LastTickVolleys);
                 volleyEffects.PlaySentries(match.LastTickSentryVolleys);
+                volleyEffects.PlayArtillery(match.LastTickArtilleryShots);
                 buildingViews.PlaySentries(match.LastTickSentryVolleys);
                 battleSounds.Play(match.LastTickCaptures);
                 villageViews.Play(match.LastTickReinforcements);

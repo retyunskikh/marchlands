@@ -12,6 +12,8 @@ namespace Marchlands.Simulation.Config
         public UnitTypeSettings fusiliers = new UnitTypeSettings();
         public UnitTypeSettings cavalry = new UnitTypeSettings();
         public UnitTypeSettings recruits = new UnitTypeSettings();
+        public UnitTypeSettings artillery = new UnitTypeSettings();
+        public GunSettings guns = new GunSettings();
         public CombatSettings combat = new CombatSettings();
         public MoraleSettings morale = new MoraleSettings();
         public MeleeSettings melee = new MeleeSettings();
@@ -32,6 +34,8 @@ namespace Marchlands.Simulation.Config
                     return cavalry;
                 case UnitType.Recruits:
                     return recruits;
+                case UnitType.Artillery:
+                    return artillery;
                 default:
                     return grenadiers;
             }

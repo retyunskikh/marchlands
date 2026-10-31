@@ -11,7 +11,10 @@ namespace Marchlands.Simulation.Buildings
         Stable,
 
         /// <summary>Блокгауз: стоит с начала матча у прохода к базе, отстреливается сильнее часовых, не нанимает.</summary>
-        Blockhouse
+        Blockhouse,
+
+        /// <summary>Артиллерийское депо: нанимает пушкарей, из них составляются пушки.</summary>
+        ArtilleryDepot
     }
 
     /// <summary>Здание стороны: штаб или казарма. Снаружи сборки только для чтения.</summary>
@@ -48,7 +51,7 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Доля выполненной постройки, в [0, 1].</summary>
         public float BuildProgress => BuildTime > 0f ? math.saturate(1f - BuildRemaining / BuildTime) : 1f;
 
-        private readonly bool[] hiring = new bool[3];
+        private readonly bool[] hiring = new bool[5];
 
         /// <summary>Включён ли найм этого рода войск.</summary>
         public bool IsHiring(UnitType type)
@@ -57,7 +60,7 @@ namespace Marchlands.Simulation.Buildings
         }
 
         /// <summary>Включён ли найм хоть одного рода войск.</summary>
-        public bool IsHiringAny => hiring[0] || hiring[1] || hiring[2];
+        public bool IsHiringAny => System.Array.IndexOf(hiring, true) >= 0;
 
         internal void SetHiring(UnitType type, bool value)
         {

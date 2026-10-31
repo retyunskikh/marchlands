@@ -68,8 +68,8 @@ namespace Marchlands.View
             }
             else if (role == SoldierRole.Private)
             {
-                body = type == UnitType.Fusiliers ? fusilierBody : grenadierBody;
-                arms = type == UnitType.Fusiliers ? fusilierArms : grenadierArms;
+                body = type == UnitType.Fusiliers || type == UnitType.Artillery ? fusilierBody : grenadierBody;
+                arms = type == UnitType.Fusiliers || type == UnitType.Artillery ? fusilierArms : grenadierArms;
             }
 
             return body != null && arms != null;
@@ -97,7 +97,7 @@ namespace Marchlands.View
                         frames = drummerWalk;
                         break;
                     default:
-                        frames = type == UnitType.Fusiliers ? fusilierWalk : grenadierWalk;
+                        frames = type == UnitType.Fusiliers || type == UnitType.Artillery ? fusilierWalk : grenadierWalk;
                         break;
                 }
             }
@@ -121,7 +121,7 @@ namespace Marchlands.View
                 case SoldierRole.Drummer:
                     return drummer;
                 default:
-                    return type == UnitType.Fusiliers ? fusilier : grenadier;
+                    return type == UnitType.Fusiliers || type == UnitType.Artillery ? fusilier : grenadier;
             }
         }
     }

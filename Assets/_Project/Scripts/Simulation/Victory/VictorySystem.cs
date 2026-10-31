@@ -116,6 +116,7 @@ namespace Marchlands.Simulation.Victory
         {
             bool hasBarracks = false;
             bool hasStable = false;
+            bool hasDepot = false;
             foreach (Building building in match.Buildings)
             {
                 if (building.Owner != side)
@@ -125,13 +126,15 @@ namespace Marchlands.Simulation.Victory
 
                 hasBarracks |= building.Type == BuildingType.Barracks;
                 hasStable |= building.Type == BuildingType.Stable;
+                hasDepot |= building.Type == BuildingType.ArtilleryDepot;
             }
 
             PlayerState player = match.GetPlayer(side);
             BuildingSettings settings = match.Settings.buildings;
             return hasBarracks && CanGather(player.GrenadierReserve, player.Gold, settings.grenadierHireCost, match.Settings.grenadiers.squadSize)
                 || hasBarracks && CanGather(player.FusilierReserve, player.Gold, settings.hireCost, match.Settings.fusiliers.squadSize)
-                || hasStable && CanGather(player.CavalryReserve, player.Gold, settings.cavalryHireCost, match.Settings.cavalry.squadSize);
+                || hasStable && CanGather(player.CavalryReserve, player.Gold, settings.cavalryHireCost, match.Settings.cavalry.squadSize)
+                || hasDepot && CanGather(player.ArtilleryReserve, player.Gold, settings.gunnerHireCost, match.Settings.artillery.squadSize);
         }
 
         private static bool CanGather(int reserve, int gold, int hireCost, int squadSize)

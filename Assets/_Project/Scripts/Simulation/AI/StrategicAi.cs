@@ -20,7 +20,7 @@ namespace Marchlands.Simulation.AI
         private static readonly float[] SiteDistanceFractions = { 0.6f, 0.9f, 0.35f };
         private static readonly float[] SiteAngleOffsets = { 0f, 30f, -30f, 60f, -60f, 90f, -90f };
 
-        private static readonly UnitType[] HiredTypes = { UnitType.Fusiliers, UnitType.Grenadiers, UnitType.Cavalry };
+        private static readonly UnitType[] HiredTypes = { UnitType.Fusiliers, UnitType.Grenadiers, UnitType.Cavalry, UnitType.Artillery };
 
         private int nextThinkTick;
         private int busyUntilTick = -1;
@@ -80,6 +80,15 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
+            // Артдепо — так же: когда золота хватает и на него, и на отряд гренадёров.
+            if (ai.artilleryGuns > 0 && !HasBuilding(match, BuildingType.ArtilleryDepot)
+                && match.GetPlayer(Side).Gold >= match.Settings.buildings.depotCost + reserveGold
+                && TryFindBarracksSite(match, headquarters, out float2 depotSite))
+            {
+                Issue(match, new BuildDepotCommand(Side, depotSite));
+                return;
+            }
+
             foreach (Building building in match.Buildings)
             {
                 if (building.Owner != Side)
@@ -111,6 +120,12 @@ namespace Marchlands.Simulation.AI
             if (CountSquads(match, UnitType.Cavalry) < ai.cavalrySquads && BuildRules.CanFormSquad(match, Side, UnitType.Cavalry))
             {
                 Issue(match, new FormSquadCommand(Side, UnitType.Cavalry));
+                return;
+            }
+
+            if (CountSquads(match, UnitType.Artillery) < ai.artilleryGuns && BuildRules.CanFormSquad(match, Side, UnitType.Artillery))
+            {
+                Issue(match, new FormSquadCommand(Side, UnitType.Artillery));
             }
         }
 

@@ -27,6 +27,11 @@ namespace Marchlands.UI
         [SerializeField] private string grenadiersTitle = "Гренадёры";
         [SerializeField] private string fusiliersTitle = "Фузилёры";
         [SerializeField] private string cavalryTitle = "Конница";
+        [SerializeField] private string artilleryTitle = "Пушка";
+        [SerializeField] private string limberingText = "Берут на передок";
+        [SerializeField] private string unlimberingText = "Снимают с передка";
+        [SerializeField] private string roundShotText = "Ядро";
+        [SerializeField] private string canisterText = "Картечь";
         [Tooltip("{0} — живых, {1} — полная численность.")]
         [SerializeField] private string strengthFormat = "{0}/{1}";
         [Tooltip("{0} — дух числом.")]
@@ -172,7 +177,8 @@ namespace Marchlands.UI
 
         private string GetTitle(UnitType type)
         {
-            return type == UnitType.Fusiliers ? fusiliersTitle : type == UnitType.Cavalry ? cavalryTitle : grenadiersTitle;
+            return type == UnitType.Fusiliers ? fusiliersTitle : type == UnitType.Cavalry ? cavalryTitle
+                : type == UnitType.Artillery ? artilleryTitle : grenadiersTitle;
         }
 
         private string GetActivity()
@@ -190,6 +196,22 @@ namespace Marchlands.UI
             if (squad.IsChangingFormation)
             {
                 return formingText;
+            }
+
+            if (squad.IsArtillery)
+            {
+                string load = squad.ShotMode == Marchlands.Simulation.Combat.ShotMode.Canister ? canisterText : roundShotText;
+                if (squad.IsLimbering)
+                {
+                    return (squad.IsLimbered ? unlimberingText : limberingText) + " · " + load;
+                }
+
+                if (squad.Order.Type == SquadOrderType.Move)
+                {
+                    return marchingText + " · " + load;
+                }
+
+                return standingText + " · " + load;
             }
 
             switch (squad.Order.Type)

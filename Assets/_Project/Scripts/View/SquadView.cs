@@ -86,6 +86,10 @@ namespace Marchlands.View
 
         public Squad Squad => squad;
 
+        // Пушка и передок у отряда-пушки.
+        private SpriteRenderer gunRenderer;
+        private SpriteRenderer limberRenderer;
+
         internal void Initialize(Squad squad, Match match, SquadViewStyle style, CasualtiesView casualties)
         {
             this.squad = squad;
@@ -101,6 +105,14 @@ namespace Marchlands.View
             moraleBackground = CreateRenderer("Morale", style.MarkerSprite, style.MoraleBarBackground, style.RingSortingOrder);
             moraleFill = CreateRenderer("Morale Fill", style.MarkerSprite, style.MoraleRoutingColor, style.RingSortingOrder + 1);
             CreateRing();
+            if (squad.IsArtillery)
+            {
+                gunRenderer = CreateRenderer("Gun", style.GunSprite, Color.white, style.SoldierSortingOrder);
+                gunRenderer.transform.localScale = Vector3.one * style.GunScale;
+                limberRenderer = CreateRenderer("Limber", style.LimberSprite, Color.white, style.SoldierSortingOrder);
+                limberRenderer.transform.localScale = Vector3.one * style.LimberScale;
+            }
+
             countLabel = gameObject.AddComponent<SquadCountLabel>();
             countLabel.Initialize(style, style.RingSortingOrder + 2);
         }
@@ -164,13 +176,15 @@ namespace Marchlands.View
                 }
 
                 soldiers[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, 0f), meleeBlend > 0f ? meleeRotation : soldierRotation);
-                bool posed = RenderArms(i, world, soldierRotation, meleeRotation, soldierForward, slot < shooters);
+                // Расчёт пушки ружей не вскидывает — наводит ствол.
+                bool posed = RenderArms(i, world, soldierRotation, meleeRotation, soldierForward, slot < shooters && !squad.IsArtillery);
                 if (!posed)
                 {
                     RenderStep(i, local, gait);
                 }
             }
 
+            RenderGun(position, facing, alpha);
             RenderRoute(position);
 
             if (selectionMarker.enabled)
@@ -213,6 +227,56 @@ namespace Marchlands.View
         }
 
         /// <summary>
+        /// Пушка перед расчётом: снятая с передка — стволом к врагу; на марше — передок впереди, пушка за ним стволом
+        /// назад. Посередине снятия (взятия) на передок картинка меняется. Бегущие бросают пушку — её не видно.
+        /// </summary>
+        private void RenderGun(float2 position, float facing, float alpha)
+        {
+            if (gunRenderer == null)
+            {
+                return;
+            }
+
+            bool visible = !squad.IsRouting;
+            gunRenderer.enabled = visible;
+            float limberTime = match.Settings.guns.limberTime;
+            bool halfway = squad.IsLimbering && squad.LimberRemaining < limberTime * 0.5f;
+            bool limbered = squad.IsLimbered != halfway;
+            limberRenderer.enabled = visible && limbered;
+            if (!visible)
+            {
+                return;
+            }
+
+            float2 forward = Angles.Direction(facing);
+            float halfDepth = FormationLayout.GetHalfExtents(squad, settings).y * style.GetSpacing(squad.Type).y;
+            float2 front = position + forward * halfDepth;
+            if (limbered)
+            {
+                float2 limber = front + forward * style.LimberAhead;
+                limberRenderer.transform.SetPositionAndRotation(new Vector3(limber.x, limber.y, 0f), Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset));
+                float2 gun = front + forward * (style.GunAhead * 0.5f);
+                gunRenderer.transform.SetPositionAndRotation(new Vector3(gun.x, gun.y, 0f), Quaternion.Euler(0f, 0f, facing + 180f + SpriteFacingOffset));
+            }
+            else
+            {
+                // Откат после выстрела: ствол отскакивает назад и возвращается.
+                float recoil = 0f;
+                if (squad.FireState == FireState.Reloading)
+                {
+                    float since = match.Settings.guns.reloadTime - squad.FireTimer + alpha * SimulationTime.TickDuration;
+                    recoil = since < RecoilTime ? math.sin(since / RecoilTime * math.PI) * RecoilDistance : 0f;
+                }
+
+                float2 gun = front + forward * (style.GunAhead - recoil);
+                gunRenderer.transform.SetPositionAndRotation(new Vector3(gun.x, gun.y, 0f), Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset));
+            }
+        }
+
+        private const float RecoilTime = 0.6f;
+        private const float RecoilDistance = 0.5f;
+
+        /// <summary>
         /// Ведёт след головы колонны и решает, насколько колонна изгибается по нему. Изгиб — только у колонны на марше;
         /// при развороте на месте, перестроении, бегстве и в рукопашной колонна плавно выпрямляется, и след начинается
         /// заново прямо за ней. Возвращает, где голова в локальных координатах (y фронта).
@@ -234,7 +298,8 @@ namespace Marchlands.View
             float target = column && !pivoting ? 1f : 0f;
             bend = Mathf.MoveTowards(bend, target, Time.deltaTime / BendBlendTime);
 
-            if (bend <= 0f)
+            // Отряд, появившийся сразу в колонне, ещё без следа — след прямо за ним.
+            if (bend <= 0f || !trail.IsValid)
             {
                 trail.Straighten(head, facing, length);
             }

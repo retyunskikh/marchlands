@@ -27,6 +27,7 @@ namespace Marchlands.Simulation.Core
         private readonly List<Squad> squads = new List<Squad>();
         private readonly List<VolleyEvent> lastTickVolleys = new List<VolleyEvent>();
         private readonly List<SentryVolley> lastTickSentryVolleys = new List<SentryVolley>();
+        private readonly List<ArtilleryShot> lastTickArtilleryShots = new List<ArtilleryShot>();
         private readonly List<MeleeEngagement> engagements = new List<MeleeEngagement>();
         private readonly List<IMatchController> controllers = new List<IMatchController>();
         private readonly List<Village> villages = new List<Village>();
@@ -78,6 +79,9 @@ namespace Marchlands.Simulation.Core
 
         /// <summary>Залпы часовых зданий за последний выполненный тик.</summary>
         public IReadOnlyList<SentryVolley> LastTickSentryVolleys => lastTickSentryVolleys;
+
+        /// <summary>Выстрелы пушек за последний выполненный тик.</summary>
+        public IReadOnlyList<ArtilleryShot> LastTickArtilleryShots => lastTickArtilleryShots;
 
         public IReadOnlyList<Village> Villages => villages;
 
@@ -238,6 +242,13 @@ namespace Marchlands.Simulation.Core
             return stable;
         }
 
+        internal Building AddDepot(Side side, float2 position)
+        {
+            var depot = new Building(nextBuildingId++, BuildingType.ArtilleryDepot, side, position, Settings.buildings.depotBuildTime, Settings.buildings.depotHealth);
+            buildings.Add(depot);
+            return depot;
+        }
+
         /// <summary>Ставит блокгауз стороны (есть с начала матча и уже построен).</summary>
         public Building AddBlockhouse(Side side, float2 position)
         {
@@ -340,10 +351,10 @@ namespace Marchlands.Simulation.Core
             return TryGetRetreatPoint(side, from, BuildingType.Barracks, out point);
         }
 
-        /// <summary>Куда бежит разбитый отряд: пехота — к казарме, конница — к конюшне.</summary>
+        /// <summary>Куда бежит разбитый отряд: пехота — к казарме, конница — к конюшне, расчёт пушки — к артдепо.</summary>
         public bool TryGetRetreatPoint(Squad squad, out float2 point)
         {
-            BuildingType home = squad.Type == UnitType.Cavalry ? BuildingType.Stable : BuildingType.Barracks;
+            BuildingType home = BuildRules.GetHomeType(squad.Type);
             return TryGetRetreatPoint(squad.Side, squad.Position, home, out point);
         }
 
@@ -413,6 +424,7 @@ namespace Marchlands.Simulation.Core
             lastTickFormedSquads.Clear();
             lastTickDisbands.Clear();
             lastTickSentryVolleys.Clear();
+            lastTickArtilleryShots.Clear();
 
             foreach (Squad squad in squads)
             {
@@ -438,6 +450,7 @@ namespace Marchlands.Simulation.Core
             lastTickVolleys.Clear();
             FireSystem.Update(this, deltaTime, lastTickVolleys);
             SentrySystem.Update(this, deltaTime, lastTickSentryVolleys);
+            ArtillerySystem.Update(this, deltaTime, lastTickArtilleryShots);
 
             foreach (Squad squad in squads)
             {

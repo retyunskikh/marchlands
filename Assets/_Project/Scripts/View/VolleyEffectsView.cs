@@ -289,6 +289,205 @@ namespace Marchlands.View
             }
         }
 
+        [Header("Пушки")]
+        [Tooltip("Ядро летит до падения столько секунд на каждые 10 u дистанции.")]
+        [SerializeField] private float ballFlightPer10 = 0.55f;
+        [Tooltip("Высота навесной траектории — доля дистанции (на экране ядро «поднимается» вверх и растёт).")]
+        [SerializeField] private float ballArcHeight = 0.35f;
+        [SerializeField] private float ballSize = 0.28f;
+        [Tooltip("Скорость ядра после падения, на рикошете, u/s.")]
+        [SerializeField] private float ricochetSpeed = 14f;
+        [Tooltip("Через сколько u рикошета ядро снова касается земли и поднимает пыль.")]
+        [SerializeField] private float bounceStep = 2.5f;
+        [SerializeField] private Color dustColor = new Color(0.62f, 0.52f, 0.36f, 0.75f);
+        [Tooltip("Тон выстрела пушки относительно залпа — ниже, гулче.")]
+        [SerializeField] private float cannonPitch = 0.5f;
+        [SerializeField] private float cannonVolume = 1f;
+        [Tooltip("Сколько клубов дыма даёт выстрел пушки.")]
+        [SerializeField] private int cannonPuffs = 5;
+        [SerializeField] private int ballSortingOrder = 40;
+
+        private sealed class Ball
+        {
+            public SpriteRenderer Renderer;
+            public SpriteRenderer Shadow;
+            public float2 From;
+            public float2 Impact;
+            public float2 End;
+            public float Flight;
+            public float Age;
+            public float NextBounce;
+        }
+
+        private readonly List<Ball> balls = new List<Ball>();
+        private Sprite ballSprite;
+
+        /// <summary>Выстрелы пушек за тик: дым у ствола, ядро по дуге с рикошетом или веер картечи, гулкий звук.</summary>
+        public void PlayArtillery(IReadOnlyList<ArtilleryShot> shots)
+        {
+            foreach (ArtilleryShot shot in shots)
+            {
+                float2 direction = math.normalizesafe(shot.Impact - shot.Muzzle, new float2(0f, 1f));
+                for (int i = 0; i < cannonPuffs; i++)
+                {
+                    float2 spread = new float2(Random.Range(-0.4f, 0.4f), Random.Range(-0.4f, 0.4f));
+                    EmitPuff(shot.Muzzle + direction * Random.Range(0.3f, 1.4f) + spread, direction * Random.Range(puffSpeed.x, puffSpeed.y) * 2f, 1.3f);
+                }
+
+                if (shot.Mode == ShotMode.Canister)
+                {
+                    // Веер картечи: пыль там, куда легли пули.
+                    float2 side = new float2(direction.y, -direction.x);
+                    float length = math.distance(shot.Muzzle, shot.Impact);
+                    for (int i = 0; i < 10; i++)
+                    {
+                        float along = Random.Range(0.5f, 1.1f) * length;
+                        float across = Random.Range(-0.35f, 0.35f) * along;
+                        EmitDust(shot.Muzzle + direction * along + side * across, 0.35f);
+                    }
+                }
+                else
+                {
+                    LaunchBall(shot);
+                }
+
+                PlayCannon(shot.Muzzle);
+            }
+        }
+
+        private void LaunchBall(ArtilleryShot shot)
+        {
+            if (ballSprite == null)
+            {
+                ballSprite = CreateBallSprite();
+            }
+
+            var ball = new Ball
+            {
+                From = shot.Muzzle,
+                Impact = shot.Impact,
+                End = shot.RicochetEnd,
+                Flight = math.max(0.2f, math.distance(shot.Muzzle, shot.Impact) / 10f * ballFlightPer10),
+                Renderer = CreateBallRenderer("Ball", Color.black * 0.85f + Color.white * 0.1f, ballSortingOrder),
+                Shadow = CreateBallRenderer("Ball Shadow", new Color(0f, 0f, 0f, 0.3f), ballSortingOrder - 1)
+            };
+            ball.NextBounce = bounceStep;
+            balls.Add(ball);
+        }
+
+        private SpriteRenderer CreateBallRenderer(string name, Color color, int order)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            var renderer = go.AddComponent<SpriteRenderer>();
+            renderer.sprite = ballSprite;
+            renderer.color = color;
+            renderer.sortingOrder = order;
+            go.transform.localScale = Vector3.one * ballSize;
+            return renderer;
+        }
+
+        private static Sprite CreateBallSprite()
+        {
+            const int size = 32;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float d = math.length(new float2(x + 0.5f - size * 0.5f, y + 0.5f - size * 0.5f));
+                    texture.SetPixel(x, y, new Color(1f, 1f, 1f, math.saturate(size * 0.5f - d)));
+                }
+            }
+
+            texture.Apply();
+            return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
+        }
+
+        private void Update()
+        {
+            for (int i = balls.Count - 1; i >= 0; i--)
+            {
+                Ball ball = balls[i];
+                ball.Age += Time.deltaTime;
+                float2 ground;
+                float height;
+                if (ball.Age < ball.Flight)
+                {
+                    // Навесная дуга: по земле — равномерно, высота — парабола; высоту показываем сдвигом вверх и размером.
+                    float t = ball.Age / ball.Flight;
+                    ground = math.lerp(ball.From, ball.Impact, t);
+                    height = 4f * t * (1f - t) * ballArcHeight * math.distance(ball.From, ball.Impact);
+                    if (t + Time.deltaTime / ball.Flight >= 1f)
+                    {
+                        EmitDust(ball.Impact, 1f);
+                    }
+                }
+                else
+                {
+                    float rolled = (ball.Age - ball.Flight) * ricochetSpeed;
+                    float length = math.distance(ball.Impact, ball.End);
+                    if (rolled >= length)
+                    {
+                        Destroy(ball.Renderer.gameObject);
+                        Destroy(ball.Shadow.gameObject);
+                        balls.RemoveAt(i);
+                        continue;
+                    }
+
+                    ground = math.lerp(ball.Impact, ball.End, length > 0f ? rolled / length : 1f);
+                    // Рикошет: низкие подскоки, на каждом касании — облачко пыли.
+                    float phase = rolled / bounceStep;
+                    height = math.abs(math.sin(phase * math.PI)) * 0.4f * (1f - rolled / math.max(length, 0.01f));
+                    if (rolled >= ball.NextBounce)
+                    {
+                        ball.NextBounce += bounceStep;
+                        EmitDust(ground, 0.6f);
+                    }
+                }
+
+                ball.Shadow.transform.position = new Vector3(ground.x, ground.y, 0f);
+                ball.Renderer.transform.position = new Vector3(ground.x, ground.y + height, 0f);
+                ball.Renderer.transform.localScale = Vector3.one * ballSize * (1f + height * 0.12f);
+            }
+        }
+
+        private void EmitDust(float2 position, float scale)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                var emit = new ParticleSystem.EmitParams
+                {
+                    position = new Vector3(position.x + Random.Range(-0.3f, 0.3f), position.y + Random.Range(-0.3f, 0.3f), 0f),
+                    velocity = new Vector3(Random.Range(-0.3f, 0.3f), Random.Range(0.1f, 0.5f), 0f),
+                    startSize = Random.Range(puffSize.x, puffSize.y) * 0.6f * scale,
+                    startLifetime = smokeDuration * 0.35f,
+                    startColor = dustColor,
+                    rotation = Random.Range(0f, 360f),
+                    applyShapeToPosition = false
+                };
+                smoke.Emit(emit, 1);
+            }
+        }
+
+        private void PlayCannon(float2 at)
+        {
+            if (volleyClip == null || voices.Count == 0)
+            {
+                return;
+            }
+
+            int index = nextVoice;
+            AudioSource source = voices[index];
+            nextVoice = (nextVoice + 1) % voices.Count;
+            filters[index].cutoffFrequency = 22000f;
+            source.clip = volleyClip;
+            source.volume = cannonVolume;
+            source.pitch = cannonPitch * Random.Range(0.92f, 1.06f);
+            source.panStereo = PanOf(at);
+            source.Play();
+        }
+
         private void EmitPuff(float2 position, float2 velocity, float scale = 1f)
         {
             var emit = new ParticleSystem.EmitParams

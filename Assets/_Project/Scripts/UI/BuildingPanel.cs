@@ -26,9 +26,11 @@ namespace Marchlands.UI
         [FormerlySerializedAs("jaegersToggle")]
         [SerializeField] private HireToggle fusiliersToggle;
         [SerializeField] private HireToggle cavalryToggle;
+        [SerializeField] private HireToggle artilleryToggle;
         [Tooltip("Иконки постройки в карточке штаба.")]
         [SerializeField] private HireToggle buildBarracksToggle;
         [SerializeField] private HireToggle buildStableToggle;
+        [SerializeField] private HireToggle buildDepotToggle;
         [Tooltip("Иконка дома-пристройки в карточке штаба: +housePopulation мест.")]
         [SerializeField] private HireToggle buildHouseToggle;
         [Tooltip("{0} — население, {1} — мест.")]
@@ -44,6 +46,8 @@ namespace Marchlands.UI
         [SerializeField] private string headquartersTitle = "Штаб";
         [SerializeField] private string barracksTitle = "Казарма";
         [SerializeField] private string stableTitle = "Конюшня";
+        [SerializeField] private string depotTitle = "Артдепо";
+        [SerializeField] private string artilleryName = "Пушки";
         [SerializeField] private string blockhouseTitle = "Блокгауз";
         [Tooltip("Строка своего блокгауза: {0} — ружей, {1} — дальность.")]
         [SerializeField] private string blockhouseStatusFormat = "Прикрывает проход: {0} ружей, дальность {1}";
@@ -86,6 +90,15 @@ namespace Marchlands.UI
             Bind(grenadiersToggle, UnitType.Grenadiers);
             Bind(fusiliersToggle, UnitType.Fusiliers);
             Bind(cavalryToggle, UnitType.Cavalry);
+            if (artilleryToggle != null)
+            {
+                Bind(artilleryToggle, UnitType.Artillery);
+            }
+
+            if (buildDepotToggle != null)
+            {
+                buildDepotToggle.Button.onClick.AddListener(() => BuildRequested?.Invoke(BuildingType.ArtilleryDepot));
+            }
             if (buildBarracksToggle != null)
             {
                 buildBarracksToggle.Button.onClick.AddListener(() => BuildRequested?.Invoke(BuildingType.Barracks));
@@ -143,14 +156,20 @@ namespace Marchlands.UI
             bool stable = building.Type == BuildingType.Stable;
             bool barracks = building.Type == BuildingType.Barracks;
             bool blockhouse = building.Type == BuildingType.Blockhouse;
-            string title = stable ? stableTitle : barracks ? barracksTitle : blockhouse ? blockhouseTitle : headquartersTitle;
+            bool depot = building.Type == BuildingType.ArtilleryDepot;
+            string title = stable ? stableTitle : barracks ? barracksTitle : blockhouse ? blockhouseTitle : depot ? depotTitle : headquartersTitle;
             titleLabel.text = own ? title : string.Format(enemyTitleFormat, title);
             RefreshToggle(grenadiersToggle, UnitType.Grenadiers, grenadiersName, own && barracks);
             RefreshToggle(fusiliersToggle, UnitType.Fusiliers, fusiliersName, own && barracks);
             RefreshToggle(cavalryToggle, UnitType.Cavalry, cavalryName, own && stable);
+            if (artilleryToggle != null)
+            {
+                RefreshToggle(artilleryToggle, UnitType.Artillery, artilleryName, own && depot);
+            }
             bool headquarters = own && building.Type == BuildingType.Headquarters;
             RefreshBuildToggle(buildBarracksToggle, BuildingType.Barracks, barracksTitle, headquarters);
             RefreshBuildToggle(buildStableToggle, BuildingType.Stable, stableTitle, headquarters);
+            RefreshBuildToggle(buildDepotToggle, BuildingType.ArtilleryDepot, depotTitle, headquarters);
             RefreshHouseToggle(headquarters);
             if (!own)
             {
@@ -172,7 +191,7 @@ namespace Marchlands.UI
             }
 
             statusLabel.text = headquarters && buildHouseToggle != null ? GetPopulationStatus()
-                : headquarters && buildBarracksToggle != null ? headquartersBuildStatus : GetStatus(barracks || stable);
+                : headquarters && buildBarracksToggle != null ? headquartersBuildStatus : GetStatus(barracks || stable || depot);
         }
 
         private string GetEnemyStatus()

@@ -20,7 +20,7 @@ namespace Marchlands.UI
         [SerializeField] private Button closeButton;
         [Tooltip("Большой портрет воина слева.")]
         [SerializeField] private Image portrait;
-        [Tooltip("Портреты по порядку: гренадёр, фузилёр, всадник.")]
+        [Tooltip("Портреты по номеру рода войск: гренадёр, фузилёр, всадник, (рекруты), пушка.")]
         [SerializeField] private Sprite[] francePortraits = new Sprite[3];
         [SerializeField] private Sprite[] austriaPortraits = new Sprite[3];
         [SerializeField] private string grenadiersTitle = "Гренадёры";
@@ -29,6 +29,8 @@ namespace Marchlands.UI
         [SerializeField] private string grenadiersNote = "Отборная пехота: метче стреляют, крепкая мораль, сильны в штыковой. Дороже фузилёров и нанимаются вдвое дольше.";
         [SerializeField] private string fusiliersNote = "Основная линейная пехота: дёшевы и быстро набираются, но уступают гренадёрам в стойкости и штыковой.";
         [SerializeField] private string cavalryNote = "Дорогая и быстрая, страшна в атаке в сабли. Стрелять не может.";
+        [SerializeField] private string artilleryTitle = "Пушки";
+        [SerializeField] private string artilleryNote = "Пушка с расчётом. Медленная; чтобы стрелять, снимается с передка, чтобы ехать — берётся на передок. Ядром бьёт далеко, навесом через своих, рикошетом выкашивает ряды — особенно колонну и строй на мосту. Картечью — страшно, но вблизи. В атаку не ходит.";
 
         private static readonly CultureInfo Russian = CultureInfo.GetCultureInfo("ru-RU");
 
@@ -54,14 +56,19 @@ namespace Marchlands.UI
             UnitTypeSettings unit = settings.Unit(type);
             bool cavalry = type == UnitType.Cavalry;
             int cost = BuildRules.GetHireCost(settings.buildings, type);
-            titleLabel.text = type == UnitType.Fusiliers ? fusiliersTitle : cavalry ? cavalryTitle : grenadiersTitle;
-            string note = type == UnitType.Fusiliers ? fusiliersNote : cavalry ? cavalryNote : grenadiersNote;
-            string fire = unit.canFire
+            bool artillery = type == UnitType.Artillery;
+            titleLabel.text = type == UnitType.Fusiliers ? fusiliersTitle : cavalry ? cavalryTitle : artillery ? artilleryTitle : grenadiersTitle;
+            string note = type == UnitType.Fusiliers ? fusiliersNote : cavalry ? cavalryNote : artillery ? artilleryNote : grenadiersNote;
+            string fire = artillery
+                ? $"Ядро: {Mathf.RoundToInt(settings.guns.roundShotMinRange)}–{Mathf.RoundToInt(settings.guns.roundShotRange)} u, картечь: до {Mathf.RoundToInt(settings.guns.canisterRange)} u\nПерезарядка: {Mathf.RoundToInt(settings.guns.reloadTime)} с"
+                : unit.canFire
                 ? $"Меткость: {Percent(unit.accuracyMultiplier)}\nДальность огня: {Percent(unit.rangeMultiplier)}"
                 : "Стрелять не может";
+            string crew = artillery ? $"Расчёт: {unit.squadSize} чел. (бросает пушку, если меньше {unit.minSquadSize})"
+                : $"Отряд: {unit.squadSize} чел. (бежит, если меньше {unit.minSquadSize})";
             bodyLabel.text =
                 $"{note}\n\n" +
-                $"Отряд: {unit.squadSize} чел. (бежит, если меньше {unit.minSquadSize})\n" +
+                $"{crew}\n" +
                 $"Цена: {cost} золота за человека, {cost * unit.squadSize} за отряд\n" +
                 $"Скорость: {Percent(unit.speedMultiplier)}\n" +
                 $"{fire}\n" +

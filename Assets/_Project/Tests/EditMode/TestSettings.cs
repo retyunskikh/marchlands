@@ -90,6 +90,8 @@ namespace Marchlands.Tests.EditMode
                     defenseRadius = 20f,
                     directApproachDistance = 12f,
                     cavalrySquads = 1,
+                    artilleryGuns = 0,
+                    artilleryRange = 22f,
                     houseMargin = 10,
                     cavalryChargeDistance = 12f,
                     cavalryFlankDistance = 8f,
@@ -150,6 +152,38 @@ namespace Marchlands.Tests.EditMode
                     chargeBonusMultiplier = 2f,
                     targetHitMultiplier = 1.3f
                 },
+                artillery = new UnitTypeSettings
+                {
+                    squadSize = 6,
+                    minSquadSize = 3,
+                    speedMultiplier = 0.9f,
+                    accuracyMultiplier = 1f,
+                    rangeMultiplier = 1f,
+                    moraleLossMultiplier = 1f,
+                    meleeMultiplier = 0.5f,
+                    canFire = false,
+                    chargeBonusMultiplier = 1f,
+                    targetHitMultiplier = 0.7f
+                },
+                guns = new GunSettings
+                {
+                    limberTime = 4f,
+                    reloadTime = 12f,
+                    aimTime = 1f,
+                    fireArcHalfAngle = 25f,
+                    roundShotMinRange = 6f,
+                    roundShotRange = 32f,
+                    roundShotSpread = 0.06f,
+                    roundShotLateralSpread = 0.02f,
+                    ricochetLength = 10f,
+                    roundShotKillChance = 0.6f,
+                    roundShotBuildingDamage = 40f,
+                    roundShotBuildingRadius = 3f,
+                    canisterRange = 10f,
+                    canisterBalls = 36,
+                    canisterHitNear = 0.3f,
+                    canisterHitFar = 0.04f
+                },
                 economy = new EconomySettings
                 {
                     captureRadius = 4f,
@@ -187,6 +221,11 @@ namespace Marchlands.Tests.EditMode
                     headquartersHealth = 600f,
                     barracksHealth = 300f,
                     stableHealth = 300f,
+                    depotCost = 180,
+                    depotBuildTime = 40f,
+                    depotHealth = 300f,
+                    gunnerHireCost = 15,
+                    gunnerHireInterval = 6f,
                     sentryShots = 4,
                     sentryInterval = 6f,
                     sentryHitChance = 0.2f,

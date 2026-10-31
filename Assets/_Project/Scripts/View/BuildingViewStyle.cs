@@ -65,6 +65,8 @@ namespace Marchlands.View
         [SerializeField] private Sprite stableBaseSprite;
         [Tooltip("Крыши конюшни в оттенках серого — окрашиваются цветом стороны.")]
         [SerializeField] private Sprite stableRoofSprite;
+        [Tooltip("Двор артдепо: навес конюшни, а во дворе пушки и ядра.")]
+        [SerializeField] private Sprite depotBaseSprite;
         [Tooltip("Прозрачность строящегося здания.")]
         [SerializeField] private float constructionAlpha = 0.45f;
         [SerializeField] private Vector2 progressBarSize = new Vector2(2.6f, 0.22f);
@@ -167,6 +169,8 @@ namespace Marchlands.View
         public Sprite StableBaseSprite => stableBaseSprite;
 
         public Sprite StableRoofSprite => stableRoofSprite;
+
+        public Sprite DepotBaseSprite => depotBaseSprite;
 
         public Vector2 StableSize => stableSize;
 
@@ -292,6 +296,7 @@ namespace Marchlands.View
                 case BuildingType.Headquarters:
                     return headquartersSize;
                 case BuildingType.Stable:
+                case BuildingType.ArtilleryDepot:
                     return stableSize;
                 case BuildingType.Blockhouse:
                     return blockhouseSize;
