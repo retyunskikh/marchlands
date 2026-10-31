@@ -449,8 +449,10 @@ namespace Marchlands.View
                 float hw = river.HalfWidth;
                 if (fieldRiverTexture != null && roadMaterial != null)
                 {
-                    DrawRiverMesh(line, hw);
-                    DrawFieldRiverFlow(line, hw);
+                    // Исток на поле (не за краем карты) — русло к нему плавно сходит на нет, а не обрывается.
+                    float[] taper = GetSourceTaper(terrain, line);
+                    DrawRiverMesh(line, hw, taper);
+                    DrawFieldRiverFlow(line, hw, int.MinValue, 0f, 1f, taper);
                     DrawRiverMouths(terrain, line, hw);
                     continue;
                 }
@@ -498,7 +500,51 @@ namespace Marchlands.View
         /// Река текстурой, как боковые: лента по сглаженной оси русла, вода шириной 2 × <paramref name="halfWidth"/>,
         /// неровные песчаные берега и трава по краям, растворяющаяся в поле. Текстура отражается по длине — без швов.
         /// </summary>
-        private void DrawRiverMesh(List<Vector2> line, float halfWidth)
+        /// <summary>
+        /// Множители ширины русла по точкам: у конца, лежащего на поле (исток ручья), ширина сходит на нет за
+        /// SourceTaperLength; у концов за краем карты — без изменений.
+        /// </summary>
+        private static float[] GetSourceTaper(TerrainMap terrain, List<Vector2> line)
+        {
+            var factors = new float[line.Count];
+            float total = 0f;
+            var along = new float[line.Count];
+            for (int i = 0; i < line.Count; i++)
+            {
+                if (i > 0)
+                {
+                    total += Vector2.Distance(line[i - 1], line[i]);
+                }
+
+                along[i] = total;
+            }
+
+            bool startInside = terrain.Contains(line[0]);
+            bool endInside = terrain.Contains(line[line.Count - 1]);
+            for (int i = 0; i < line.Count; i++)
+            {
+                float factor = 1f;
+                if (startInside)
+                {
+                    factor = math.min(factor, math.smoothstep(0f, SourceTaperLength, along[i]));
+                }
+
+                if (endInside)
+                {
+                    factor = math.min(factor, math.smoothstep(0f, SourceTaperLength, total - along[i]));
+                }
+
+                factors[i] = math.max(MinTaper, factor);
+            }
+
+            return factors;
+        }
+
+        // На какой длине ручей сходит на нет к истоку, u, и до какой доли ширины.
+        private const float SourceTaperLength = 6f;
+        private const float MinTaper = 0.05f;
+
+        private void DrawRiverMesh(List<Vector2> line, float halfWidth, float[] taper = null)
         {
             float texelsPerUnit = fieldRiverWaterTexels / math.max(0.01f, halfWidth * 2f);
             float width = fieldRiverTexture.width / texelsPerUnit;
@@ -518,8 +564,9 @@ namespace Marchlands.View
             {
                 Vector2 tangent = (line[math.min(i + 1, line.Count - 1)] - line[math.max(i - 1, 0)]).normalized;
                 Vector2 normal = new Vector2(-tangent.y, tangent.x);
-                vertices[i * 2] = line[i] + normal * (width * 0.5f);
-                vertices[i * 2 + 1] = line[i] - normal * (width * 0.5f);
+                float here = width * (taper != null ? taper[i] : 1f);
+                vertices[i * 2] = line[i] + normal * (here * 0.5f);
+                vertices[i * 2 + 1] = line[i] - normal * (here * 0.5f);
                 float v = lengths[i] / tileLength;
                 uvs[i * 2] = new Vector2(0f, v);
                 uvs[i * 2 + 1] = new Vector2(1f, v);
@@ -553,7 +600,8 @@ namespace Marchlands.View
         }
 
         /// <summary>Блики по воде притока, плывущие по течению (от первой точки русла к последней), — как у боковых рек.</summary>
-        private void DrawFieldRiverFlow(List<Vector2> line, float halfWidth, int sortingOrder = int.MinValue, float startLength = 0f, float flare = 1f)
+        private void DrawFieldRiverFlow(List<Vector2> line, float halfWidth, int sortingOrder = int.MinValue, float startLength = 0f, float flare = 1f,
+            float[] taper = null)
         {
             if (riverFlowSprite == null)
             {
@@ -563,7 +611,7 @@ namespace Marchlands.View
             Vector2 tile = riverFlowSprite.bounds.size;
             // Уже воды: на изгибах лента не должна заходить на песок берегов.
             float width = halfWidth * 2f * FlowWidthShare;
-            Mesh mesh = BuildStrip(line, width, 0f, width / tile.x, tile.y, startLength / tile.y, width * flare);
+            Mesh mesh = BuildStrip(line, width, 0f, width / tile.x, tile.y, startLength / tile.y, width * flare, null, taper);
             MeshRenderer flowRenderer = CreateMeshObject("Field River Flow", mesh, riverFlowSprite.texture,
                 sortingOrder == int.MinValue ? borderSortingOrder - 4 : sortingOrder);
             flowRenderer.gameObject.AddComponent<RiverMeshFlow>().Initialize(mesh, riverFlowSpeed / tile.y);
@@ -680,7 +728,7 @@ namespace Marchlands.View
         /// от uMin до uMax, вдоль — повтор через tileLength со сдвигом vOffset; цвет вершин — <paramref name="color"/>.
         /// </summary>
         private static Mesh BuildStrip(List<Vector2> line, float width, float uMin, float uMax, float tileLength,
-            float vOffset = 0f, float endWidth = -1f, Color? color = null)
+            float vOffset = 0f, float endWidth = -1f, Color? color = null, float[] taper = null)
         {
             float total = 0f;
             for (int i = 1; i < line.Count; i++)
@@ -708,7 +756,8 @@ namespace Marchlands.View
 
                 Vector2 tangent = (line[math.min(i + 1, line.Count - 1)] - line[math.max(i - 1, 0)]).normalized;
                 Vector2 normal = new Vector2(-tangent.y, tangent.x);
-                float here = math.lerp(width, endWidth, math.smoothstep(0f, 1f, total > 0f ? length / total : 0f));
+                float here = math.lerp(width, endWidth, math.smoothstep(0f, 1f, total > 0f ? length / total : 0f))
+                    * (taper != null ? taper[i] : 1f);
                 vertices[i * 2] = line[i] + normal * (here * 0.5f);
                 vertices[i * 2 + 1] = line[i] - normal * (here * 0.5f);
                 float v = (tileLength > 0f ? length / tileLength : 0f) + vOffset;

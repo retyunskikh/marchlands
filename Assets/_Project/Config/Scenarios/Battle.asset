@@ -125,26 +125,34 @@ MonoBehaviour:
   terrainMin: {x: -56, y: -34}
   terrainMax: {x: 56, y: 34}
   forests:
+  - center: {x: 15, y: 31}
+    radius: 4
+  - center: {x: -15, y: -31}
+    radius: 4
+  - center: {x: 2, y: 32}
+    radius: 3.5
+  - center: {x: -2, y: -32}
+    radius: 3.5
   - center: {x: -9, y: 13}
     radius: 4.5
   - center: {x: 9, y: -13}
     radius: 4.5
-  - center: {x: -5, y: 15.5}
+  - center: {x: -40, y: -18}
+    radius: 4.5
+  - center: {x: 40, y: 18}
+    radius: 4.5
+  - center: {x: -46, y: 14}
     radius: 3.5
-  - center: {x: 5, y: -15.5}
+  - center: {x: 46, y: -14}
     radius: 3.5
-  - center: {x: 9, y: 12}
-    radius: 4
-  - center: {x: -9, y: -12}
-    radius: 4
-  - center: {x: -40, y: 18}
-    radius: 5
-  - center: {x: 40, y: -18}
-    radius: 5
-  - center: {x: -40, y: -16}
-    radius: 4
-  - center: {x: 40, y: 16}
-    radius: 4
+  - center: {x: -30, y: -30}
+    radius: 3
+  - center: {x: 30, y: 30}
+    radius: 3
+  - center: {x: 16, y: 14}
+    radius: 3.5
+  - center: {x: -16, y: -14}
+    radius: 3.5
   roads:
   - points:
     - {x: -52, y: 0}
@@ -170,5 +178,38 @@ MonoBehaviour:
     - {x: 20, y: -24}
     - {x: 26, y: -13}
     - {x: 34, y: 0}
+  mapSize: {x: 120, y: 80}
+  season: {fileID: 0}
+  rivers:
+  - points:
+    - {x: 11, y: 46}
+    - {x: 10, y: 34}
+    - {x: 8, y: 26}
+    - {x: 5, y: 19}
+    - {x: 3, y: 13}
+    halfWidth: 1.3
+  - points:
+    - {x: -11, y: -46}
+    - {x: -10, y: -34}
+    - {x: -8, y: -26}
+    - {x: -5, y: -19}
+    - {x: -3, y: -13}
+    halfWidth: 1.3
+  crossings:
+  - position: {x: 8.5, y: 25.7}
+    type: 1
+  - position: {x: -8.5, y: -25.7}
+    type: 1
+  hills:
+  - center: {x: 0, y: 0}
+    radius: 8
+  - center: {x: -26, y: -9}
+    radius: 5
+  - center: {x: 26, y: 9}
+    radius: 5
+  - center: {x: -40, y: 26}
+    radius: 4.5
+  - center: {x: 40, y: -26}
+    radius: 4.5
   franceRetreatPoint: {x: 0, y: -35}
   austriaRetreatPoint: {x: 0, y: 35}
