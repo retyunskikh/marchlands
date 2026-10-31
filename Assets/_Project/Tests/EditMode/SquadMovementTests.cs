@@ -181,16 +181,17 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void SquadStandsWhileFormingLine_ThenContinuesMoveOrder()
+        public void SquadMarchesSlowlyWhileFormingLine_ThenContinuesMoveOrder()
         {
             Match match = CreateMatch();
             Squad squad = match.AddSquad(Side.France, float2.zero, 0f, Formation.Column);
-            var target = new float2(4f, 0f);
+            var target = new float2(8f, 0f);
             match.Enqueue(new ChangeFormationCommand(squad.Id, Formation.Line));
             match.Enqueue(new MoveCommand(squad.Id, target, 0f));
 
             RunUntil(match, () => !squad.IsChangingFormation && match.CurrentTick > 0);
-            Assert.AreEqual(0f, math.length(squad.Position), 1e-5f, "Перестраиваясь в линию, отряд стоит");
+            // Перестроение 4 с со скоростью колонны × 0.4: 4 × 1.6 × 0.4 = 2.56 u.
+            Assert.AreEqual(2.56f, squad.Position.x, 0.2f, "Перестраиваясь в линию, отряд уже идёт, но медленно");
 
             RunUntil(match, () => squad.Order.Type == SquadOrderType.None);
             Assert.AreEqual(0f, math.distance(target, squad.Position), 1e-4f);

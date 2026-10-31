@@ -30,9 +30,8 @@ namespace Marchlands.Simulation.Squads
             }
 
             bool reforming = squad.IsChangingFormation;
-            // В маршевую колонну отряд перестраивается на ходу: сразу идёт к цели, но медленно.
-            bool marchingWhileReforming = reforming && squad.TargetFormation == Formation.Column
-                && squad.Order.Type == SquadOrderType.Move;
+            // Перестраиваясь (в колонну или в линию), отряд с приказом движения сразу идёт к цели, но медленно.
+            bool marchingWhileReforming = reforming && squad.Order.Type == SquadOrderType.Move;
             if (reforming)
             {
                 UpdateFormationChange(squad, settings, deltaTime);
@@ -40,20 +39,6 @@ namespace Marchlands.Simulation.Squads
 
             if (reforming && !marchingWhileReforming)
             {
-                // Перестраиваясь в линию, отряд стоит, но уже разворачивается: к цели движения, а на месте — в конечный фронт.
-                if (squad.Order.Type == SquadOrderType.Move)
-                {
-                    float2 toTarget = squad.Order.Target - squad.Position;
-                    float targetFacing = math.length(toTarget) > settings.arrivalTolerance ? Angles.Of(toTarget) : squad.Order.FinalFacing;
-                    float facingBefore = squad.Facing;
-                    float time = deltaTime;
-                    RotateTowards(squad, targetFacing, settings.rotationSpeed, ref time);
-                    if (EnemyOverlap(squad, match) > OverlapEpsilon)
-                    {
-                        squad.Facing = facingBefore;
-                    }
-                }
-
                 return;
             }
 
