@@ -67,7 +67,7 @@ MonoBehaviour:
       canFire: 0
       skirmishFire: 0
       chargeBonusMultiplier: 2
-      targetHitMultiplier: 0.85
+      targetHitMultiplier: 0.45
     recruits:
       squadSize: 0
       minSquadSize: 0
@@ -94,6 +94,8 @@ MonoBehaviour:
       targetHitMultiplier: 0.7
     guns:
       limberTime: 4
+      gunAhead: 1.6
+      towLength: 3.7
       reloadTime: 12
       aimTime: 1
       fireArcHalfAngle: 25
@@ -200,6 +202,7 @@ MonoBehaviour:
       gunCrewHireCost: 150
       gunCrewHireInterval: 60
       gunCostGrowth: 1.5
+      gunQueueSize: 1
       headquartersPopulation: 100
       housePopulation: 30
       houseCost: 40

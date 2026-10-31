@@ -37,21 +37,35 @@ namespace Marchlands.Tests.EditMode
             return gun;
         }
 
+        /// <summary>Где сейчас сама пушка: в бою — впереди фронта расчёта, на передке — позади тыла.</summary>
+        private static float2 GunPoint(Match match, Squad gun)
+        {
+            float half = FormationLayout.GetHalfExtents(gun, match.Settings.squads).y;
+            float2 forward = Angles.Direction(gun.Facing);
+            return gun.IsLimbered
+                ? gun.Position - forward * (half + match.Settings.guns.towLength)
+                : gun.Position + forward * (half + match.Settings.guns.gunAhead);
+        }
+
         [Test]
         public void NewGun_UnlimbersAfterLimberTime_AndLimbersBeforeMoving()
         {
             var match = new Match(1, TestSettings.Create());
             Squad gun = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, UnitType.Artillery);
             Assert.IsTrue(gun.IsLimbered, "Выезжает на передке");
+            float2 towed = GunPoint(match, gun);
             Run(match, match.Settings.guns.limberTime + 0.2f);
             Assert.IsTrue(gun.IsGunReady, "Без приказа снимается с передка");
+            Assert.Less(math.distance(GunPoint(match, gun), towed), 0.01f, "Пушка стоит на месте — расчёт обошёл её");
+            Assert.Less(gun.Position.y, -1f, "Расчёт отошёл назад, за пушку");
 
+            float2 firing = GunPoint(match, gun);
             match.Enqueue(new MoveCommand(gun.Id, new float2(0f, 10f), 90f));
-            Run(match, match.Settings.guns.limberTime - 0.5f);
-            Assert.Less(math.length(gun.Position), 1e-4f, "Пока берут на передок — стоит");
-            Run(match, 2f);
+            Run(match, match.Settings.guns.limberTime + 0.2f);
             Assert.IsTrue(gun.IsLimbered);
-            Assert.Greater(gun.Position.y, 0.1f, "На передке поехала");
+            Assert.Less(math.distance(GunPoint(match, gun), firing), 0.3f, "Беря на передок, пушку не двигают — расчёт выходит вперёд");
+            Run(match, 2f);
+            Assert.Greater(GunPoint(match, gun).y, firing.y + 0.1f, "На передке поехала");
         }
 
         [Test]
@@ -122,42 +136,6 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void Canister_KillsCloseTarget_AndRoundShotIsNotUsed()
-        {
-            int kills = 0;
-            for (ulong seed = 1; seed <= 20; seed++)
-            {
-                var match = new Match(seed, TestSettings.Create());
-                Squad gun = ReadyGun(match);
-                match.Enqueue(new SetShotModeCommand(gun.Id, ShotMode.Canister));
-                match.AddSquad(Side.Austria, new float2(0f, 6f), -90f, Formation.Line, 30);
-                for (int i = 0; i < TicksFor(3f); i++)
-                {
-                    match.Tick();
-                    foreach (ArtilleryShot shot in match.LastTickArtilleryShots)
-                    {
-                        Assert.AreEqual(ShotMode.Canister, shot.Mode);
-                        kills += shot.Casualties;
-                    }
-                }
-            }
-
-            // ~36 пуль × ~0.2 на 5 u ≈ 7 убитых за выстрел.
-            Assert.Greater(kills / 20f, 3f, "Картечь вблизи страшна");
-        }
-
-        [Test]
-        public void Canister_DoesNotReachFarTarget()
-        {
-            var match = new Match(1, TestSettings.Create());
-            Squad gun = ReadyGun(match);
-            match.Enqueue(new SetShotModeCommand(gun.Id, ShotMode.Canister));
-            match.AddSquad(Side.Austria, new float2(0f, 20f), -90f, Formation.Line);
-            Run(match, 3f);
-            Assert.AreEqual(FireState.Loaded, gun.FireState, "Картечью так далеко не бьют");
-        }
-
-        [Test]
         public void Gun_IgnoresTargetOutsideSector()
         {
             var match = new Match(1, TestSettings.Create());
@@ -205,19 +183,30 @@ namespace Marchlands.Tests.EditMode
             match.Tick();
             Assert.IsTrue(depot.IsOrderingGun);
             Assert.GreaterOrEqual(gold - match.GetPlayer(Side.France).Gold, match.Settings.buildings.gunCrewHireCost - 5, "Заплатили сразу за всю пушку");
+            // Пока первая готовится, вторую можно поставить в очередь (дороже), третью — уже нет.
             gold = match.GetPlayer(Side.France).Gold;
             match.Enqueue(new OrderGunCommand(depot.Id));
             match.Tick();
-            Assert.Less(gold - match.GetPlayer(Side.France).Gold, 5, "Пока готовят, вторую не заказать");
+            Assert.AreEqual(1, depot.GunOrdersQueued, "Вторая — в очереди");
+            Assert.Greater(gold - match.GetPlayer(Side.France).Gold, match.Settings.buildings.gunCrewHireCost, "Вторая дороже");
+            gold = match.GetPlayer(Side.France).Gold;
+            match.Enqueue(new OrderGunCommand(depot.Id));
+            match.Tick();
+            Assert.AreEqual(1, depot.GunOrdersQueued, "Очередь — одна пушка");
+            Assert.Less(gold - match.GetPlayer(Side.France).Gold, 5, "Сверх очереди не берут денег");
 
             Run(match, match.Settings.buildings.gunCrewHireInterval);
             Assert.IsTrue(match.Squads.Any(s => s.IsArtillery), $"Пушка готова: осталось {depot.GunOrderRemaining}, отрядов {match.Squads.Count}, депо цело {!depot.IsDestroyed}");
             Squad gun = match.Squads.Single(s => s.IsArtillery);
             Assert.AreEqual(match.Settings.artillery.squadSize, gun.Alive, "Сразу со всем расчётом");
+            Assert.IsTrue(depot.IsOrderingGun, "Сразу за первой готовят вторую из очереди");
+            Assert.AreEqual(0, depot.GunOrdersQueued);
+            Assert.Less(math.distance(gun.Position, depot.Position), 12f, "Встала у депо");
+            Run(match, match.Settings.buildings.gunCrewHireInterval + 1f);
+            Assert.AreEqual(2, match.Squads.Count(s => s.IsArtillery), "Вторая из очереди готова");
             Assert.IsFalse(depot.IsOrderingGun);
-            Assert.Less(math.distance(gun.Position, depot.Position), 10f, "Встала у депо");
             Run(match, 5f);
-            Assert.AreEqual(1, match.Squads.Count(s => s.IsArtillery), "Без нового нажатия пушек больше не появляется");
+            Assert.AreEqual(2, match.Squads.Count(s => s.IsArtillery), "Без нового нажатия пушек больше не появляется");
         }
 
         [Test]

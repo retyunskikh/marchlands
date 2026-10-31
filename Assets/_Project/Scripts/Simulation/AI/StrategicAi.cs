@@ -109,7 +109,7 @@ namespace Marchlands.Simulation.AI
                 // Пушки заказывают поштучно, пока их меньше нужного.
                 if (building.IsOrderingGun)
                 {
-                    pendingGuns++;
+                    pendingGuns += 1 + building.GunOrdersQueued;
                 }
                 else if (CountSquads(match, UnitType.Artillery) + pendingGuns < ai.artilleryGuns && BuildRules.CanOrderGun(match, building))
                 {

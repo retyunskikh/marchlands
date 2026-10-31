@@ -250,18 +250,18 @@ namespace Marchlands.Simulation.AI
             }
 
             float distance = math.distance(gun.Position, target.Position);
-            ShotMode mode = FireGeometry.Distance(gun, target, match.Settings.squads) <= guns.canisterRange ? ShotMode.Canister : ShotMode.RoundShot;
-            if (gun.ShotMode != mode)
-            {
-                Issue(match, brain, new SetShotModeCommand(gun.Id, mode));
-                return;
-            }
 
+            // Снимая пушку с передка, расчёт обходит её и отходит назад — на подходе это учитываем.
+            // Снятая пушка снова едет, только если цель и правда вне дальности: иначе она «качается» на границе.
+            float walk = gun.IsLimbered ? ArtillerySystem.GetLimberWalk(gun, match.Settings) : 0f;
+            float effective = distance + walk;
+            float reach = gun.IsLimbered ? guns.roundShotRange - match.Settings.ai.repathDistance : guns.roundShotRange;
             float2 toTarget = target.Position - gun.Position;
-            if (distance > guns.roundShotRange - match.Settings.ai.repathDistance)
+            if (effective > reach)
             {
                 float2 direction = math.normalizesafe(toTarget, Angles.Direction(gun.Facing));
-                GoTo(match, gun, brain, target.Position - direction * match.Settings.ai.artilleryRange, Angles.Of(direction));
+                float stand = math.max(guns.roundShotMinRange, match.Settings.ai.artilleryRange - walk);
+                GoTo(match, gun, brain, target.Position - direction * stand, Angles.Of(direction));
                 return;
             }
 

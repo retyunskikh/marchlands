@@ -5,7 +5,7 @@ namespace Marchlands.Simulation.Commands
 {
     /// <summary>
     /// Заказать в артдепо одну пушку с расчётом: платят сразу (цена растёт с каждой живой пушкой стороны),
-    /// через gunCrewHireInterval она встаёт у депо. Пока пушка готовится, следующую в этом депо не заказать.
+    /// через gunCrewHireInterval она встаёт у депо. Пока одна готовится, ещё до gunQueueSize ждут в очереди.
     /// </summary>
     public sealed class OrderGunCommand : ICommand
     {
@@ -25,6 +25,13 @@ namespace Marchlands.Simulation.Commands
             }
 
             match.GetPlayer(depot.Owner).Gold -= BuildRules.GetGunCost(match, depot.Owner);
+            if (depot.IsOrderingGun)
+            {
+                // Пока готовят одну, следующая ждёт в очереди (уже оплачена).
+                depot.GunOrdersQueued++;
+                return;
+            }
+
             depot.GunOrderRemaining = match.Settings.buildings.gunCrewHireInterval;
         }
     }

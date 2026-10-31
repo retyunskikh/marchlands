@@ -148,7 +148,7 @@ namespace Marchlands.Simulation.Buildings
             {
                 if (building.Owner == side && building.IsOrderingGun)
                 {
-                    guns++;
+                    guns += 1 + building.GunOrdersQueued;
                 }
             }
 
@@ -156,11 +156,14 @@ namespace Marchlands.Simulation.Buildings
             return (int)math.round(settings.gunCrewHireCost * math.pow(math.max(1f, settings.gunCostGrowth), guns));
         }
 
-        /// <summary>Можно ли заказать пушку в этом депо: построено, ничего не готовит, хватает золота и мест на расчёт.</summary>
+        /// <summary>
+        /// Можно ли заказать пушку в этом депо: построено, есть место в очереди (одна готовится и до gunQueueSize ждут),
+        /// хватает золота и мест на расчёт.
+        /// </summary>
         public static bool CanOrderGun(Match match, Building depot)
         {
             return depot != null && depot.Type == BuildingType.ArtilleryDepot && depot.IsBuilt && !depot.IsDestroyed
-                && !depot.IsOrderingGun
+                && (!depot.IsOrderingGun || depot.GunOrdersQueued < match.Settings.buildings.gunQueueSize)
                 && HasHousing(match, depot.Owner, match.Settings.artillery.squadSize)
                 && match.GetPlayer(depot.Owner).Gold >= GetGunCost(match, depot.Owner);
         }

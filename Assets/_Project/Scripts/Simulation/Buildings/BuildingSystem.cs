@@ -62,6 +62,11 @@ namespace Marchlands.Simulation.Buildings
                     {
                         building.GunOrderRemaining = 0f;
                         match.ReportFormed(SpawnSquad(match, building, UnitType.Artillery));
+                        if (building.GunOrdersQueued > 0)
+                        {
+                            building.GunOrdersQueued--;
+                            building.GunOrderRemaining = settings.gunCrewHireInterval;
+                        }
                     }
                 }
             }

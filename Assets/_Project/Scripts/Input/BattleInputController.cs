@@ -138,9 +138,15 @@ namespace Marchlands.Input
         }
 
         /// <summary>«В штыки» нажата: следующий тап по вражескому отряду отдаст приказ, тап мимо — отменит.</summary>
+        /// <summary>Выбор цели тапом: для отряда — кого атаковать в штыки, для пушки — по кому бить.</summary>
         public void BeginChargeTargeting()
         {
-            SetChargeTargeting(selected != null && ChargeRules.CanCharge(selected));
+            SetChargeTargeting(CanPickTarget(selected));
+        }
+
+        private static bool CanPickTarget(Squad squad)
+        {
+            return squad != null && (squad.IsArtillery ? squad.CanReceiveOrders : ChargeRules.CanCharge(squad));
         }
 
         private void OnEnable()
@@ -201,7 +207,7 @@ namespace Marchlands.Input
                 SelectCamp(null);
             }
 
-            if (isChargeTargeting && !ChargeRules.CanCharge(selected))
+            if (isChargeTargeting && !CanPickTarget(selected))
             {
                 SetChargeTargeting(false);
             }
@@ -520,6 +526,22 @@ namespace Marchlands.Input
         {
             SetChargeTargeting(false);
             Squad enemy = FindSquadAt(world, own: false);
+            if (selected.IsArtillery)
+            {
+                // Пушке — цель: отряд или здание.
+                Building shelled = enemy == null ? FindBuildingAt(world, own: false) : null;
+                if (enemy != null)
+                {
+                    match.Enqueue(new TargetCommand(selected.Id, enemy.Id));
+                }
+                else if (shelled != null)
+                {
+                    match.Enqueue(TargetCommand.AtBuilding(selected.Id, shelled.Id));
+                }
+
+                return;
+            }
+
             if (enemy != null)
             {
                 match.Enqueue(new ChargeCommand(selected.Id, enemy.Id));

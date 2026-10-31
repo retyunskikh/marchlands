@@ -113,10 +113,6 @@ namespace Marchlands.View
         [SerializeField] private Sprite limberSprite;
         [SerializeField] private float gunScale = 1.7f;
         [SerializeField] private float limberScale = 1.4f;
-        [Tooltip("Насколько впереди расчёта стоит снятая с передка пушка, u.")]
-        [SerializeField] private float gunAhead = 0.9f;
-        [Tooltip("Насколько впереди расчёта едет передок (пушка на марше — за ним, стволом назад), u.")]
-        [SerializeField] private float limberAhead = 2.2f;
         [SerializeField] private Color franceColor = new Color(0.2f, 0.35f, 0.85f);
         [SerializeField] private Color austriaColor = new Color(0.95f, 0.95f, 0.95f);
         [SerializeField] private Color selectionColor = new Color(1f, 0.9f, 0.3f, 0.3f);
@@ -326,10 +322,6 @@ namespace Marchlands.View
         public float GunScale => gunScale;
 
         public float LimberScale => limberScale;
-
-        public float GunAhead => gunAhead;
-
-        public float LimberAhead => limberAhead;
 
         public int RingSegments => ringSegments;
 

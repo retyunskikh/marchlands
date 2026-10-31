@@ -33,10 +33,10 @@ namespace Marchlands.UI
         [SerializeField] private string fightingText = "Дерутся";
 
         [Header("Пушка")]
-        [Tooltip("У пушки кнопка «Залп» переключает заряд: картинка пушки, подпись — чем заряжена.")]
+        [Tooltip("У пушки на месте «Залпа» — «Цель»: нажать и тапнуть по вражескому отряду или зданию.")]
         [SerializeField] private Sprite gunIcon;
-        [SerializeField] private string roundShotText = "Ядро";
-        [SerializeField] private string canisterText = "Картечь";
+        [SerializeField] private string gunTargetText = "Цель";
+        [SerializeField] private string gunTargetingText = "Выберите\nцель";
         [Tooltip("Размер подписи заряда относительно цифр перезарядки.")]
         [SerializeField] private float gunLabelScale = 0.32f;
 
@@ -139,7 +139,7 @@ namespace Marchlands.UI
             volleyButton.interactable = canVolley;
             volleyLabel.text = gun
                 ? (squad.FireState == FireState.Reloading && squad.IsInMelee ? fightingText
-                    : squad.ShotMode == ShotMode.Canister ? canisterText : roundShotText)
+                    : isChargeTargeting ? gunTargetingText : gunTargetText)
                 : GetVolleyText();
             // У пушки — подпись заряда мелко внизу, под картинкой; у пехоты — крупные секунды перезарядки.
             int fontSize = gun ? Mathf.RoundToInt(volleyFontSize * gunLabelScale) : volleyFontSize;
@@ -268,8 +268,8 @@ namespace Marchlands.UI
 
             if (squad.IsArtillery)
             {
-                ShotMode next = squad.ShotMode == ShotMode.Canister ? ShotMode.RoundShot : ShotMode.Canister;
-                match.Enqueue(new SetShotModeCommand(squad.Id, next));
+                // Указать пушке цель — следующим тапом по врагу.
+                ChargeRequested?.Invoke();
                 return;
             }
 

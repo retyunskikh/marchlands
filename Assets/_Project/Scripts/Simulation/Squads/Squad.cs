@@ -115,6 +115,12 @@ namespace Marchlands.Simulation.Squads
 
         public bool IsLimbering => LimberRemaining > 0f;
 
+        /// <summary>
+        /// Насколько расчёт уже перешёл вдоль фронта, снимая пушку с передка или беря на передок, u:
+        /// пушка стоит на месте, расчёт обходит её. Отменили перестановку — возвращается назад.
+        /// </summary>
+        internal float LimberShift { get; set; }
+
         /// <summary>Пушка снята с передка и может стрелять.</summary>
         public bool IsGunReady => IsArtillery && !IsLimbered && LimberRemaining <= 0f;
 

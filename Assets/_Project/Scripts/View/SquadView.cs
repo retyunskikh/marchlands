@@ -288,48 +288,47 @@ namespace Marchlands.View
             }
 
             gunRenderer.enabled = true;
-            float limberTime = match.Settings.guns.limberTime;
+            GunSettings guns = match.Settings.guns;
             // 0 — снята с передка (стволом к врагу перед расчётом), 1 — на передке (позади расчёта, её тянут).
             float towed = squad.IsLimbered ? 1f : 0f;
-            if (squad.IsLimbering && limberTime > 0f)
+            if (squad.IsLimbering && guns.limberTime > 0f)
             {
-                float done = 1f - squad.LimberRemaining / limberTime;
+                float done = math.saturate(1f - (squad.LimberRemaining - alpha * SimulationTime.TickDuration) / guns.limberTime);
                 towed = squad.IsLimbered ? 1f - done : done;
             }
 
-            float blend = math.smoothstep(0f, 1f, towed);
-            limberRenderer.enabled = towed > 0.5f;
-
+            // Пушка стоит на месте, а расчёт (центр отряда в симуляции) её обходит: от центра пушка — впереди фронта
+            // в бою и позади тыла на марше; посередине перестановки расчёт её разворачивает на месте.
             float2 forward = Angles.Direction(facing);
-            float halfDepth = FormationLayout.GetHalfExtents(squad, settings).y * GetSpacing().y;
-            float2 front = position + forward * halfDepth;
-            float2 back = position - forward * halfDepth;
-            if (towed > 0f)
-            {
-                // На марше расчёт идёт впереди и тянет: за ним передок, за передком пушка стволом назад.
-                // Снимая с передка, пушку обводят вокруг расчёта и ставят перед ним — без скачка.
-                float2 limber = back - forward * (style.GunAhead * 0.5f);
-                limberRenderer.transform.SetPositionAndRotation(new Vector3(limber.x, limber.y, 0f), Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset));
-                float2 towedAt = back - forward * style.LimberAhead;
-                float2 firingAt = front + forward * style.GunAhead;
-                float2 side = Angles.Right(facing) * (math.sin(blend * math.PI) * (halfDepth + style.GunAhead));
-                float2 gun = math.lerp(firingAt, towedAt, blend) + side;
-                gunRenderer.transform.SetPositionAndRotation(new Vector3(gun.x, gun.y, 0f), Quaternion.Euler(0f, 0f, facing + 180f * blend + SpriteFacingOffset));
-            }
-            else
+            float halfDepth = FormationLayout.GetHalfExtents(squad, settings).y;
+            float fireOffset = halfDepth + guns.gunAhead;
+            float towOffset = halfDepth + guns.towLength;
+            float recoil = 0f;
+            if (towed <= 0f && squad.FireState == FireState.Reloading)
             {
                 // Откат после выстрела: ствол отскакивает назад и возвращается.
-                float recoil = 0f;
-                if (squad.FireState == FireState.Reloading)
-                {
-                    float since = match.Settings.guns.reloadTime - squad.FireTimer + alpha * SimulationTime.TickDuration;
-                    recoil = since < RecoilTime ? math.sin(since / RecoilTime * math.PI) * RecoilDistance : 0f;
-                }
+                float since = guns.reloadTime - squad.FireTimer + alpha * SimulationTime.TickDuration;
+                recoil = since < RecoilTime ? math.sin(since / RecoilTime * math.PI) * RecoilDistance : 0f;
+            }
 
-                float2 gun = front + forward * (style.GunAhead - recoil);
-                gunRenderer.transform.SetPositionAndRotation(new Vector3(gun.x, gun.y, 0f), Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset));
+            float2 gun = position + forward * (fireOffset - (fireOffset + towOffset) * towed - recoil);
+            float turn = 180f * math.smoothstep(0f, 1f, towed);
+            gunRenderer.transform.SetPositionAndRotation(new Vector3(gun.x, gun.y, 0f), Quaternion.Euler(0f, 0f, facing + turn + SpriteFacingOffset));
+
+            // Передок подводят, когда пушку уже развернули, — между расчётом и пушкой.
+            limberRenderer.enabled = towed > 0.5f;
+            if (limberRenderer.enabled)
+            {
+                float2 limber = gun + forward * (guns.towLength * LimberShare);
+                limberRenderer.transform.SetPositionAndRotation(new Vector3(limber.x, limber.y, 0f), Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset));
             }
         }
+
+        // Насколько индикаторы отстоят за пушкой на передке, u.
+        private const float GunRearGap = 1f;
+
+        // Где передок между пушкой и тылом расчёта — доля длины упряжки от пушки.
+        private const float LimberShare = 0.55f;
 
         /// <summary>Пушка разбитого расчёта остаётся на поле отдельной фигурой и тает (см. <see cref="FadingSprite"/>).</summary>
         private void AbandonGun()
@@ -561,7 +560,7 @@ namespace Marchlands.View
             }
 
             // Пушку на передке тянут позади расчёта — индикаторы за ней, а не поверх.
-            return squad.IsArtillery && squad.IsLimbered ? halfDepth + style.LimberAhead + style.GunAhead : halfDepth;
+            return squad.IsArtillery && squad.IsLimbered ? halfDepth + match.Settings.guns.towLength + GunRearGap : halfDepth;
         }
 
         /// <summary>Горизонтальная полоска морали: заполнение слева направо, цвет по состоянию.</summary>

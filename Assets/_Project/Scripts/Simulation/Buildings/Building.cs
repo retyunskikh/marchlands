@@ -96,6 +96,9 @@ namespace Marchlands.Simulation.Buildings
 
         public bool IsOrderingGun => GunOrderRemaining > 0f;
 
+        /// <summary>Сколько пушек заказано в очередь за готовящейся (уже оплачены).</summary>
+        public int GunOrdersQueued { get; internal set; }
+
         /// <summary>У здания работают рабочие из штаба: чинят его или строят (видны на поле).</summary>
         public bool HasWorkers { get; internal set; }
 

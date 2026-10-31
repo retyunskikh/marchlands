@@ -171,6 +171,8 @@ namespace Marchlands.Tests.EditMode
                 guns = new GunSettings
                 {
                     limberTime = 4f,
+                    gunAhead = 1.6f,
+                    towLength = 3.7f,
                     reloadTime = 12f,
                     aimTime = 1f,
                     fireArcHalfAngle = 25f,
@@ -230,6 +232,7 @@ namespace Marchlands.Tests.EditMode
                     gunCrewHireCost = 90,
                     gunCrewHireInterval = 36f,
                     gunCostGrowth = 1.5f,
+                    gunQueueSize = 1,
                     sentryShots = 4,
                     sentryInterval = 6f,
                     sentryHitChance = 0.2f,

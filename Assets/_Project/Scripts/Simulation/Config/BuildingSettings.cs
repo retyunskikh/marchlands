@@ -60,6 +60,9 @@ namespace Marchlands.Simulation.Config
         /// <summary>Во сколько раз дороже каждая следующая пушка, пока предыдущие живы.</summary>
         public float gunCostGrowth;
 
+        /// <summary>Сколько пушек можно заказать в депо сверх готовящейся (очередь).</summary>
+        public int gunQueueSize;
+
         /// <summary>Сколько мест (солдат на поле и рекрутов в резерве) даёт штаб.</summary>
         public int headquartersPopulation;
 

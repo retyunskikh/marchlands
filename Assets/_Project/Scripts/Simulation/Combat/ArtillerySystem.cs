@@ -50,24 +50,52 @@ namespace Marchlands.Simulation.Combat
                 return;
             }
 
-            // Бегущие бросают всё и бегут: пушку считаем на передке (её увозят).
-            bool needLimbered = squad.IsRouting || WantsToMove(squad, match.Settings.squads);
+            // Бегущие пушку бросают — переставлять её некому.
+            if (squad.IsRouting)
+            {
+                squad.LimberRemaining = 0f;
+                squad.LimberShift = 0f;
+                return;
+            }
+
+            bool needLimbered = WantsToMove(squad, match.Settings.squads);
+            float2 forward = Angles.Direction(squad.Facing);
             if (squad.IsLimbered == needLimbered)
             {
+                // Передумали посреди перестановки — расчёт возвращается на прежнее место.
+                if (squad.LimberShift != 0f)
+                {
+                    squad.Position -= forward * squad.LimberShift;
+                    squad.LimberShift = 0f;
+                }
+
                 squad.LimberRemaining = 0f;
                 return;
             }
 
+            GunSettings guns = match.Settings.guns;
             if (squad.LimberRemaining <= 0f)
             {
-                squad.LimberRemaining = match.Settings.guns.limberTime;
+                squad.LimberRemaining = guns.limberTime;
+                squad.LimberShift = 0f;
                 CancelAiming(squad);
             }
+
+            // Пушка стоит на месте, расчёт её обходит: на передок — вперёд (пушка остаётся позади),
+            // с передка — назад (пушка оказывается впереди).
+            float total = GetLimberWalk(squad, match.Settings);
+            float target = (needLimbered ? 1f : -1f) * total;
+            float step = guns.limberTime > 0f ? total * deltaTime / guns.limberTime : total;
+            float next = needLimbered ? math.min(target, squad.LimberShift + step) : math.max(target, squad.LimberShift - step);
+            squad.Position += forward * (next - squad.LimberShift);
+            squad.LimberShift = next;
 
             squad.LimberRemaining -= deltaTime;
             if (squad.LimberRemaining <= TimerEpsilon)
             {
+                squad.Position += forward * (target - squad.LimberShift);
                 squad.LimberRemaining = 0f;
+                squad.LimberShift = 0f;
                 squad.IsLimbered = needLimbered;
             }
         }
@@ -135,18 +163,22 @@ namespace Marchlands.Simulation.Combat
                 return;
             }
 
-            if (gun.ShotMode == ShotMode.Canister && aimedSquad != null)
-            {
-                FireCanister(match, gun, aimedSquad, shots);
-            }
-            else
-            {
-                FireRoundShot(match, gun, aimedSquad != null ? aimedSquad.Position : aimedBuilding.Position, aimedSquad, shots);
-            }
+            // Пушка бьёт только ядрами (картечи нет).
+            FireRoundShot(match, gun, aimedSquad != null ? aimedSquad.Position : aimedBuilding.Position, aimedSquad, shots);
 
             gun.FireState = FireState.Reloading;
             gun.FireTimer = match.Settings.guns.reloadTime;
             gun.AimTargetId = 0;
+        }
+
+        /// <summary>
+        /// Сколько проходит расчёт, переставляя пушку: от «пушка впереди фронта» до «пушка позади тыла» — глубина
+        /// строя расчёта, вынос пушки вперёд и длина упряжки.
+        /// </summary>
+        public static float GetLimberWalk(Squad gun, SimulationSettings settings)
+        {
+            float depth = FormationLayout.GetHalfExtents(gun, settings.squads).y * 2f;
+            return depth + settings.guns.gunAhead + settings.guns.towLength;
         }
 
         /// <summary>Дуло — середина переднего края расчёта.</summary>
@@ -234,11 +266,6 @@ namespace Marchlands.Simulation.Combat
             if (!InSector(gun, target.Position, guns))
             {
                 return false;
-            }
-
-            if (gun.ShotMode == ShotMode.Canister)
-            {
-                return FireGeometry.Distance(gun, target, match.Settings.squads) <= guns.canisterRange;
             }
 
             float distance = math.distance(muzzle, target.Position);

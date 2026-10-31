@@ -12,6 +12,12 @@ namespace Marchlands.Simulation.Config
         /// <summary>Сколько секунд пушку снимают с передка (перед стрельбой) или берут на передок (перед маршем), s.</summary>
         public float limberTime;
 
+        /// <summary>Насколько пушка в бою стоит впереди фронта расчёта, u.</summary>
+        public float gunAhead;
+
+        /// <summary>Насколько пушка на передке тянется позади тыла расчёта, u.</summary>
+        public float towLength;
+
         /// <summary>Перезарядка пушки, s.</summary>
         public float reloadTime;
 

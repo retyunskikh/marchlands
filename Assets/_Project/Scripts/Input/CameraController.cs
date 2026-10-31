@@ -1,3 +1,4 @@
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Marchlands.Input
@@ -16,6 +17,9 @@ namespace Marchlands.Input
         [SerializeField] private Vector2 mapSize = new Vector2(120f, 80f);
         [Tooltip("Насколько можно заглянуть за край карты, u.")]
         [SerializeField] private float boundsMargin = 3f;
+        [Tooltip("Насколько дальше можно сдвинуть карту вверх (заглянуть ниже нижнего края) — доля высоты экрана: "
+            + "кнопки приказов внизу справа тогда закрывают меньше поля.")]
+        [SerializeField] private float bottomOverscroll = 0.22f;
 
         private Camera targetCamera;
         private InputConfig config;
@@ -92,14 +96,15 @@ namespace Marchlands.Input
 
             Vector3 position = transform.position;
             position.x = ClampAxis(position.x, mapCenter.x, allowedHalf.x, halfWidth);
-            position.y = ClampAxis(position.y, mapCenter.y, allowedHalf.y, halfHeight);
+            position.y = ClampAxis(position.y, mapCenter.y, allowedHalf.y, halfHeight, bottomOverscroll * halfHeight * 2f);
             transform.position = position;
         }
 
-        private static float ClampAxis(float value, float center, float allowedHalf, float viewHalf)
+        /// <param name="extraBelow">Дополнительный запас вниз (к меньшим значениям), u.</param>
+        private static float ClampAxis(float value, float center, float allowedHalf, float viewHalf, float extraBelow = 0f)
         {
-            float freedom = allowedHalf - viewHalf;
-            return freedom <= 0f ? center : Mathf.Clamp(value, center - freedom, center + freedom);
+            float freedom = math.max(0f, allowedHalf - viewHalf);
+            return Mathf.Clamp(value, center - freedom - extraBelow, center + freedom);
         }
     }
 }

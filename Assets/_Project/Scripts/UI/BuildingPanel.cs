@@ -65,6 +65,9 @@ namespace Marchlands.UI
         [Tooltip("Статус артдепо: пушку заказывают поштучно; каждая следующая дороже, пока предыдущие целы.")]
         [SerializeField] private string depotIdleStatus = "Пушка — по нажатию. Каждая следующая дороже";
         [SerializeField] private string depotOrderingStatus = "Готовят пушку";
+        [SerializeField] private string depotQueuedStatus = "Готовят пушку, ещё {0} в очереди";
+        [Tooltip("Приписка к цене пушки: сколько ещё ждут в очереди.")]
+        [SerializeField] private string gunQueueFormat = "  +{0}";
         [Tooltip("Портреты для иконок найма по порядку: гренадёр, фузилёр, всадник.")]
         [SerializeField] private Sprite[] francePortraits = new Sprite[3];
         [SerializeField] private Sprite[] austriaPortraits = new Sprite[3];
@@ -197,7 +200,9 @@ namespace Marchlands.UI
 
             statusLabel.text = headquarters && buildHouseToggle != null ? GetPopulationStatus()
                 : headquarters && buildBarracksToggle != null ? headquartersBuildStatus
-                : depot && building.IsBuilt ? (building.IsOrderingGun ? depotOrderingStatus : depotIdleStatus)
+                : depot && building.IsBuilt ? (building.IsOrderingGun
+                    ? (building.GunOrdersQueued > 0 ? string.Format(depotQueuedStatus, building.GunOrdersQueued) : depotOrderingStatus)
+                    : depotIdleStatus)
                 : GetStatus(barracks || stable || depot);
         }
 
@@ -267,7 +272,13 @@ namespace Marchlands.UI
             toggle.SetAvailable(available || building.IsOrderingGun);
             float interval = match.Settings.buildings.gunCrewHireInterval;
             float progress = building.IsOrderingGun && interval > 0f ? 1f - building.GunOrderRemaining / interval : -1f;
-            toggle.Show(string.Format(toggleFormat, artilleryName, BuildRules.GetGunCost(match, building.Owner)), building.IsOrderingGun, progress);
+            string text = string.Format(toggleFormat, artilleryName, BuildRules.GetGunCost(match, building.Owner));
+            if (building.GunOrdersQueued > 0)
+            {
+                text += string.Format(gunQueueFormat, building.GunOrdersQueued);
+            }
+
+            toggle.Show(text, building.IsOrderingGun, progress);
             toggle.SetDisband(0);
         }
 

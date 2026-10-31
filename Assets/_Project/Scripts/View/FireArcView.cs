@@ -53,9 +53,9 @@ namespace Marchlands.View
 
         public void Render(float alpha)
         {
-            // Бегущий и конница не стреляют — сектор не нужен.
+            // Бегущий и конница не стреляют — сектор не нужен. У пушки — свой сектор: дальность ядра и угол ствола.
             bool visible = squad != null && match.FindSquad(squad.Id) != null
-                && !squad.IsRouting && UnitStats.CanFire(squad, match.Settings);
+                && !squad.IsRouting && (UnitStats.CanFire(squad, match.Settings) || squad.IsArtillery);
             meshRenderer.enabled = visible;
             if (!visible)
             {
@@ -64,7 +64,14 @@ namespace Marchlands.View
 
             SquadSettings squads = match.Settings.squads;
             float2 half = FormationLayout.GetHalfExtents(squad, squads);
-            if (!Mathf.Approximately(half.x, builtHalfWidth))
+            if (squad.IsArtillery)
+            {
+                if (!Mathf.Approximately(builtHalfWidth, GunArcKey))
+                {
+                    BuildGunMesh(match.Settings.guns);
+                }
+            }
+            else if (!Mathf.Approximately(half.x, builtHalfWidth))
             {
                 BuildMesh(half.x, match.Settings.combat);
             }
@@ -73,6 +80,24 @@ namespace Marchlands.View
             float facing = squad.PreviousFacing + Angles.Delta(squad.PreviousFacing, squad.Facing) * alpha;
             float2 front = position + Angles.Direction(facing) * half.y;
             transform.SetPositionAndRotation(new Vector3(front.x, front.y, 0f), Quaternion.Euler(0f, 0f, facing + MeshFacingOffset));
+        }
+
+        // Метка «построен сектор пушки» вместо ширины фронта.
+        private const float GunArcKey = -2f;
+
+        /// <summary>Сектор пушки: от дула, в пределах угла ствола, от наименьшей до наибольшей дальности ядра.</summary>
+        private void BuildGunMesh(GunSettings guns)
+        {
+            builtHalfWidth = GunArcKey;
+            vertices.Clear();
+            colors.Clear();
+            triangles.Clear();
+            AddZone(0f, guns.roundShotMinRange, guns.roundShotRange, guns.fireArcHalfAngle, effectiveColor);
+            mesh.Clear();
+            mesh.SetVertices(vertices);
+            mesh.SetColors(colors);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
         }
 
         private void BuildMesh(float halfWidth, CombatSettings combat)
