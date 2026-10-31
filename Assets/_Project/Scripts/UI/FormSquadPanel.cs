@@ -27,7 +27,6 @@ namespace Marchlands.UI
         [SerializeField] private string grenadiersName = "Гренадёры";
         [SerializeField] private string fusiliersName = "Фузилёры";
         [SerializeField] private string cavalryName = "Конница";
-        [SerializeField] private string artilleryName = "Пушки";
         [SerializeField] private Color readyTint = Color.white;
         [SerializeField] private Color waitingTint = new Color(1f, 1f, 1f, 0.4f);
 
