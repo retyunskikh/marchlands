@@ -2743,7 +2743,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 0.3
 --- !u!222 &397019236
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -15041,8 +15041,6 @@ MonoBehaviour:
   riverFlowSprite: {fileID: 21300000, guid: 7366c4396e7d522478beb2d629ce282b, type: 3}
   riverFlowSpeed: 0.8
   riverExtension: 8
-  westOuterForestSprite: {fileID: 21300000, guid: b370f6c2579e8594a8b84d8118db500d, type: 3}
-  eastOuterForestSprite: {fileID: 21300000, guid: 5a4e87907c39e384e8a896c91b6b0f9e, type: 3}
   outerExtent: 40
   borderCanopySprite: {fileID: 21300000, guid: 25f26a19fe9f0ef49b8ae043d958efd1, type: 3}
   borderCanopyTile: 7
@@ -16678,6 +16676,7 @@ GameObject:
   - component: {fileID: 1864823350}
   - component: {fileID: 1864823352}
   - component: {fileID: 1864823351}
+  - component: {fileID: 1864823353}
   m_Layer: 0
   m_Name: Panel
   m_TagString: Untagged
@@ -16736,7 +16735,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 0.15
 --- !u!222 &1864823352
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -16745,6 +16744,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1864823349}
   m_CullTransparentMesh: 1
+--- !u!114 &1864823353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1864823349}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfabb0440166ab443bba8876756fdfa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Shadow
+  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.35}
+  m_EffectDistance: {x: 4, y: -4}
+  m_UseGraphicAlpha: 1
 --- !u!1 &1922987057
 GameObject:
   m_ObjectHideFlags: 0
