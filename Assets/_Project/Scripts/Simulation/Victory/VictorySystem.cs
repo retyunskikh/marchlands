@@ -134,7 +134,7 @@ namespace Marchlands.Simulation.Victory
             return hasBarracks && CanGather(player.GrenadierReserve, player.Gold, settings.grenadierHireCost, match.Settings.grenadiers.squadSize)
                 || hasBarracks && CanGather(player.FusilierReserve, player.Gold, settings.hireCost, match.Settings.fusiliers.squadSize)
                 || hasStable && CanGather(player.CavalryReserve, player.Gold, settings.cavalryHireCost, match.Settings.cavalry.squadSize)
-                || hasDepot && player.Gold >= settings.gunCrewHireCost;
+                || hasDepot && player.Gold >= BuildRules.GetGunCost(match, side);
         }
 
         private static bool CanGather(int reserve, int gold, int hireCost, int squadSize)

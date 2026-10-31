@@ -62,6 +62,9 @@ namespace Marchlands.UI
         [SerializeField] private string fullStatus = "Найм: ждут люди на два отряда";
         [Tooltip("{0} — название, {1} — цена человека.")]
         [SerializeField] private string toggleFormat = "{1}";
+        [Tooltip("Статус артдепо: пушку заказывают поштучно; каждая следующая дороже, пока предыдущие целы.")]
+        [SerializeField] private string depotIdleStatus = "Пушка — по нажатию. Каждая следующая дороже";
+        [SerializeField] private string depotOrderingStatus = "Готовят пушку";
         [Tooltip("Портреты для иконок найма по порядку: гренадёр, фузилёр, всадник.")]
         [SerializeField] private Sprite[] francePortraits = new Sprite[3];
         [SerializeField] private Sprite[] austriaPortraits = new Sprite[3];
@@ -92,7 +95,9 @@ namespace Marchlands.UI
             Bind(cavalryToggle, UnitType.Cavalry);
             if (artilleryToggle != null)
             {
-                Bind(artilleryToggle, UnitType.Artillery);
+                // Пушку заказывают поштучно: одно нажатие — одна пушка.
+                artilleryToggle.Button.onClick.AddListener(OnOrderGun);
+                artilleryToggle.InfoButton.onClick.AddListener(() => infoPanel.Show(UnitType.Artillery, building != null ? building.Owner : playerSide));
             }
 
             if (buildDepotToggle != null)
@@ -164,7 +169,7 @@ namespace Marchlands.UI
             RefreshToggle(cavalryToggle, UnitType.Cavalry, cavalryName, own && stable);
             if (artilleryToggle != null)
             {
-                RefreshToggle(artilleryToggle, UnitType.Artillery, artilleryName, own && depot);
+                RefreshGunToggle(own && depot);
             }
             bool headquarters = own && building.Type == BuildingType.Headquarters;
             RefreshBuildToggle(buildBarracksToggle, BuildingType.Barracks, barracksTitle, headquarters);
@@ -191,7 +196,9 @@ namespace Marchlands.UI
             }
 
             statusLabel.text = headquarters && buildHouseToggle != null ? GetPopulationStatus()
-                : headquarters && buildBarracksToggle != null ? headquartersBuildStatus : GetStatus(barracks || stable || depot);
+                : headquarters && buildBarracksToggle != null ? headquartersBuildStatus
+                : depot && building.IsBuilt ? (building.IsOrderingGun ? depotOrderingStatus : depotIdleStatus)
+                : GetStatus(barracks || stable || depot);
         }
 
         private string GetEnemyStatus()
@@ -233,6 +240,43 @@ namespace Marchlands.UI
             int cost = BuildRules.GetHireCost(match.Settings.buildings, type);
             toggle.Show(string.Format(toggleFormat, unitName, cost), building.IsHiring(type), progress);
             toggle.SetDisband(match.GetPlayer(building.Owner).GetReserve(type));
+        }
+
+        /// <summary>Заказ пушки: цена следующей пушки; пока пушку готовят — полоска, нажать нельзя.</summary>
+        private void RefreshGunToggle(bool visible)
+        {
+            HireToggle toggle = artilleryToggle;
+            if (toggle.gameObject.activeSelf != visible)
+            {
+                toggle.gameObject.SetActive(visible);
+            }
+
+            if (!visible)
+            {
+                return;
+            }
+
+            Sprite[] portraits = building.Owner == Side.France ? francePortraits : austriaPortraits;
+            if (portraits != null && (int)UnitType.Artillery < portraits.Length)
+            {
+                toggle.SetIcon(portraits[(int)UnitType.Artillery]);
+            }
+
+            bool available = BuildRules.CanOrderGun(match, building);
+            toggle.Button.interactable = available;
+            toggle.SetAvailable(available || building.IsOrderingGun);
+            float interval = match.Settings.buildings.gunCrewHireInterval;
+            float progress = building.IsOrderingGun && interval > 0f ? 1f - building.GunOrderRemaining / interval : -1f;
+            toggle.Show(string.Format(toggleFormat, artilleryName, BuildRules.GetGunCost(match, building.Owner)), building.IsOrderingGun, progress);
+            toggle.SetDisband(0);
+        }
+
+        private void OnOrderGun()
+        {
+            if (building != null)
+            {
+                match.Enqueue(new OrderGunCommand(building.Id));
+            }
         }
 
         private void RefreshBuildToggle(HireToggle toggle, BuildingType type, string title, bool visible)

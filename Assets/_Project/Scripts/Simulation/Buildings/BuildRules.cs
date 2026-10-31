@@ -125,7 +125,44 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Нанимает ли здание этот род войск: казарма — пехоту, конюшня — конницу; только построенное.</summary>
         public static bool CanHireType(Building building, UnitType type)
         {
-            return CanHire(building) && building.Type == GetHomeType(type);
+            // Пушки не нанимают постоянно — их заказывают поштучно (см. OrderGunCommand).
+            return type != UnitType.Artillery && CanHire(building) && building.Type == GetHomeType(type);
+        }
+
+        /// <summary>
+        /// Цена следующей пушки стороны: gunCrewHireCost × gunCostGrowth^n, где n — её пушки в строю и заказанные.
+        /// Погибла или брошена пушка — следующая снова дешевле.
+        /// </summary>
+        public static int GetGunCost(Match match, Side side)
+        {
+            int guns = 0;
+            foreach (Squad squad in match.Squads)
+            {
+                if (squad.Side == side && squad.IsArtillery && !squad.IsRouting && !squad.IsWithdrawn && squad.Alive > 0)
+                {
+                    guns++;
+                }
+            }
+
+            foreach (Building building in match.Buildings)
+            {
+                if (building.Owner == side && building.IsOrderingGun)
+                {
+                    guns++;
+                }
+            }
+
+            BuildingSettings settings = match.Settings.buildings;
+            return (int)math.round(settings.gunCrewHireCost * math.pow(math.max(1f, settings.gunCostGrowth), guns));
+        }
+
+        /// <summary>Можно ли заказать пушку в этом депо: построено, ничего не готовит, хватает золота и мест на расчёт.</summary>
+        public static bool CanOrderGun(Match match, Building depot)
+        {
+            return depot != null && depot.Type == BuildingType.ArtilleryDepot && depot.IsBuilt && !depot.IsDestroyed
+                && !depot.IsOrderingGun
+                && HasHousing(match, depot.Owner, match.Settings.artillery.squadSize)
+                && match.GetPlayer(depot.Owner).Gold >= GetGunCost(match, depot.Owner);
         }
 
         /// <summary>Цена одного рекрута рода войск.</summary>
@@ -233,10 +270,7 @@ namespace Marchlands.Simulation.Buildings
                 return HireWait.Full;
             }
 
-            // Пушку нанимают сразу с расчётом — места нужны на всех.
-            UnitType? upcoming = NextHireType(match, building);
-            int people = upcoming == UnitType.Artillery ? match.Settings.artillery.squadSize : 1;
-            if (!HasHousing(match, building.Owner, people))
+            if (!HasHousing(match, building.Owner))
             {
                 return HireWait.NoHousing;
             }

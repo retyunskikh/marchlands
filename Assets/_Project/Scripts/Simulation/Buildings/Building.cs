@@ -91,6 +91,11 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Чинят ли здание рабочие из штаба в этом тике.</summary>
         public bool IsRepairing { get; internal set; }
 
+        /// <summary>Сколько осталось готовить заказанную в артдепо пушку, s; 0 — пушку не готовят.</summary>
+        public float GunOrderRemaining { get; internal set; }
+
+        public bool IsOrderingGun => GunOrderRemaining > 0f;
+
         /// <summary>У здания работают рабочие из штаба: чинят его или строят (видны на поле).</summary>
         public bool HasWorkers { get; internal set; }
 

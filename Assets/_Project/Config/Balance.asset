@@ -199,6 +199,7 @@ MonoBehaviour:
       depotHealth: 300
       gunCrewHireCost: 150
       gunCrewHireInterval: 60
+      gunCostGrowth: 1.5
       headquartersPopulation: 100
       housePopulation: 30
       houseCost: 40

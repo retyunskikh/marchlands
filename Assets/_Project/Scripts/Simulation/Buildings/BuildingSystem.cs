@@ -53,6 +53,17 @@ namespace Marchlands.Simulation.Buildings
                 {
                     Hire(match, building, settings, deltaTime);
                 }
+
+                // Заказанная пушка готова — встаёт у депо со всем расчётом.
+                if (building.IsOrderingGun)
+                {
+                    building.GunOrderRemaining -= deltaTime;
+                    if (building.GunOrderRemaining <= TimerEpsilon)
+                    {
+                        building.GunOrderRemaining = 0f;
+                        match.ReportFormed(SpawnSquad(match, building, UnitType.Artillery));
+                    }
+                }
             }
         }
 
@@ -73,15 +84,7 @@ namespace Marchlands.Simulation.Buildings
 
             PlayerState player = match.GetPlayer(building.Owner);
             player.Gold -= BuildRules.GetHireCost(settings, type.Value);
-            if (type.Value == UnitType.Artillery)
-            {
-                // Пушку нанимают сразу со всем расчётом: она встаёт у депо, в резерв никто не идёт.
-                match.ReportFormed(SpawnSquad(match, building, UnitType.Artillery));
-            }
-            else
-            {
-                player.AddReserve(type.Value, 1);
-            }
+            player.AddReserve(type.Value, 1);
 
             building.NextHireType = (System.Array.IndexOf(BuildRules.HireOrder, type.Value) + 1) % BuildRules.HireOrder.Length;
             building.HireRemaining = BuildRules.GetHireInterval(match, building);

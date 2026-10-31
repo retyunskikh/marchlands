@@ -229,6 +229,7 @@ namespace Marchlands.Tests.EditMode
                     depotHealth = 300f,
                     gunCrewHireCost = 90,
                     gunCrewHireInterval = 36f,
+                    gunCostGrowth = 1.5f,
                     sentryShots = 4,
                     sentryInterval = 6f,
                     sentryHitChance = 0.2f,

@@ -344,7 +344,7 @@ namespace Marchlands.View
             flowRenderer.sprite = riverFlowSprite;
             flowRenderer.drawMode = SpriteDrawMode.Tiled;
             flowRenderer.size = new Vector2(size.x, size.y + period);
-            flowRenderer.sortingOrder = borderSortingOrder + 5;
+            flowRenderer.sortingOrder = borderSortingOrder + 6;
             flowRenderer.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
             flow.AddComponent<RiverFlow>().Initialize(riverFlowSpeed, period);
         }
@@ -553,7 +553,7 @@ namespace Marchlands.View
         }
 
         /// <summary>Блики по воде притока, плывущие по течению (от первой точки русла к последней), — как у боковых рек.</summary>
-        private void DrawFieldRiverFlow(List<Vector2> line, float halfWidth, int sortingOrder = int.MinValue)
+        private void DrawFieldRiverFlow(List<Vector2> line, float halfWidth, int sortingOrder = int.MinValue, float startLength = 0f, float flare = 1f)
         {
             if (riverFlowSprite == null)
             {
@@ -563,7 +563,7 @@ namespace Marchlands.View
             Vector2 tile = riverFlowSprite.bounds.size;
             // Уже воды: на изгибах лента не должна заходить на песок берегов.
             float width = halfWidth * 2f * FlowWidthShare;
-            Mesh mesh = BuildStrip(line, width, 0f, width / tile.x, tile.y);
+            Mesh mesh = BuildStrip(line, width, 0f, width / tile.x, tile.y, startLength / tile.y, width * flare);
             MeshRenderer flowRenderer = CreateMeshObject("Field River Flow", mesh, riverFlowSprite.texture,
                 sortingOrder == int.MinValue ? borderSortingOrder - 4 : sortingOrder);
             flowRenderer.gameObject.AddComponent<RiverMeshFlow>().Initialize(mesh, riverFlowSpeed / tile.y);
@@ -577,71 +577,127 @@ namespace Marchlands.View
         {
             float halfMapX = mapSize.x * 0.5f;
             float waterShare = math.saturate(fieldRiverWaterTexels / math.max(1f, fieldRiverTexture.width));
+            float texelsPerUnit = fieldRiverWaterTexels / math.max(0.01f, halfWidth * 2f);
+            float tileLength = fieldRiverTexture.height / texelsPerUnit;
+            float textureWidth = fieldRiverTexture.width / texelsPerUnit;
             foreach (float side in new[] { -1f, 1f })
             {
                 float edge = side > 0f ? terrain.BoundsMax.x : terrain.BoundsMin.x;
-                float middle = edge + side * (halfMapX - math.abs(edge)) * 0.5f;
-                var mouth = new List<Vector2>();
-                float start = edge * side - MouthOverlap;
-                for (int i = 0; i < line.Count; i++)
+                float sideWidth = halfMapX - math.abs(edge);
+                float middle = math.abs(edge) + sideWidth * 0.5f;
+                // Приток с берегами и травой — поверх края боковой реки до её песка: трава ложится на траву,
+                // песок притока смыкается с песком реки. Дальше до середины русла — только вода.
+                float banks = middle - sideWidth * SideRiverSandShare;
+                List<Vector2> full = ClipAlongX(line, side, math.abs(edge) - MouthOverlap, banks, out float fullStart);
+                if (full != null)
                 {
-                    float x = line[i].x * side;
-                    if (x < start)
-                    {
-                        continue;
-                    }
-
-                    // Первая точка — ровно на краю поля: иначе между краем и устьем видна полоска травы.
-                    if (mouth.Count == 0 && i > 0)
-                    {
-                        Vector2 a = line[i - 1];
-                        Vector2 b = line[i];
-                        float t = math.saturate((start * side - a.x) / math.max(1e-4f, math.abs(b.x - a.x)) * side);
-                        mouth.Add(Vector2.Lerp(a, b, t));
-                    }
-
-                    if (x > middle * side)
-                    {
-                        // Последняя точка — ровно на середине боковой реки.
-                        if (i > 0)
-                        {
-                            Vector2 a = line[i - 1];
-                            Vector2 b = line[i];
-                            float t = math.saturate((middle - a.x) / math.max(1e-4f, b.x - a.x));
-                            mouth.Add(Vector2.Lerp(a, b, t));
-                        }
-
-                        break;
-                    }
-
-                    mouth.Add(line[i]);
+                    Mesh mesh = BuildStrip(full, textureWidth, 0f, 1f, tileLength, fullStart / tileLength);
+                    CreateMeshObject("River Mouth Banks", mesh, fieldRiverTexture, borderSortingOrder + 4);
                 }
 
-                if (mouth.Count < 2)
+                List<Vector2> water = ClipAlongX(line, side, banks - MouthWaterOverlap, middle, out float waterStart);
+                if (water == null)
                 {
                     continue;
                 }
 
-                float texelsPerUnit = fieldRiverWaterTexels / math.max(0.01f, halfWidth * 2f);
-                float tileLength = fieldRiverTexture.height / texelsPerUnit;
-                Mesh mesh = BuildStrip(mouth, halfWidth * 2f, 0.5f - waterShare * 0.5f, 0.5f + waterShare * 0.5f, tileLength);
-                CreateMeshObject("River Mouth", mesh, fieldRiverTexture, borderSortingOrder + 4);
-                DrawFieldRiverFlow(mouth, halfWidth, borderSortingOrder + 5);
+                float width = halfWidth * 2f;
+                Mesh waterMesh = BuildStrip(water, width, 0.5f - waterShare * 0.5f, 0.5f + waterShare * 0.5f, tileLength,
+                    waterStart / tileLength, width * MouthFlare);
+                CreateMeshObject("River Mouth", waterMesh, fieldRiverTexture, borderSortingOrder + 5);
+
+                // Блики — одной лентой на всё устье, продолжая блики притока: без «окна» без бликов.
+                List<Vector2> flow = ClipAlongX(line, side, math.abs(edge) - MouthOverlap, middle, out float flowStart);
+                if (flow != null)
+                {
+                    DrawFieldRiverFlow(flow, halfWidth, borderSortingOrder + 6, flowStart);
+                }
             }
         }
 
-        // Насколько устье заходит на поле до края боковой реки, u.
-        private const float MouthOverlap = 0.1f;
+        /// <summary>
+        /// Кусок ломаной между |x| = from и |x| = to со стороны <paramref name="side"/> (концы — точно на границах);
+        /// startLength — сколько по ломаной до его начала. null — ломаная туда не доходит.
+        /// </summary>
+        private static List<Vector2> ClipAlongX(List<Vector2> line, float side, float from, float to, out float startLength)
+        {
+            startLength = 0f;
+            var piece = new List<Vector2>();
+            float travelled = 0f;
+            for (int i = 0; i < line.Count; i++)
+            {
+                float segment = i > 0 ? Vector2.Distance(line[i - 1], line[i]) : 0f;
+                travelled += segment;
+                float x = line[i].x * side;
+                if (x < from)
+                {
+                    continue;
+                }
+
+                if (piece.Count == 0 && i > 0)
+                {
+                    float px = line[i - 1].x * side;
+                    float t = math.saturate((from - px) / math.max(1e-4f, x - px));
+                    piece.Add(Vector2.Lerp(line[i - 1], line[i], t));
+                    startLength = travelled - segment * (1f - t);
+                }
+
+                if (x > to)
+                {
+                    if (i > 0)
+                    {
+                        float px = line[i - 1].x * side;
+                        float t = math.saturate((to - px) / math.max(1e-4f, x - px));
+                        piece.Add(Vector2.Lerp(line[i - 1], line[i], t));
+                    }
+
+                    break;
+                }
+
+                piece.Add(line[i]);
+            }
+
+            return piece.Count >= 2 ? piece : null;
+        }
+
+        // Насколько кусок притока с берегами начинается до края поля, u.
+        private const float MouthOverlap = 0.5f;
+
+        // Насколько вода устья заходит под берега притока, u.
+        private const float MouthWaterOverlap = 0.3f;
+
+        // Где кончается песок боковой реки — доля её ширины от середины русла (по картинке боковой реки).
+        private const float SideRiverSandShare = 0.28f;
+
+        // Во сколько раз устье шире притока там, где впадает.
+        private const float MouthFlare = 1.15f;
 
         // Какая доля ширины воды под бликами течения.
         private const float FlowWidthShare = 0.7f;
 
-        /// <summary>Лента вдоль ломаной: ширина <paramref name="width"/>, текстура поперёк — от uMin до uMax, вдоль — повтор через tileLength.</summary>
-        private static Mesh BuildStrip(List<Vector2> line, float width, float uMin, float uMax, float tileLength)
+        /// <summary>
+        /// Лента вдоль ломаной: ширина от <paramref name="width"/> до <paramref name="endWidth"/> (плавно), текстура поперёк —
+        /// от uMin до uMax, вдоль — повтор через tileLength со сдвигом vOffset; цвет вершин — <paramref name="color"/>.
+        /// </summary>
+        private static Mesh BuildStrip(List<Vector2> line, float width, float uMin, float uMax, float tileLength,
+            float vOffset = 0f, float endWidth = -1f, Color? color = null)
         {
+            float total = 0f;
+            for (int i = 1; i < line.Count; i++)
+            {
+                total += Vector2.Distance(line[i - 1], line[i]);
+            }
+
+            if (endWidth < 0f)
+            {
+                endWidth = width;
+            }
+
             var vertices = new Vector3[line.Count * 2];
             var uvs = new Vector2[line.Count * 2];
+            var colors = new Color[line.Count * 2];
             var triangles = new int[(line.Count - 1) * 6];
+            Color tint = color ?? Color.white;
             float length = 0f;
             for (int i = 0; i < line.Count; i++)
             {
@@ -652,11 +708,13 @@ namespace Marchlands.View
 
                 Vector2 tangent = (line[math.min(i + 1, line.Count - 1)] - line[math.max(i - 1, 0)]).normalized;
                 Vector2 normal = new Vector2(-tangent.y, tangent.x);
-                vertices[i * 2] = line[i] + normal * (width * 0.5f);
-                vertices[i * 2 + 1] = line[i] - normal * (width * 0.5f);
-                float v = tileLength > 0f ? length / tileLength : 0f;
+                float here = math.lerp(width, endWidth, math.smoothstep(0f, 1f, total > 0f ? length / total : 0f));
+                vertices[i * 2] = line[i] + normal * (here * 0.5f);
+                vertices[i * 2 + 1] = line[i] - normal * (here * 0.5f);
+                float v = (tileLength > 0f ? length / tileLength : 0f) + vOffset;
                 uvs[i * 2] = new Vector2(uMin, v);
                 uvs[i * 2 + 1] = new Vector2(uMax, v);
+                colors[i * 2] = colors[i * 2 + 1] = tint;
                 if (i + 1 < line.Count)
                 {
                     int t = i * 6;
@@ -672,12 +730,6 @@ namespace Marchlands.View
             var mesh = new Mesh { name = "Strip" };
             mesh.vertices = vertices;
             mesh.uv = uvs;
-            var colors = new Color[vertices.Length];
-            for (int i = 0; i < colors.Length; i++)
-            {
-                colors[i] = Color.white;
-            }
-
             mesh.colors = colors;
             mesh.triangles = triangles;
             mesh.RecalculateBounds();

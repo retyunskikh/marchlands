@@ -20,7 +20,7 @@ namespace Marchlands.Simulation.AI
         private static readonly float[] SiteDistanceFractions = { 0.6f, 0.9f, 0.35f };
         private static readonly float[] SiteAngleOffsets = { 0f, 30f, -30f, 60f, -60f, 90f, -90f };
 
-        private static readonly UnitType[] HiredTypes = { UnitType.Fusiliers, UnitType.Grenadiers, UnitType.Cavalry, UnitType.Artillery };
+        private static readonly UnitType[] HiredTypes = { UnitType.Fusiliers, UnitType.Grenadiers, UnitType.Cavalry };
 
         private int nextThinkTick;
         private int busyUntilTick = -1;
@@ -89,6 +89,7 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
+            int pendingGuns = 0;
             foreach (Building building in match.Buildings)
             {
                 if (building.Owner != Side)
@@ -98,13 +99,22 @@ namespace Marchlands.Simulation.AI
 
                 foreach (UnitType hired in HiredTypes)
                 {
-                    // Пушка собирается сама, как наберётся расчёт, — пушкарей нанимают, только пока пушек мало.
-                    bool wanted = hired != UnitType.Artillery || CountSquads(match, UnitType.Artillery) < ai.artilleryGuns;
-                    if (BuildRules.CanHireType(building, hired) && building.IsHiring(hired) != wanted)
+                    if (BuildRules.CanHireType(building, hired) && !building.IsHiring(hired))
                     {
-                        Issue(match, new SetHiringCommand(building.Id, hired, wanted));
+                        Issue(match, new SetHiringCommand(building.Id, hired, true));
                         return;
                     }
+                }
+
+                // Пушки заказывают поштучно, пока их меньше нужного.
+                if (building.IsOrderingGun)
+                {
+                    pendingGuns++;
+                }
+                else if (CountSquads(match, UnitType.Artillery) + pendingGuns < ai.artilleryGuns && BuildRules.CanOrderGun(match, building))
+                {
+                    Issue(match, new OrderGunCommand(building.Id));
+                    return;
                 }
             }
 

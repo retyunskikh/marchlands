@@ -288,6 +288,11 @@ namespace Marchlands.View
                 float buildTime = settings.buildings.houseBuildTime;
                 progress = buildTime > 0f ? 1f - building.HouseBuildRemaining / buildTime : -1f;
             }
+            else if (building.IsOrderingGun)
+            {
+                float interval = settings.buildings.gunCrewHireInterval;
+                progress = interval > 0f ? 1f - building.GunOrderRemaining / interval : -1f;
+            }
             else if (building.IsHiringAny)
             {
                 float interval = BuildRules.GetHireInterval(match, building);

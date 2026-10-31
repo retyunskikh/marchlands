@@ -199,25 +199,43 @@ namespace Marchlands.Tests.EditMode
             Assert.AreEqual(1000 - match.Settings.buildings.depotCost, match.GetPlayer(Side.France).Gold);
             depot.BuildRemaining = 0f;
 
-            match.Enqueue(new SetHiringCommand(depot.Id, UnitType.Artillery, true));
-            Run(match, match.Settings.buildings.gunCrewHireInterval - 1f);
-            Assert.IsFalse(match.Squads.Any(s => s.IsArtillery), "Пока таймер не вышел, пушки нет");
-            Assert.AreEqual(0, match.GetPlayer(Side.France).ArtilleryReserve, "По одному пушкаря не нанимают");
+            // Одно нажатие — одна пушка: платят сразу, пушка готова через gunCrewHireInterval.
+            int gold = match.GetPlayer(Side.France).Gold;
+            match.Enqueue(new OrderGunCommand(depot.Id));
+            match.Tick();
+            Assert.IsTrue(depot.IsOrderingGun);
+            Assert.GreaterOrEqual(gold - match.GetPlayer(Side.France).Gold, match.Settings.buildings.gunCrewHireCost - 5, "Заплатили сразу за всю пушку");
+            gold = match.GetPlayer(Side.France).Gold;
+            match.Enqueue(new OrderGunCommand(depot.Id));
+            match.Tick();
+            Assert.Less(gold - match.GetPlayer(Side.France).Gold, 5, "Пока готовят, вторую не заказать");
 
-            // Пушку нанимают сразу со всем расчётом: на этом тике платят за неё целиком.
-            int spent = 0;
-            for (int i = 0; i < TicksFor(2f) && !match.Squads.Any(s => s.IsArtillery); i++)
-            {
-                int before = match.GetPlayer(Side.France).Gold;
-                match.Tick();
-                spent = before - match.GetPlayer(Side.France).Gold;
-            }
-
+            Run(match, match.Settings.buildings.gunCrewHireInterval);
+            Assert.IsTrue(match.Squads.Any(s => s.IsArtillery), $"Пушка готова: осталось {depot.GunOrderRemaining}, отрядов {match.Squads.Count}, депо цело {!depot.IsDestroyed}");
             Squad gun = match.Squads.Single(s => s.IsArtillery);
-            Assert.AreEqual(match.Settings.artillery.squadSize, gun.Alive);
-            Assert.AreEqual(0, match.GetPlayer(Side.France).ArtilleryReserve);
-            Assert.GreaterOrEqual(spent, match.Settings.buildings.gunCrewHireCost - 5, "Заплатили за пушку целиком");
+            Assert.AreEqual(match.Settings.artillery.squadSize, gun.Alive, "Сразу со всем расчётом");
+            Assert.IsFalse(depot.IsOrderingGun);
             Assert.Less(math.distance(gun.Position, depot.Position), 10f, "Встала у депо");
+            Run(match, 5f);
+            Assert.AreEqual(1, match.Squads.Count(s => s.IsArtillery), "Без нового нажатия пушек больше не появляется");
+        }
+
+        [Test]
+        public void EachNextGun_CostsMore_WhilePreviousAlive()
+        {
+            Match match = CreateBaseMatch();
+            Marchlands.Simulation.Config.BuildingSettings settings = match.Settings.buildings;
+            Assert.AreEqual(settings.gunCrewHireCost, BuildRules.GetGunCost(match, Side.France));
+
+            Squad first = match.AddSquad(Side.France, FranceHq + new float2(10f, 10f), 90f, Formation.Line, UnitType.Artillery);
+            int second = BuildRules.GetGunCost(match, Side.France);
+            Assert.AreEqual((int)math.round(settings.gunCrewHireCost * settings.gunCostGrowth), second, "Вторая дороже");
+
+            match.AddSquad(Side.France, FranceHq + new float2(-10f, 10f), 90f, Formation.Line, UnitType.Artillery);
+            Assert.Greater(BuildRules.GetGunCost(match, Side.France), second, "Третья ещё дороже");
+
+            first.Alive = 0;
+            Assert.AreEqual(second, BuildRules.GetGunCost(match, Side.France), "Погибла пушка — следующая снова дешевле");
         }
 
         [Test]
