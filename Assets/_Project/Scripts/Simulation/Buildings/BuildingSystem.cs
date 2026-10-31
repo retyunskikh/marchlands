@@ -74,6 +74,14 @@ namespace Marchlands.Simulation.Buildings
             PlayerState player = match.GetPlayer(building.Owner);
             player.Gold -= BuildRules.GetHireCost(settings, type.Value);
             player.AddReserve(type.Value, 1);
+            // Пушку не собирают кнопкой: набрался расчёт — она сама встаёт у депо.
+            if (type.Value == UnitType.Artillery && BuildRules.CanFormSquad(match, building.Owner, UnitType.Artillery))
+            {
+                player.AddReserve(UnitType.Artillery, -match.Settings.Unit(UnitType.Artillery).squadSize);
+                Squad gun = SpawnSquad(match, BuildRules.GetFormingBuilding(match, building.Owner, UnitType.Artillery), UnitType.Artillery);
+                match.ReportFormed(gun);
+            }
+
             building.NextHireType = (System.Array.IndexOf(BuildRules.HireOrder, type.Value) + 1) % BuildRules.HireOrder.Length;
             building.HireRemaining = BuildRules.GetHireInterval(match, building);
         }

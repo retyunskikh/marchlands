@@ -77,7 +77,12 @@ namespace Marchlands.Simulation.Morale
 
             if (math.distance(squad.Position, point) <= match.Settings.squads.arrivalTolerance)
             {
-                match.GetPlayer(squad.Side).AddReserve(squad.Type, squad.Alive);
+                // Разбитый расчёт пушки, добежав до штаба, просто исчезает: без пушки он не отряд.
+                if (!squad.IsArtillery)
+                {
+                    match.GetPlayer(squad.Side).AddReserve(squad.Type, squad.Alive);
+                }
+
                 squad.IsWithdrawn = true;
             }
         }

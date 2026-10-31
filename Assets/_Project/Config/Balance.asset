@@ -82,7 +82,7 @@ MonoBehaviour:
       targetHitMultiplier: 1
     artillery:
       squadSize: 6
-      minSquadSize: 3
+      minSquadSize: 4
       speedMultiplier: 0.9
       accuracyMultiplier: 1
       rangeMultiplier: 1
@@ -101,14 +101,14 @@ MonoBehaviour:
       roundShotRange: 32
       roundShotSpread: 0.06
       roundShotLateralSpread: 0.02
-      ricochetLength: 10
-      roundShotKillChance: 0.6
-      roundShotBuildingDamage: 40
+      ricochetLength: 14
+      roundShotKillChance: 0.8
+      roundShotBuildingDamage: 70
       roundShotBuildingRadius: 3
       canisterRange: 10
-      canisterBalls: 36
-      canisterHitNear: 0.3
-      canisterHitFar: 0.04
+      canisterBalls: 54
+      canisterHitNear: 0.4
+      canisterHitFar: 0.06
     combat:
       maxRange: 12
       effectiveRange: 7
@@ -194,11 +194,11 @@ MonoBehaviour:
       stableBuildTime: 40
       cavalryHireCost: 6
       cavalryHireInterval: 4.5
-      depotCost: 180
-      depotBuildTime: 40
+      depotCost: 320
+      depotBuildTime: 55
       depotHealth: 300
-      gunnerHireCost: 15
-      gunnerHireInterval: 6
+      gunnerHireCost: 25
+      gunnerHireInterval: 10
       headquartersPopulation: 100
       housePopulation: 30
       houseCost: 40

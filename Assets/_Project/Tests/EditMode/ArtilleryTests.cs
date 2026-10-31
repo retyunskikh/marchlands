@@ -55,6 +55,25 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void TargetedBuilding_IsShelled_EvenWithEnemySquadNearer()
+        {
+            var match = new Match(1, TestSettings.Create());
+            Squad gun = ReadyGun(match);
+            Building blockhouse = match.AddBlockhouse(Side.Austria, new float2(0f, 25f));
+            match.AddSquad(Side.Austria, new float2(0f, 14f), -90f, Formation.Line);
+            match.Enqueue(TargetCommand.AtBuilding(gun.Id, blockhouse.Id));
+            match.Tick();
+
+            Assert.IsTrue(GunTargeting.TryGetTarget(match, gun, out Squad squad, out Building building));
+            Assert.AreEqual(blockhouse, building, "Указанное здание важнее ближайшего отряда");
+            Assert.IsNull(squad);
+
+            float health = blockhouse.Health;
+            Run(match, match.Settings.guns.aimTime + 1f);
+            Assert.Less(blockhouse.Health, health, "Ядро попало по зданию");
+        }
+
+        [Test]
         public void ReadyGun_FiresRoundShotByItself()
         {
             var match = new Match(1, TestSettings.Create());
@@ -182,14 +201,28 @@ namespace Marchlands.Tests.EditMode
 
             match.Enqueue(new SetHiringCommand(depot.Id, UnitType.Artillery, true));
             Run(match, match.Settings.buildings.gunnerHireInterval * match.Settings.artillery.squadSize + 1f);
-            Assert.GreaterOrEqual(match.GetPlayer(Side.France).ArtilleryReserve, match.Settings.artillery.squadSize);
-            Assert.IsTrue(BuildRules.CanFormSquad(match, Side.France, UnitType.Artillery));
 
-            match.Enqueue(new FormSquadCommand(Side.France, UnitType.Artillery));
-            match.Tick();
+            // Пушку не собирают кнопкой: набрался расчёт — она сама встала у депо.
             Squad gun = match.Squads.Single(s => s.IsArtillery);
             Assert.AreEqual(match.Settings.artillery.squadSize, gun.Alive);
+            Assert.Less(match.GetPlayer(Side.France).ArtilleryReserve, match.Settings.artillery.squadSize, "Расчёт ушёл из резерва в пушку");
             Assert.Less(math.distance(gun.Position, depot.Position), 10f, "Встала у депо");
+        }
+
+        [Test]
+        public void BrokenCrew_RunsToHeadquarters_AndVanishes_WithoutReserve()
+        {
+            Match match = CreateBaseMatch();
+            Squad gun = match.AddSquad(Side.France, FranceHq + new float2(12f, 10f), 90f, Formation.Line, UnitType.Artillery);
+            // Осталась половина расчёта — меньше минимального рабочего, пушку бросают.
+            gun.Alive = match.Settings.artillery.minSquadSize - 1;
+            int reserveBefore = match.GetPlayer(Side.France).ArtilleryReserve;
+            match.Tick();
+            Assert.IsTrue(gun.IsRouting, "Неполный расчёт бросает пушку");
+
+            Run(match, 60f);
+            Assert.IsNull(match.FindSquad(gun.Id), "Добежали до штаба и исчезли");
+            Assert.AreEqual(reserveBefore, match.GetPlayer(Side.France).ArtilleryReserve, "В резерв не вернулись");
         }
 
         [Test]

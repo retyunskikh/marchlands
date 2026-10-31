@@ -158,7 +158,7 @@ namespace Marchlands.Tests.EditMode
                 artillery = new UnitTypeSettings
                 {
                     squadSize = 6,
-                    minSquadSize = 3,
+                    minSquadSize = 4,
                     speedMultiplier = 0.9f,
                     accuracyMultiplier = 1f,
                     rangeMultiplier = 1f,

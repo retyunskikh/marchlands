@@ -68,9 +68,10 @@ namespace Marchlands.UI
                 Refresh(cavalryButton, UnitType.Cavalry, cavalryName, Has(BuildingType.Stable));
             }
 
-            if (artilleryButton != null)
+            // Пушку не собирают кнопкой: она встаёт у депо сама, как наберётся расчёт.
+            if (artilleryButton != null && artilleryButton.gameObject.activeSelf)
             {
-                Refresh(artilleryButton, UnitType.Artillery, artilleryName, Has(BuildingType.ArtilleryDepot));
+                artilleryButton.gameObject.SetActive(false);
             }
         }
 

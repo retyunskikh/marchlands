@@ -242,7 +242,7 @@ namespace Marchlands.Input
                 return;
             }
 
-            // Тап по врагу при выбранной пушке — указать ей цель.
+            // Тап по врагу при выбранной пушке — указать ей цель (отряд или здание).
             if (selected != null && selected.IsArtillery)
             {
                 Squad enemy = FindSquadAt(world, own: false);
@@ -250,6 +250,26 @@ namespace Marchlands.Input
                 {
                     hasPendingTap = false;
                     match.Enqueue(new TargetCommand(selected.Id, enemy.Id));
+                    return;
+                }
+
+                Building enemyTarget = FindBuildingAt(world, own: false);
+                if (enemyTarget != null)
+                {
+                    hasPendingTap = false;
+                    match.Enqueue(TargetCommand.AtBuilding(selected.Id, enemyTarget.Id));
+                    return;
+                }
+            }
+
+            // Тап по вражескому зданию при выбранном отряде — сразу штурм, без кнопки «В штыки».
+            if (selected != null && ChargeRules.CanCharge(selected))
+            {
+                Building assaulted = FindBuildingAt(world, own: false);
+                if (assaulted != null)
+                {
+                    hasPendingTap = false;
+                    match.Enqueue(new AssaultCommand(selected.Id, assaulted.Id));
                     return;
                 }
             }

@@ -306,6 +306,15 @@ namespace Marchlands.View
         [Tooltip("Сколько клубов дыма даёт выстрел пушки.")]
         [SerializeField] private int cannonPuffs = 5;
         [SerializeField] private int ballSortingOrder = 40;
+        [Header("Взрыв ядра")]
+        [Tooltip("Вспышка там, где ядро ударило в землю: растёт до explosionSize и гаснет за explosionTime.")]
+        [SerializeField] private Color explosionColor = new Color(1f, 0.78f, 0.35f, 0.95f);
+        [SerializeField] private Color fireColor = new Color(1f, 0.5f, 0.15f, 0.9f);
+        [SerializeField] private Color blastSmokeColor = new Color(0.32f, 0.29f, 0.26f, 0.8f);
+        [SerializeField] private float explosionSize = 2.6f;
+        [SerializeField] private float explosionTime = 0.35f;
+        [SerializeField] private float explosionVolume = 0.7f;
+        [SerializeField] private float explosionPitch = 0.33f;
 
         private sealed class Ball
         {
@@ -320,6 +329,14 @@ namespace Marchlands.View
         }
 
         private readonly List<Ball> balls = new List<Ball>();
+
+        private sealed class Blast
+        {
+            public SpriteRenderer Renderer;
+            public float Age;
+        }
+
+        private readonly List<Blast> blasts = new List<Blast>();
         private Sprite ballSprite;
 
         /// <summary>Выстрелы пушек за тик: дым у ствола, ядро по дуге с рикошетом или веер картечи, гулкий звук.</summary>
@@ -420,7 +437,7 @@ namespace Marchlands.View
                     height = 4f * t * (1f - t) * ballArcHeight * math.distance(ball.From, ball.Impact);
                     if (t + Time.deltaTime / ball.Flight >= 1f)
                     {
-                        EmitDust(ball.Impact, 1f);
+                        Explode(ball.Impact);
                     }
                 }
                 else
@@ -450,7 +467,91 @@ namespace Marchlands.View
                 ball.Renderer.transform.position = new Vector3(ground.x, ground.y + height, 0f);
                 ball.Renderer.transform.localScale = Vector3.one * ballSize * (1f + height * 0.12f);
             }
+
+            UpdateBlasts();
         }
+
+        /// <summary>
+        /// Ядро ударило в землю: вспышка, выброс огня и тёмного дыма, комья земли и глухой удар.
+        /// </summary>
+        private void Explode(float2 at)
+        {
+            var blast = new Blast { Renderer = CreateBallRenderer("Blast", explosionColor, ballSortingOrder + 1) };
+            blast.Renderer.transform.position = new Vector3(at.x, at.y, 0f);
+            blasts.Add(blast);
+
+            for (int i = 0; i < 8; i++)
+            {
+                float2 direction = Angles.Direction(Random.Range(0f, 360f));
+                EmitParticle(at + direction * 0.2f, direction * Random.Range(1.5f, 3.5f), fireColor, Random.Range(0.4f, 0.8f), smokeDuration * 0.12f);
+            }
+
+            for (int i = 0; i < 6; i++)
+            {
+                float2 direction = Angles.Direction(Random.Range(0f, 360f));
+                EmitParticle(at + direction * 0.4f, direction * Random.Range(0.4f, 1.2f) + new float2(0f, 0.4f), blastSmokeColor,
+                    Random.Range(puffSize.x, puffSize.y) * 1.1f, smokeDuration * 0.5f);
+            }
+
+            EmitDust(at, 1.8f);
+            PlayExplosion(at);
+        }
+
+        private void EmitParticle(float2 position, float2 velocity, Color color, float size, float lifetime)
+        {
+            var emit = new ParticleSystem.EmitParams
+            {
+                position = new Vector3(position.x, position.y, 0f),
+                velocity = new Vector3(velocity.x, velocity.y, 0f),
+                startSize = size,
+                startLifetime = lifetime,
+                startColor = color,
+                rotation = Random.Range(0f, 360f),
+                applyShapeToPosition = false
+            };
+            smoke.Emit(emit, 1);
+        }
+
+        private void UpdateBlasts()
+        {
+            for (int i = blasts.Count - 1; i >= 0; i--)
+            {
+                Blast blast = blasts[i];
+                blast.Age += Time.deltaTime;
+                float t = explosionTime > 0f ? blast.Age / explosionTime : 1f;
+                if (t >= 1f)
+                {
+                    Destroy(blast.Renderer.gameObject);
+                    blasts.RemoveAt(i);
+                    continue;
+                }
+
+                // Быстро вспыхивает и медленнее гаснет.
+                blast.Renderer.transform.localScale = Vector3.one * explosionSize * math.sqrt(t);
+                Color color = explosionColor;
+                color.a *= 1f - t * t;
+                blast.Renderer.color = color;
+            }
+        }
+
+        private void PlayExplosion(float2 at)
+        {
+            if (volleyClip == null || voices.Count == 0)
+            {
+                return;
+            }
+
+            int index = nextVoice;
+            AudioSource source = voices[index];
+            nextVoice = (nextVoice + 1) % voices.Count;
+            filters[index].cutoffFrequency = 1500f;
+            source.clip = volleyClip;
+            source.volume = explosionVolume;
+            source.pitch = explosionPitch * Random.Range(0.9f, 1.1f);
+            source.panStereo = PanOf(at);
+            source.Play();
+        }
+
 
         private void EmitDust(float2 position, float scale)
         {

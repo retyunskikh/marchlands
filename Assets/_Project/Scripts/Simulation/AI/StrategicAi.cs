@@ -98,9 +98,11 @@ namespace Marchlands.Simulation.AI
 
                 foreach (UnitType hired in HiredTypes)
                 {
-                    if (BuildRules.CanHireType(building, hired) && !building.IsHiring(hired))
+                    // Пушка собирается сама, как наберётся расчёт, — пушкарей нанимают, только пока пушек мало.
+                    bool wanted = hired != UnitType.Artillery || CountSquads(match, UnitType.Artillery) < ai.artilleryGuns;
+                    if (BuildRules.CanHireType(building, hired) && building.IsHiring(hired) != wanted)
                     {
-                        Issue(match, new SetHiringCommand(building.Id, hired, true));
+                        Issue(match, new SetHiringCommand(building.Id, hired, wanted));
                         return;
                     }
                 }
@@ -123,10 +125,6 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
-            if (CountSquads(match, UnitType.Artillery) < ai.artilleryGuns && BuildRules.CanFormSquad(match, Side, UnitType.Artillery))
-            {
-                Issue(match, new FormSquadCommand(Side, UnitType.Artillery));
-            }
         }
 
         private int CountSquads(Match match, UnitType type)

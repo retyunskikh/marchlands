@@ -118,7 +118,7 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Пушка снята с передка и может стрелять.</summary>
         public bool IsGunReady => IsArtillery && !IsLimbered && LimberRemaining <= 0f;
 
-        /// <summary>Цель, указанная пушке игроком; 0 — бить по ближайшему.</summary>
+        /// <summary>Цель, указанная пушке игроком: отряд, минус номер здания; 0 — бить по ближайшему.</summary>
         public int PreferredTargetId { get; internal set; }
 
         /// <summary>Численность толпы рекрутов после последней сверки с резервом; разница — погибшие.</summary>

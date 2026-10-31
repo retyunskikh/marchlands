@@ -156,13 +156,27 @@ namespace Marchlands.Simulation.Combat
         }
 
         /// <summary>Цель: указанная игроком, если её можно достать, иначе ближайший враг; ядром — иначе ближайшее здание.</summary>
-        private static bool FindTarget(Match match, Squad gun, out Squad target, out Building building)
+        internal static bool FindTarget(Match match, Squad gun, out Squad target, out Building building)
         {
             building = null;
-            target = match.FindSquad(gun.PreferredTargetId);
-            if (target != null && IsValidTarget(match, gun, target))
+            target = null;
+            if (gun.PreferredTargetId < 0)
             {
-                return true;
+                // Указанное здание бьют ядрами; картечью по стенам не стреляют — тогда по ближайшему врагу.
+                Building preferred = match.FindBuilding(-gun.PreferredTargetId);
+                if (preferred != null && gun.ShotMode == ShotMode.RoundShot && IsValidBuilding(match, gun, preferred))
+                {
+                    building = preferred;
+                    return true;
+                }
+            }
+            else
+            {
+                target = match.FindSquad(gun.PreferredTargetId);
+                if (target != null && IsValidTarget(match, gun, target))
+                {
+                    return true;
+                }
             }
 
             target = null;

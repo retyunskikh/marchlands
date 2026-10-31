@@ -233,10 +233,6 @@ MonoBehaviour:
     type: 1
   - position: {x: 14, y: -35.2}
     type: 1
-  - position: {x: -42, y: 24}
-    type: 0
-  - position: {x: 42, y: -24}
-    type: 0
   hills:
   - center: {x: -28, y: -8}
     radius: 6

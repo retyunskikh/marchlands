@@ -365,10 +365,10 @@ namespace Marchlands.Simulation.Core
             return TryGetRetreatPoint(side, from, BuildingType.Barracks, out point);
         }
 
-        /// <summary>Куда бежит разбитый отряд: пехота — к казарме, конница — к конюшне, расчёт пушки — к артдепо.</summary>
+        /// <summary>Куда бежит разбитый отряд: пехота — к казарме, конница — к конюшне, расчёт брошенной пушки — к штабу.</summary>
         public bool TryGetRetreatPoint(Squad squad, out float2 point)
         {
-            BuildingType home = BuildRules.GetHomeType(squad.Type);
+            BuildingType home = squad.IsArtillery ? BuildingType.Headquarters : BuildRules.GetHomeType(squad.Type);
             return TryGetRetreatPoint(squad.Side, squad.Position, home, out point);
         }
 

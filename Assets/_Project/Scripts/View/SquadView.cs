@@ -39,6 +39,7 @@ namespace Marchlands.View
         private CombatSettings combat;
         private SquadViewStyle style;
         private SpriteRenderer selectionMarker;
+        private SpriteRenderer targetMarker;
         private SpriteRenderer moraleBackground;
         private SpriteRenderer moraleFill;
 
@@ -118,6 +119,8 @@ namespace Marchlands.View
 
             selectionMarker = CreateRenderer("Selection", style.MarkerSprite, style.SelectionColor, style.MarkerSortingOrder);
             selectionMarker.enabled = false;
+            targetMarker = CreateRenderer("Gun Target", style.MarkerSprite, style.GunTargetColor, style.MarkerSortingOrder);
+            targetMarker.enabled = false;
             moraleBackground = CreateRenderer("Morale", style.MarkerSprite, style.MoraleBarBackground, style.RingSortingOrder);
             moraleFill = CreateRenderer("Morale Fill", style.MarkerSprite, style.MoraleRoutingColor, style.RingSortingOrder + 1);
             CreateRing();
@@ -199,7 +202,7 @@ namespace Marchlands.View
                 float scale = 1f;
                 if (assaultBlend > 0f)
                 {
-                    float2 storm = ToAssaultPosition(i, local, out scale);
+                    float2 storm = ToAssaultPosition(i, local, world, position, facing, out scale);
                     float blend = math.smoothstep(0f, 1f, assaultBlend);
                     world = math.lerp(world, storm, blend);
                     poseDirection = math.normalizesafe(assaultCenter - world, forward);
@@ -221,6 +224,7 @@ namespace Marchlands.View
             AdvanceGaitPhase();
             RenderGun(position, facing, alpha);
             RenderRoute(position);
+            RenderGunTarget(alpha);
 
             if (selectionMarker.enabled)
             {
@@ -272,26 +276,45 @@ namespace Marchlands.View
                 return;
             }
 
-            bool visible = !squad.IsRouting;
-            gunRenderer.enabled = visible;
-            float limberTime = match.Settings.guns.limberTime;
-            bool halfway = squad.IsLimbering && squad.LimberRemaining < limberTime * 0.5f;
-            bool limbered = squad.IsLimbered != halfway;
-            limberRenderer.enabled = visible && limbered;
-            if (!visible)
+            // Разбитый расчёт бросает пушку: она остаётся на месте и постепенно тает, как павшие.
+            if (squad.IsRouting)
             {
+                if (gunRenderer.enabled)
+                {
+                    AbandonGun();
+                }
+
                 return;
             }
+
+            gunRenderer.enabled = true;
+            float limberTime = match.Settings.guns.limberTime;
+            // 0 — снята с передка (стволом к врагу перед расчётом), 1 — на передке (позади расчёта, её тянут).
+            float towed = squad.IsLimbered ? 1f : 0f;
+            if (squad.IsLimbering && limberTime > 0f)
+            {
+                float done = 1f - squad.LimberRemaining / limberTime;
+                towed = squad.IsLimbered ? 1f - done : done;
+            }
+
+            float blend = math.smoothstep(0f, 1f, towed);
+            limberRenderer.enabled = towed > 0.5f;
 
             float2 forward = Angles.Direction(facing);
             float halfDepth = FormationLayout.GetHalfExtents(squad, settings).y * GetSpacing().y;
             float2 front = position + forward * halfDepth;
-            if (limbered)
+            float2 back = position - forward * halfDepth;
+            if (towed > 0f)
             {
-                float2 limber = front + forward * style.LimberAhead;
+                // На марше расчёт идёт впереди и тянет: за ним передок, за передком пушка стволом назад.
+                // Снимая с передка, пушку обводят вокруг расчёта и ставят перед ним — без скачка.
+                float2 limber = back - forward * (style.GunAhead * 0.5f);
                 limberRenderer.transform.SetPositionAndRotation(new Vector3(limber.x, limber.y, 0f), Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset));
-                float2 gun = front + forward * (style.GunAhead * 0.5f);
-                gunRenderer.transform.SetPositionAndRotation(new Vector3(gun.x, gun.y, 0f), Quaternion.Euler(0f, 0f, facing + 180f + SpriteFacingOffset));
+                float2 towedAt = back - forward * style.LimberAhead;
+                float2 firingAt = front + forward * style.GunAhead;
+                float2 side = Angles.Right(facing) * (math.sin(blend * math.PI) * (halfDepth + style.GunAhead));
+                float2 gun = math.lerp(firingAt, towedAt, blend) + side;
+                gunRenderer.transform.SetPositionAndRotation(new Vector3(gun.x, gun.y, 0f), Quaternion.Euler(0f, 0f, facing + 180f * blend + SpriteFacingOffset));
             }
             else
             {
@@ -306,6 +329,22 @@ namespace Marchlands.View
                 float2 gun = front + forward * (style.GunAhead - recoil);
                 gunRenderer.transform.SetPositionAndRotation(new Vector3(gun.x, gun.y, 0f), Quaternion.Euler(0f, 0f, facing + SpriteFacingOffset));
             }
+        }
+
+        /// <summary>Пушка разбитого расчёта остаётся на поле отдельной фигурой и тает (см. <see cref="FadingSprite"/>).</summary>
+        private void AbandonGun()
+        {
+            var abandoned = new GameObject("Abandoned Gun");
+            abandoned.transform.SetParent(transform.parent, false);
+            abandoned.transform.SetPositionAndRotation(gunRenderer.transform.position, gunRenderer.transform.rotation);
+            abandoned.transform.localScale = gunRenderer.transform.lossyScale;
+            var copy = abandoned.AddComponent<SpriteRenderer>();
+            copy.sprite = gunRenderer.sprite;
+            copy.color = gunRenderer.color * new Color(style.AbandonedGunDarkening, style.AbandonedGunDarkening, style.AbandonedGunDarkening, 1f);
+            copy.sortingOrder = gunRenderer.sortingOrder;
+            abandoned.AddComponent<FadingSprite>().Initialize(copy, style.AbandonedGunLieTime, style.AbandonedGunFadeTime);
+            gunRenderer.enabled = false;
+            limberRenderer.enabled = false;
         }
 
         private const float RecoilTime = 0.6f;
@@ -469,11 +508,60 @@ namespace Marchlands.View
             return spacing;
         }
 
+        /// <summary>У выбранной пушки подсвечена её цель: отряд или здание, по которому она бьёт или будет бить.</summary>
+        private void RenderGunTarget(float alpha)
+        {
+            Squad targetSquad = null;
+            Building targetBuilding = null;
+            bool shown = selectionMarker.enabled && squad.IsArtillery && !squad.IsRouting
+                && GunTargeting.TryGetTarget(match, squad, out targetSquad, out targetBuilding);
+            if (targetMarker.enabled != shown)
+            {
+                targetMarker.enabled = shown;
+            }
+
+            if (!shown)
+            {
+                return;
+            }
+
+            float2 center;
+            float2 half;
+            float angle = 0f;
+            if (targetSquad != null)
+            {
+                center = math.lerp(targetSquad.PreviousPosition, targetSquad.Position, alpha);
+                half = FormationLayout.GetHalfExtents(targetSquad, settings) * (float2)style.GetSpacing(targetSquad.Type);
+                angle = targetSquad.Facing + SpriteFacingOffset;
+            }
+            else
+            {
+                center = targetBuilding.Position;
+                Vector2 size = BuildingSize != null ? BuildingSize(targetBuilding.Type) : new Vector2(2f, 2f);
+                half = new float2(size.x, size.y) * 0.5f;
+            }
+
+            Color color = style.GunTargetColor;
+            color.a *= 0.65f + 0.35f * math.sin(Time.time * GunTargetPulseRate);
+            targetMarker.color = color;
+            targetMarker.transform.SetPositionAndRotation(new Vector3(center.x, center.y, 0f), Quaternion.Euler(0f, 0f, angle));
+            targetMarker.transform.localScale = new Vector3((half.x + style.SelectionPadding) * 2f, (half.y + style.SelectionPadding) * 2f, 1f);
+        }
+
+        // Как быстро мерцает подсветка цели пушки, рад/с.
+        private const float GunTargetPulseRate = 5f;
+
         /// <summary>Расстояние от центра отряда до его тыла.</summary>
         private float GetRearDistance()
         {
             float halfDepth = FormationLayout.GetHalfExtents(squad, settings).y * GetSpacing().y;
-            return squad.IsRouting ? halfDepth * style.RoutSpread + style.RoutScatter : halfDepth;
+            if (squad.IsRouting)
+            {
+                return halfDepth * style.RoutSpread + style.RoutScatter;
+            }
+
+            // Пушку на передке тянут позади расчёта — индикаторы за ней, а не поверх.
+            return squad.IsArtillery && squad.IsLimbered ? halfDepth + style.LimberAhead + style.GunAhead : halfDepth;
         }
 
         /// <summary>Горизонтальная полоска морали: заполнение слева направо, цвет по состоянию.</summary>
@@ -657,20 +745,23 @@ namespace Marchlands.View
         /// шеренга у стен, задние — дальше. Первая волна толкается и колет стену, часть лезет на неё: заходит
         /// на здание, наверху крупнее (ближе к зрителю), и срывается обратно.
         /// </summary>
-        private float2 ToAssaultPosition(int index, float2 local, out float scale)
+        private float2 ToAssaultPosition(int index, float2 local, float2 formationWorld, float2 position, float facing, out float scale)
         {
             scale = 1f;
             float2 half = FormationLayout.GetHalfExtents(squad, settings) * GetSpacing();
-            float spread = half.x > 1e-3f ? math.clamp(local.x / half.x, -1f, 1f) : 0f;
+            // Место на дуге — по тому, где солдат стоит сейчас, если смотреть со здания: кто левее, тот и встаёт левее.
+            // Так никто не перебегает на другой край — к своему участку стены каждому ближе всех.
+            float2 across = new float2(-assaultFrom.y, assaultFrom.x);
+            float lateralExtent = math.abs(half.x * math.dot(Angles.Right(facing), across)) + math.abs(half.y * math.dot(Angles.Direction(facing), across));
+            float spread = lateralExtent > 1e-3f ? math.clamp(math.dot(formationWorld - position, across) / lateralExtent, -1f, 1f) : 0f;
             float rankStep = settings.rankSpacing * GetSpacing().y;
             int rank = rankStep > 1e-3f ? math.clamp((int)math.round((half.y - local.y) / rankStep - 0.5f), 0, math.max(0, frameRanks - 1)) : 0;
 
-            // Смотрим со здания на отряд: правый фланг отряда (он смотрит на здание) — по часовой стрелке.
-            float angle = Angles.Of(assaultFrom) - spread * style.AssaultArc * 0.5f + Scatter(index + 311).x * 8f;
+            float angle = Angles.Of(assaultFrom) + spread * style.AssaultArc * 0.5f + Scatter(index + 311).x * 2f;
             float2 direction = Angles.Direction(angle);
             float edge = math.min(assaultHalf.x / math.max(math.abs(direction.x), 1e-3f), assaultHalf.y / math.max(math.abs(direction.y), 1e-3f));
             float radius = edge + style.AssaultStandOff + rank * style.AssaultRankGap + Scatter(index + 421).y * 0.15f;
-            float2 across = new float2(-direction.y, direction.x);
+            float2 tangent = new float2(-direction.y, direction.x);
             float sway = math.sin(Time.time * 2.3f + Scatter(index + 977).x * 6f) * style.AssaultSway;
 
             bool climber = rank == 0 && (Scatter(index + 733).x + 1f) * 0.5f < style.AssaultClimbShare;
@@ -690,7 +781,7 @@ namespace Marchlands.View
                 radius -= Thrust(index) * style.ThrustLength * 0.4f;
             }
 
-            return assaultCenter + direction * radius + across * sway;
+            return assaultCenter + direction * radius + tangent * sway;
         }
 
         private void SetSoldierScale(int index, float scale)

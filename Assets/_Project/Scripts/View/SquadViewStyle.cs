@@ -120,6 +120,12 @@ namespace Marchlands.View
         [SerializeField] private Color franceColor = new Color(0.2f, 0.35f, 0.85f);
         [SerializeField] private Color austriaColor = new Color(0.95f, 0.95f, 0.95f);
         [SerializeField] private Color selectionColor = new Color(1f, 0.9f, 0.3f, 0.3f);
+        [Tooltip("Брошенная пушка разбитого расчёта: сколько лежит, за сколько тает (s), насколько темнее.")]
+        [SerializeField] private float abandonedGunLieTime = 8f;
+        [SerializeField] private float abandonedGunFadeTime = 3f;
+        [SerializeField] private float abandonedGunDarkening = 0.7f;
+        [Tooltip("Подсветка цели выбранной пушки (мерцает).")]
+        [SerializeField] private Color gunTargetColor = new Color(1f, 0.25f, 0.15f, 0.35f);
         [Tooltip("Насколько рамка выделения шире габаритов отряда с каждой стороны, u.")]
         [SerializeField] private float selectionPadding = 0.3f;
         [SerializeField] private int markerSortingOrder = 10;
@@ -290,6 +296,14 @@ namespace Marchlands.View
         }
 
         public Color SelectionColor => selectionColor;
+
+        public Color GunTargetColor => gunTargetColor;
+
+        public float AbandonedGunLieTime => abandonedGunLieTime;
+
+        public float AbandonedGunFadeTime => abandonedGunFadeTime;
+
+        public float AbandonedGunDarkening => abandonedGunDarkening;
 
         public float SelectionPadding => selectionPadding;
 
