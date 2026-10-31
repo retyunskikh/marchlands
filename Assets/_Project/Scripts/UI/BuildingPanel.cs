@@ -35,8 +35,8 @@ namespace Marchlands.UI
         [SerializeField] private HireToggle buildHouseToggle;
         [Tooltip("Усиление казармы (казарма у стороны одна).")]
         [SerializeField] private HireToggle upgradeToggle;
+        [SerializeField] private string upgradeProgressFormat = "{0}%";
         [SerializeField] private string upgradeTitle = "Усилить";
-        [SerializeField] private string upgradedTitle = "Усилена";
         [SerializeField] private string upgradingStatus = "Казарму усиливают — найм стоит";
         [Tooltip("{0} — население, {1} — мест.")]
         [SerializeField] private string populationFormat = "Население: {0}/{1}";
@@ -367,7 +367,8 @@ namespace Marchlands.UI
                 return;
             }
 
-            visible &= building.IsBuilt;
+            // Усиленной казарме кнопка не нужна — она исчезает.
+            visible &= building.IsBuilt && !building.IsUpgraded;
             if (upgradeToggle.gameObject.activeSelf != visible)
             {
                 upgradeToggle.gameObject.SetActive(visible);
@@ -381,13 +382,19 @@ namespace Marchlands.UI
             int cost = match.Settings.buildings.barracksUpgradeCost;
             bool can = BuildRules.CanUpgrade(match, building);
             upgradeToggle.Button.interactable = can;
-            upgradeToggle.SetName(building.IsUpgraded ? upgradedTitle : upgradeTitle);
-            upgradeToggle.SetAvailable(can || building.IsUpgrading || building.IsUpgraded);
+            upgradeToggle.SetName(upgradeTitle);
+            upgradeToggle.SetAvailable(can || building.IsUpgrading);
             float time = match.Settings.buildings.barracksUpgradeTime;
-            float progress = building.IsUpgrading && time > 0f ? 1f - building.UpgradeRemaining / time : -1f;
-            upgradeToggle.Show(building.IsUpgraded ? string.Empty : string.Format(buildFormat, string.Empty, cost),
-                building.IsUpgrading || building.IsUpgraded, progress);
+            // Идёт усиление — полоса заполняется с первого тика (чуть видна сразу), вместо цены — проценты.
+            float progress = building.IsUpgrading && time > 0f ? Mathf.Max(1f - building.UpgradeRemaining / time, UpgradeProgressMin) : -1f;
+            string text = building.IsUpgrading
+                ? string.Format(upgradeProgressFormat, Mathf.FloorToInt(progress * 100f))
+                : string.Format(buildFormat, string.Empty, cost);
+            upgradeToggle.Show(text, building.IsUpgrading, progress);
         }
+
+        // Сколько полосы видно в первый миг усиления, чтобы было ясно, что оно пошло.
+        private const float UpgradeProgressMin = 0.03f;
 
         private void OnUpgrade()
         {

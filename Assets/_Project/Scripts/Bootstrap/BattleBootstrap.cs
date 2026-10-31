@@ -128,7 +128,7 @@ namespace Marchlands.Bootstrap
             orderPanel.Initialize(match);
             if (squadCard != null)
             {
-                squadCard.Initialize(match);
+                squadCard.Initialize(match, scenario.PlayerSide);
             }
             topBar.Initialize(match, scenario.PlayerSide);
             buildPanel.Initialize(match, scenario.PlayerSide);
@@ -315,7 +315,13 @@ namespace Marchlands.Bootstrap
         private void OnBuildingSelectionChanged(Building building)
         {
             buildingViews.SetSelected(building);
-            buildingPanel.SetBuilding(building);
+            // Блокгауз ничего не нанимает и не строит — о нём рассказывает карточка внизу слева, как об отряде.
+            bool blockhouse = building != null && building.Type == BuildingType.Blockhouse;
+            buildingPanel.SetBuilding(blockhouse ? null : building);
+            if (squadCard != null)
+            {
+                squadCard.SetBuilding(blockhouse ? building : null);
+            }
         }
 
         private void OnCampSelectionChanged(UnitType? type)

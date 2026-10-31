@@ -27,6 +27,8 @@ MonoBehaviour:
       formationChangeTime: 4
       reformMoveSpeedMultiplier: 0.4
       arrivalTolerance: 0.05
+      backstepDistance: 6
+      backstepSpeedMultiplier: 0.5
       columnWaypointReach: 1.5
       roadAlignMaxDetour: 1.5
       roadRouteGain: 1.3
@@ -189,8 +191,8 @@ MonoBehaviour:
       barracksUpgradeTime: 40
       barracksUpgradeHireSpeed: 2
       upgradedSentryShots: 7
-      buildRadiusFromHQ: 19
-      buildingSpacing: 9
+      buildRadiusFromHQ: 21
+      buildingSpacing: 10.5
       hireCost: 3
       hireInterval: 3
       grenadierHireCost: 5
@@ -213,22 +215,22 @@ MonoBehaviour:
       houseBuildTime: 15
       maxHouses: 4
       annexSpacing: 2.5
-      spawnOffset: 9
-      campOffset: 6
+      spawnOffset: 10
+      campOffset: 6.8
       headquartersHealth: 600
       barracksHealth: 300
       stableHealth: 300
       sentryShots: 4
       sentryInterval: 6
       sentryHitChance: 0.2
-      sentryRange: 11
+      sentryRange: 12
       blockhouseHealth: 250
       blockhouseRebuildTime: 45
       blockhouseShots: 6
       blockhouseInterval: 6
       blockhouseHitChance: 0.22
-      blockhouseRange: 12
-      assaultRange: 5.2
+      blockhouseRange: 13
+      assaultRange: 5.8
       assaultDamage: 0.5
       repairDelay: 15
       repairRate: 5

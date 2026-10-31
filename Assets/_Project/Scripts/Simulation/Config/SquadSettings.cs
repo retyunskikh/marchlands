@@ -52,6 +52,14 @@ namespace Marchlands.Simulation.Config
         public float arrivalTolerance;
 
         /// <summary>
+        /// Точка позади и ближе этого — отряд не разворачивается, а пятится, сохраняя фронт (и встаёт тем же фронтом), u.
+        /// </summary>
+        public float backstepDistance;
+
+        /// <summary>Во сколько раз медленнее отряд пятится.</summary>
+        public float backstepSpeedMultiplier;
+
+        /// <summary>
         /// Колонна на марше поворачивает на ходу и срезает промежуточные точки пути: ближе этого к точке — идёт
         /// к следующей. Так же бегущие идут по точкам пути бегства, u.
         /// </summary>

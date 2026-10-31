@@ -1,3 +1,4 @@
+using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
@@ -30,8 +31,11 @@ namespace Marchlands.UI
         [SerializeField] private string artilleryTitle = "Пушка";
         [SerializeField] private string limberingText = "Берут на передок";
         [SerializeField] private string unlimberingText = "Снимают с передка";
-        [SerializeField] private string roundShotText = "Ядро";
-        [SerializeField] private string canisterText = "Картечь";
+        [SerializeField] private string limberedText = "На передке";
+        [SerializeField] private string gunReloadingText = "Заряжают";
+        [SerializeField] private string gunReadyText = "Готова к выстрелу";
+        [SerializeField] private string gunAimSquadText = "Наводят на отряд";
+        [SerializeField] private string gunAimBuildingText = "Наводят на здание";
         [Tooltip("{0} — живых, {1} — полная численность.")]
         [SerializeField] private string strengthFormat = "{0}/{1}";
         [Tooltip("{0} — дух числом.")]
@@ -54,16 +58,31 @@ namespace Marchlands.UI
         [Tooltip("Цвет рамки карточки толпы: отличает её от карточки отряда.")]
         [SerializeField] private Color campTint = new Color(0.82f, 0.78f, 0.7f);
 
+        [Header("Блокгауз")]
+        [Tooltip("Карточка блокгауза: здоровье полоской, стрелки и дальность.")]
+        [SerializeField] private Sprite blockhousePortrait;
+        [SerializeField] private string blockhouseTitle = "Блокгауз";
+        [SerializeField] private string enemyBlockhouseTitle = "Блокгауз врага";
+        [Tooltip("Значок человечка у численности — у здания его нет.")]
+        [SerializeField] private GameObject strengthIcon;
+        [SerializeField] private string healthFormat = "Прочность: {0}%";
+        [SerializeField] private string blockhouseDetailsFormat = "Стрелков: {0}";
+        [SerializeField] private string repairingSuffix = "\nЧинят";
+        [SerializeField] private string rebuildingFormat = "Строят: {0}%";
+
         private Match match;
         private Squad squad;
+        private Building building;
+        private Side playerSide;
         private Side campSide;
         private UnitType? campType;
         private Image panelImage;
         private Color panelColor;
 
-        public void Initialize(Match match)
+        public void Initialize(Match match, Side playerSide)
         {
             this.match = match;
+            this.playerSide = playerSide;
             panelImage = panel.GetComponent<Image>();
             panelColor = panelImage != null ? panelImage.color : Color.white;
             SetSquad(null);
@@ -75,11 +94,35 @@ namespace Marchlands.UI
             if (squad != null)
             {
                 campType = null;
+                building = null;
             }
 
-            panel.SetActive(squad != null || campType.HasValue);
+            panel.SetActive(squad != null || campType.HasValue || building != null);
             SetCampLook(false);
             Refresh();
+        }
+
+        /// <summary>Карточка блокгауза (своего или вражеского); null — скрыть, если не выделено другое.</summary>
+        public void SetBuilding(Building building)
+        {
+            this.building = building;
+            if (building != null)
+            {
+                squad = null;
+                campType = null;
+            }
+
+            panel.SetActive(squad != null || campType.HasValue || building != null);
+            SetCampLook(false);
+            Refresh();
+        }
+
+        private void LateUpdate()
+        {
+            if (strengthIcon != null && strengthIcon.activeSelf != (building == null))
+            {
+                strengthIcon.SetActive(building == null);
+            }
         }
 
         /// <summary>Карточка группы толпы рекрутов этого рода войск; null — скрыть (если не выделен отряд).</summary>
@@ -122,6 +165,12 @@ namespace Marchlands.UI
                 return;
             }
 
+            if (building != null)
+            {
+                RefreshBuilding();
+                return;
+            }
+
             if (squad == null && campType.HasValue)
             {
                 RefreshCamp(campType.Value);
@@ -153,6 +202,40 @@ namespace Marchlands.UI
             strengthLabel.text = string.Format(strengthFormat, squad.Alive, UnitStats.Of(squad, match.Settings).squadSize);
             // Перезарядку показывает кнопка «Залп» — в карточке её нет.
             detailsLabel.text = string.Format(moraleFormat, Mathf.RoundToInt(morale)) + "\n" + GetActivity();
+        }
+
+        private void RefreshBuilding()
+        {
+            if (match.FindBuilding(building.Id) == null)
+            {
+                SetBuilding(null);
+                return;
+            }
+
+            if (blockhousePortrait != null && portrait.sprite != blockhousePortrait)
+            {
+                portrait.sprite = blockhousePortrait;
+            }
+
+            titleLabel.text = building.Owner == playerSide ? blockhouseTitle : enemyBlockhouseTitle;
+            float share = building.MaxHealth > 0f ? Mathf.Clamp01(building.Health / building.MaxHealth) : 0f;
+            if (moraleFill != null)
+            {
+                moraleFill.fillAmount = share;
+                moraleFill.color = Color.Lerp(moraleLow, moraleHigh, share);
+            }
+
+            // Здание — не отряд: вместо «сколько людей» — прочность в процентах, без значка человечка.
+            strengthLabel.text = string.Format(healthFormat, Mathf.CeilToInt(share * 100f));
+            if (!building.IsBuilt)
+            {
+                detailsLabel.text = string.Format(rebuildingFormat, Mathf.FloorToInt(building.BuildProgress * 100f));
+                return;
+            }
+
+            Volley volley = Volley.Of(building, match.Settings.buildings);
+            detailsLabel.text = string.Format(blockhouseDetailsFormat, volley.Shots)
+                + (building.IsRepairing ? repairingSuffix : string.Empty);
         }
 
         private void RefreshCamp(UnitType type)
@@ -200,18 +283,33 @@ namespace Marchlands.UI
 
             if (squad.IsArtillery)
             {
-                string load = squad.ShotMode == Marchlands.Simulation.Combat.ShotMode.Canister ? canisterText : roundShotText;
+                // Пушка: что делает расчёт — везёт, снимает с передка, заряжает, наводит.
                 if (squad.IsLimbering)
                 {
-                    return (squad.IsLimbered ? unlimberingText : limberingText) + " · " + load;
+                    return squad.IsLimbered ? unlimberingText : limberingText;
                 }
 
                 if (squad.Order.Type == SquadOrderType.Move)
                 {
-                    return marchingText + " · " + load;
+                    return marchingText;
                 }
 
-                return standingText + " · " + load;
+                if (squad.IsLimbered)
+                {
+                    return limberedText;
+                }
+
+                if (squad.FireState == Marchlands.Simulation.Combat.FireState.Reloading)
+                {
+                    return gunReloadingText;
+                }
+
+                if (Marchlands.Simulation.Combat.GunTargeting.TryGetTarget(match, squad, out Squad targetSquad, out Building targetBuilding))
+                {
+                    return targetBuilding != null ? gunAimBuildingText : gunAimSquadText;
+                }
+
+                return gunReadyText;
             }
 
             switch (squad.Order.Type)

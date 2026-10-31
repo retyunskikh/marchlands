@@ -39,7 +39,7 @@ namespace Marchlands.Tests.EditMode
         [TestCase(Formation.Line, 90f, 0f, 10f, 90f, 10f, TestName = "Line_StraightAhead_10s")]
         [TestCase(Formation.Line, 90f, 10f, 0f, 0f, 12f, TestName = "Line_TurnRight90_ThenMarch_12s")]
         [TestCase(Formation.Column, 0f, 16f, 0f, 180f, 14f, TestName = "Column_March_ThenAboutFace_14s")]
-        [TestCase(Formation.Line, 0f, -5f, 0f, 0f, 13f, TestName = "Line_TargetBehind_TurnMarchTurn_13s")]
+        [TestCase(Formation.Line, 0f, -10f, 0f, 0f, 18f, TestName = "Line_TargetFarBehind_TurnMarchTurn_18s")]
         public void Squad_ArrivesInExpectedTime(Formation formation, float facing, float targetX, float targetY, float finalFacing, float expectedSeconds)
         {
             Match match = CreateMatch();
@@ -52,6 +52,37 @@ namespace Marchlands.Tests.EditMode
 
             Assert.That(ticks, Is.InRange(ExpectedTicks(expectedSeconds) - 1, ExpectedTicks(expectedSeconds) + 1));
             Assert.AreEqual(0f, math.distance(target, squad.Position), 1e-4f);
+        }
+
+        [Test]
+        public void ShortStepBack_WalksBackwards_WithoutTurning()
+        {
+            Match match = CreateMatch();
+            Squad squad = match.AddSquad(Side.France, float2.zero, 0f, Formation.Line);
+            var target = new float2(-4f, 0f);
+            match.Enqueue(new MoveCommand(squad.Id, target, 180f));
+            match.Tick();
+
+            int ticks = 1 + RunUntil(match, () =>
+            {
+                Assert.AreEqual(0f, Angles.Delta(0f, squad.Facing), 1e-3f, "Пятится, не разворачиваясь");
+                return squad.Order.Type == SquadOrderType.None;
+            });
+
+            // Вдвое медленнее обычного шага (1 u/s): 4 u за 8 с.
+            Assert.That(ticks, Is.InRange(ExpectedTicks(8f) - 1, ExpectedTicks(8f) + 1));
+            Assert.AreEqual(0f, math.distance(target, squad.Position), 1e-4f);
+            Assert.AreEqual(0f, squad.Facing, 1e-3f, "Встаёт прежним фронтом");
+        }
+
+        [Test]
+        public void ShortStepSideways_StillTurns()
+        {
+            Match match = CreateMatch();
+            Squad squad = match.AddSquad(Side.France, float2.zero, 0f, Formation.Line);
+            Assert.IsFalse(MoveCommand.IsBackstep(squad, new float2(0f, 4f), match.Settings.squads));
+            Assert.IsFalse(MoveCommand.IsBackstep(squad, new float2(-10f, 0f), match.Settings.squads));
+            Assert.IsTrue(MoveCommand.IsBackstep(squad, new float2(-4f, 1f), match.Settings.squads));
         }
 
         [Test]

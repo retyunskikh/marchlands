@@ -46,6 +46,12 @@ namespace Marchlands.Simulation.Commands
             }
 
             squad.ClearRoute();
+            // Немного назад — отряд пятится, не разворачиваясь, и встаёт прежним фронтом.
+            if (IsBackstep(squad, target, match.Settings.squads))
+            {
+                facing = squad.Facing;
+            }
+
             squad.HasArrived = false;
             squad.BestDistance = float.MaxValue;
             squad.StallTime = 0f;
@@ -55,5 +61,17 @@ namespace Marchlands.Simulation.Commands
                 RoutePlanner.TryPlan(match, squad, target);
             }
         }
+
+        /// <summary>Точка позади отряда (за его тылом в секторе ±60°) и ближе backstepDistance — отойти шагом назад.</summary>
+        public static bool IsBackstep(Squad squad, float2 target, Config.SquadSettings settings)
+        {
+            float2 offset = target - squad.Position;
+            float distance = math.length(offset);
+            return settings.backstepDistance > 0f && distance > settings.arrivalTolerance && distance <= settings.backstepDistance
+                && math.abs(Angles.Delta(squad.Facing, Angles.Of(offset))) >= BackstepAngle;
+        }
+
+        // Насколько точка должна быть позади (угол от фронта), чтобы отряд пятился, градусы.
+        private const float BackstepAngle = 120f;
     }
 }

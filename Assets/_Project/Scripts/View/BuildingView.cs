@@ -16,6 +16,10 @@ namespace Marchlands.View
         private SimulationSettings settings;
         private BuildingViewStyle style;
         private Color sideColor;
+        // Цвет крыши: цвет стороны, у деревянной казармы — дерево с оттенком стороны.
+        private Color roofColor;
+        private SpriteRenderer roofDetail;
+        private SpriteRenderer[] annexDetails;
         private Vector2 size;
         private SpriteRenderer scaffold;
 
@@ -46,6 +50,7 @@ namespace Marchlands.View
             this.settings = settings;
             this.style = style;
             this.sideColor = sideColor;
+            roofColor = sideColor;
             transform.position = new Vector3(building.Position.x, building.Position.y, 0f);
 
             bool isHeadquarters = building.Type == BuildingType.Headquarters;
@@ -64,9 +69,33 @@ namespace Marchlands.View
                 : isBlockhouse ? style.BlockhouseBaseSprite : style.BarracksBaseSprite;
             Sprite roofSprite = isHeadquarters ? style.HeadquartersRoofSprite : isStable || isDepot ? style.StableRoofSprite
                 : isBlockhouse ? style.BlockhouseRoofSprite : style.BarracksRoofSprite;
+            Sprite detailSprite = style.RoofDetailOf(building.Type);
+            if (building.Type == BuildingType.Barracks)
+            {
+                // Казарма до усиления — деревянная (тёс и частокол), после — каменная, под черепицей.
+                if (!building.IsUpgraded && style.BarracksWoodRoofSprite != null)
+                {
+                    roofSprite = style.BarracksWoodRoofSprite;
+                    detailSprite = null;
+                    roofColor = Color.Lerp(Color.white, sideColor, style.WoodRoofSideTint);
+                    roofColor.a = sideColor.a;
+                }
+                else if (building.IsUpgraded && style.BarracksStoneBaseSprite != null)
+                {
+                    baseSprite = style.BarracksStoneBaseSprite;
+                }
+            }
+
             if (baseSprite != null && roofSprite != null)
             {
                 CreateEstate(baseSprite, roofSprite, isHeadquarters);
+                if (detailSprite != null)
+                {
+                    roofDetail = CreateDetail("Roof Detail", detailSprite, body.transform.localPosition);
+                    roofDetail.flipX = body.flipX;
+                    roofDetail.transform.localScale = FitScale(detailSprite);
+                }
+
                 if (isHeadquarters)
                 {
                     CreateAnnexes();
@@ -157,7 +186,7 @@ namespace Marchlands.View
             inner.transform.localScale = FitScale(baseSprite);
             innerColor = Color.white;
 
-            body = CreateRenderer("Roofs", style.BodySortingOrder + 1, sideColor);
+            body = CreateRenderer("Roofs", style.BodySortingOrder + 1, roofColor);
             body.sprite = roofSprite;
             body.flipX = flip;
             body.transform.localScale = FitScale(roofSprite);
@@ -201,8 +230,27 @@ namespace Marchlands.View
                 annexRoofs[i].transform.localPosition = position;
                 annexRoofs[i].transform.localScale = FitScale(style.AnnexRoofSprite, style.AnnexSize);
                 annexBases[i].enabled = annexRoofs[i].enabled = false;
+                if (style.AnnexRoofDetailSprite != null)
+                {
+                    annexDetails ??= new SpriteRenderer[offsets.Length];
+                    annexDetails[i] = CreateDetail($"Annex Detail {i}", style.AnnexRoofDetailSprite, position);
+                    annexDetails[i].transform.localScale = FitScale(style.AnnexRoofDetailSprite, style.AnnexSize);
+                    annexDetails[i].enabled = false;
+                }
             }
         }
+
+        /// <summary>Детали поверх крыши: тот же порядок отрисовки, что у крыши, но чуть ближе к камере — поверх неё.</summary>
+        private SpriteRenderer CreateDetail(string name, Sprite sprite, Vector2 position)
+        {
+            SpriteRenderer detail = CreateRenderer(name, style.BodySortingOrder + 1, Color.white);
+            detail.sprite = sprite;
+            detail.transform.localPosition = new Vector3(position.x, position.y, DetailDepth);
+            return detail;
+        }
+
+        // Насколько детали крыши ближе к камере, чем сама крыша (при равном порядке отрисовки рисуются поверх).
+        private const float DetailDepth = -0.01f;
 
         private static Vector3 FitScale(Sprite sprite, Vector2 target)
         {
@@ -219,6 +267,12 @@ namespace Marchlands.View
                 bool underConstruction = i == building.Houses && building.IsBuildingHouse;
                 bool visible = built || underConstruction;
                 annexBases[i].enabled = annexRoofs[i].enabled = visible;
+                if (annexDetails != null && annexDetails[i] != null)
+                {
+                    annexDetails[i].enabled = visible;
+                    annexDetails[i].color = new Color(1f, 1f, 1f, visible && !built ? style.ConstructionAlpha : 1f);
+                }
+
                 if (!visible)
                 {
                     continue;
@@ -251,8 +305,8 @@ namespace Marchlands.View
             float health = building.MaxHealth > 0f ? math.saturate(building.Health / building.MaxHealth) : 1f;
             // Повреждённое здание темнеет.
             Color tint = Color.Lerp(style.DamagedTint, Color.white, health);
-            Color bodyColor = sideColor * tint;
-            bodyColor.a = sideColor.a;
+            Color bodyColor = roofColor * tint;
+            bodyColor.a = roofColor.a;
             Color shownInnerColor = innerColor * tint;
             shownInnerColor.a = innerColor.a;
             if (!building.IsBuilt)
@@ -263,6 +317,10 @@ namespace Marchlands.View
 
             body.color = bodyColor;
             inner.color = shownInnerColor;
+            if (roofDetail != null)
+            {
+                roofDetail.color = new Color(1f, 1f, 1f, building.IsBuilt ? 1f : style.ConstructionAlpha);
+            }
             if (flag != null)
             {
                 flag.color = bodyColor;

@@ -472,7 +472,20 @@ namespace Marchlands.Simulation.Squads
 
                 speed *= match.TerrainSpeedMultiplier(squad.Position);
                 float desired = Angles.Of(toTarget);
-                if (marchTurns && speed > 0f && CanTurnOnTheMove(squad, desired, distance, speed, settings.squads.rotationSpeed))
+                // Немного назад — пятится, не разворачиваясь (медленнее).
+                if (!detour && Commands.MoveCommand.IsBackstep(squad, target, settings.squads))
+                {
+                    float back = speed * settings.squads.backstepSpeedMultiplier * time;
+                    if (back < distance)
+                    {
+                        squad.Position += toTarget / distance * back;
+                        return;
+                    }
+
+                    squad.Position = target;
+                    time = 0f;
+                }
+                else if (marchTurns && speed > 0f && CanTurnOnTheMove(squad, desired, distance, speed, settings.squads.rotationSpeed))
                 {
                     float delta = Angles.Delta(squad.Facing, desired);
                     float turn = math.min(math.abs(delta), settings.squads.rotationSpeed * time);

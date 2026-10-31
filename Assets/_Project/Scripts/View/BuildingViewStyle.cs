@@ -67,6 +67,20 @@ namespace Marchlands.View
         [SerializeField] private Sprite stableRoofSprite;
         [Tooltip("Двор артдепо: навес конюшни, а во дворе пушки и ядра.")]
         [SerializeField] private Sprite depotBaseSprite;
+
+        [Header("Детали и усиление")]
+        [Tooltip("Черепица, кромки и коньки поверх крыш (не окрашиваются): штаб, казарма, конюшня/депо, блокгауз, пристройка.")]
+        [SerializeField] private Sprite headquartersRoofDetailSprite;
+        [SerializeField] private Sprite barracksRoofDetailSprite;
+        [SerializeField] private Sprite stableRoofDetailSprite;
+        [SerializeField] private Sprite blockhouseRoofDetailSprite;
+        [SerializeField] private Sprite annexRoofDetailSprite;
+        [Tooltip("Казарма до усиления — деревянная: тёсовая крыша и частокол.")]
+        [SerializeField] private Sprite barracksWoodRoofSprite;
+        [Tooltip("Усиленная казарма — каменная ограда и мощёный двор.")]
+        [SerializeField] private Sprite barracksStoneBaseSprite;
+        [Tooltip("Насколько деревянная крыша окрашена цветом стороны (0 — просто дерево).")]
+        [SerializeField, Range(0f, 1f)] private float woodRoofSideTint = 0.3f;
         [Tooltip("Прозрачность строящегося здания.")]
         [SerializeField] private float constructionAlpha = 0.45f;
         [SerializeField] private Vector2 progressBarSize = new Vector2(2.6f, 0.22f);
@@ -184,6 +198,31 @@ namespace Marchlands.View
         public Sprite StableRoofSprite => stableRoofSprite;
 
         public Sprite DepotBaseSprite => depotBaseSprite;
+
+        public Sprite AnnexRoofDetailSprite => annexRoofDetailSprite;
+
+        public Sprite BarracksWoodRoofSprite => barracksWoodRoofSprite;
+
+        public Sprite BarracksStoneBaseSprite => barracksStoneBaseSprite;
+
+        public float WoodRoofSideTint => woodRoofSideTint;
+
+        /// <summary>Детали крыши здания этого типа (может не быть).</summary>
+        public Sprite RoofDetailOf(BuildingType type)
+        {
+            switch (type)
+            {
+                case BuildingType.Headquarters:
+                    return headquartersRoofDetailSprite;
+                case BuildingType.Stable:
+                case BuildingType.ArtilleryDepot:
+                    return stableRoofDetailSprite;
+                case BuildingType.Blockhouse:
+                    return blockhouseRoofDetailSprite;
+                default:
+                    return barracksRoofDetailSprite;
+            }
+        }
 
         public Vector2 StableSize => stableSize;
 
@@ -311,7 +350,6 @@ namespace Marchlands.View
 
         public Color ScaffoldColor => scaffoldColor;
 
-        /// <summary>Габариты здания этого типа.</summary>
         /// <summary>Размер здания с учётом усиления: усиленная казарма крупнее.</summary>
         public Vector2 SizeOf(Building building)
         {
@@ -319,6 +357,7 @@ namespace Marchlands.View
             return building.IsUpgraded ? size * upgradedScale : size;
         }
 
+        /// <summary>Габариты здания этого типа.</summary>
         public Vector2 SizeOf(BuildingType type)
         {
             switch (type)

@@ -26,6 +26,8 @@ namespace Marchlands.Tests.EditMode
                     formationChangeTime = 4f,
                     reformMoveSpeedMultiplier = 0.4f,
                     arrivalTolerance = 0.05f,
+                    backstepDistance = 6f,
+                    backstepSpeedMultiplier = 0.5f,
                     columnWaypointReach = 1.5f,
                     roadAlignMaxDetour = 1.5f,
                     roadRouteGain = 1.3f,
