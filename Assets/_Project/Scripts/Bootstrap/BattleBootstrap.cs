@@ -24,6 +24,9 @@ namespace Marchlands.Bootstrap
         [SerializeField] private ScenarioConfig scenario;
         [Tooltip("Карты на выбор в главном меню, по порядку карточек; пусто — всегда scenario (песочницы).")]
         [SerializeField] private ScenarioConfig[] maps;
+        [Tooltip("Карта обучения (уроки ведёт tutorial).")]
+        [SerializeField] private ScenarioConfig tutorialScenario;
+        [SerializeField] private TutorialDirector tutorial;
         [SerializeField] private int seed = 1;
         [SerializeField] private int targetFrameRate = 60;
 
@@ -52,6 +55,10 @@ namespace Marchlands.Bootstrap
         private Match match;
         private FixedStepClock clock;
 
+        private bool isTutorial;
+        private GatedController enemyTactics;
+        private GatedController enemyStrategy;
+
         public Match Match => match;
 
         /// <summary>Доля шага между последним выполненным тиком и следующим, в [0, 1).</summary>
@@ -62,7 +69,12 @@ namespace Marchlands.Bootstrap
             // На мобильных Unity по умолчанию ограничивает частоту 30 кадрами.
             Application.targetFrameRate = targetFrameRate;
 
-            if (maps != null && maps.Length > 0)
+            isTutorial = MapChoice.Tutorial && tutorialScenario != null && tutorial != null;
+            if (isTutorial)
+            {
+                scenario = tutorialScenario;
+            }
+            else if (maps != null && maps.Length > 0)
             {
                 scenario = maps[Mathf.Clamp(MapChoice.Selected, 0, maps.Length - 1)];
             }
@@ -126,6 +138,11 @@ namespace Marchlands.Bootstrap
             if (campPanel != null)
             {
                 campPanel.Initialize(match, scenario.PlayerSide);
+            }
+
+            if (isTutorial && enemyTactics != null)
+            {
+                tutorial.Initialize(match, scenario.PlayerSide, input, enemyTactics, enemyStrategy);
             }
 
             input.SelectionChanged += OnSelectionChanged;
@@ -225,7 +242,15 @@ namespace Marchlands.Bootstrap
                     match.AddBlockhouse(side, blockhouse);
                 }
 
-                if (scenario.IsAiControlled(side))
+                if (scenario.IsAiControlled(side) && isTutorial)
+                {
+                    // В обучении противник включается по ходу уроков.
+                    enemyTactics = new GatedController(new TacticalAi(side));
+                    enemyStrategy = new GatedController(new StrategicAi(side));
+                    match.AddController(enemyTactics);
+                    match.AddController(enemyStrategy);
+                }
+                else if (scenario.IsAiControlled(side))
                 {
                     match.AddController(new TacticalAi(side));
                     match.AddController(new StrategicAi(side));

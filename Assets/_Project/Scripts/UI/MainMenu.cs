@@ -11,6 +11,8 @@ namespace Marchlands.UI
     public sealed class MainMenu : MonoBehaviour
     {
         [SerializeField] private Button startButton;
+        [Tooltip("Обучение: отдельная карта с пошаговыми уроками.")]
+        [SerializeField] private Button tutorialButton;
         [SerializeField] private string battleSceneName = "Battle";
         [Tooltip("Карточки карт — в том же порядке, что список карт в сцене боя.")]
         [SerializeField] private Button[] mapButtons;
@@ -24,7 +26,12 @@ namespace Marchlands.UI
         {
             Application.targetFrameRate = targetFrameRate;
             Time.timeScale = 1f;
-            startButton.onClick.AddListener(() => SceneManager.LoadScene(battleSceneName));
+            startButton.onClick.AddListener(() => StartBattle(false));
+            if (tutorialButton != null)
+            {
+                tutorialButton.onClick.AddListener(() => StartBattle(true));
+            }
+
             stressButton.onClick.AddListener(() => SceneManager.LoadScene(stressSceneName));
             stressButton.gameObject.SetActive(Debug.isDebugBuild);
 
@@ -40,6 +47,12 @@ namespace Marchlands.UI
             }
 
             Select(Mathf.Clamp(MapChoice.Selected, 0, Mathf.Max(0, mapButtons.Length - 1)));
+        }
+
+        private void StartBattle(bool tutorial)
+        {
+            MapChoice.Tutorial = tutorial;
+            SceneManager.LoadScene(battleSceneName);
         }
 
         private void Select(int index)

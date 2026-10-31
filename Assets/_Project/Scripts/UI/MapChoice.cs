@@ -7,6 +7,9 @@ namespace Marchlands.UI
     {
         private const string PrefsKey = "Marchlands.Map";
 
+        /// <summary>Запущено обучение (своя карта с уроками), а не обычный бой. Не запоминается между запусками.</summary>
+        public static bool Tutorial { get; set; }
+
         public static int Selected
         {
             get
