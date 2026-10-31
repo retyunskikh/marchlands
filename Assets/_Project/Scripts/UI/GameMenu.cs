@@ -1,5 +1,6 @@
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Victory;
+using Marchlands.View;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -8,7 +9,7 @@ namespace Marchlands.UI
 {
     /// <summary>
     /// Пауза и экран результата матча. Пауза останавливает время (а с ним и тики симуляции),
-    /// «Заново» перезапускает текущую сцену, «В меню» открывает главное меню.
+    /// «Заново» перезапускает текущую сцену, «В меню» открывает главное меню. На паузе музыка затихает.
     /// </summary>
     public sealed class GameMenu : MonoBehaviour
     {
@@ -38,12 +39,14 @@ namespace Marchlands.UI
 
         private Match match;
         private Side playerSide;
+        private MusicDirector music;
         private bool resultShown;
 
-        public void Initialize(Match match, Side playerSide)
+        public void Initialize(Match match, Side playerSide, MusicDirector music)
         {
             this.match = match;
             this.playerSide = playerSide;
+            this.music = music;
             Time.timeScale = 1f;
 
             pauseButton.onClick.AddListener(Pause);
@@ -92,12 +95,22 @@ namespace Marchlands.UI
         {
             Time.timeScale = 0f;
             pauseOverlay.SetActive(true);
+            SetMusicPaused(true);
         }
 
         private void Resume()
         {
             Time.timeScale = 1f;
             pauseOverlay.SetActive(false);
+            SetMusicPaused(false);
+        }
+
+        private void SetMusicPaused(bool paused)
+        {
+            if (music != null)
+            {
+                music.SetPaused(paused);
+            }
         }
 
         private void Restart()

@@ -11,7 +11,8 @@ namespace Marchlands.View
     /// тишина на случайное время из silenceTime; затем — следующая композиция того же плейлиста (по кругу).
     /// Марш вступает сразу, когда не бегущий враг подходит к не бегущему отряду игрока ближе tensionRadius;
     /// если угрозы нет calmDelay секунд, марш затихает, а после паузы играет спокойная музыка.
-    /// Без матча (главное меню) играет только спокойная музыка.
+    /// Без матча (главное меню) играет только спокойная музыка. На паузе игры музыка за pauseFadeTime затихает
+    /// и встаёт на паузу, после паузы продолжается с того же места.
     /// </summary>
     public sealed class MusicDirector : MonoBehaviour
     {
@@ -36,9 +37,12 @@ namespace Marchlands.View
         [SerializeField] private float calmDelay = 20f;
         [Tooltip("Как часто проверять обстановку, s.")]
         [SerializeField] private float checkInterval = 0.5f;
+        [Tooltip("За сколько секунд музыка затихает на паузе игры и возвращается после неё.")]
+        [SerializeField] private float pauseFadeTime = 1f;
 
         private readonly AudioSource[] sources = new AudioSource[2];
         private readonly float[] targetVolumes = new float[2];
+        private readonly float[] volumes = new float[2];
         private readonly int[] nextTrack = new int[2];
 
         private Match match;
@@ -50,6 +54,8 @@ namespace Marchlands.View
         private float silenceTimer;
         private float sinceThreat = float.MaxValue;
         private float sinceCheck;
+        private bool paused;
+        private float pauseLevel = 1f;
 
         private const string EnabledKey = "music.enabled";
         private static bool? musicEnabled;
@@ -93,12 +99,35 @@ namespace Marchlands.View
             PlayNext(Mood.Calm, instant: true);
         }
 
+        /// <summary>Пауза игры: музыка плавно затихает и останавливается; после паузы продолжается с того же места.</summary>
+        public void SetPaused(bool value)
+        {
+            if (paused == value)
+            {
+                return;
+            }
+
+            paused = value;
+            if (!paused)
+            {
+                foreach (AudioSource source in sources)
+                {
+                    source.UnPause();
+                }
+            }
+        }
+
         private void Update()
         {
             float delta = Time.unscaledDeltaTime;
             foreach (AudioSource source in sources)
             {
                 source.mute = !Enabled;
+            }
+
+            if (UpdatePause(delta))
+            {
+                return;
             }
 
             UpdateMood(delta);
@@ -185,6 +214,31 @@ namespace Marchlands.View
             return false;
         }
 
+        /// <summary>
+        /// Ведёт громкость паузы к нулю или к полной; совсем затихшую музыку ставит на паузу.
+        /// Возвращает true, пока игра на паузе: композиции, тишина и настроение тогда не меняются.
+        /// </summary>
+        private bool UpdatePause(float delta)
+        {
+            float step = pauseFadeTime > 0f ? delta / pauseFadeTime : 1f;
+            pauseLevel = Mathf.MoveTowards(pauseLevel, paused ? 0f : 1f, step);
+            if (!paused)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < sources.Length; i++)
+            {
+                sources[i].volume = volumes[i] * pauseLevel;
+                if (pauseLevel <= 0f && sources[i].isPlaying)
+                {
+                    sources[i].Pause();
+                }
+            }
+
+            return true;
+        }
+
         /// <summary>Громкость каждого источника плавно идёт к целевой; затихший источник останавливается.</summary>
         private void UpdateVolumes(float delta)
         {
@@ -192,8 +246,9 @@ namespace Marchlands.View
             for (int i = 0; i < sources.Length; i++)
             {
                 AudioSource source = sources[i];
-                source.volume = Mathf.MoveTowards(source.volume, targetVolumes[i], step);
-                if (targetVolumes[i] <= 0f && source.volume <= 0f && source.isPlaying)
+                volumes[i] = Mathf.MoveTowards(volumes[i], targetVolumes[i], step);
+                source.volume = volumes[i] * pauseLevel;
+                if (targetVolumes[i] <= 0f && volumes[i] <= 0f && source.isPlaying)
                 {
                     source.Stop();
                 }
@@ -224,7 +279,8 @@ namespace Marchlands.View
             activeSource = 1 - activeSource;
             AudioSource source = sources[activeSource];
             source.clip = playlist[index];
-            source.volume = instant ? volume : 0f;
+            volumes[activeSource] = instant ? volume : 0f;
+            source.volume = volumes[activeSource] * pauseLevel;
             targetVolumes[activeSource] = volume;
             source.Play();
             silent = false;

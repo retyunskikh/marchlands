@@ -85,7 +85,7 @@ namespace Marchlands.Bootstrap
             buildPanel.Initialize(match, scenario.PlayerSide);
             buildingPanel.Initialize(match);
             formSquadPanel.Initialize(match, scenario.PlayerSide);
-            gameMenu.Initialize(match, scenario.PlayerSide);
+            gameMenu.Initialize(match, scenario.PlayerSide, music);
 
             input.SelectionChanged += OnSelectionChanged;
             input.BuildingSelectionChanged += OnBuildingSelectionChanged;
