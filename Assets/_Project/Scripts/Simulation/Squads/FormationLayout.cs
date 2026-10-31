@@ -11,7 +11,8 @@ namespace Marchlands.Simulation.Squads
     /// </summary>
     public static class FormationLayout
     {
-        public static void GetGrid(Formation formation, int alive, SquadSettings settings, out int files, out int ranks)
+        /// <param name="maxFiles">Не шире стольких рядов (узкое место, например мост): строй становится глубже; 0 — без ограничения.</param>
+        public static void GetGrid(Formation formation, int alive, SquadSettings settings, out int files, out int ranks, int maxFiles = 0)
         {
             if (alive <= 0)
             {
@@ -23,24 +24,41 @@ namespace Marchlands.Simulation.Squads
             files = formation == Formation.Line
                 ? CeilDiv(alive, settings.lineRanks)
                 : math.min(alive, settings.columnFrontWidth);
+            if (maxFiles > 0)
+            {
+                files = math.min(files, maxFiles);
+            }
+
             ranks = CeilDiv(alive, files);
         }
 
-        /// <summary>Половины ширины (x) и глубины (y) прямоугольника, который занимает отряд.</summary>
-        public static float2 GetHalfExtents(Formation formation, int alive, SquadSettings settings)
+        /// <summary>Сетка строя отряда с учётом сжатия (<see cref="Squad.FileLimit"/>).</summary>
+        public static void GetGrid(Squad squad, SquadSettings settings, out int files, out int ranks)
         {
-            GetGrid(formation, alive, settings, out int files, out int ranks);
+            GetGrid(squad.Formation, squad.Alive, settings, out files, out ranks, squad.FileLimit);
+        }
+
+        /// <summary>Половины ширины (x) и глубины (y) прямоугольника, который занимает отряд.</summary>
+        public static float2 GetHalfExtents(Formation formation, int alive, SquadSettings settings, int maxFiles = 0)
+        {
+            GetGrid(formation, alive, settings, out int files, out int ranks, maxFiles);
             return new float2(files * settings.fileSpacing, ranks * settings.rankSpacing) * 0.5f;
+        }
+
+        /// <summary>Габариты отряда в его нынешнем строю с учётом сжатия.</summary>
+        public static float2 GetHalfExtents(Squad squad, SquadSettings settings)
+        {
+            return GetHalfExtents(squad.Formation, squad.Alive, settings, squad.FileLimit);
         }
 
         /// <summary>
         /// Заполняет <paramref name="result"/> локальными позициями солдат: первой идёт передняя шеренга,
         /// неполная последняя шеренга выравнивается по центру. Число слотов равно <paramref name="alive"/>.
         /// </summary>
-        public static void GetLocalSlots(Formation formation, int alive, SquadSettings settings, List<float2> result)
+        public static void GetLocalSlots(Formation formation, int alive, SquadSettings settings, List<float2> result, int maxFiles = 0)
         {
             result.Clear();
-            GetGrid(formation, alive, settings, out int files, out int ranks);
+            GetGrid(formation, alive, settings, out int files, out int ranks, maxFiles);
 
             for (int i = 0; i < alive; i++)
             {

@@ -48,7 +48,7 @@ namespace Marchlands.Simulation.Squads
 
         public static SquadFootprint Of(Squad squad, SquadSettings settings)
         {
-            return new SquadFootprint(squad.Position, squad.Facing, FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings));
+            return new SquadFootprint(squad.Position, squad.Facing, FormationLayout.GetHalfExtents(squad, settings));
         }
 
         /// <summary>

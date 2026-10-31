@@ -17,6 +17,7 @@ namespace Marchlands.Simulation.Squads
         public static void Update(Squad squad, Match match, float deltaTime)
         {
             SquadSettings settings = match.Settings.squads;
+            UpdateFileLimit(squad, match);
 
             if (squad.IsInMelee)
             {
@@ -84,6 +85,27 @@ namespace Marchlands.Simulation.Squads
             {
                 Commands.ChangeFormationCommand.Start(match, squad, restore.Value);
             }
+        }
+
+        /// <summary>
+        /// На мосту строй сжимается: не шире настила, зато глубже (линия остаётся линией). Сжимается, как только
+        /// отряд в коридоре моста и его фронт подходит к въезду; сошёл с моста — раздаётся обратно.
+        /// </summary>
+        private static void UpdateFileLimit(Squad squad, Match match)
+        {
+            SquadSettings settings = match.Settings.squads;
+            float bridgeHalf = match.Settings.terrain.bridgeHalfWidth;
+            if (match.Terrain == null || bridgeHalf <= 0f || settings.fileSpacing <= 0f)
+            {
+                // Без местности мостов нет — сжимать нечему.
+                return;
+            }
+
+            // Габариты без сжатия: по ним решаем, тесно ли отряду, — иначе сжатый строй тут же «помещался» бы обратно.
+            float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings);
+            int files = math.max(1, (int)math.floor(bridgeHalf * 2f / settings.fileSpacing));
+            bool entering = match.Terrain.IsEnteringBridge(squad.Position, math.max(half.x, bridgeHalf), half.y + settings.rankSpacing);
+            squad.FileLimit = entering ? files : 0;
         }
 
         /// <summary>
@@ -166,7 +188,7 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Полуразмеры повёрнутого прямоугольника отряда по осям мира.</summary>
         public static float2 ProjectedHalfExtents(Squad squad, float facing, SquadSettings settings)
         {
-            float2 half = FormationLayout.GetHalfExtents(squad.TargetFormation, squad.Alive, settings);
+            float2 half = FormationLayout.GetHalfExtents(squad.TargetFormation, squad.Alive, settings, squad.FileLimit);
             float2 forward = Angles.Direction(facing);
             float2 right = Angles.Right(facing);
             return new float2(

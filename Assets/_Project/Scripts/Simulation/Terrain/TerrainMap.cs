@@ -219,6 +219,33 @@ namespace Marchlands.Simulation.Terrain
             return index >= 0 && crossings[index].Type == CrossingType.Ford && IsInRiverBand(point);
         }
 
+        /// <summary>
+        /// Входит ли отряд с центром в <paramref name="point"/> на мост: центр в коридоре моста (не дальше
+        /// <paramref name="lateral"/> от его оси вбок) и не дальше <paramref name="approach"/> от въезда за берегом.
+        /// </summary>
+        public bool IsEnteringBridge(float2 point, float lateral, float approach)
+        {
+            foreach (Crossing crossing in crossings)
+            {
+                if (crossing.Type != CrossingType.Bridge)
+                {
+                    continue;
+                }
+
+                float2 axis = crossing.Across;
+                float length = math.distance(crossing.BankA, crossing.BankB);
+                float2 offset = point - crossing.BankA;
+                float along = math.dot(offset, axis);
+                float side = math.abs(math.dot(offset, new float2(-axis.y, axis.x)));
+                if (side <= lateral && along >= -approach && along <= length + approach)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public bool IsOnBridge(float2 point)
         {
             int index = CrossingAt(point);

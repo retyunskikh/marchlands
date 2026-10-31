@@ -154,6 +154,12 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Куда проложен маршрут бегства (бегущий перепрокладывает его, если цель сменилась).</summary>
         internal float2 RouteGoal { get; set; }
 
+        /// <summary>
+        /// Сколько рядов в ширину помещается там, где стоит отряд (на мосту — по ширине настила): строй, не меняясь,
+        /// становится уже и глубже. 0 — без ограничения.
+        /// </summary>
+        public int FileLimit { get; internal set; }
+
         /// <summary>Стоит ли центр отряда на холме (обновляется после движения): стреляет дальше.</summary>
         public bool IsOnHill { get; internal set; }
 

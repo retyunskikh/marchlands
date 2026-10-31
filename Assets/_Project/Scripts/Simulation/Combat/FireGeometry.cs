@@ -13,14 +13,14 @@ namespace Marchlands.Simulation.Combat
         /// <summary>Середина переднего края отряда.</summary>
         public static float2 FrontCenter(Squad squad, SquadSettings settings)
         {
-            float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings);
+            float2 half = FormationLayout.GetHalfExtents(squad, settings);
             return squad.Position + Angles.Direction(squad.Facing) * half.y;
         }
 
         /// <summary>Половина ширины фронта.</summary>
         public static float FrontHalfWidth(Squad squad, SquadSettings settings)
         {
-            return FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings).x;
+            return FormationLayout.GetHalfExtents(squad, settings).x;
         }
 
         /// <summary>

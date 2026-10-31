@@ -205,6 +205,84 @@ namespace Marchlands.Tests.EditMode
             Assert.IsNull(match.FindSquad(squad.Id), "Добежали до своих");
         }
 
+        /// <summary>Поле 100×60, река по x = 0, мост на y = 0 по дороге с запада на восток.</summary>
+        private static Match BridgeMap()
+        {
+            var match = new Match(1, TestSettings.Create());
+            var map = new TerrainMap(new float2(-50f, -30f), new float2(50f, 30f));
+            map.AddRoad(new List<float2> { new float2(-50f, 0f), new float2(50f, 0f) });
+            map.AddRiver(new List<float2> { new float2(0f, -40f), new float2(0f, 40f) }, 2f);
+            map.AddCrossing(new float2(0f, 0f), CrossingType.Bridge);
+            match.SetTerrain(map);
+            return match;
+        }
+
+        [Test]
+        public void Line_SqueezesOnBridge_AndWidensAfter()
+        {
+            Match match = BridgeMap();
+            Squad squad = match.AddSquad(Side.France, new float2(-12f, 0f), 0f, Formation.Line);
+            match.Enqueue(new MoveCommand(squad.Id, new float2(12f, 0f), 0f));
+            bool squeezed = false;
+            for (int i = 0; i < 600 && squad.Order.Type != SquadOrderType.None || i == 0; i++)
+            {
+                match.Tick();
+                if (match.Terrain.IsOnBridge(squad.Position))
+                {
+                    squeezed = true;
+                    Assert.Greater(squad.FileLimit, 0, "На мосту строй сжат");
+                    float half = FormationLayout.GetHalfExtents(squad, match.Settings.squads).x;
+                    Assert.LessOrEqual(half, match.Settings.terrain.bridgeHalfWidth, "Не шире настила");
+                }
+            }
+
+            Assert.IsTrue(squeezed, "Прошёл по мосту");
+            Assert.AreEqual(Formation.Line, squad.Formation, "Линия не отменяется");
+            Assert.AreEqual(0, squad.FileLimit, "За мостом раздался обратно");
+        }
+
+        [Test]
+        public void SqueezedLine_FiresWeakerThanFullLine()
+        {
+            int full = 0;
+            int squeezed = 0;
+            for (ulong seed = 1; seed <= 200; seed++)
+            {
+                full += SqueezeVolley(seed, 0);
+                squeezed += SqueezeVolley(seed, 6);
+            }
+
+            Assert.Less(squeezed, full, "Задние ряды сжатого строя дальше от врага");
+        }
+
+        private static int SqueezeVolley(ulong seed, int fileLimit)
+        {
+            var match = new Match(seed, TestSettings.Create());
+            Squad shooter = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, 30);
+            shooter.FileLimit = fileLimit;
+            float shooterHalf = FormationLayout.GetHalfExtents(shooter, match.Settings.squads).y;
+            shooter.Position = new float2(0f, -shooterHalf);
+            float targetHalf = FormationLayout.GetHalfExtents(Formation.Line, 30, match.Settings.squads).y;
+            match.AddSquad(Side.Austria, new float2(0f, 5f + targetHalf), -90f, Formation.Line, 30);
+            match.Enqueue(new VolleyCommand(shooter.Id));
+            for (int i = 0; i < 100; i++)
+            {
+                // Сжатие держим вручную: моста здесь нет.
+                shooter.FileLimit = fileLimit;
+                match.Tick();
+                foreach (VolleyEvent volley in match.LastTickVolleys)
+                {
+                    if (volley.ShooterId == shooter.Id)
+                    {
+                        return volley.Casualties;
+                    }
+                }
+            }
+
+            Assert.Fail("Залпа не было");
+            return 0;
+        }
+
         [Test]
         public void AiCavalry_ChargesOnlyFromFlankOrRear()
         {

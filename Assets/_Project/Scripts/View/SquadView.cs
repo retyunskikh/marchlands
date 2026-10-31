@@ -57,6 +57,7 @@ namespace Marchlands.View
         private Formation slotsFormation;
         private Formation slotsTarget;
         private int slotsAlive = -1;
+        private int slotsFileLimit;
         private bool slotsChanging;
 
         // У каждого солдата своя походка: 0 — стоит, 1 — идёт; меняется плавно, чтобы шаг не обрывался.
@@ -174,10 +175,10 @@ namespace Marchlands.View
 
             if (selectionMarker.enabled)
             {
-                float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings);
+                float2 half = FormationLayout.GetHalfExtents(squad, settings);
                 if (squad.IsChangingFormation)
                 {
-                    half = math.lerp(half, FormationLayout.GetHalfExtents(squad.TargetFormation, squad.Alive, settings), change);
+                    half = math.lerp(half, FormationLayout.GetHalfExtents(squad.TargetFormation, squad.Alive, settings, squad.FileLimit), change);
                 }
 
                 half *= (float2)style.GetSpacing(squad.Type);
@@ -218,7 +219,7 @@ namespace Marchlands.View
         /// </summary>
         private float UpdateTrail(float2 position, float facing, float2 spacing, bool changing)
         {
-            float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings) * spacing;
+            float2 half = FormationLayout.GetHalfExtents(squad, settings) * spacing;
             float2 forward = Angles.Direction(facing);
             float2 head = position + forward * half.y;
             float length = half.y * 2f;
@@ -310,7 +311,7 @@ namespace Marchlands.View
         /// <summary>Расстояние от центра отряда до его тыла.</summary>
         private float GetRearDistance()
         {
-            float halfDepth = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings).y * style.GetSpacing(squad.Type).y;
+            float halfDepth = FormationLayout.GetHalfExtents(squad, settings).y * style.GetSpacing(squad.Type).y;
             return squad.IsRouting ? halfDepth * style.RoutSpread + style.RoutScatter : halfDepth;
         }
 
@@ -608,7 +609,7 @@ namespace Marchlands.View
         private void UpdateSlots()
         {
             bool changing = squad.IsChangingFormation;
-            if (slotsFormation == squad.Formation && slotsTarget == squad.TargetFormation
+            if (slotsFormation == squad.Formation && slotsTarget == squad.TargetFormation && slotsFileLimit == squad.FileLimit
                 && slotsAlive == squad.Alive && slotsChanging == changing && fromSlots.Count == squad.Alive)
             {
                 return;
@@ -616,7 +617,8 @@ namespace Marchlands.View
 
             // Перестроение закончилось или повернуло назад: прежняя цель стала текущим строем, и солдат
             // занимает тот слот, к которому шёл.
-            bool sameSoldiers = slotsAlive == squad.Alive && slotOrder.Count == squad.Alive;
+            // Строй сжался на мосту (или раздался обратно) — солдаты занимают новые места по порядку от того, где стоят.
+            bool sameSoldiers = slotsAlive == squad.Alive && slotOrder.Count == squad.Alive && slotsFileLimit == squad.FileLimit;
             if (sameSoldiers && slotsChanging && squad.Formation == slotsTarget && squad.Formation != slotsFormation)
             {
                 for (int i = 0; i < slotOrder.Count; i++)
@@ -628,9 +630,10 @@ namespace Marchlands.View
             slotsFormation = squad.Formation;
             slotsTarget = squad.TargetFormation;
             slotsAlive = squad.Alive;
+            slotsFileLimit = squad.FileLimit;
             slotsChanging = changing;
 
-            FormationLayout.GetLocalSlots(squad.Formation, squad.Alive, settings, fromSlots);
+            FormationLayout.GetLocalSlots(squad.Formation, squad.Alive, settings, fromSlots, squad.FileLimit);
             if (!sameSoldiers)
             {
                 AssignSlotsByPosition();
@@ -638,7 +641,7 @@ namespace Marchlands.View
 
             if (changing)
             {
-                FormationLayout.GetLocalSlots(squad.TargetFormation, squad.Alive, settings, toSlots);
+                FormationLayout.GetLocalSlots(squad.TargetFormation, squad.Alive, settings, toSlots, squad.FileLimit);
                 FormationLayout.MatchTransitionSlots(fromSlots, toSlots, transitionTargets);
             }
         }

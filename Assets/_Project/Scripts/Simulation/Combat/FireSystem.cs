@@ -137,9 +137,9 @@ namespace Marchlands.Simulation.Combat
             cover *= UnitStats.Of(target, match.Settings).targetHitMultiplier;
             int shooters;
             int casualties;
-            if (shooter.Formation == Formation.Column)
+            if (shooter.Formation == Formation.Column || shooter.FileLimit > 0)
             {
-                casualties = ColumnVolley(match, shooter, target, distance, cover, unit, out shooters);
+                casualties = DeepVolley(match, shooter, target, distance, cover, unit, out shooters);
             }
             else
             {
@@ -154,15 +154,15 @@ namespace Marchlands.Simulation.Combat
         }
 
         /// <summary>
-        /// Залп из колонны: стреляют все шеренги, но каждая со своей дистанции — задние дальше от врага и бьют хуже;
-        /// вдобавок меткость × columnVolleyAccuracyMultiplier (стреляют через головы своих). Осечки в дождь — по шеренгам.
+        /// Залп глубоким строем (колонна или строй, сжатый на мосту): стреляют все шеренги, но каждая со своей
+        /// дистанции — задние дальше от врага и бьют хуже; шеренги дальше обычных двух линейных стреляют через головы
+        /// своих — меткость × columnVolleyAccuracyMultiplier. Осечки в дождь — по шеренгам.
         /// </summary>
-        private static int ColumnVolley(Match match, Squad shooter, Squad target, float frontDistance, float cover, UnitTypeSettings unit, out int fired)
+        private static int DeepVolley(Match match, Squad shooter, Squad target, float frontDistance, float cover, UnitTypeSettings unit, out int fired)
         {
             SimulationSettings settings = match.Settings;
-            FormationLayout.GetGrid(Formation.Column, shooter.Alive, settings.squads, out int files, out int ranks);
+            FormationLayout.GetGrid(shooter, settings.squads, out int files, out int ranks);
             float rangeMultiplier = UnitStats.RangeMultiplier(shooter, settings);
-            float accuracy = unit.accuracyMultiplier * settings.combat.columnVolleyAccuracyMultiplier;
             fired = 0;
             int casualties = 0;
             for (int rank = 0; rank < ranks; rank++)
@@ -171,6 +171,7 @@ namespace Marchlands.Simulation.Combat
                 int rankFired = WeatherSystem.RollFired(match, inRank);
                 fired += rankFired;
                 float rankDistance = VolleyMath.ColumnRankDistance(frontDistance, rank, settings.squads) / rangeMultiplier;
+                float accuracy = unit.accuracyMultiplier * (rank >= settings.squads.lineRanks ? settings.combat.columnVolleyAccuracyMultiplier : 1f);
                 float probability = VolleyMath.HitProbability(rankDistance, shooter.IsFirstVolley, target.Formation, settings.combat, cover, accuracy);
                 casualties += VolleyMath.RollCasualties(match.Random, rankFired, probability, target.Alive - casualties);
             }

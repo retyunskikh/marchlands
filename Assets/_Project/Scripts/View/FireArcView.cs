@@ -63,7 +63,7 @@ namespace Marchlands.View
             }
 
             SquadSettings squads = match.Settings.squads;
-            float2 half = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, squads);
+            float2 half = FormationLayout.GetHalfExtents(squad, squads);
             if (!Mathf.Approximately(half.x, builtHalfWidth))
             {
                 BuildMesh(half.x, match.Settings.combat);

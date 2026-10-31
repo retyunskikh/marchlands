@@ -54,7 +54,7 @@ namespace Marchlands.View
         /// <summary>Радиус кольца: чуть шире строя.</summary>
         public float GetRadius(Squad target)
         {
-            float2 half = FormationLayout.GetHalfExtents(target.TargetFormation, target.Alive, match.Settings.squads);
+            float2 half = FormationLayout.GetHalfExtents(target.TargetFormation, target.Alive, match.Settings.squads, target.FileLimit);
             return math.max(half.x, half.y) + margin;
         }
 

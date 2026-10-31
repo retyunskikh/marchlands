@@ -29,8 +29,8 @@ namespace Marchlands.UI
 
         public bool IsArmed => armed;
 
-        /// <summary>Спрашивать ли «Точно?»; false — действие сразу по первому нажатию (кнопка остаётся красной).</summary>
-        public bool RequireConfirm { get; set; } = true;
+        /// <summary>Спрашивать ли «Точно?»; по умолчанию нет — действие сразу по первому нажатию (кнопка остаётся красной).</summary>
+        public bool RequireConfirm { get; set; }
 
         private void Awake()
         {

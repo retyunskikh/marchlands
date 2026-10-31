@@ -217,7 +217,8 @@ namespace Marchlands.Tests.EditMode
                     fordSpeedMultiplier = 0.5f,
                     fordTargetMultiplier = 1.3f,
                     hillRangeMultiplier = 1.2f,
-                    uphillChargeMultiplier = 0.8f
+                    uphillChargeMultiplier = 0.8f,
+                    bridgeHalfWidth = 1.6f
                 }
             };
         }

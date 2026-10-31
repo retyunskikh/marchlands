@@ -268,8 +268,8 @@ namespace Marchlands.Simulation.AI
         {
             float2 forward = Angles.Direction(target.Facing);
             float2 right = Angles.Right(target.Facing);
-            float2 targetHalf = FormationLayout.GetHalfExtents(target.Formation, target.Alive, settings);
-            float2 ownHalf = FormationLayout.GetHalfExtents(cavalry.Formation, cavalry.Alive, settings);
+            float2 targetHalf = FormationLayout.GetHalfExtents(target, settings);
+            float2 ownHalf = FormationLayout.GetHalfExtents(cavalry, settings);
             float ownRadius = math.max(ownHalf.x, ownHalf.y);
             float side = math.dot(cavalry.Position - target.Position, right) < 0f ? -1f : 1f;
             return target.Position + right * (side * (targetHalf.x + ownRadius + distance))
@@ -631,8 +631,8 @@ namespace Marchlands.Simulation.AI
 
             float2 direction = math.normalize(toTarget);
             SquadSettings settings = match.Settings.squads;
-            float ownHalfDepth = FormationLayout.GetHalfExtents(squad.Formation, squad.Alive, settings).y;
-            float targetHalfDepth = FormationLayout.GetHalfExtents(target.Formation, target.Alive, settings).y;
+            float ownHalfDepth = FormationLayout.GetHalfExtents(squad, settings).y;
+            float targetHalfDepth = FormationLayout.GetHalfExtents(target, settings).y;
             float2 point = target.Position - direction * (brain.FireDistance + ownHalfDepth + targetHalfDepth);
 
             GoTo(match, squad, brain, point, Angles.Of(direction));

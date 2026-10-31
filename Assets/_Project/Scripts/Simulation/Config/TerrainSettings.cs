@@ -32,5 +32,11 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Множитель скорости атаки (в штыки, в сабли, на здание) вверх по склону холма.</summary>
         public float uphillChargeMultiplier;
+
+        /// <summary>
+        /// Полуширина настила моста: на мосту строй сжимается до стольких рядов в ширину, сколько помещается
+        /// (2 × bridgeHalfWidth / fileSpacing), и становится глубже, u.
+        /// </summary>
+        public float bridgeHalfWidth;
     }
 }
