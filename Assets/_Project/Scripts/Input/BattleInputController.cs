@@ -72,6 +72,12 @@ namespace Marchlands.Input
 
         public Squad Selected => selected;
 
+        /// <summary>Границы карты для камеры (из сценария боя).</summary>
+        public void SetMapBounds(Vector2 center, Vector2 size)
+        {
+            cameraController.SetMapBounds(center, size);
+        }
+
         public void Initialize(Match match, Side playerSide)
         {
             this.match = match;

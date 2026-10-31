@@ -442,6 +442,7 @@ namespace Marchlands.Simulation.Core
             foreach (Squad squad in squads)
             {
                 SquadMovementSystem.Update(squad, this, deltaTime);
+                squad.IsOnHill = Terrain != null && Terrain.IsOnHill(squad.Position);
             }
 
             MeleeSystem.Update(this, deltaTime);

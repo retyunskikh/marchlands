@@ -10,19 +10,26 @@ namespace Marchlands.Simulation.Squads
             return settings.Unit(squad.Type);
         }
 
+        /// <summary>Множитель всех дальностей огня: рода войск и, если отряд на холме, — холма.</summary>
+        public static float RangeMultiplier(Squad squad, SimulationSettings settings)
+        {
+            float multiplier = Of(squad, settings).rangeMultiplier;
+            return squad.IsOnHill && settings.terrain.hillRangeMultiplier > 0f ? multiplier * settings.terrain.hillRangeMultiplier : multiplier;
+        }
+
         public static float EffectiveRange(Squad squad, SimulationSettings settings)
         {
-            return settings.combat.effectiveRange * Of(squad, settings).rangeMultiplier;
+            return settings.combat.effectiveRange * RangeMultiplier(squad, settings);
         }
 
         public static float MaxRange(Squad squad, SimulationSettings settings)
         {
-            return settings.combat.maxRange * Of(squad, settings).rangeMultiplier;
+            return settings.combat.maxRange * RangeMultiplier(squad, settings);
         }
 
         public static float PointBlankRange(Squad squad, SimulationSettings settings)
         {
-            return settings.combat.pointBlankRange * Of(squad, settings).rangeMultiplier;
+            return settings.combat.pointBlankRange * RangeMultiplier(squad, settings);
         }
 
         /// <summary>Скорость марша в строю <paramref name="formation"/>, u/s.</summary>

@@ -187,6 +187,10 @@ MonoBehaviour:
       forestSpeedMultiplier: 0.6
       forestCoverMultiplier: 0.7
       pathCellSize: 2
+      fordSpeedMultiplier: 0.5
+      fordTargetMultiplier: 1.3
+      hillRangeMultiplier: 1.2
+      uphillChargeMultiplier: 0.8
     weather:
       dryTimeMin: 150
       dryTimeMax: 330

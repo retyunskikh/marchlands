@@ -25,7 +25,9 @@ namespace Marchlands.Simulation.Squads
 
             if (squad.IsRouting)
             {
+                float2 routFrom = squad.Position;
                 UpdateRout(squad, match, deltaTime);
+                StayOutOfWater(squad, match, routFrom);
                 return;
             }
 
@@ -67,6 +69,31 @@ namespace Marchlands.Simulation.Squads
                 squad.Position = position;
                 squad.Facing = facing;
             }
+
+            StayOutOfWater(squad, match, position);
+        }
+
+        /// <summary>В реку вне переправ не войти: шаг в воду отменяется, отряд остаётся на берегу.</summary>
+        private static void StayOutOfWater(Squad squad, Match match, float2 before)
+        {
+            if (match.Terrain != null && match.Terrain.IsWater(squad.Position) && !match.Terrain.IsWater(before))
+            {
+                squad.Position = before;
+            }
+        }
+
+        /// <summary>Куда идти к <paramref name="goal"/>: напрямую или через переправу, если по пути река.</summary>
+        private static float2 Steer(Squad squad, Match match, float2 goal)
+        {
+            return match.Terrain != null ? match.Terrain.Steer(squad.Position, goal) : goal;
+        }
+
+        /// <summary>Атака вверх по склону холма медленнее.</summary>
+        private static float UphillMultiplier(Squad squad, Match match, float2 direction)
+        {
+            return match.Terrain != null && match.Terrain.IsUphill(squad.Position, direction) && match.Settings.terrain.uphillChargeMultiplier > 0f
+                ? match.Settings.terrain.uphillChargeMultiplier
+                : 1f;
         }
 
         private const float OverlapEpsilon = 1e-3f;
@@ -126,7 +153,9 @@ namespace Marchlands.Simulation.Squads
         {
             SimulationSettings settings = match.Settings;
             float time = deltaTime;
-            float2 target = squad.Order.Target;
+            // Если по пути река — сначала к переправе (точка пути), дальше снова к цели приказа.
+            float2 target = Steer(squad, match, squad.Order.Target);
+            bool detour = math.any(target != squad.Order.Target);
             float2 toTarget = target - squad.Position;
             float distance = math.length(toTarget);
 
@@ -160,6 +189,12 @@ namespace Marchlands.Simulation.Squads
                 time -= distance / speed;
             }
 
+            // Дошли до точки переправы — приказ продолжается со следующего тика.
+            if (detour)
+            {
+                return;
+            }
+
             if (RotateTowards(squad, squad.Order.FinalFacing, settings.squads.rotationSpeed, ref time))
             {
                 squad.Order = SquadOrder.None;
@@ -176,17 +211,19 @@ namespace Marchlands.Simulation.Squads
             }
 
             float time = deltaTime;
-            float2 toTarget = target.Position - squad.Position;
+            float2 toTarget = Steer(squad, match, target.Position) - squad.Position;
             if (math.lengthsq(toTarget) <= 0f
                 || !RotateTowards(squad, Angles.Of(toTarget), match.Settings.squads.rotationSpeed, ref time))
             {
                 return;
             }
 
-            float distance = FireGeometry.Distance(squad, target, match.Settings.squads);
-            float speed = UnitStats.ChargeSpeed(squad, match.Settings) * match.TerrainSpeedMultiplier(squad.Position);
+            float distance = math.min(FireGeometry.Distance(squad, target, match.Settings.squads), math.length(toTarget));
+            float2 direction = math.normalize(toTarget);
+            float speed = UnitStats.ChargeSpeed(squad, match.Settings) * match.TerrainSpeedMultiplier(squad.Position)
+                * UphillMultiplier(squad, match, direction);
             float step = math.min(speed * time, distance);
-            squad.Position += math.normalize(toTarget) * step;
+            squad.Position += direction * step;
         }
 
         /// <summary>
@@ -201,16 +238,19 @@ namespace Marchlands.Simulation.Squads
                 return;
             }
 
-            float2 toTarget = target.Position - squad.Position;
-            float distance = math.length(toTarget) - match.Settings.buildings.assaultRange;
+            float distance = math.length(target.Position - squad.Position) - match.Settings.buildings.assaultRange;
+            float2 toTarget = Steer(squad, match, target.Position) - squad.Position;
             float time = deltaTime;
-            if (distance <= 0f || !RotateTowards(squad, Angles.Of(toTarget), match.Settings.squads.rotationSpeed, ref time))
+            if (distance <= 0f || math.lengthsq(toTarget) <= 0f
+                || !RotateTowards(squad, Angles.Of(toTarget), match.Settings.squads.rotationSpeed, ref time))
             {
                 return;
             }
 
-            float speed = UnitStats.ChargeSpeed(squad, match.Settings) * match.TerrainSpeedMultiplier(squad.Position);
-            squad.Position += math.normalize(toTarget) * math.min(speed * time, distance);
+            float2 direction = math.normalize(toTarget);
+            float speed = UnitStats.ChargeSpeed(squad, match.Settings) * match.TerrainSpeedMultiplier(squad.Position)
+                * UphillMultiplier(squad, match, direction);
+            squad.Position += direction * math.min(speed * time, math.min(distance, math.length(toTarget)));
         }
 
         /// <summary>Бегство: разворот к точке отхода со скоростью routRotationSpeed и бегом к ней.</summary>
@@ -220,7 +260,8 @@ namespace Marchlands.Simulation.Squads
             float distance;
             if (match.TryGetRetreatPoint(squad, out float2 retreatPoint))
             {
-                float2 toPoint = retreatPoint - squad.Position;
+                // Бегут к своим через переправу, если по прямой река.
+                float2 toPoint = Steer(squad, match, retreatPoint) - squad.Position;
                 distance = math.length(toPoint);
                 if (distance <= match.Settings.squads.arrivalTolerance)
                 {

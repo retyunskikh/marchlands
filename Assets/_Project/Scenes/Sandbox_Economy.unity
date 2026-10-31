@@ -15107,6 +15107,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.View::Marchlands.View.TerrainView
   squareSprite: {fileID: 21300000, guid: 5f47f2ad9246ed441acf41244c86118e, type: 3}
   discSprite: {fileID: 21300000, guid: 0c4c11c45c291d142a331ea1609b0e7c, type: 3}
+  circleSprite: {fileID: 21300000, guid: b6cb92c132d19f947854d3db7c821888, type: 3}
   westRiverSprite: {fileID: 21300000, guid: 4e3de2fd258661743a548216e62b9ecd, type: 3}
   eastRiverSprite: {fileID: 21300000, guid: b61a6ef4cfacef345a8513a08da88452, type: 3}
   westRiverWaterMask: {fileID: 21300000, guid: 59288dbee676e6542b0ff22baf90dbc7, type: 3}
@@ -15150,6 +15151,24 @@ MonoBehaviour:
   undergrowthPerRadius: 2
   undergrowthSize: {x: 0.7, y: 1.2}
   edgeBushesPerRadius: 1.2
+  fieldRiverTexture: {fileID: 2800000, guid: bcc8f4e4ac7fd964eb577eaf4867f820, type: 3}
+  fieldRiverWaterTexels: 60
+  riverWaterColor: {r: 0.27, g: 0.46, b: 0.66, a: 1}
+  riverDeepColor: {r: 0.2, g: 0.37, b: 0.57, a: 1}
+  riverBankColor: {r: 0.62, g: 0.55, b: 0.38, a: 1}
+  riverReedColor: {r: 0.27, g: 0.4, b: 0.18, a: 0.55}
+  riverBankWidth: 0.7
+  riverReedWidth: 1.2
+  riverStep: 0.7
+  fordWaterColor: {r: 0.45, g: 0.6, b: 0.72, a: 1}
+  fordStoneColor: {r: 0.62, g: 0.6, b: 0.55, a: 1}
+  bridgeColor: {r: 0.5, g: 0.36, b: 0.22, a: 1}
+  bridgeRailColor: {r: 0.32, g: 0.22, b: 0.13, a: 1}
+  bridgeWidth: 3.2
+  hillLightColor: {r: 0.9, g: 0.88, b: 0.52, a: 0.4}
+  hillShadowColor: {r: 0.1, g: 0.18, b: 0.05, a: 0.34}
+  hillContourColor: {r: 0.36, g: 0.3, b: 0.14, a: 0.45}
+  hillContours: 3
   bushSprites:
   - {fileID: 21300000, guid: 2f726e2b2f3316848b37e72611a1f3ff, type: 3}
   - {fileID: 21300000, guid: 1dc82d910c38e7445909cd0c9086d004, type: 3}
@@ -15667,6 +15686,7 @@ MonoBehaviour:
   seed: 1
   targetFrameRate: 60
   terrainView: {fileID: 1546069960}
+  background: {fileID: 1414540578}
   squadViews: {fileID: 1066568540}
   villageViews: {fileID: 242668666}
   buildingViews: {fileID: 448538675}

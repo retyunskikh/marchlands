@@ -20,6 +20,18 @@ namespace Marchlands.Input
         private Camera targetCamera;
         private InputConfig config;
 
+        /// <summary>Границы карты из сценария: центр и размер области, за которую камера не заглядывает дальше запаса.</summary>
+        public void SetMapBounds(Vector2 center, Vector2 size)
+        {
+            mapCenter = center;
+            mapSize = size;
+            if (targetCamera != null)
+            {
+                targetCamera.orthographicSize = ClampZoom(targetCamera.orthographicSize);
+                ClampToMap();
+            }
+        }
+
         public void Initialize(InputConfig config)
         {
             this.config = config;

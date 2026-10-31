@@ -115,6 +115,9 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Сколько выстрелов вразнобой отряд начал готовить — по нему выбирается следующий стрелок.</summary>
         internal int SkirmishShotCount { get; set; }
 
+        /// <summary>Стоит ли центр отряда на холме (обновляется после движения): стреляет дальше.</summary>
+        public bool IsOnHill { get; internal set; }
+
         /// <summary>Толпа рекрутов, а не управляемый отряд.</summary>
         public bool IsCamp => Type == UnitType.Recruits;
 

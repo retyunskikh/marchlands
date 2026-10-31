@@ -207,7 +207,11 @@ namespace Marchlands.Tests.EditMode
                     roadHalfWidth = 1.5f,
                     forestSpeedMultiplier = 0.6f,
                     forestCoverMultiplier = 0.7f,
-                    pathCellSize = 2f
+                    pathCellSize = 2f,
+                    fordSpeedMultiplier = 0.5f,
+                    fordTargetMultiplier = 1.3f,
+                    hillRangeMultiplier = 1.2f,
+                    uphillChargeMultiplier = 0.8f
                 }
             };
         }

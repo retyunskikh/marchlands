@@ -20,5 +20,17 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Размер ячейки сетки поиска пути ИИ, u.</summary>
         public float pathCellSize;
+
+        /// <summary>Множитель скорости на броде.</summary>
+        public float fordSpeedMultiplier;
+
+        /// <summary>Множитель вероятности попадания по отряду, центр которого на броде (в воде, на виду).</summary>
+        public float fordTargetMultiplier;
+
+        /// <summary>Множитель всех дальностей огня отряда, центр которого на холме.</summary>
+        public float hillRangeMultiplier;
+
+        /// <summary>Множитель скорости атаки (в штыки, в сабли, на здание) вверх по склону холма.</summary>
+        public float uphillChargeMultiplier;
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
+using Marchlands.Simulation.Terrain;
 using UnityEngine;
 
 namespace Marchlands.Bootstrap.Config
@@ -41,6 +42,15 @@ namespace Marchlands.Bootstrap.Config
         [SerializeField] private Vector2 terrainMax;
         [SerializeField] private List<ForestSpawn> forests = new List<ForestSpawn>();
         [SerializeField] private List<RoadSpawn> roads = new List<RoadSpawn>();
+        [Tooltip("Размер всей карты с краями (лес, реки по бокам), u; проходимая зона — terrainMin–terrainMax.")]
+        [SerializeField] private Vector2 mapSize = new Vector2(120f, 80f);
+
+        [Header("Рельеф (большие карты)")]
+        [Tooltip("Реки через поле: вплавь непроходимы.")]
+        [SerializeField] private List<RiverSpawn> rivers = new List<RiverSpawn>();
+        [Tooltip("Броды и мосты: точка у реки, переправа встаёт на ось русла.")]
+        [SerializeField] private List<CrossingSpawn> crossings = new List<CrossingSpawn>();
+        [SerializeField] private List<ForestSpawn> hills = new List<ForestSpawn>();
 
         [Header("Точки отхода (для песочниц без штабов)")]
         [SerializeField] private Vector2 franceRetreatPoint;
@@ -71,6 +81,15 @@ namespace Marchlands.Bootstrap.Config
         public IReadOnlyList<ForestSpawn> Forests => forests;
 
         public IReadOnlyList<RoadSpawn> Roads => roads;
+
+        public Vector2 MapSize => mapSize;
+
+        public IReadOnlyList<RiverSpawn> Rivers => rivers;
+
+        public IReadOnlyList<CrossingSpawn> Crossings => crossings;
+
+        /// <summary>Холмы — круги, как рощи.</summary>
+        public IReadOnlyList<ForestSpawn> Hills => hills;
 
         public bool VictoryConditions => victoryConditions;
 
@@ -111,6 +130,30 @@ namespace Marchlands.Bootstrap.Config
             public Vector2 Center => center;
 
             public float Radius => radius;
+        }
+
+        [Serializable]
+        public sealed class RiverSpawn
+        {
+            [Tooltip("Точки оси русла по порядку.")]
+            [SerializeField] private List<Vector2> points = new List<Vector2>();
+            [Tooltip("Полуширина воды, u.")]
+            [SerializeField] private float halfWidth = 2.5f;
+
+            public IReadOnlyList<Vector2> Points => points;
+
+            public float HalfWidth => halfWidth;
+        }
+
+        [Serializable]
+        public sealed class CrossingSpawn
+        {
+            [SerializeField] private Vector2 position;
+            [SerializeField] private CrossingType type;
+
+            public Vector2 Position => position;
+
+            public CrossingType Type => type;
         }
 
         [Serializable]

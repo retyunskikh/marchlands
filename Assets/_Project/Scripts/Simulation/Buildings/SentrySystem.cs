@@ -111,9 +111,9 @@ namespace Marchlands.Simulation.Buildings
                 probability *= settings.combat.columnTargetMultiplier;
             }
 
-            if (match.Terrain != null && match.Terrain.IsInForest(target.Position))
+            if (match.Terrain != null)
             {
-                probability *= settings.terrain.forestCoverMultiplier;
+                probability *= match.Terrain.TargetHitMultiplier(target.Position, settings.terrain);
             }
 
             // Дождь зданиям не мешает: порох у часовых и в блокгаузе под крышей, сухой.

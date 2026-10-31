@@ -29,6 +29,8 @@ namespace Marchlands.Bootstrap
 
         [Header("Сцена")]
         [SerializeField] private TerrainView terrainView;
+        [Tooltip("Фон поля: растягивается на размер карты сценария.")]
+        [SerializeField] private Transform background;
         [SerializeField] private SquadViewRegistry squadViews;
         [SerializeField] private VillageViewRegistry villageViews;
         [SerializeField] private BuildingViewRegistry buildingViews;
@@ -69,7 +71,25 @@ namespace Marchlands.Bootstrap
             clock = new FixedStepClock(SimulationTime.TicksPerSecond, SimulationTime.MaxTicksPerAdvance);
             SpawnScenario();
 
-            terrainView.Initialize(match);
+            if (scenario.HasTerrain)
+            {
+                // Размер карты — из сценария: фон, край леса и границы камеры (вверх-вниз — до опушки).
+                Vector2 size = scenario.MapSize;
+                terrainView.Initialize(match, size);
+                if (background != null)
+                {
+                    SpriteRenderer backgroundRenderer = background.GetComponent<SpriteRenderer>();
+                    Vector2 spriteSize = backgroundRenderer != null && backgroundRenderer.sprite != null ? (Vector2)backgroundRenderer.sprite.bounds.size : Vector2.one;
+                    background.localScale = new Vector3(size.x / spriteSize.x, size.y / spriteSize.y, 1f);
+                }
+
+                float fieldHeight = scenario.TerrainMax.y - scenario.TerrainMin.y;
+                input.SetMapBounds((scenario.TerrainMin + scenario.TerrainMax) * 0.5f, new Vector2(size.x, fieldHeight + 2f));
+            }
+            else
+            {
+                terrainView.Initialize(match);
+            }
             squadViews.Initialize(match);
             villageViews.Initialize(match, scenario.VillageLayouts, scenario.GetVillageDoors);
             buildingViews.Initialize(match);
@@ -229,6 +249,27 @@ namespace Marchlands.Bootstrap
                 }
 
                 terrain.AddRoad(points);
+            }
+
+            foreach (ScenarioConfig.RiverSpawn river in scenario.Rivers)
+            {
+                points.Clear();
+                foreach (Vector2 point in river.Points)
+                {
+                    points.Add(point);
+                }
+
+                terrain.AddRiver(points, river.HalfWidth);
+            }
+
+            foreach (ScenarioConfig.CrossingSpawn crossing in scenario.Crossings)
+            {
+                terrain.AddCrossing(crossing.Position, crossing.Type);
+            }
+
+            foreach (ScenarioConfig.ForestSpawn hill in scenario.Hills)
+            {
+                terrain.AddHill(hill.Center, hill.Radius);
             }
 
             return terrain;

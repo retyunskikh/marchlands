@@ -131,11 +131,11 @@ namespace Marchlands.Simulation.Combat
             int ready = VolleyMath.Shooters(shooter.Formation, shooter.Alive, match.Settings.squads);
             // В дождь сырой порох: часть ружей даёт осечку и не стреляет.
             int shooters = WeatherSystem.RollFired(match, ready);
-            bool inCover = match.Terrain != null && match.Terrain.IsInForest(target.Position);
-            float cover = inCover ? match.Settings.terrain.forestCoverMultiplier : 1f;
-            // Дальнобойность рода войск растягивает всю кривую попадания: при множителе 1.25 стрелок на 1.25 × d бьёт, как обычный на d.
+            // Местность у цели: лес укрывает, брод открывает.
+            float cover = match.Terrain != null ? match.Terrain.TargetHitMultiplier(target.Position, match.Settings.terrain) : 1f;
+            // Дальнобойность (рода войск и холма) растягивает всю кривую попадания: при множителе 1.25 стрелок на 1.25 × d бьёт, как обычный на d.
             UnitTypeSettings unit = UnitStats.Of(shooter, match.Settings);
-            float scaledDistance = distance / unit.rangeMultiplier;
+            float scaledDistance = distance / UnitStats.RangeMultiplier(shooter, match.Settings);
             cover *= UnitStats.Of(target, match.Settings).targetHitMultiplier;
             float probability = VolleyMath.HitProbability(scaledDistance, shooter.IsFirstVolley, target.Formation, combat, cover, unit.accuracyMultiplier);
             int casualties = VolleyMath.RollCasualties(match.Random, shooters, probability, target.Alive);
@@ -207,8 +207,8 @@ namespace Marchlands.Simulation.Combat
                 return;
             }
 
-            float scaledDistance = distance / unit.rangeMultiplier;
-            float cover = (match.Terrain != null && match.Terrain.IsInForest(target.Position) ? match.Settings.terrain.forestCoverMultiplier : 1f)
+            float scaledDistance = distance / UnitStats.RangeMultiplier(squad, match.Settings);
+            float cover = (match.Terrain != null ? match.Terrain.TargetHitMultiplier(target.Position, match.Settings.terrain) : 1f)
                 * UnitStats.Of(target, match.Settings).targetHitMultiplier;
             float probability = VolleyMath.HitProbability(scaledDistance, false, target.Formation, combat, cover, unit.accuracyMultiplier);
             int aliveBefore = target.Alive;

@@ -21,6 +21,8 @@ namespace Marchlands.View
 
         [SerializeField] private Sprite squareSprite;
         [SerializeField] private Sprite discSprite;
+        [Tooltip("Кольцо — горизонтали холмов.")]
+        [SerializeField] private Sprite circleSprite;
         [Tooltip("Цельные текстуры рек; растягиваются на полосу между полем и краем карты.")]
         [SerializeField] private Sprite westRiverSprite;
         [SerializeField] private Sprite eastRiverSprite;
@@ -92,6 +94,33 @@ namespace Marchlands.View
         [Tooltip("Сколько кустов по опушке на единицу радиуса рощи.")]
         [SerializeField] private float edgeBushesPerRadius = 1.2f;
 
+        [Header("Река через поле, переправы, холмы")]
+        [Tooltip("Текстура реки через поле (как у боковых: вода, песчаные берега, трава по краям); вдоль — повторяется с отражением.")]
+        [SerializeField] private Texture2D fieldRiverTexture;
+        [Tooltip("Сколько текселей текстуры поперёк занимает вода — по нему текстура масштабируется под ширину реки.")]
+        [SerializeField] private float fieldRiverWaterTexels = 60f;
+        [Tooltip("Запасной вид, если текстуры нет: цвета полос реки.")]
+        [SerializeField] private Color riverWaterColor = new Color(0.27f, 0.46f, 0.66f);
+        [SerializeField] private Color riverDeepColor = new Color(0.2f, 0.37f, 0.57f);
+        [SerializeField] private Color riverBankColor = new Color(0.62f, 0.55f, 0.38f);
+        [SerializeField] private Color riverReedColor = new Color(0.27f, 0.4f, 0.18f, 0.55f);
+        [Tooltip("Ширина берега (песок, грязь) и полосы прибрежной травы, u.")]
+        [SerializeField] private float riverBankWidth = 0.7f;
+        [SerializeField] private float riverReedWidth = 1.2f;
+        [Tooltip("Шаг, с которым река рисуется кругами и прямоугольниками, u.")]
+        [SerializeField] private float riverStep = 0.7f;
+        [SerializeField] private Color fordWaterColor = new Color(0.45f, 0.6f, 0.72f);
+        [SerializeField] private Color fordStoneColor = new Color(0.62f, 0.6f, 0.55f);
+        [SerializeField] private Color bridgeColor = new Color(0.5f, 0.36f, 0.22f);
+        [SerializeField] private Color bridgeRailColor = new Color(0.32f, 0.22f, 0.13f);
+        [Tooltip("Ширина моста, u.")]
+        [SerializeField] private float bridgeWidth = 3.2f;
+        [Tooltip("Холм: освещённый склон, тень и горизонтали.")]
+        [SerializeField] private Color hillLightColor = new Color(0.86f, 0.84f, 0.5f, 0.22f);
+        [SerializeField] private Color hillShadowColor = new Color(0.12f, 0.2f, 0.06f, 0.2f);
+        [SerializeField] private Color hillContourColor = new Color(0.36f, 0.3f, 0.16f, 0.22f);
+        [SerializeField] private int hillContours = 3;
+
         [Header("Убранство поля (только вид)")]
         [Tooltip("Кусты — рисуются поверх травы, но под деревнями, зданиями и отрядами.")]
         [SerializeField] private Sprite[] bushSprites;
@@ -122,8 +151,14 @@ namespace Marchlands.View
         [SerializeField] private int tuftSortingOrder = -72;
         [SerializeField] private int bushSortingOrder = -55;
 
-        public void Initialize(Match match)
+        /// <param name="size">Размер карты из сценария; не задан — как в настройках сцены.</param>
+        public void Initialize(Match match, Vector2? size = null)
         {
+            if (size.HasValue)
+            {
+                mapSize = size.Value;
+            }
+
             TerrainMap terrain = match.Terrain;
             if (terrain == null)
             {
@@ -133,6 +168,8 @@ namespace Marchlands.View
             DrawOuterForest(terrain);
             DrawRivers(terrain);
             DrawBorderForest(terrain);
+            DrawHills(terrain);
+            DrawFieldRivers(terrain);
             DrawRoads(terrain);
             DrawForests(terrain);
             DrawDecor(match);
@@ -206,7 +243,8 @@ namespace Marchlands.View
 
         private bool IsOpenGround(TerrainMap terrain, List<float2> settlements, float2 position)
         {
-            if (!terrain.Contains(position) || terrain.IsOnRoad(position, roadWidth * 0.5f + decorClearance))
+            if (!terrain.Contains(position) || terrain.IsOnRoad(position, roadWidth * 0.5f + decorClearance)
+                || terrain.DistanceToRivers(position) < riverBankWidth + riverReedWidth + decorClearance)
             {
                 return false;
             }
@@ -358,6 +396,213 @@ namespace Marchlands.View
                         Sprite sprite = bushSprites[(int)(Hash01(++seed) * bushSprites.Length) % bushSprites.Length];
                         CreateStretched("Border Bush", sprite, bushSortingOrder, rim - new float2(0f, side * Hash01(++seed) * 0.6f), new Vector2(bush, bush), 0f, Color.white);
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Река через поле: полоса прибрежной травы, берег, вода и тёмная стремнина посередине — кругами и прямоугольниками
+        /// по сглаженной оси русла. Поверх — переправы: брод (светлая мель с камнями) и деревянный мост с перилами.
+        /// </summary>
+        private void DrawFieldRivers(TerrainMap terrain)
+        {
+            foreach (River river in terrain.Rivers)
+            {
+                var points = new List<Vector2>(river.Points.Length);
+                foreach (float2 point in river.Points)
+                {
+                    points.Add(new Vector2(point.x, point.y));
+                }
+
+                List<Vector2> line = RoadShape.Smooth(points, riverStep);
+                float hw = river.HalfWidth;
+                if (fieldRiverTexture != null && roadMaterial != null)
+                {
+                    DrawRiverMesh(line, hw);
+                    continue;
+                }
+
+                DrawRibbon(line, (hw + riverBankWidth + riverReedWidth) * 2f, riverReedColor, borderSortingOrder - 6);
+                DrawRibbon(line, (hw + riverBankWidth) * 2f, riverBankColor, borderSortingOrder - 5);
+                DrawRibbon(line, hw * 2f, riverWaterColor, borderSortingOrder - 4);
+                DrawRibbon(line, hw * 0.9f, riverDeepColor, borderSortingOrder - 3);
+            }
+
+            int seed = 90001;
+            foreach (Crossing crossing in terrain.Crossings)
+            {
+                float2 across = crossing.Across;
+                float length = math.distance(crossing.BankA, crossing.BankB);
+                float angle = math.degrees(math.atan2(across.y, across.x));
+                if (crossing.Type == CrossingType.Ford)
+                {
+                    // Мель: светлая вода в пределах русла и россыпь камней поперёк реки.
+                    float water = math.max(1f, length - 3f);
+                    CreateStretched("Ford", discSprite, borderSortingOrder - 2, (Vector2)crossing.Center,
+                        new Vector2(water * 0.95f, crossing.Radius * 1.1f), angle, fordWaterColor);
+                    for (int i = 0; i < 26; i++)
+                    {
+                        float t = (Hash01(++seed) - 0.5f) * 0.85f;
+                        float side = (Hash01(++seed) - 0.5f) * crossing.Radius * 0.8f;
+                        float2 along = new float2(-across.y, across.x);
+                        float2 stone = crossing.Center + across * (t * water) + along * side;
+                        float size = math.lerp(0.25f, 0.6f, Hash01(++seed));
+                        CreateStretched("Ford Stone", discSprite, borderSortingOrder - 1, (Vector2)stone,
+                            new Vector2(size, size * 0.8f), Hash01(++seed) * 180f, fordStoneColor * math.lerp(0.85f, 1.1f, Hash01(++seed)));
+                    }
+                }
+                else
+                {
+                    // Мост: настил вдоль дороги, что через него идёт (иначе — поперёк реки), доски и перила.
+                    if (TryRoadDirection(terrain, crossing.Center, crossing.Radius * 1.5f, out float2 roadDirection))
+                    {
+                        across = math.dot(roadDirection, across) < 0f ? -roadDirection : roadDirection;
+                        angle = math.degrees(math.atan2(across.y, across.x));
+                    }
+
+                    float deck = length + 1.2f;
+                    Create("Bridge", squareSprite, bridgeColor, borderSortingOrder - 2, (Vector2)crossing.Center, new Vector2(deck, bridgeWidth), angle);
+                    float2 along = new float2(-across.y, across.x);
+                    int planks = (int)(deck / 0.45f);
+                    for (int i = 0; i < planks; i++)
+                    {
+                        float2 at = crossing.Center + across * ((i + 0.5f) / planks - 0.5f) * deck;
+                        Create("Plank", squareSprite, bridgeColor * 0.8f, borderSortingOrder - 1, (Vector2)at, new Vector2(0.06f, bridgeWidth * 0.96f), angle);
+                    }
+
+                    foreach (float sign in new[] { -1f, 1f })
+                    {
+                        float2 rail = crossing.Center + along * (sign * (bridgeWidth * 0.5f - 0.1f));
+                        Create("Rail", squareSprite, bridgeRailColor, borderSortingOrder, (Vector2)rail, new Vector2(deck, 0.22f), angle);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Река текстурой, как боковые: лента по сглаженной оси русла, вода шириной 2 × <paramref name="halfWidth"/>,
+        /// неровные песчаные берега и трава по краям, растворяющаяся в поле. Текстура отражается по длине — без швов.
+        /// </summary>
+        private void DrawRiverMesh(List<Vector2> line, float halfWidth)
+        {
+            float texelsPerUnit = fieldRiverWaterTexels / math.max(0.01f, halfWidth * 2f);
+            float width = fieldRiverTexture.width / texelsPerUnit;
+            float tileLength = fieldRiverTexture.height / texelsPerUnit;
+
+            var lengths = new float[line.Count];
+            for (int i = 1; i < line.Count; i++)
+            {
+                lengths[i] = lengths[i - 1] + Vector2.Distance(line[i - 1], line[i]);
+            }
+
+            var vertices = new Vector3[line.Count * 2];
+            var uvs = new Vector2[line.Count * 2];
+            var colors = new Color[line.Count * 2];
+            var triangles = new int[(line.Count - 1) * 6];
+            for (int i = 0; i < line.Count; i++)
+            {
+                Vector2 tangent = (line[math.min(i + 1, line.Count - 1)] - line[math.max(i - 1, 0)]).normalized;
+                Vector2 normal = new Vector2(-tangent.y, tangent.x);
+                vertices[i * 2] = line[i] + normal * (width * 0.5f);
+                vertices[i * 2 + 1] = line[i] - normal * (width * 0.5f);
+                float v = lengths[i] / tileLength;
+                uvs[i * 2] = new Vector2(0f, v);
+                uvs[i * 2 + 1] = new Vector2(1f, v);
+                colors[i * 2] = colors[i * 2 + 1] = Color.white;
+                if (i + 1 < line.Count)
+                {
+                    int t = i * 6;
+                    triangles[t] = i * 2;
+                    triangles[t + 1] = i * 2 + 2;
+                    triangles[t + 2] = i * 2 + 1;
+                    triangles[t + 3] = i * 2 + 1;
+                    triangles[t + 4] = i * 2 + 2;
+                    triangles[t + 5] = i * 2 + 3;
+                }
+            }
+
+            var mesh = new Mesh { name = "Field River" };
+            mesh.vertices = vertices;
+            mesh.uv = uvs;
+            mesh.colors = colors;
+            mesh.triangles = triangles;
+            mesh.RecalculateBounds();
+
+            var material = new Material(roadMaterial) { mainTexture = fieldRiverTexture };
+            var child = new GameObject("Field River");
+            child.transform.SetParent(transform, false);
+            child.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var meshRenderer = child.AddComponent<MeshRenderer>();
+            meshRenderer.sharedMaterial = material;
+            meshRenderer.sortingOrder = borderSortingOrder - 4;
+        }
+
+        /// <summary>Направление дороги, ближайшей к точке (не дальше <paramref name="radius"/>); false — дорог рядом нет.</summary>
+        private static bool TryRoadDirection(TerrainMap terrain, float2 point, float radius, out float2 direction)
+        {
+            direction = float2.zero;
+            float best = radius;
+            foreach (float2[] road in terrain.Roads)
+            {
+                for (int i = 0; i + 1 < road.Length; i++)
+                {
+                    float2 ab = road[i + 1] - road[i];
+                    float lengthSq = math.lengthsq(ab);
+                    float t = lengthSq > 0f ? math.saturate(math.dot(point - road[i], ab) / lengthSq) : 0f;
+                    float distance = math.distance(point, road[i] + ab * t);
+                    if (distance <= best && lengthSq > 0f)
+                    {
+                        best = distance;
+                        direction = math.normalize(ab);
+                    }
+                }
+            }
+
+            return math.lengthsq(direction) > 0f;
+        }
+
+        /// <summary>Лента из кругов и прямоугольников вдоль линии: ровные края и скруглённые изгибы.</summary>
+        private void DrawRibbon(List<Vector2> line, float width, Color color, int order)
+        {
+            for (int i = 0; i < line.Count; i++)
+            {
+                Create("River Part", discSprite, color, order, line[i], new Vector2(width, width), 0f);
+                if (i + 1 >= line.Count)
+                {
+                    continue;
+                }
+
+                Vector2 delta = line[i + 1] - line[i];
+                float angle = math.degrees(math.atan2(delta.y, delta.x));
+                Create("River Part", squareSprite, color, order, (line[i] + line[i + 1]) * 0.5f, new Vector2(delta.magnitude, width), angle);
+            }
+        }
+
+        /// <summary>
+        /// Пологий холм: освещённый склон к северо-западу, тень к юго-востоку и несколько горизонталей —
+        /// без чёткой границы, как рощи. Механика действует в радиусе холма.
+        /// </summary>
+        private void DrawHills(TerrainMap terrain)
+        {
+            Sprite soft = patchSprite != null ? patchSprite : discSprite;
+            foreach (Hill hill in terrain.Hills)
+            {
+                float r = hill.Radius;
+                CreateStretched("Hill Shadow", soft, patchSortingOrder + 1, (Vector2)(hill.Center + new float2(r * 0.25f, -r * 0.25f)),
+                    new Vector2(r * 2.3f, r * 2.1f), 0f, hillShadowColor);
+                CreateStretched("Hill Light", soft, patchSortingOrder + 2, (Vector2)(hill.Center + new float2(-r * 0.2f, r * 0.2f)),
+                    new Vector2(r * 1.9f, r * 1.8f), 0f, hillLightColor);
+                if (circleSprite == null)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < hillContours; i++)
+                {
+                    float scale = 1f - i / (float)math.max(1, hillContours);
+                    float2 offset = new float2(-r * 0.08f, r * 0.08f) * i;
+                    CreateStretched("Hill Contour", circleSprite, patchSortingOrder + 3, (Vector2)(hill.Center + offset),
+                        new Vector2(r * 2f * scale, r * 1.85f * scale), 0f, hillContourColor);
                 }
             }
         }

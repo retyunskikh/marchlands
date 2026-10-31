@@ -1,0 +1,238 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afac6d499091d5f4f919c8e1e4766d98, type: 3}
+  m_Name: BigMap
+  m_EditorClassIdentifier: Game.Bootstrap::Marchlands.Bootstrap.Config.ScenarioConfig
+  playerSide: 0
+  squads:
+  - side: 0
+    position: {x: -64, y: 7}
+    facing: 0
+    formation: 0
+    type: 1
+  - side: 1
+    position: {x: 64, y: -7}
+    facing: 180
+    formation: 0
+    type: 1
+  - side: 0
+    position: {x: -64, y: -7}
+    facing: 0
+    formation: 0
+    type: 1
+  - side: 1
+    position: {x: 64, y: 7}
+    facing: 180
+    formation: 0
+    type: 1
+  villages:
+  - {x: -52, y: 30}
+  - {x: 52, y: -30}
+  - {x: -46, y: -28}
+  - {x: 46, y: 28}
+  - {x: -26, y: 12}
+  - {x: 26, y: -12}
+  - {x: -14, y: -32}
+  - {x: 14, y: 32}
+  villageLayouts:
+  - {fileID: 21300000, guid: 3938f159e56e5834484aee8e19d53d83, type: 3}
+  - {fileID: 21300000, guid: 6245de9180b778e4ab612374b1b85202, type: 3}
+  - {fileID: 21300000, guid: 4122f0aa4f772934ba850161b331c41c, type: 3}
+  - {fileID: 21300000, guid: 28bd0124a00daf74f9b361d36a24d89f, type: 3}
+  - {fileID: 21300000, guid: 80944e6eebc019d45b871304ae7a55ce, type: 3}
+  - {fileID: 21300000, guid: 5b4006722ff291e4fbe25c4c31445b44, type: 3}
+  - {fileID: 21300000, guid: e6afa4fb194c3fc44a8f7fec111af983, type: 3}
+  - {fileID: 21300000, guid: 7a5845718a8ff0b4a98ddced1cf7d292, type: 3}
+  villageDoors:
+  - points:
+    - {x: -1.9065132, y: 0.2584896}
+    - {x: 1.4112663, y: 1.3730793}
+    - {x: 1.9814377, y: -0.58018494}
+    - {x: -0.7927666, y: -3.6919937}
+    - {x: 2.5896416, y: -2.7923813}
+    - {x: 3.1649551, y: 1.9622211}
+    - {x: 3.761963, y: -0.07795334}
+  - points:
+    - {x: 1.9065132, y: -0.2584896}
+    - {x: -1.9814377, y: 0.58018494}
+    - {x: -0.588974, y: -3.5811539}
+    - {x: 0.7927666, y: 3.6919937}
+    - {x: -3.1649551, y: -1.9622211}
+    - {x: -3.761963, y: 0.07795334}
+  - points:
+    - {x: 1.9506378, y: 0.38101768}
+    - {x: -0.7159805, y: -1.8859463}
+    - {x: -2.1835709, y: 0.09297371}
+    - {x: -0.14064026, y: 3.6200943}
+    - {x: 1.1493607, y: -3.671093}
+    - {x: -3.2809906, y: 2.0747185}
+    - {x: -2.1254807, y: -3.0842}
+  - points:
+    - {x: -1.9506378, y: -0.38101768}
+    - {x: 0.7159805, y: 1.8859463}
+    - {x: 0.14064026, y: -3.6200943}
+    - {x: -1.1493607, y: 3.671093}
+    - {x: 3.2809906, y: -2.0747185}
+    - {x: 2.1254807, y: 3.0842}
+    - {x: 3.7622948, y: 0.87145805}
+  - points:
+    - {x: -1.3975563, y: 1.1316233}
+    - {x: 0.7427101, y: -1.6377172}
+    - {x: 2.2784233, y: -0.44940758}
+    - {x: -0.92761993, y: -2.960309}
+    - {x: 1.8739948, y: -3.101512}
+    - {x: 1.6852074, y: 3.5257034}
+    - {x: 3.8364677, y: 0.7648907}
+  - points:
+    - {x: 1.3975563, y: -1.1316233}
+    - {x: -0.7427101, y: 1.6377172}
+    - {x: -2.2784233, y: 0.44940758}
+    - {x: 0.92761993, y: 2.960309}
+    - {x: -1.8739948, y: 3.101512}
+    - {x: -1.6852074, y: -3.5257034}
+    - {x: -3.4146595, y: 1.9093628}
+  - points:
+    - {x: -1.1738596, y: 1.4972343}
+    - {x: -0.2811861, y: -1.8870125}
+    - {x: -2.1756897, y: -2.373024}
+    - {x: 3.6874447, y: -0.59074783}
+    - {x: 0.19065666, y: -3.6758308}
+    - {x: 2.2452068, y: -3.0862694}
+  - points:
+    - {x: 1.1738596, y: -1.4972343}
+    - {x: 0.2811861, y: 1.8870125}
+    - {x: -1.686245, y: 1.3227348}
+    - {x: 2.1756897, y: 2.373024}
+    - {x: -2.3957748, y: -2.6621857}
+    - {x: -3.6874447, y: 0.59074783}
+    - {x: -0.19065666, y: 3.6758308}
+    - {x: -2.2452068, y: 3.0862694}
+  victoryConditions: 1
+  hasHeadquarters: 1
+  franceHeadquarters: {x: -72, y: 0}
+  austriaHeadquarters: {x: 72, y: 0}
+  franceBlockhouses:
+  - {x: -50, y: 10}
+  - {x: -50, y: -10}
+  austriaBlockhouses:
+  - {x: 50, y: -10}
+  - {x: 50, y: 10}
+  franceAi: 0
+  austriaAi: 1
+  hasTerrain: 1
+  terrainMin: {x: -76, y: -44}
+  terrainMax: {x: 76, y: 44}
+  forests:
+  - center: {x: -34, y: 36}
+    radius: 7
+  - center: {x: 34, y: -36}
+    radius: 7
+  - center: {x: -24, y: 40}
+    radius: 4.5
+  - center: {x: 24, y: -40}
+    radius: 4.5
+  - center: {x: -6, y: 38}
+    radius: 4
+  - center: {x: 6, y: -38}
+    radius: 4
+  - center: {x: -24, y: -20}
+    radius: 4
+  - center: {x: 24, y: 20}
+    radius: 4
+  - center: {x: -17, y: -13}
+    radius: 3.5
+  - center: {x: 17, y: 13}
+    radius: 3.5
+  - center: {x: -60, y: -38}
+    radius: 5
+  - center: {x: 60, y: 38}
+    radius: 5
+  - center: {x: -62, y: 22}
+    radius: 4
+  - center: {x: 62, y: -22}
+    radius: 4
+  - center: {x: -40, y: -38}
+    radius: 3.5
+  - center: {x: 40, y: 38}
+    radius: 3.5
+  roads:
+  - points:
+    - {x: -72, y: 0}
+    - {x: -56, y: 0}
+    - {x: -38, y: 2}
+    - {x: -20, y: -2}
+    - {x: 0, y: 0}
+    - {x: 20, y: 2}
+    - {x: 38, y: -2}
+    - {x: 56, y: 0}
+    - {x: 72, y: 0}
+  - points:
+    - {x: -56, y: 0}
+    - {x: -50, y: 16}
+    - {x: -52, y: 30}
+    - {x: -57, y: 41}
+  - points:
+    - {x: 56, y: 0}
+    - {x: 50, y: -16}
+    - {x: 52, y: -30}
+    - {x: 57, y: -41}
+  - points:
+    - {x: -38, y: 2}
+    - {x: -26, y: 12}
+    - {x: -12, y: 22}
+    - {x: 0.4, y: 26}
+    - {x: 14, y: 32}
+    - {x: 30, y: 34}
+    - {x: 46, y: 28}
+    - {x: 56, y: 0}
+  - points:
+    - {x: 38, y: -2}
+    - {x: 26, y: -12}
+    - {x: 12, y: -22}
+    - {x: -0.4, y: -26}
+    - {x: -14, y: -32}
+    - {x: -30, y: -34}
+    - {x: -46, y: -28}
+    - {x: -56, y: 0}
+  mapSize: {x: 160, y: 100}
+  rivers:
+  - points:
+    - {x: 6, y: 52}
+    - {x: 4, y: 32}
+    - {x: -2, y: 22}
+    - {x: -5, y: 13}
+    - {x: -1, y: 5}
+    - {x: 0, y: 0}
+    - {x: 1, y: -5}
+    - {x: 5, y: -13}
+    - {x: 2, y: -22}
+    - {x: -4, y: -32}
+    - {x: -6, y: -52}
+    halfWidth: 1.6
+  crossings:
+  - position: {x: 0, y: 0}
+    type: 1
+  - position: {x: 0.4, y: 26}
+    type: 1
+  - position: {x: -0.4, y: -26}
+    type: 1
+  hills:
+  - center: {x: -38, y: -12}
+    radius: 6
+  - center: {x: 38, y: 12}
+    radius: 6
+  - center: {x: -14, y: 4}
+    radius: 5
+  - center: {x: 14, y: -4}
+    radius: 5
+  franceRetreatPoint: {x: -72, y: 0}
+  austriaRetreatPoint: {x: 72, y: 0}
