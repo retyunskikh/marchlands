@@ -27,6 +27,10 @@ namespace Marchlands.UI
         [SerializeField] private Slider musicVolumeSlider;
         [SerializeField] private Text musicVolumeLabel;
         [SerializeField] private string musicVolumeFormat = "Громкость музыки: {0}%";
+        [Tooltip("Общая громкость игры: все звуки и музыка.")]
+        [SerializeField] private Slider gameVolumeSlider;
+        [SerializeField] private Text gameVolumeLabel;
+        [SerializeField] private string gameVolumeFormat = "Громкость игры: {0}%";
 
         [Header("Результат")]
         [SerializeField] private GameObject resultOverlay;
@@ -112,6 +116,27 @@ namespace Marchlands.UI
                     MusicDirector.PlayerVolume = value;
                     ShowMusicVolume(value);
                 });
+            }
+
+            if (gameVolumeSlider != null)
+            {
+                gameVolumeSlider.minValue = 0f;
+                gameVolumeSlider.maxValue = 1f;
+                gameVolumeSlider.SetValueWithoutNotify(GameVolume.Volume);
+                ShowGameVolume(GameVolume.Volume);
+                gameVolumeSlider.onValueChanged.AddListener(value =>
+                {
+                    GameVolume.Volume = value;
+                    ShowGameVolume(value);
+                });
+            }
+        }
+
+        private void ShowGameVolume(float value)
+        {
+            if (gameVolumeLabel != null)
+            {
+                gameVolumeLabel.text = string.Format(gameVolumeFormat, Mathf.RoundToInt(value * 100f));
             }
         }
 
