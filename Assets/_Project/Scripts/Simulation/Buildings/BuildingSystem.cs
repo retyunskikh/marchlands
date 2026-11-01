@@ -49,7 +49,7 @@ namespace Marchlands.Simulation.Buildings
                     }
                 }
 
-                // Усиление казармы: строят рабочие, найм в это время стоит.
+                // Усиление казармы, штаба или блокгауза: строят рабочие; казарма в это время не нанимает.
                 if (building.IsUpgrading)
                 {
                     building.UpgradeRemaining -= deltaTime;
@@ -57,6 +57,13 @@ namespace Marchlands.Simulation.Buildings
                     {
                         building.UpgradeRemaining = 0f;
                         building.Level++;
+                        // Каменные штаб и блокгауз крепче: запас здоровья растёт, доля повреждений сохраняется.
+                        float multiplier = match.Settings.buildings.fortifiedHealthMultiplier;
+                        if (building.Type != BuildingType.Barracks && multiplier > 0f)
+                        {
+                            building.MaxHealth *= multiplier;
+                            building.Health *= multiplier;
+                        }
                     }
                 }
                 else if (building.IsHiringAny)

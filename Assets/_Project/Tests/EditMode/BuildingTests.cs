@@ -81,7 +81,7 @@ namespace Marchlands.Tests.EditMode
             int sentries = Volley.Of(barracks, match.Settings.buildings).Shots;
 
             match.Enqueue(new SetHiringCommand(barracks.Id, UnitType.Fusiliers, true));
-            match.Enqueue(new UpgradeBarracksCommand(barracks.Id));
+            match.Enqueue(new UpgradeBuildingCommand(barracks.Id));
             match.Tick();
             Assert.IsTrue(barracks.IsUpgrading);
             int reserve = match.GetPlayer(Side.France).FusilierReserve;
@@ -94,6 +94,48 @@ namespace Marchlands.Tests.EditMode
                 "Нанимает вдвое быстрее");
             Assert.Greater(Volley.Of(barracks, match.Settings.buildings).Shots, sentries, "Часовых больше");
             Assert.IsFalse(BuildRules.CanUpgrade(match, barracks), "Дважды не усиливают");
+        }
+
+        [Test]
+        public void BlockhouseFortify_MoreDefenders_LongerRange_Sturdier()
+        {
+            Match match = CreateMatch();
+            match.GetPlayer(Side.France).Gold = 2000;
+            Building blockhouse = match.AddBlockhouse(Side.France, FranceHq + new float2(14f, 0f));
+            Volley wooden = Volley.Of(blockhouse, match.Settings.buildings);
+            float health = blockhouse.MaxHealth;
+            Assert.IsFalse(blockhouse.IsUpgraded, "Сначала деревянный");
+
+            match.Enqueue(new UpgradeBuildingCommand(blockhouse.Id));
+            match.Tick();
+            Assert.IsTrue(blockhouse.IsUpgrading);
+            Assert.AreEqual(2000 - match.Settings.buildings.blockhouseUpgradeCost, match.GetPlayer(Side.France).Gold);
+            RunTicks(match, TicksFor(match.Settings.buildings.blockhouseUpgradeTime + 1f));
+
+            Assert.IsTrue(blockhouse.IsUpgraded, "Каменный");
+            Volley stone = Volley.Of(blockhouse, match.Settings.buildings);
+            Assert.Greater(stone.Shots, wooden.Shots, "Защитников больше");
+            Assert.Greater(stone.Range, wooden.Range, "Бьёт дальше");
+            Assert.AreEqual(health * match.Settings.buildings.fortifiedHealthMultiplier, blockhouse.MaxHealth, 1e-3f, "Крепче");
+        }
+
+        [Test]
+        public void HeadquartersFortify_SturdierWithMoreSentries_AndNeedsGold()
+        {
+            Match match = CreateMatch();
+            Building hq = match.GetHeadquarters(Side.France);
+            match.GetPlayer(Side.France).Gold = match.Settings.buildings.headquartersUpgradeCost - 1;
+            Assert.IsFalse(BuildRules.CanUpgrade(match, hq), "Без золота не укрепить");
+
+            match.GetPlayer(Side.France).Gold = 1000;
+            int sentries = Volley.Of(hq, match.Settings.buildings).Shots;
+            float health = hq.MaxHealth;
+            match.Enqueue(new UpgradeBuildingCommand(hq.Id));
+            RunTicks(match, TicksFor(match.Settings.buildings.headquartersUpgradeTime + 1f));
+
+            Assert.IsTrue(hq.IsUpgraded);
+            Assert.Greater(hq.MaxHealth, health, "Крепче");
+            Assert.Greater(Volley.Of(hq, match.Settings.buildings).Shots, sentries, "Часовых больше");
         }
 
         [Test]

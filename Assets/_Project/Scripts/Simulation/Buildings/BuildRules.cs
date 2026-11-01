@@ -128,12 +128,34 @@ namespace Marchlands.Simulation.Buildings
             return false;
         }
 
-        /// <summary>Можно ли усилить казарму: своя построенная, ещё не усилена и не усиливается, золота хватает.</summary>
-        public static bool CanUpgrade(Match match, Building barracks)
+        /// <summary>Усиливают (укрепляют) казарму, штаб и блокгауз.</summary>
+        public static bool IsUpgradable(BuildingType type)
         {
-            return barracks != null && barracks.Type == BuildingType.Barracks && barracks.IsBuilt && !barracks.IsDestroyed
-                && !barracks.IsUpgraded && !barracks.IsUpgrading
-                && match.GetPlayer(barracks.Owner).Gold >= match.Settings.buildings.barracksUpgradeCost;
+            return type == BuildingType.Barracks || type == BuildingType.Headquarters || type == BuildingType.Blockhouse;
+        }
+
+        public static int GetUpgradeCost(Match match, BuildingType type)
+        {
+            BuildingSettings settings = match.Settings.buildings;
+            return type == BuildingType.Headquarters ? settings.headquartersUpgradeCost
+                : type == BuildingType.Blockhouse ? settings.blockhouseUpgradeCost
+                : settings.barracksUpgradeCost;
+        }
+
+        public static float GetUpgradeTime(Match match, BuildingType type)
+        {
+            BuildingSettings settings = match.Settings.buildings;
+            return type == BuildingType.Headquarters ? settings.headquartersUpgradeTime
+                : type == BuildingType.Blockhouse ? settings.blockhouseUpgradeTime
+                : settings.barracksUpgradeTime;
+        }
+
+        /// <summary>Можно ли усилить здание: казарма, штаб или блокгауз, построено, ещё не усилено и не усиливается, золота хватает.</summary>
+        public static bool CanUpgrade(Match match, Building building)
+        {
+            return building != null && IsUpgradable(building.Type) && building.IsBuilt && !building.IsDestroyed
+                && !building.IsUpgraded && !building.IsUpgrading
+                && match.GetPlayer(building.Owner).Gold >= GetUpgradeCost(match, building.Type);
         }
 
         public static bool CanBuildBarracks(Match match, Side side, float2 point)

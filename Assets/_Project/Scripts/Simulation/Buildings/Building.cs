@@ -81,7 +81,7 @@ namespace Marchlands.Simulation.Buildings
 
         public bool IsBuildingHouse => HouseBuildRemaining > 0f;
 
-        public float MaxHealth { get; }
+        public float MaxHealth { get; internal set; }
 
         /// <summary>Здоровье; штурмующие в штыки отряды его снимают, на нуле здание разрушено.</summary>
         public float Health { get; internal set; }
@@ -91,7 +91,7 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Чинят ли здание рабочие из штаба в этом тике.</summary>
         public bool IsRepairing { get; internal set; }
 
-        /// <summary>Уровень здания: 1 — обычное, 2 — усиленная казарма.</summary>
+        /// <summary>Уровень здания: 1 — обычное (штаб и блокгауз — деревянные), 2 — усиленная казарма, каменные штаб и блокгауз.</summary>
         public int Level { get; internal set; } = 1;
 
         /// <summary>Сколько осталось усиливать казарму, s; 0 — не усиливают.</summary>

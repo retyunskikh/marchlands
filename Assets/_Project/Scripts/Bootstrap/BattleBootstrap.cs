@@ -327,9 +327,10 @@ namespace Marchlands.Bootstrap
         private void OnBuildingSelectionChanged(Building building)
         {
             buildingViews.SetSelected(building);
-            // Блокгауз ничего не нанимает и не строит — о нём рассказывает карточка внизу слева, как об отряде.
+            // О блокгаузе рассказывает карточка внизу слева, как об отряде; у своего снизу ещё кнопка «Укрепить».
             bool blockhouse = building != null && building.Type == BuildingType.Blockhouse;
-            buildingPanel.SetBuilding(blockhouse ? null : building);
+            bool ownBlockhouse = blockhouse && building.Owner == scenario.PlayerSide;
+            buildingPanel.SetBuilding(!blockhouse || ownBlockhouse ? building : null);
             if (squadCard != null)
             {
                 squadCard.SetBuilding(blockhouse ? building : null);

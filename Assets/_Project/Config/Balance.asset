@@ -194,6 +194,13 @@ MonoBehaviour:
       barracksUpgradeCost: 200
       barracksUpgradeTime: 40
       barracksUpgradeHireSpeed: 2
+      headquartersUpgradeCost: 250
+      headquartersUpgradeTime: 50
+      blockhouseUpgradeCost: 150
+      blockhouseUpgradeTime: 35
+      upgradedBlockhouseShots: 9
+      upgradedBlockhouseRange: 16
+      fortifiedHealthMultiplier: 1.5
       upgradedSentryShots: 7
       buildRadiusFromHQ: 24
       buildingSpacing: 10.5

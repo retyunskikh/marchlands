@@ -3410,6 +3410,13 @@ MonoBehaviour:
   upgradeTitle: "\u0423\u0441\u0438\u043B\u0438\u0442\u044C"
   upgradingStatus: "\u041A\u0430\u0437\u0430\u0440\u043C\u0443 \u0443\u0441\u0438\u043B\u0438\u0432\u0430\u044E\u0442
     \u2014 \u043D\u0430\u0439\u043C \u0441\u0442\u043E\u0438\u0442"
+  fortifyTitle: "\u0423\u043A\u0440\u0435\u043F\u0438\u0442\u044C"
+  headquartersFortifyingStatus: "\u0428\u0442\u0430\u0431 \u0443\u043A\u0440\u0435\u043F\u043B\u044F\u044E\u0442"
+  blockhouseFortifyingStatus: "\u0411\u043B\u043E\u043A\u0433\u0430\u0443\u0437 \u0443\u043A\u0440\u0435\u043F\u043B\u044F\u044E\u0442"
+  headquartersPanelWidth: 1360
+  blockhousePanelWidth: 560
+  headquartersSlotStep: 265
+  barracksUpgradeX: 270
   populationFormat: "\u041D\u0430\u0441\u0435\u043B\u0435\u043D\u0438\u0435: {0}/{1}"
   houseBuildingFormat: " \xB7 \u0441\u0442\u0440\u043E\u0438\u0442\u0441\u044F \u0434\u043E\u043C
     {0}%"
@@ -20211,6 +20218,10 @@ MonoBehaviour:
     annexRoofDetailSprite: {fileID: 21300000, guid: 45235071e89e3904098e1e63622bc8db, type: 3}
     barracksWoodRoofSprite: {fileID: 21300000, guid: 1db9f6bba5e6ac845ba8e427c8f4c587, type: 3}
     barracksStoneBaseSprite: {fileID: 21300000, guid: d31a0c9b0178e2849956e9f058b5c0b2, type: 3}
+    headquartersWoodRoofSprite: {fileID: 21300000, guid: 852eefc3b5e1dc3449193d3da2b177e8, type: 3}
+    headquartersWoodBaseSprite: {fileID: 21300000, guid: 02a2d636d69b01245bdcdb66a2812562, type: 3}
+    blockhouseWoodRoofSprite: {fileID: 21300000, guid: 85f6e33f07926b34881d192ae54c1c97, type: 3}
+    blockhouseStoneBaseSprite: {fileID: 21300000, guid: 1aaa13a6d53176c4ca6f047aa663c931, type: 3}
     woodRoofSideTint: 0.3
     constructionAlpha: 0.45
     progressBarSize: {x: 3.6, y: 0.3}

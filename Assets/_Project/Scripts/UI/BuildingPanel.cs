@@ -38,6 +38,19 @@ namespace Marchlands.UI
         [SerializeField] private string upgradeProgressFormat = "{0}%";
         [SerializeField] private string upgradeTitle = "Усилить";
         [SerializeField] private string upgradingStatus = "Казарму усиливают — найм стоит";
+        [Tooltip("Штаб и блокгауз из деревянных укрепляют в каменные.")]
+        [SerializeField] private string fortifyTitle = "Укрепить";
+        [SerializeField] private string headquartersFortifyingStatus = "Штаб укрепляют";
+        [SerializeField] private string blockhouseFortifyingStatus = "Блокгауз укрепляют";
+
+        [Header("Раскладка по типу здания")]
+        [Tooltip("Ширина панели: у штаба пять кнопок, у казармы и конюшни — обычная, у блокгауза — одна кнопка.")]
+        [SerializeField] private float headquartersPanelWidth = 1360f;
+        [SerializeField] private float blockhousePanelWidth = 560f;
+        [Tooltip("Шаг кнопок штаба: казарма, конюшня, депо, дом, укрепить — слева направо.")]
+        [SerializeField] private float headquartersSlotStep = 265f;
+        [Tooltip("Где у казармы кнопка «Усилить».")]
+        [SerializeField] private float barracksUpgradeX = 270f;
         [Tooltip("{0} — население, {1} — мест.")]
         [SerializeField] private string populationFormat = "Население: {0}/{1}";
         [Tooltip("{0} — процент постройки дома.")]
@@ -140,9 +153,52 @@ namespace Marchlands.UI
             {
                 infoPanel.Hide();
             }
+            else
+            {
+                LayOut(building.Type);
+            }
 
             Refresh();
         }
+
+        /// <summary>Ширина панели и места кнопок под тип здания (у штаба добавилась кнопка «Укрепить»).</summary>
+        private void LayOut(BuildingType type)
+        {
+            var panelRect = (RectTransform)panel.transform;
+            if (defaultPanelWidth <= 0f)
+            {
+                defaultPanelWidth = panelRect.sizeDelta.x;
+            }
+
+            float width = type == BuildingType.Headquarters ? headquartersPanelWidth
+                : type == BuildingType.Blockhouse ? blockhousePanelWidth : defaultPanelWidth;
+            panelRect.sizeDelta = new Vector2(width, panelRect.sizeDelta.y);
+            if (type == BuildingType.Headquarters)
+            {
+                SetX(buildBarracksToggle, -2f * headquartersSlotStep);
+                SetX(buildStableToggle, -headquartersSlotStep);
+                SetX(buildDepotToggle, 0f);
+                SetX(buildHouseToggle, headquartersSlotStep);
+                SetX(upgradeToggle, 2f * headquartersSlotStep);
+            }
+            else
+            {
+                SetX(upgradeToggle, type == BuildingType.Blockhouse ? 0f : barracksUpgradeX);
+            }
+        }
+
+        private static void SetX(Component toggle, float x)
+        {
+            if (toggle == null)
+            {
+                return;
+            }
+
+            var rect = (RectTransform)toggle.transform;
+            rect.anchoredPosition = new Vector2(x, rect.anchoredPosition.y);
+        }
+
+        private float defaultPanelWidth;
 
         private void Bind(HireToggle toggle, UnitType type)
         {
@@ -189,7 +245,7 @@ namespace Marchlands.UI
             RefreshBuildToggle(buildStableToggle, BuildingType.Stable, stableTitle, headquarters);
             RefreshBuildToggle(buildDepotToggle, BuildingType.ArtilleryDepot, depotTitle, headquarters);
             RefreshHouseToggle(headquarters);
-            RefreshUpgradeToggle(own && barracks);
+            RefreshUpgradeToggle(own && BuildRules.IsUpgradable(building.Type));
             if (!own)
             {
                 statusLabel.text = GetEnemyStatus();
@@ -202,9 +258,10 @@ namespace Marchlands.UI
                 return;
             }
 
-            if (barracks && building.IsUpgrading)
+            if (building.IsUpgrading)
             {
-                statusLabel.text = upgradingStatus;
+                statusLabel.text = barracks ? upgradingStatus
+                    : blockhouse ? blockhouseFortifyingStatus : headquartersFortifyingStatus;
                 return;
             }
 
@@ -359,7 +416,7 @@ namespace Marchlands.UI
             }
         }
 
-        /// <summary>«Усилить» в карточке своей казармы: цена; пока усиливают — полоска; усиленная — «Усилена».</summary>
+        /// <summary>«Усилить» у казармы, «Укрепить» у штаба и блокгауза: цена; пока строят — полоска с процентами; потом кнопки нет.</summary>
         private void RefreshUpgradeToggle(bool visible)
         {
             if (upgradeToggle == null)
@@ -379,12 +436,12 @@ namespace Marchlands.UI
                 return;
             }
 
-            int cost = match.Settings.buildings.barracksUpgradeCost;
+            int cost = BuildRules.GetUpgradeCost(match, building.Type);
             bool can = BuildRules.CanUpgrade(match, building);
             upgradeToggle.Button.interactable = can;
-            upgradeToggle.SetName(upgradeTitle);
+            upgradeToggle.SetName(building.Type == BuildingType.Barracks ? upgradeTitle : fortifyTitle);
             upgradeToggle.SetAvailable(can || building.IsUpgrading);
-            float time = match.Settings.buildings.barracksUpgradeTime;
+            float time = BuildRules.GetUpgradeTime(match, building.Type);
             // Идёт усиление — полоса заполняется с первого тика (чуть видна сразу), вместо цены — проценты.
             float progress = building.IsUpgrading && time > 0f ? Mathf.Max(1f - building.UpgradeRemaining / time, UpgradeProgressMin) : -1f;
             string text = building.IsUpgrading
@@ -400,7 +457,7 @@ namespace Marchlands.UI
         {
             if (building != null)
             {
-                match.Enqueue(new UpgradeBarracksCommand(building.Id));
+                match.Enqueue(new UpgradeBuildingCommand(building.Id));
             }
         }
 

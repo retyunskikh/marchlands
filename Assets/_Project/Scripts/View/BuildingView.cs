@@ -70,20 +70,19 @@ namespace Marchlands.View
             Sprite roofSprite = isHeadquarters ? style.HeadquartersRoofSprite : isStable || isDepot ? style.StableRoofSprite
                 : isBlockhouse ? style.BlockhouseRoofSprite : style.BarracksRoofSprite;
             Sprite detailSprite = style.RoofDetailOf(building.Type);
-            if (building.Type == BuildingType.Barracks)
+            // Казарма, штаб и блокгауз до усиления — деревянные (тёс, частокол), после — каменные, под черепицей.
+            Sprite woodRoof = style.WoodRoofOf(building.Type);
+            if (!building.IsUpgraded && woodRoof != null)
             {
-                // Казарма до усиления — деревянная (тёс и частокол), после — каменная, под черепицей.
-                if (!building.IsUpgraded && style.BarracksWoodRoofSprite != null)
-                {
-                    roofSprite = style.BarracksWoodRoofSprite;
-                    detailSprite = null;
-                    roofColor = Color.Lerp(Color.white, sideColor, style.WoodRoofSideTint);
-                    roofColor.a = sideColor.a;
-                }
-                else if (building.IsUpgraded && style.BarracksStoneBaseSprite != null)
-                {
-                    baseSprite = style.BarracksStoneBaseSprite;
-                }
+                roofSprite = woodRoof;
+                detailSprite = null;
+                roofColor = Color.Lerp(Color.white, sideColor, style.WoodRoofSideTint);
+                roofColor.a = sideColor.a;
+                baseSprite = style.WoodBaseOf(building.Type) ?? baseSprite;
+            }
+            else if (building.IsUpgraded)
+            {
+                baseSprite = style.StoneBaseOf(building.Type) ?? baseSprite;
             }
 
             if (baseSprite != null && roofSprite != null)

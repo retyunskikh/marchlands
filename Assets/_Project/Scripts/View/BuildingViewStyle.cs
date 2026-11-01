@@ -79,6 +79,12 @@ namespace Marchlands.View
         [SerializeField] private Sprite barracksWoodRoofSprite;
         [Tooltip("Усиленная казарма — каменная ограда и мощёный двор.")]
         [SerializeField] private Sprite barracksStoneBaseSprite;
+        [Tooltip("Штаб до укрепления — деревянный: тёсовая крыша и частокол.")]
+        [SerializeField] private Sprite headquartersWoodRoofSprite;
+        [SerializeField] private Sprite headquartersWoodBaseSprite;
+        [Tooltip("Блокгауз до укрепления — тёсовая крыша; после — каменная ограда.")]
+        [SerializeField] private Sprite blockhouseWoodRoofSprite;
+        [SerializeField] private Sprite blockhouseStoneBaseSprite;
         [Tooltip("Насколько деревянная крыша окрашена цветом стороны (0 — просто дерево).")]
         [SerializeField, Range(0f, 1f)] private float woodRoofSideTint = 0.3f;
         [Tooltip("Прозрачность строящегося здания.")]
@@ -206,6 +212,29 @@ namespace Marchlands.View
         public Sprite BarracksStoneBaseSprite => barracksStoneBaseSprite;
 
         public float WoodRoofSideTint => woodRoofSideTint;
+
+        /// <summary>Крыша деревянного (не усиленного) здания; null — у этого типа деревянного вида нет.</summary>
+        public Sprite WoodRoofOf(BuildingType type)
+        {
+            return type == BuildingType.Barracks ? barracksWoodRoofSprite
+                : type == BuildingType.Headquarters ? headquartersWoodRoofSprite
+                : type == BuildingType.Blockhouse ? blockhouseWoodRoofSprite
+                : null;
+        }
+
+        /// <summary>Основание деревянного здания (если у него своё); null — общее.</summary>
+        public Sprite WoodBaseOf(BuildingType type)
+        {
+            return type == BuildingType.Headquarters ? headquartersWoodBaseSprite : null;
+        }
+
+        /// <summary>Основание каменного (усиленного) здания (если своё); null — общее.</summary>
+        public Sprite StoneBaseOf(BuildingType type)
+        {
+            return type == BuildingType.Barracks ? barracksStoneBaseSprite
+                : type == BuildingType.Blockhouse ? blockhouseStoneBaseSprite
+                : null;
+        }
 
         /// <summary>Детали крыши здания этого типа (может не быть).</summary>
         public Sprite RoofDetailOf(BuildingType type)

@@ -26,8 +26,11 @@ namespace Marchlands.Simulation.Buildings
 
         public static Volley Of(Building building, BuildingSettings settings)
         {
+            // Каменный (укреплённый) блокгауз: защитников больше, бьют дальше.
             return building.Type == BuildingType.Blockhouse
-                ? new Volley(settings.blockhouseShots, settings.blockhouseInterval, settings.blockhouseHitChance, settings.blockhouseRange)
+                ? new Volley(building.IsUpgraded ? settings.upgradedBlockhouseShots : settings.blockhouseShots,
+                    settings.blockhouseInterval, settings.blockhouseHitChance,
+                    building.IsUpgraded ? settings.upgradedBlockhouseRange : settings.blockhouseRange)
                 : new Volley(building.IsUpgraded ? settings.upgradedSentryShots : settings.sentryShots,
                     settings.sentryInterval, settings.sentryHitChance, settings.sentryRange);
         }

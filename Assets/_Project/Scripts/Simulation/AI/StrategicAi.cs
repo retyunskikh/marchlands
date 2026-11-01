@@ -62,15 +62,19 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
-            // Разбогатев (хватает и на усиление, и на отряд гренадёров), усиливает казарму.
-            foreach (Building barracks in match.Buildings)
+            // Разбогатев (хватает и на усиление, и на отряд гренадёров), усиливает казарму, затем укрепляет
+            // блокгаузы и штаб.
+            int reserve = match.Settings.buildings.grenadierHireCost * match.Settings.grenadiers.squadSize;
+            foreach (BuildingType type in UpgradeOrder)
             {
-                int reserve = match.Settings.buildings.grenadierHireCost * match.Settings.grenadiers.squadSize;
-                if (barracks.Owner == Side && BuildRules.CanUpgrade(match, barracks)
-                    && match.GetPlayer(Side).Gold >= match.Settings.buildings.barracksUpgradeCost + reserve)
+                foreach (Building building in match.Buildings)
                 {
-                    Issue(match, new UpgradeBarracksCommand(barracks.Id));
-                    return;
+                    if (building.Owner == Side && building.Type == type && BuildRules.CanUpgrade(match, building)
+                        && match.GetPlayer(Side).Gold >= BuildRules.GetUpgradeCost(match, type) + reserve)
+                    {
+                        Issue(match, new UpgradeBuildingCommand(building.Id));
+                        return;
+                    }
                 }
             }
 
@@ -207,6 +211,9 @@ namespace Marchlands.Simulation.AI
 
             return Angles.Direction(Side == Side.France ? 90f : -90f);
         }
+
+        // Что ИИ усиливает первым: казарму (найм), потом блокгаузы, потом штаб.
+        private static readonly BuildingType[] UpgradeOrder = { BuildingType.Barracks, BuildingType.Blockhouse, BuildingType.Headquarters };
 
         private void Issue(Match match, ICommand command)
         {

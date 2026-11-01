@@ -20,6 +20,24 @@ namespace Marchlands.Simulation.Config
         /// <summary>Во сколько раз быстрее нанимает усиленная казарма.</summary>
         public float barracksUpgradeHireSpeed;
 
+        /// <summary>Укрепить штаб (деревянный — в каменный): цена, сколько строят, s.</summary>
+        public int headquartersUpgradeCost;
+
+        public float headquartersUpgradeTime;
+
+        /// <summary>Укрепить блокгауз (деревянный — в каменный): цена, сколько строят, s.</summary>
+        public int blockhouseUpgradeCost;
+
+        public float blockhouseUpgradeTime;
+
+        /// <summary>Укреплённый блокгауз: ружей в залпе и дальность огня, u.</summary>
+        public int upgradedBlockhouseShots;
+
+        public float upgradedBlockhouseRange;
+
+        /// <summary>Во сколько раз крепче (больше здоровья) укреплённые штаб и блокгауз.</summary>
+        public float fortifiedHealthMultiplier;
+
         /// <summary>Сколько ружей в залпе часовых усиленной казармы.</summary>
         public int upgradedSentryShots;
 
