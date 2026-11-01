@@ -44,26 +44,48 @@ namespace Marchlands.Tests.EditMode
         {
             var match = new Match(1, TestSettings.Create());
             Squad own = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
-            Squad near = match.AddSquad(Side.Austria, new float2(0f, 24f), 270f, Formation.Line);
+            Squad near = match.AddSquad(Side.Austria, new float2(0f, 23f), 270f, Formation.Line);
             Squad far = match.AddSquad(Side.Austria, new float2(0f, -27f), 90f, Formation.Line);
             match.EnableFogOfWar();
 
-            Assert.IsTrue(match.IsVisible(near, Side.France), "ближе обзора пехоты (25) — виден");
+            Assert.AreEqual(24f, match.VisionRange, 1e-4f, "обзор — вдвое дальше выстрела гренадёров (12)");
+            Assert.IsTrue(match.IsVisible(near, Side.France), "ближе обзора — виден");
             Assert.IsFalse(match.IsVisible(far, Side.France), "дальше обзора — в тумане");
             Assert.IsTrue(match.IsVisible(own, Side.France), "свои видны всегда");
             Assert.IsTrue(match.IsVisible(own, Side.Austria), "у австрийцев отряд рядом — француз виден и им");
         }
 
         [Test]
-        public void Fog_CavalrySeesFartherThanInfantry()
+        public void Fog_EnemyBuildings_EvenUnderConstruction_HiddenOutsideVision()
         {
             var match = new Match(1, TestSettings.Create());
-            match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, UnitType.Cavalry);
-            Squad enemy = match.AddSquad(Side.Austria, new float2(28f, 0f), 270f, Formation.Line);
+            match.AddHeadquarters(Side.France, new float2(-100f, 0f));
+            match.AddHeadquarters(Side.Austria, new float2(100f, 0f));
             match.EnableFogOfWar();
+            Building enemyHq = match.GetHeadquarters(Side.Austria);
+            Assert.IsFalse(match.IsVisible(enemyHq, Side.France), "вражеский штаб вдали — в тумане");
+            Assert.IsTrue(match.IsVisible(match.GetHeadquarters(Side.France), Side.France), "свой — всегда");
 
-            Assert.IsTrue(match.IsVisible(enemy, Side.France));
-            Assert.IsFalse(match.IsVisible(match.Squads[0], Side.Austria), "пехота на 28 конницу не видит");
+            match.AddSquad(Side.France, new float2(80f, 0f), 0f, Formation.Line);
+            Assert.IsTrue(match.IsVisible(enemyHq, Side.France), "подошли — видно");
+        }
+
+        [Test]
+        public void Fog_OwnConstructionSite_GivesVision()
+        {
+            var match = new Match(1, TestSettings.Create());
+            match.AddHeadquarters(Side.France, new float2(-100f, 0f));
+            match.GetPlayer(Side.France).Gold = 1000;
+            match.EnableFogOfWar();
+            float2 site = new float2(-100f, 8f);
+            match.Enqueue(new BuildBarracksCommand(Side.France, site));
+            match.Tick();
+            Building barracks = match.Buildings.First(b => b.Type == BuildingType.Barracks);
+            Assert.IsFalse(barracks.IsBuilt, "ещё строится");
+
+            Squad enemy = match.AddSquad(Side.Austria, site + new float2(0f, 20f), 270f, Formation.Line);
+            match.Tick();
+            Assert.IsTrue(match.IsVisible(enemy, Side.France), "стройка тоже даёт обзор");
         }
 
         [Test]
@@ -99,7 +121,7 @@ namespace Marchlands.Tests.EditMode
             }
 
             Assert.IsTrue(match.IsVisible(enemy, Side.France));
-            Assert.LessOrEqual(math.length(enemy.Position), match.Settings.vision.infantryVisionRange + 0.01f);
+            Assert.LessOrEqual(math.length(enemy.Position), match.VisionRange + 0.01f);
         }
 
         [Test]
@@ -153,7 +175,7 @@ namespace Marchlands.Tests.EditMode
         public void Ai_DoesNotFireAtEnemyHiddenInFog()
         {
             Match match = CombatTestScenarios.FacingLines(1, 20f, out _, out Squad ai);
-            match.Settings.vision.infantryVisionRange = 5f;
+            match.Settings.vision.visionRangeMultiplier = 0.4f;
             match.SetRetreatPoint(Side.Austria, new float2(0f, 60f));
             match.AddController(new TacticalAi(Side.Austria));
             match.EnableFogOfWar();

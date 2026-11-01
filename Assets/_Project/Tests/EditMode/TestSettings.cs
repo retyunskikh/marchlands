@@ -193,11 +193,7 @@ namespace Marchlands.Tests.EditMode
                 },
                 vision = new VisionSettings
                 {
-                    infantryVisionRange = 25f,
-                    cavalryVisionRange = 30f,
-                    artilleryVisionRange = 20f,
-                    buildingVisionRange = 20f,
-                    villageVisionRange = 15f,
+                    visionRangeMultiplier = 2f,
                     balloonCost = 400,
                     balloonResearchTime = 40f
                 },

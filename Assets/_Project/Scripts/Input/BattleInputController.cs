@@ -670,7 +670,8 @@ namespace Marchlands.Input
             float pad = cameraController.PixelsToWorld(ScreenUnits.DpToPixels(config.MinTouchTarget)) * 0.25f;
             foreach (Building building in match.Buildings)
             {
-                if ((building.Owner == playerSide) != own || building.IsDestroyed)
+                // Вражеское здание в тумане войны не выбрать — его не видно.
+                if ((building.Owner == playerSide) != own || building.IsDestroyed || !match.IsVisible(building, playerSide))
                 {
                     continue;
                 }

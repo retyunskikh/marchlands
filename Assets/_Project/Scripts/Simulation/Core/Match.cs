@@ -134,6 +134,15 @@ namespace Marchlands.Simulation.Core
             return !FogOfWar || squad.Side == viewer || squad.SeenBy[(int)viewer];
         }
 
+        /// <summary>Видит ли сторона здание: своё — всегда, чужое — без тумана или в обзоре (в том числе стройку).</summary>
+        public bool IsVisible(Building building, Side viewer)
+        {
+            return !FogOfWar || building.Owner == viewer || VisibilitySystem.IsPointSeen(this, building.Position, viewer);
+        }
+
+        /// <summary>Радиус обзора в тумане войны, u.</summary>
+        public float VisionRange => VisibilitySystem.Range(Settings);
+
         /// <summary>Местность полной карты; null — ровное поле без границ (песочницы).</summary>
         public TerrainMap Terrain { get; private set; }
 

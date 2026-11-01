@@ -153,6 +153,13 @@ namespace Marchlands.Bootstrap
             }
 
             squadViews.Initialize(match, playerSide);
+            if (match.FogOfWar && scenario.HasTerrain)
+            {
+                // Пелена тумана над картой и лесами за краем.
+                var fog = new GameObject("Fog of War").AddComponent<FogOfWarView>();
+                fog.Initialize(match, playerSide, (scenario.TerrainMin + scenario.TerrainMax) * 0.5f, scenario.MapSize);
+            }
+
             villageViews.Initialize(match, scenario.VillageLayouts, scenario.GetVillageDoors);
             buildingViews.Initialize(match);
             fireArc.Initialize(match);
