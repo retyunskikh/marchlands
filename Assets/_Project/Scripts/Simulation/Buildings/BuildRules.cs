@@ -150,6 +150,18 @@ namespace Marchlands.Simulation.Buildings
                 : settings.barracksUpgradeTime;
         }
 
+        /// <summary>
+        /// Можно ли изучить воздушный шар: туман войны включён, свой штаб цел, шар ещё не изучен и не изучается,
+        /// золота хватает.
+        /// </summary>
+        public static bool CanResearchBalloon(Match match, Side side)
+        {
+            Building headquarters = match.GetHeadquarters(side);
+            var player = match.GetPlayer(side);
+            return match.FogOfWar && headquarters != null && headquarters.IsBuilt && !headquarters.IsDestroyed
+                && !player.HasBalloon && !player.IsResearchingBalloon && player.Gold >= match.Settings.vision.balloonCost;
+        }
+
         /// <summary>Можно ли усилить здание: казарма, штаб или блокгауз, построено, ещё не усилено и не усиливается, золота хватает.</summary>
         public static bool CanUpgrade(Match match, Building building)
         {

@@ -18,6 +18,14 @@ namespace Marchlands.Simulation.Economy
 
         public int Gold { get; internal set; }
 
+        /// <summary>Воздушный шар изучен: туман войны для стороны снят.</summary>
+        public bool HasBalloon { get; internal set; }
+
+        /// <summary>Сколько ещё изучать шар, s; 0 — не изучают.</summary>
+        public float BalloonResearchRemaining { get; internal set; }
+
+        public bool IsResearchingBalloon => BalloonResearchRemaining > 0f;
+
         /// <summary>Рекруты и вернувшиеся из разбитых отрядов гренадёры.</summary>
         public int GrenadierReserve
         {

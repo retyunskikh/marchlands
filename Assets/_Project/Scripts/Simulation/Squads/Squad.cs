@@ -28,6 +28,9 @@ namespace Marchlands.Simulation.Squads
 
         public int Id { get; }
 
+        /// <summary>Туман войны: видит ли отряд сторона (по номеру стороны). Смотреть через Match.IsVisible.</summary>
+        internal bool[] SeenBy { get; } = { true, true };
+
         public Side Side { get; }
 
         public UnitType Type { get; }

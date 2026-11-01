@@ -52,6 +52,12 @@ namespace Marchlands.UI
         [Tooltip("{0} — цена, {1} — секунд стройки.")]
         [SerializeField] private string upgradeCostFormat = "Цена: {0} золота, строят {1} с";
 
+        [Header("Воздушный шар")]
+        [SerializeField] private string balloonTitle = "Воздушный шар";
+        [SerializeField] private string balloonNote = "Привязной шар над штабом: наблюдатель видит всё поле. Туман войны для вас снят до конца боя — видны все отряды противника.";
+        [Tooltip("{0} — цена, {1} — секунд изучения.")]
+        [SerializeField] private string balloonCostFormat = "Цена: {0} золота, изучают {1} с";
+
         private static readonly CultureInfo Russian = CultureInfo.GetCultureInfo("ru-RU");
 
         private Match match;
@@ -146,6 +152,21 @@ namespace Marchlands.UI
         private static string Number(float value)
         {
             return value.ToString("0.#", Russian);
+        }
+
+        /// <summary>Что даёт воздушный шар: картинка, описание, цена и время изучения.</summary>
+        public void ShowBalloon(Sprite picture)
+        {
+            if (portrait != null && picture != null)
+            {
+                portrait.sprite = picture;
+                portrait.preserveAspect = true;
+            }
+
+            titleLabel.text = balloonTitle;
+            VisionSettings vision = match.Settings.vision;
+            bodyLabel.text = balloonNote + "\n\n" + string.Format(Russian, balloonCostFormat, vision.balloonCost, Mathf.RoundToInt(vision.balloonResearchTime));
+            panel.SetActive(true);
         }
 
         public void Hide()

@@ -22,6 +22,11 @@ namespace Marchlands.UI
         [Tooltip("Выход из игры.")]
         [SerializeField] private Button quitButton;
         [SerializeField] private string stressSceneName = "Sandbox_Stress";
+        [Tooltip("Переключатель тумана войны перед боем.")]
+        [SerializeField] private Button fogButton;
+        [SerializeField] private Text fogLabel;
+        [SerializeField] private string fogOnText = "Туман войны: вкл";
+        [SerializeField] private string fogOffText = "Туман войны: выкл";
         [SerializeField] private int targetFrameRate = 60;
 
         private void Awake()
@@ -40,6 +45,15 @@ namespace Marchlands.UI
                 quitButton.onClick.AddListener(Application.Quit);
             }
             stressButton.gameObject.SetActive(Debug.isDebugBuild);
+            if (fogButton != null)
+            {
+                fogButton.onClick.AddListener(() =>
+                {
+                    MapChoice.FogOfWar = !MapChoice.FogOfWar;
+                    ShowFog();
+                });
+                ShowFog();
+            }
 
             if (mapButtons == null)
             {
@@ -53,6 +67,14 @@ namespace Marchlands.UI
             }
 
             Select(Mathf.Clamp(MapChoice.Selected, 0, Mathf.Max(0, mapButtons.Length - 1)));
+        }
+
+        private void ShowFog()
+        {
+            if (fogLabel != null)
+            {
+                fogLabel.text = MapChoice.FogOfWar ? fogOnText : fogOffText;
+            }
         }
 
         private void StartBattle(bool tutorial)

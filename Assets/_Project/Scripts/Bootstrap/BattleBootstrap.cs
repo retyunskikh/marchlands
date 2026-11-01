@@ -115,7 +115,13 @@ namespace Marchlands.Bootstrap
             {
                 terrainView.Initialize(match);
             }
-            squadViews.Initialize(match);
+            // Туман войны — в обычном бою по выбору в меню; в обучении и песочницах его нет.
+            if (!isTutorial && maps != null && maps.Length > 0 && MapChoice.FogOfWar)
+            {
+                match.EnableFogOfWar();
+            }
+
+            squadViews.Initialize(match, scenario.PlayerSide);
             villageViews.Initialize(match, scenario.VillageLayouts, scenario.GetVillageDoors);
             buildingViews.Initialize(match);
             fireArc.Initialize(match);

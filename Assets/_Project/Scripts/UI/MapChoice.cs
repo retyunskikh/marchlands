@@ -10,6 +10,30 @@ namespace Marchlands.UI
         /// <summary>Запущено обучение (своя карта с уроками), а не обычный бой. Не запоминается между запусками.</summary>
         public static bool Tutorial { get; set; }
 
+        private const string FogPrefsKey = "Marchlands.FogOfWar";
+
+        /// <summary>Туман войны в обычном бою (в обучении его нет). Запоминается между запусками, по умолчанию включён.</summary>
+        public static bool FogOfWar
+        {
+            get
+            {
+                try
+                {
+                    return PlayerPrefs.GetInt(FogPrefsKey, 1) != 0;
+                }
+                catch (UnityException)
+                {
+                    return true;
+                }
+            }
+
+            set
+            {
+                PlayerPrefs.SetInt(FogPrefsKey, value ? 1 : 0);
+                PlayerPrefs.Save();
+            }
+        }
+
         public static int Selected
         {
             get

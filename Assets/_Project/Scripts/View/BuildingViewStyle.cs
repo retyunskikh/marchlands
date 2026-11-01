@@ -79,6 +79,16 @@ namespace Marchlands.View
         [SerializeField] private Sprite barracksWoodRoofSprite;
         [Tooltip("Усиленная казарма — каменная ограда и мощёный двор.")]
         [SerializeField] private Sprite barracksStoneBaseSprite;
+        [Tooltip("Воздушный шар над штабом стороны, изучившей его (опора спрайта — конец троса внизу).")]
+        [SerializeField] private Sprite balloonSprite;
+        [Tooltip("Высота шара с тросом на карте, u.")]
+        [SerializeField] private float balloonHeight = 11f;
+        [Tooltip("Где у штаба закреплён трос (доля габарита от центра).")]
+        [SerializeField] private Vector2 balloonAnchor = new Vector2(0.38f, 0.3f);
+        [Tooltip("Насколько шар покачивается, градусы, и как быстро.")]
+        [SerializeField] private float balloonSway = 4f;
+        [SerializeField] private float balloonSwaySpeed = 0.7f;
+        [SerializeField] private int balloonSortingOrder = 60;
         [Tooltip("Штаб до укрепления — деревянный: тёсовая крыша и частокол.")]
         [SerializeField] private Sprite headquartersWoodRoofSprite;
         [SerializeField] private Sprite headquartersWoodBaseSprite;
@@ -212,6 +222,18 @@ namespace Marchlands.View
         public Sprite BarracksStoneBaseSprite => barracksStoneBaseSprite;
 
         public float WoodRoofSideTint => woodRoofSideTint;
+
+        public Sprite BalloonSprite => balloonSprite;
+
+        public float BalloonHeight => balloonHeight;
+
+        public Vector2 BalloonAnchor => balloonAnchor;
+
+        public float BalloonSway => balloonSway;
+
+        public float BalloonSwaySpeed => balloonSwaySpeed;
+
+        public int BalloonSortingOrder => balloonSortingOrder;
 
         /// <summary>Крыша деревянного (не усиленного) здания; null — у этого типа деревянного вида нет.</summary>
         public Sprite WoodRoofOf(BuildingType type)

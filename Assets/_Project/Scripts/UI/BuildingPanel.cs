@@ -44,6 +44,12 @@ namespace Marchlands.UI
         [SerializeField] private Sprite upgradeBarracksIcon;
         [SerializeField] private Sprite upgradeHeadquartersIcon;
         [SerializeField] private Sprite upgradeBlockhouseIcon;
+        [Tooltip("Воздушный шар в карточке штаба (только при тумане войны).")]
+        [SerializeField] private HireToggle balloonToggle;
+        [SerializeField] private Sprite balloonIcon;
+        [SerializeField] private string balloonTitle = "Шар";
+        [Tooltip("Ширина панели штаба, когда в ней ещё и шар (шесть кнопок).")]
+        [SerializeField] private float headquartersBalloonPanelWidth = 1625f;
         [SerializeField] private string headquartersFortifyingStatus = "Штаб укрепляют";
         [SerializeField] private string blockhouseFortifyingStatus = "Блокгауз укрепляют";
 
@@ -150,6 +156,15 @@ namespace Marchlands.UI
                 }
             }
 
+            if (balloonToggle != null)
+            {
+                balloonToggle.Button.onClick.AddListener(() => match.Enqueue(new ResearchBalloonCommand(playerSide)));
+                if (balloonToggle.InfoButton != null)
+                {
+                    balloonToggle.InfoButton.onClick.AddListener(() => infoPanel.ShowBalloon(balloonIcon));
+                }
+            }
+
             if (buildHouseToggle != null)
             {
                 buildHouseToggle.Button.onClick.AddListener(OnBuildHouse);
@@ -184,16 +199,20 @@ namespace Marchlands.UI
                 defaultPanelWidth = panelRect.sizeDelta.x;
             }
 
-            float width = type == BuildingType.Headquarters ? headquartersPanelWidth
+            // В тумане войны у штаба шестая кнопка — воздушный шар: кнопки сдвигаются на полшага влево.
+            bool balloon = type == BuildingType.Headquarters && match.FogOfWar && balloonToggle != null;
+            float width = type == BuildingType.Headquarters ? (balloon ? headquartersBalloonPanelWidth : headquartersPanelWidth)
                 : type == BuildingType.Blockhouse ? blockhousePanelWidth : defaultPanelWidth;
             panelRect.sizeDelta = new Vector2(width, panelRect.sizeDelta.y);
             if (type == BuildingType.Headquarters)
             {
-                SetX(buildBarracksToggle, -2f * headquartersSlotStep);
-                SetX(buildStableToggle, -headquartersSlotStep);
-                SetX(buildDepotToggle, 0f);
-                SetX(buildHouseToggle, headquartersSlotStep);
-                SetX(upgradeToggle, 2f * headquartersSlotStep);
+                float shift = balloon ? -0.5f * headquartersSlotStep : 0f;
+                SetX(buildBarracksToggle, -2f * headquartersSlotStep + shift);
+                SetX(buildStableToggle, -headquartersSlotStep + shift);
+                SetX(buildDepotToggle, shift);
+                SetX(buildHouseToggle, headquartersSlotStep + shift);
+                SetX(upgradeToggle, 2f * headquartersSlotStep + shift);
+                SetX(balloonToggle, 3f * headquartersSlotStep + shift);
             }
             else
             {
@@ -260,6 +279,7 @@ namespace Marchlands.UI
             RefreshBuildToggle(buildDepotToggle, BuildingType.ArtilleryDepot, depotTitle, headquarters);
             RefreshHouseToggle(headquarters);
             RefreshUpgradeToggle(own && BuildRules.IsUpgradable(building.Type));
+            RefreshBalloonToggle(own && building.Type == BuildingType.Headquarters);
             if (!own)
             {
                 statusLabel.text = GetEnemyStatus();
@@ -463,6 +483,41 @@ namespace Marchlands.UI
                 ? string.Format(upgradeProgressFormat, Mathf.FloorToInt(progress * 100f))
                 : string.Format(buildFormat, string.Empty, cost);
             upgradeToggle.Show(text, building.IsUpgrading, progress);
+        }
+
+        /// <summary>Воздушный шар в штабе: цена; пока изучают — полоска с процентами; изучен — кнопки нет.</summary>
+        private void RefreshBalloonToggle(bool visible)
+        {
+            if (balloonToggle == null)
+            {
+                return;
+            }
+
+            var player = match.GetPlayer(playerSide);
+            visible &= match.FogOfWar && !player.HasBalloon;
+            if (balloonToggle.gameObject.activeSelf != visible)
+            {
+                balloonToggle.gameObject.SetActive(visible);
+            }
+
+            if (!visible)
+            {
+                return;
+            }
+
+            bool can = BuildRules.CanResearchBalloon(match, playerSide);
+            balloonToggle.Button.interactable = can;
+            balloonToggle.SetName(balloonTitle);
+            balloonToggle.SetIcon(balloonIcon);
+            balloonToggle.SetAvailable(can || player.IsResearchingBalloon);
+            float time = match.Settings.vision.balloonResearchTime;
+            float progress = player.IsResearchingBalloon && time > 0f
+                ? Mathf.Max(1f - player.BalloonResearchRemaining / time, UpgradeProgressMin)
+                : -1f;
+            string text = player.IsResearchingBalloon
+                ? string.Format(upgradeProgressFormat, Mathf.FloorToInt(progress * 100f))
+                : string.Format(buildFormat, string.Empty, match.Settings.vision.balloonCost);
+            balloonToggle.Show(text, player.IsResearchingBalloon, progress);
         }
 
         /// <summary>Картинка будущего (каменного) здания на кнопке усиления.</summary>

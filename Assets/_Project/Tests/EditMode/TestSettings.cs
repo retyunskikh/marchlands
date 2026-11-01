@@ -191,6 +191,16 @@ namespace Marchlands.Tests.EditMode
                     canisterHitNear = 0.3f,
                     canisterHitFar = 0.04f
                 },
+                vision = new VisionSettings
+                {
+                    infantryVisionRange = 25f,
+                    cavalryVisionRange = 30f,
+                    artilleryVisionRange = 20f,
+                    buildingVisionRange = 20f,
+                    villageVisionRange = 15f,
+                    balloonCost = 400,
+                    balloonResearchTime = 40f
+                },
                 economy = new EconomySettings
                 {
                     captureRadius = 4f,

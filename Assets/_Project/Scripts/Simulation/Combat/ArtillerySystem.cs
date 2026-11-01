@@ -256,7 +256,8 @@ namespace Marchlands.Simulation.Combat
         /// </summary>
         public static bool IsValidTarget(Match match, Squad gun, Squad target)
         {
-            if (target == null || target.Side == gun.Side || target.Alive <= 0 || target.IsWithdrawn || target.IsInMelee)
+            if (target == null || target.Side == gun.Side || target.Alive <= 0 || target.IsWithdrawn || target.IsInMelee
+                || !match.IsVisible(target, gun.Side))
             {
                 return false;
             }

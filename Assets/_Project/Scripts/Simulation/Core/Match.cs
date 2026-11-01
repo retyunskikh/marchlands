@@ -10,6 +10,7 @@ using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
 using Marchlands.Simulation.Terrain;
 using Marchlands.Simulation.Victory;
+using Marchlands.Simulation.Vision;
 using Unity.Mathematics;
 
 namespace Marchlands.Simulation.Core
@@ -115,6 +116,22 @@ namespace Marchlands.Simulation.Core
         internal void ReportReinforcement(Squad squad, Village village)
         {
             lastTickReinforcements.Add(new Reinforcement(squad.Id, village.Id));
+        }
+
+        /// <summary>Действует ли туман войны: вражеские отряды видны только в обзоре своих.</summary>
+        public bool FogOfWar { get; private set; }
+
+        /// <summary>Включает туман войны (до начала матча, после расстановки).</summary>
+        public void EnableFogOfWar()
+        {
+            FogOfWar = true;
+            VisibilitySystem.Refresh(this);
+        }
+
+        /// <summary>Видит ли сторона <paramref name="viewer"/> отряд: свои — всегда, чужие — без тумана или в обзоре.</summary>
+        public bool IsVisible(Squad squad, Side viewer)
+        {
+            return !FogOfWar || squad.Side == viewer || squad.SeenBy[(int)viewer];
         }
 
         /// <summary>Местность полной карты; null — ровное поле без границ (песочницы).</summary>
@@ -486,6 +503,10 @@ namespace Marchlands.Simulation.Core
             VictorySystem.Update(this, deltaTime);
 
             squads.RemoveAll(squad => squad.Alive <= 0 || squad.IsWithdrawn);
+            if (FogOfWar)
+            {
+                VisibilitySystem.Update(this, deltaTime);
+            }
 
             CurrentTick++;
         }

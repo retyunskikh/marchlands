@@ -269,3 +269,11 @@ MonoBehaviour:
       rainTimeMax: 100
       rainFireChance: 0.67
       rainSpeedMultiplier: 0.85
+    vision:
+      infantryVisionRange: 25
+      cavalryVisionRange: 30
+      artilleryVisionRange: 20
+      buildingVisionRange: 20
+      villageVisionRange: 15
+      balloonCost: 400
+      balloonResearchTime: 40

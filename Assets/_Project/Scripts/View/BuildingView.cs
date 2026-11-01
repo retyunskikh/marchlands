@@ -285,6 +285,37 @@ namespace Marchlands.View
             }
         }
 
+        private SpriteRenderer balloon;
+
+        /// <summary>Над штабом стороны, изучившей воздушный шар, висит шар на тросе и покачивается.</summary>
+        private void RenderBalloon(Match match)
+        {
+            bool show = building.Type == BuildingType.Headquarters && style.BalloonSprite != null
+                && match.GetPlayer(building.Owner).HasBalloon && !building.IsDestroyed;
+            if (!show)
+            {
+                if (balloon != null)
+                {
+                    balloon.enabled = false;
+                }
+
+                return;
+            }
+
+            if (balloon == null)
+            {
+                balloon = CreateRenderer("Balloon", style.BalloonSortingOrder, Color.white);
+                balloon.sprite = style.BalloonSprite;
+                float scale = style.BalloonHeight / style.BalloonSprite.bounds.size.y;
+                balloon.transform.localScale = new Vector3(scale, scale, 1f);
+                balloon.transform.localPosition = new Vector3(size.x * style.BalloonAnchor.x, size.y * style.BalloonAnchor.y, 0f);
+            }
+
+            balloon.enabled = true;
+            float sway = style.BalloonSway * Mathf.Sin(Time.time * style.BalloonSwaySpeed + building.Id);
+            balloon.transform.localRotation = Quaternion.Euler(0f, 0f, sway);
+        }
+
         /// <summary>Масштаб, при котором спрайт занимает габариты здания.</summary>
         private Vector3 FitScale(Sprite sprite)
         {
@@ -320,6 +351,7 @@ namespace Marchlands.View
         /// <param name="underAssault">На здание идёт штурм: видны полоска здоровья и круг дальности часовых.</param>
         internal void Render(Match match, bool underAssault)
         {
+            RenderBalloon(match);
             float health = building.MaxHealth > 0f ? math.saturate(building.Health / building.MaxHealth) : 1f;
             // Повреждённое здание темнеет.
             Color tint = Color.Lerp(style.DamagedTint, Color.white, health);

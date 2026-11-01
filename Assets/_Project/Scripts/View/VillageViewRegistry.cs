@@ -128,6 +128,8 @@ namespace Marchlands.View
 
                 float2 direction = toSquad / distance;
                 walker.Position += direction * step;
+                // Туман войны: человек, идущий к невидимому чужому отряду, не выдаёт его.
+                walker.Renderer.enabled = squadViews.IsShown(squad);
                 float angle = math.degrees(math.atan2(direction.y, direction.x)) - 90f;
                 walker.Step.Apply(walker.Renderer, walker.Position, Quaternion.Euler(0f, 0f, angle), true, direction,
                     walker.Stand, walker.Walk0, walker.Walk1, squadViews.Style);

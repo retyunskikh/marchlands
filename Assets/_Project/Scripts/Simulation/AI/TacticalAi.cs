@@ -307,7 +307,8 @@ namespace Marchlands.Simulation.AI
         {
             foreach (Squad other in match.Squads)
             {
-                if (other.Side != squad.Side && other.Order.Type == SquadOrderType.Charge && other.Order.TargetSquadId == squad.Id)
+                if (other.Side != squad.Side && other.Order.Type == SquadOrderType.Charge && other.Order.TargetSquadId == squad.Id
+                    && match.IsVisible(other, squad.Side))
                 {
                     return true;
                 }
@@ -385,7 +386,8 @@ namespace Marchlands.Simulation.AI
         private static Squad SelectTarget(Match match, Squad squad, SquadBrain brain, float radius)
         {
             Squad current = match.FindSquad(brain.TargetId);
-            if (current != null && !current.IsRouting && math.distance(current.Position, squad.Position) <= radius)
+            if (current != null && !current.IsRouting && match.IsVisible(current, squad.Side)
+                && math.distance(current.Position, squad.Position) <= radius)
             {
                 return current;
             }
@@ -394,7 +396,7 @@ namespace Marchlands.Simulation.AI
             float bestDistance = float.MaxValue;
             foreach (Squad other in match.Squads)
             {
-                if (other.Side == squad.Side || other.IsRouting)
+                if (other.Side == squad.Side || other.IsRouting || !match.IsVisible(other, squad.Side))
                 {
                     continue;
                 }
@@ -432,7 +434,7 @@ namespace Marchlands.Simulation.AI
             defenders.Clear();
             foreach (Squad threat in match.Squads)
             {
-                if (threat.Side == Side || threat.IsRouting || threat.IsCamp || !IsThreat(match, threat))
+                if (threat.Side == Side || threat.IsRouting || threat.IsCamp || !match.IsVisible(threat, Side) || !IsThreat(match, threat))
                 {
                     continue;
                 }
@@ -488,7 +490,7 @@ namespace Marchlands.Simulation.AI
         {
             foreach (Squad other in match.Squads)
             {
-                if (other != threat && other.Side != own.Side && !other.IsRouting
+                if (other != threat && other.Side != own.Side && !other.IsRouting && match.IsVisible(other, own.Side)
                     && math.distance(other.Position, own.Position) <= match.Settings.ai.engageRadius)
                 {
                     return true;
@@ -563,7 +565,7 @@ namespace Marchlands.Simulation.AI
         {
             foreach (Squad other in match.Squads)
             {
-                if (other.Side != Side && !other.IsRouting && !other.IsCamp && other.Alive > 0
+                if (other.Side != Side && !other.IsRouting && !other.IsCamp && other.Alive > 0 && match.IsVisible(other, Side)
                     && math.distancesq(other.Position, position) <= radius * radius)
                 {
                     return true;

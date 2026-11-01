@@ -78,6 +78,14 @@ namespace Marchlands.Simulation.AI
                 }
             }
 
+            // В тумане войны, разбогатев, изучает воздушный шар.
+            if (BuildRules.CanResearchBalloon(match, Side)
+                && match.GetPlayer(Side).Gold >= match.Settings.vision.balloonCost + reserve)
+            {
+                Issue(match, new ResearchBalloonCommand(Side));
+                return;
+            }
+
             // Мест почти нет — первым делом дом, иначе найм встанет.
             int freePlaces = BuildRules.GetPopulationCapacity(match, Side) - BuildRules.GetPopulation(match, Side);
             if (freePlaces < ai.houseMargin && BuildRules.CanBuildHouse(match, Side))
