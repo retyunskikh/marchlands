@@ -65,8 +65,41 @@ namespace Marchlands.Simulation.Commands
                     ChangeFormationCommand.Start(match, squad, Formation.Line);
                 }
 
-                RoutePlanner.TryPlan(match, squad, target);
+                // Недалеко и враг рядом (у отряда или у цели) — это манёвр на позицию: идут прямо, своим строем,
+                // без перестроения и без крюка к дорогам. Дальний приказ — по дорогам (колонна сама развернётся
+                // в линию, когда подойдёт враг).
+                if (!IsManoeuvre(match, squad, target))
+                {
+                    RoutePlanner.TryPlan(match, squad, target);
+                }
             }
+        }
+
+        /// <summary>Манёвр у врага: цель ближе autoColumnMinDistance, а враг ближе autoLineEnemyRadius к отряду или к цели.</summary>
+        public static bool IsManoeuvre(Match match, Squad squad, float2 target)
+        {
+            Config.SquadSettings settings = match.Settings.squads;
+            if (math.distance(squad.Position, target) >= settings.autoColumnMinDistance)
+            {
+                return false;
+            }
+
+            float radius = settings.autoLineEnemyRadius;
+            if (RoutePlanner.IsEnemyNear(match, squad, radius))
+            {
+                return true;
+            }
+
+            foreach (Squad other in match.Squads)
+            {
+                if (other.Side != squad.Side && !other.IsRouting && !other.IsWithdrawn && !other.IsCamp && other.Alive > 0
+                    && math.distancesq(other.Position, target) <= radius * radius)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>Точка позади отряда (за его тылом в секторе ±60°) и ближе backstepDistance — отойти шагом назад.</summary>

@@ -193,6 +193,21 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void ManoeuvreNearEnemy_GoesStraight_NoRoadDetour()
+        {
+            Match match = ForestAndRoad(1.5f, out Squad squad);
+            match.Settings.squads.autoColumnMinDistance = 100f;
+            match.Settings.squads.autoLineEnemyRadius = 15f;
+            // Враг у цели: это выход на позицию атаки — прямо, линией, без крюка к дороге.
+            match.AddSquad(Side.Austria, new float2(40f, 22f), -90f, Formation.Line);
+            match.Enqueue(new MoveCommand(squad.Id, new float2(40f, 12f), 0f, autoRoute: true));
+            match.Tick();
+
+            Assert.IsFalse(squad.HasRoute, "Без маршрута по дорогам");
+            Assert.AreEqual(Formation.Line, squad.TargetFormation, "Своим строем");
+        }
+
+        [Test]
         public void AutoColumn_ReformsToLine_WhenEnemyApproaches()
         {
             Match match = ForestAndRoad(1.5f, out Squad squad);
