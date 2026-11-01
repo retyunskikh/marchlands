@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Morale;
@@ -58,6 +59,12 @@ namespace Marchlands.UI
         [Tooltip("Цвет рамки карточки толпы: отличает её от карточки отряда.")]
         [SerializeField] private Color campTint = new Color(0.82f, 0.78f, 0.7f);
 
+        [Header("Группа")]
+        [Tooltip("Выделено несколько отрядов: {0} — сколько.")]
+        [SerializeField] private string groupTitleFormat = "Выделено: {0}";
+        [Tooltip("{0} — худший дух в группе.")]
+        [SerializeField] private string groupDetailsFormat = "Худший дух: {0}";
+
         [Header("Блокгауз")]
         [Tooltip("Карточка блокгауза: здоровье полоской, стрелки и дальность.")]
         [SerializeField] private Sprite blockhousePortrait;
@@ -73,6 +80,7 @@ namespace Marchlands.UI
         private Match match;
         private Squad squad;
         private Building building;
+        private readonly List<Squad> group = new List<Squad>();
         private Side playerSide;
         private Side campSide;
         private UnitType? campType;
@@ -88,8 +96,26 @@ namespace Marchlands.UI
             SetSquad(null);
         }
 
+        /// <summary>Выделенные отряды: один — его карточка, несколько — сводка (первый — главный).</summary>
+        public void SetSquads(IReadOnlyList<Squad> squads)
+        {
+            group.Clear();
+            group.AddRange(squads);
+            SetSquad(group.Count > 0 ? group[0] : null, keepGroup: true);
+        }
+
         public void SetSquad(Squad squad)
         {
+            SetSquad(squad, keepGroup: false);
+        }
+
+        private void SetSquad(Squad squad, bool keepGroup)
+        {
+            if (!keepGroup)
+            {
+                group.Clear();
+            }
+
             this.squad = squad;
             if (squad != null)
             {
@@ -205,6 +231,12 @@ namespace Marchlands.UI
                 return;
             }
 
+            if (group.Count > 1)
+            {
+                RefreshGroup();
+                return;
+            }
+
             SetPortrait(squad.Side, squad.Type);
             titleLabel.text = GetTitle(squad.Type);
 
@@ -219,6 +251,33 @@ namespace Marchlands.UI
             strengthLabel.text = string.Format(strengthFormat, squad.Alive, UnitStats.Of(squad, match.Settings).squadSize);
             // Перезарядку показывает кнопка «Залп» — в карточке её нет.
             detailsLabel.text = string.Format(moraleFormat, Mathf.RoundToInt(morale)) + "\n" + GetActivity();
+        }
+
+        /// <summary>Сводка группы: портрет главного, сколько выделено, всего людей и худший дух.</summary>
+        private void RefreshGroup()
+        {
+            SetPortrait(squad.Side, squad.Type);
+            titleLabel.text = string.Format(groupTitleFormat, group.Count);
+            int alive = 0;
+            int full = 0;
+            float worst = MoraleMath.MaxMorale;
+            foreach (Squad member in group)
+            {
+                alive += member.Alive;
+                full += UnitStats.Of(member, match.Settings).squadSize;
+                worst = Mathf.Min(worst, member.Morale);
+            }
+
+            float morale = Mathf.Clamp(worst, 0f, MoraleMath.MaxMorale);
+            float share = morale / MoraleMath.MaxMorale;
+            if (moraleFill != null)
+            {
+                moraleFill.fillAmount = share;
+                moraleFill.color = Color.Lerp(moraleLow, moraleHigh, share);
+            }
+
+            strengthLabel.text = string.Format(strengthFormat, alive, full);
+            detailsLabel.text = string.Format(groupDetailsFormat, Mathf.RoundToInt(morale));
         }
 
         private void RefreshBuilding()

@@ -164,8 +164,34 @@ namespace Marchlands.View
 
         internal void SetSelected(bool selected)
         {
-            selectionMarker.enabled = selected;
+            isSelected = selected;
+            RefreshMarker();
         }
+
+        /// <summary>Под курсором мыши: кольцо бледнее, чем у выделенного.</summary>
+        internal void SetHovered(bool hovered)
+        {
+            isHovered = hovered;
+            RefreshMarker();
+        }
+
+        private void RefreshMarker()
+        {
+            selectionMarker.enabled = isSelected || isHovered;
+            Color color = style.SelectionColor;
+            if (!isSelected)
+            {
+                color.a *= HoverAlpha;
+            }
+
+            selectionMarker.color = color;
+        }
+
+        private bool isSelected;
+        private bool isHovered;
+
+        // Насколько бледнее кольцо отряда под курсором, чем у выделенного.
+        private const float HoverAlpha = 0.45f;
 
         internal void Render(float alpha)
         {
@@ -437,7 +463,7 @@ namespace Marchlands.View
         private void RenderRoute(float2 position)
         {
             int used = 0;
-            if (selectionMarker.enabled && !squad.IsRouting && style.RouteDotSpacing > 0f && CollectRoute(position))
+            if (isSelected && !squad.IsRouting && style.RouteDotSpacing > 0f && CollectRoute(position))
             {
                 float2 from = position;
                 float carry = style.RouteDotSpacing * 0.5f;
@@ -539,7 +565,7 @@ namespace Marchlands.View
         {
             Squad targetSquad = null;
             Building targetBuilding = null;
-            bool shown = selectionMarker.enabled && squad.IsArtillery && !squad.IsRouting
+            bool shown = isSelected && squad.IsArtillery && !squad.IsRouting
                 && GunTargeting.TryGetTarget(match, squad, out targetSquad, out targetBuilding);
             if (targetMarker.enabled != shown)
             {

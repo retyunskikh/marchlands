@@ -51,6 +51,8 @@ namespace Marchlands.Bootstrap
         [SerializeField] private BuildingPanel buildingPanel;
         [SerializeField] private FormSquadPanel formSquadPanel;
         [SerializeField] private GameMenu gameMenu;
+        [Tooltip("Мышь и клавиатура на ПК (на телефоне не действует).")]
+        [SerializeField] private DesktopControls desktopControls;
 
         private Match match;
         private FixedStepClock clock;
@@ -146,6 +148,7 @@ namespace Marchlands.Bootstrap
             }
 
             input.SelectionChanged += OnSelectionChanged;
+            input.GroupChanged += OnGroupChanged;
             input.BuildingSelectionChanged += OnBuildingSelectionChanged;
             input.CampSelectionChanged += OnCampSelectionChanged;
             input.ChargeTargetingChanged += orderPanel.SetChargeTargeting;
@@ -154,6 +157,14 @@ namespace Marchlands.Bootstrap
             buildingPanel.BuildRequested += input.BeginPlacement;
             buildPanel.ConfirmRequested += input.ConfirmPlacement;
             buildPanel.CancelRequested += input.CancelPlacement;
+            if (desktopControls != null)
+            {
+                desktopControls.VolleyPressed += orderPanel.Volley;
+                desktopControls.ChargePressed += orderPanel.Charge;
+                desktopControls.FormationPressed += orderPanel.ToggleFormation;
+                desktopControls.StopPressed += orderPanel.Stop;
+                desktopControls.PausePressed += gameMenu.TogglePause;
+            }
         }
 
         private void OnDestroy()
@@ -164,6 +175,7 @@ namespace Marchlands.Bootstrap
             }
 
             input.SelectionChanged -= OnSelectionChanged;
+            input.GroupChanged -= OnGroupChanged;
             input.BuildingSelectionChanged -= OnBuildingSelectionChanged;
             input.CampSelectionChanged -= OnCampSelectionChanged;
             if (orderPanel != null)
@@ -335,6 +347,17 @@ namespace Marchlands.Bootstrap
             if (campPanel != null)
             {
                 campPanel.SetCamp(type);
+            }
+        }
+
+        /// <summary>Выделено несколько отрядов (или снова один): кольца у всех, кнопки и карточка — на группу.</summary>
+        private void OnGroupChanged(IReadOnlyList<Squad> squads)
+        {
+            squadViews.SetSelected(squads);
+            orderPanel.SetSquads(squads);
+            if (squadCard != null)
+            {
+                squadCard.SetSquads(squads);
             }
         }
 

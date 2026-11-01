@@ -28,17 +28,8 @@ namespace Marchlands.Simulation.Commands
                 return;
             }
 
-            if (squad.Order.Type == SquadOrderType.Move && !squad.SuspendedOrder.HasValue)
-            {
-                squad.SuspendedOrder = squad.Order;
-            }
-            else if (!squad.SuspendedOrder.HasValue)
-            {
-                squad.ClearRoute();
-            }
-
-            // Развернули нарочно — отложенный марш ждёт, пока рядом не станет врагов (даже если его отложила рукопашная).
-            squad.SuspendedByMelee = false;
+            // Разворот на месте — новый приказ: прежний марш (и отложенный схваткой) отменяется, идти уже никуда не надо.
+            squad.ClearRoute();
 
             squad.HasArrived = false;
             squad.BestDistance = float.MaxValue;

@@ -12,7 +12,7 @@ namespace Marchlands.Input
     /// Касание, начатое над UI, целиком отдаётся UI. После щипка жест не продолжается,
     /// пока не будут отпущены все пальцы — чтобы оставшийся палец не дал случайный тап или протяжку.
     /// </summary>
-    public sealed class TouchGestures
+    public sealed class TouchGestures : IGestures
     {
         private enum State
         {
@@ -104,7 +104,7 @@ namespace Marchlands.Input
 
                 trackedTouchId = touch.touchId;
                 startPosition = touch.startScreenPosition;
-                state = IsOverUi(startPosition) ? State.Blocked : State.Pressed;
+                state = IsOverUi(startPosition, uiHits) ? State.Blocked : State.Pressed;
                 return;
             }
         }
@@ -196,7 +196,7 @@ namespace Marchlands.Input
             return false;
         }
 
-        private bool IsOverUi(Vector2 screenPosition)
+        internal static bool IsOverUi(Vector2 screenPosition, List<RaycastResult> uiHits)
         {
             EventSystem eventSystem = EventSystem.current;
             if (eventSystem == null)

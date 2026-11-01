@@ -193,7 +193,7 @@ MonoBehaviour:
       barracksUpgradeTime: 40
       barracksUpgradeHireSpeed: 2
       upgradedSentryShots: 7
-      buildRadiusFromHQ: 21
+      buildRadiusFromHQ: 24
       buildingSpacing: 10.5
       hireCost: 3
       hireInterval: 3

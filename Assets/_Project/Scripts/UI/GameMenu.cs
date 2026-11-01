@@ -91,6 +91,24 @@ namespace Marchlands.UI
             Time.timeScale = 1f;
         }
 
+        /// <summary>Пауза или продолжение (клавиша паузы на ПК).</summary>
+        public void TogglePause()
+        {
+            if (resultShown || match == null || !match.VictoryEnabled)
+            {
+                return;
+            }
+
+            if (pauseOverlay.activeSelf)
+            {
+                Resume();
+            }
+            else
+            {
+                Pause();
+            }
+        }
+
         private void Pause()
         {
             Time.timeScale = 0f;

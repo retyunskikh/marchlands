@@ -20,6 +20,9 @@ namespace Marchlands.Input
         [Tooltip("Насколько дальше можно сдвинуть карту вверх (заглянуть ниже нижнего края) — доля высоты экрана: "
             + "кнопки приказов внизу справа тогда закрывают меньше поля.")]
         [SerializeField] private float bottomOverscroll = 0.22f;
+        [Tooltip("Насколько дальше можно сдвинуть карту вниз (заглянуть выше верхнего края) — доля высоты экрана: "
+            + "верхние деревни не прячутся под кнопками найма слева вверху.")]
+        [SerializeField] private float topOverscroll = 0.15f;
 
         private Camera targetCamera;
         private InputConfig config;
@@ -53,6 +56,35 @@ namespace Marchlands.Input
         {
             return pixels * 2f * targetCamera.orthographicSize / Screen.height;
         }
+
+        /// <summary>Видна ли точка мира на экране.</summary>
+        public bool IsVisible(Vector2 world)
+        {
+            Vector3 viewport = targetCamera.WorldToViewportPoint(new Vector3(world.x, world.y, 0f));
+            return viewport.x >= 0f && viewport.x <= 1f && viewport.y >= 0f && viewport.y <= 1f;
+        }
+
+        public Vector2 WorldToScreen(Vector2 world)
+        {
+            return targetCamera.WorldToScreenPoint(new Vector3(world.x, world.y, 0f));
+        }
+
+        /// <summary>Сдвиг камеры на столько u (клавиши, край экрана).</summary>
+        public void MoveBy(Vector2 worldDelta)
+        {
+            transform.position += new Vector3(worldDelta.x, worldDelta.y, 0f);
+            ClampToMap();
+        }
+
+        /// <summary>Навести камеру на точку мира.</summary>
+        public void CenterOn(Vector2 world)
+        {
+            transform.position = new Vector3(world.x, world.y, transform.position.z);
+            ClampToMap();
+        }
+
+        /// <summary>Видимая высота мира, u (для скорости прокрутки клавишами).</summary>
+        public float ViewHeight => targetCamera.orthographicSize * 2f;
 
         /// <summary>Сдвигает камеру так, чтобы точка под пальцем осталась под пальцем.</summary>
         public void Pan(Vector2 screenDelta)
@@ -96,15 +128,18 @@ namespace Marchlands.Input
 
             Vector3 position = transform.position;
             position.x = ClampAxis(position.x, mapCenter.x, allowedHalf.x, halfWidth);
-            position.y = ClampAxis(position.y, mapCenter.y, allowedHalf.y, halfHeight, bottomOverscroll * halfHeight * 2f);
+            position.y = ClampAxis(position.y, mapCenter.y, allowedHalf.y, halfHeight, bottomOverscroll * halfHeight * 2f,
+                topOverscroll * halfHeight * 2f);
             transform.position = position;
         }
 
         /// <param name="extraBelow">Дополнительный запас вниз (к меньшим значениям), u.</param>
-        private static float ClampAxis(float value, float center, float allowedHalf, float viewHalf, float extraBelow = 0f)
+        /// <param name="extraAbove">Дополнительный запас вверх (к большим значениям), u.</param>
+        private static float ClampAxis(float value, float center, float allowedHalf, float viewHalf, float extraBelow = 0f,
+            float extraAbove = 0f)
         {
             float freedom = math.max(0f, allowedHalf - viewHalf);
-            return Mathf.Clamp(value, center - freedom - extraBelow, center + freedom);
+            return Mathf.Clamp(value, center - freedom - extraBelow, center + freedom + extraAbove);
         }
     }
 }

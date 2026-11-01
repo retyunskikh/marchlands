@@ -293,10 +293,29 @@ namespace Marchlands.View
             return new Vector3(size.x / bounds.x, size.y / bounds.y, 1f);
         }
 
+        /// <summary>Под курсором мыши: рамка бледнее, чем у выделенного.</summary>
+        internal void SetHovered(bool hovered)
+        {
+            this.hovered = hovered;
+            selection.enabled = selected || hovered;
+            Color color = style.SelectionColor;
+            if (!selected)
+            {
+                color.a *= HoverAlpha;
+            }
+
+            selection.color = color;
+        }
+
+        private bool hovered;
+
+        // Насколько бледнее рамка здания под курсором.
+        private const float HoverAlpha = 0.45f;
+
         internal void SetSelected(bool selected)
         {
             this.selected = selected;
-            selection.enabled = selected;
+            SetHovered(hovered);
         }
 
         /// <param name="underAssault">На здание идёт штурм: видны полоска здоровья и круг дальности часовых.</param>

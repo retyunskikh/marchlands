@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Config;
@@ -27,8 +28,11 @@ namespace Marchlands.Input
 
         private Match match;
         private Side playerSide;
-        private TouchGestures gestures;
+        private IGestures gestures;
         private Squad selected;
+
+        // Все выделенные отряды; первый — главный (selected): по нему кольцо поворота, сектор огня и карточка.
+        private readonly List<Squad> group = new List<Squad>();
 
         private bool isDraggingOrder;
         private bool isRotating;
@@ -80,6 +84,37 @@ namespace Marchlands.Input
         public event Action<bool> ChargeTargetingChanged;
 
         public Squad Selected => selected;
+
+        /// <summary>Выделенные отряды (первый — главный); пусто — ничего не выделено.</summary>
+        public IReadOnlyList<Squad> SelectedGroup => group;
+
+        /// <summary>Набор выделенных отрядов изменился (первый — главный).</summary>
+        public event Action<IReadOnlyList<Squad>> GroupChanged;
+
+        /// <summary>Управление мышью и клавиатурой (ПК, редактор), а не пальцами.</summary>
+        public static bool UsesMouse
+        {
+            get
+            {
+#if UNITY_EDITOR
+                return true;
+#else
+                return !Application.isMobilePlatform;
+#endif
+            }
+        }
+
+        public bool IsPlacing => isPlacing;
+
+        public bool IsChargeTargeting => isChargeTargeting;
+
+        public Match Match => match;
+
+        public Side PlayerSide => playerSide;
+
+        public CameraController CameraRig => cameraController;
+
+        public InputConfig Config => config;
 
         /// <summary>Границы карты для камеры (из сценария боя).</summary>
         public void SetMapBounds(Vector2 center, Vector2 size)
@@ -154,13 +189,10 @@ namespace Marchlands.Input
         private void OnEnable()
         {
             // Создаём здесь, а не в Awake: после перекомпиляции в Play Mode Unity вызывает OnEnable без Awake.
-            gestures ??= new TouchGestures(config);
+            // На ПК (и в редакторе) левая кнопка мыши — как палец; на телефоне — касания.
+            gestures ??= UsesMouse ? new MouseGestures(config) : (IGestures)new TouchGestures(config);
 
             EnhancedTouchSupport.Enable();
-#if UNITY_EDITOR
-            // В редакторе мышь изображает палец.
-            TouchSimulation.Enable();
-#endif
             gestures.Tapped += OnTapped;
             gestures.DragStarted += OnDragStarted;
             gestures.DragUpdated += OnDragUpdated;
@@ -177,9 +209,6 @@ namespace Marchlands.Input
             gestures.DragEnded -= OnDragEnded;
             gestures.DragCancelled -= OnDragCancelled;
             gestures.Pinched -= OnPinched;
-#if UNITY_EDITOR
-            TouchSimulation.Disable();
-#endif
             EnhancedTouchSupport.Disable();
         }
 
@@ -190,11 +219,16 @@ namespace Marchlands.Input
                 return;
             }
 
-            // Выделенный отряд мог погибнуть.
+            // Выделенный отряд мог погибнуть; из группы выбывают погибшие и бегущие.
             if (selected != null && match.FindSquad(selected.Id) == null)
             {
                 hasPendingTap = false;
                 Select(null);
+            }
+
+            if (group.RemoveAll(s => match.FindSquad(s.Id) == null || s.IsRouting) > 0)
+            {
+                SetGroup(new List<Squad>(group));
             }
 
             // Выделенное здание могли разрушить.
@@ -257,7 +291,7 @@ namespace Marchlands.Input
                 if (enemy != null)
                 {
                     hasPendingTap = false;
-                    match.Enqueue(new TargetCommand(selected.Id, enemy.Id));
+                    OrderAttack(enemy, gunsOnly: true);
                     return;
                 }
 
@@ -265,7 +299,7 @@ namespace Marchlands.Input
                 if (enemyTarget != null)
                 {
                     hasPendingTap = false;
-                    match.Enqueue(TargetCommand.AtBuilding(selected.Id, enemyTarget.Id));
+                    OrderAssault(enemyTarget, gunsOnly: true);
                     return;
                 }
             }
@@ -277,7 +311,7 @@ namespace Marchlands.Input
                 if (assaulted != null)
                 {
                     hasPendingTap = false;
-                    match.Enqueue(new AssaultCommand(selected.Id, assaulted.Id));
+                    OrderAssault(assaulted);
                     return;
                 }
             }
@@ -321,9 +355,7 @@ namespace Marchlands.Input
             if (isDoubleTap)
             {
                 hasPendingTap = false;
-                float2 toTarget = world - selected.Position;
-                float facing = math.lengthsq(toTarget) > 0f ? Angles.Of(toTarget) : selected.Facing;
-                match.Enqueue(new MoveCommand(selected.Id, world, facing, autoRoute: true));
+                OrderMove(world, null);
                 return;
             }
 
@@ -342,6 +374,15 @@ namespace Marchlands.Input
             bool isDoubleTap = squadTapOn == hit
                 && now - squadTapTime <= config.DoubleTapMaxInterval
                 && Vector2.Distance(screenPosition, squadTapPosition) <= ScreenUnits.DpToPixels(config.DoubleTapMaxDistance);
+            if (isDoubleTap && UsesMouse)
+            {
+                // Мышью двойной клик по отряду — все свои отряды этого рода войск на экране.
+                squadTapOn = null;
+                squadTapFrom = null;
+                SelectSameTypeOnScreen(hit);
+                return;
+            }
+
             if (isDoubleTap)
             {
                 Squad mover = squadTapFrom;
@@ -354,6 +395,13 @@ namespace Marchlands.Input
                         + FormationLayout.GetHalfExtents(mover.TargetFormation, mover.Alive, settings).y + settings.rankSpacing;
                     float2 behind = hit.Position - Angles.Direction(hit.Facing) * depth;
                     match.Enqueue(new MoveCommand(mover.Id, behind, hit.Facing, autoRoute: true));
+                    foreach (Squad other in group)
+                    {
+                        if (other != mover && other != hit && other.CanReceiveOrders)
+                        {
+                            match.Enqueue(new MoveCommand(other.Id, behind - Angles.Direction(hit.Facing) * depth, hit.Facing, autoRoute: true));
+                        }
+                    }
                 }
 
                 Select(hit);
@@ -468,8 +516,13 @@ namespace Marchlands.Input
                 isRotating = false;
                 rotationRing.SetDraggedFacing(null);
                 orderPreview.Hide();
-                // Поворот на месте; марш не отменяется, а откладывается, пока рядом враги.
-                match.Enqueue(new FaceCommand(selected.Id, FacingTowards(endScreen)));
+                // Поворот на месте — всей группы к одному фронту.
+                float faced = FacingTowards(endScreen);
+                foreach (Squad squad in group)
+                {
+                    match.Enqueue(new FaceCommand(squad.Id, faced));
+                }
+
                 return;
             }
 
@@ -484,13 +537,13 @@ namespace Marchlands.Input
             if (destinationLocked)
             {
                 destinationLocked = false;
-                match.Enqueue(new MoveCommand(selected.Id, lockedDestination, lockedFacing, autoRoute: true));
+                GroupMove.EnqueueAnchored(match, group, selected, lockedDestination, lockedFacing, selected.Facing, autoRoute: true);
                 return;
             }
 
             float2 from = cameraController.ScreenToWorld(startScreen);
             float2 to = cameraController.ScreenToWorld(endScreen);
-            match.Enqueue(new MoveCommand(selected.Id, to, Angles.Of(to - from), autoRoute: true));
+            GroupMove.EnqueueAnchored(match, group, selected, to, Angles.Of(to - from), selected.Facing, autoRoute: true);
         }
 
         private void OnDragCancelled()
@@ -528,33 +581,17 @@ namespace Marchlands.Input
         {
             SetChargeTargeting(false);
             Squad enemy = FindSquadAt(world, own: false);
-            if (selected.IsArtillery)
-            {
-                // Пушке — цель: отряд или здание.
-                Building shelled = enemy == null ? FindBuildingAt(world, own: false) : null;
-                if (enemy != null)
-                {
-                    match.Enqueue(new TargetCommand(selected.Id, enemy.Id));
-                }
-                else if (shelled != null)
-                {
-                    match.Enqueue(TargetCommand.AtBuilding(selected.Id, shelled.Id));
-                }
-
-                return;
-            }
-
             if (enemy != null)
             {
-                match.Enqueue(new ChargeCommand(selected.Id, enemy.Id));
+                OrderAttack(enemy);
                 return;
             }
 
-            // Тап по вражескому зданию — штурм в штыки.
+            // Тап по вражескому зданию — штурм в штыки (пушкам — цель).
             Building enemyBuilding = FindBuildingAt(world, own: false);
             if (enemyBuilding != null)
             {
-                match.Enqueue(new AssaultCommand(selected.Id, enemyBuilding.Id));
+                OrderAssault(enemyBuilding);
                 return;
             }
 
@@ -741,10 +778,191 @@ namespace Marchlands.Input
             }
 
             selected = squad;
+            group.Clear();
+            if (squad != null)
+            {
+                group.Add(squad);
+            }
+
             isRotating = false;
             rotationRing.SetSquad(squad);
             SetChargeTargeting(false);
             SelectionChanged?.Invoke(squad);
+            GroupChanged?.Invoke(group);
+        }
+
+        /// <summary>Выделить набор своих отрядов (первый — главный); пустой — снять выделение.</summary>
+        public void SetGroup(IList<Squad> squads)
+        {
+            var own = new List<Squad>();
+            foreach (Squad squad in squads)
+            {
+                if (squad != null && squad.Side == playerSide && !squad.IsCamp && !squad.IsRouting && !own.Contains(squad)
+                    && match.FindSquad(squad.Id) != null)
+                {
+                    own.Add(squad);
+                }
+            }
+
+            if (own.Count == 0)
+            {
+                Select(null);
+                return;
+            }
+
+            CancelPlacement();
+            if (own[0] != selected)
+            {
+                Select(own[0]);
+            }
+
+            group.Clear();
+            group.AddRange(own);
+            GroupChanged?.Invoke(group);
+        }
+
+        /// <summary>Добавить отряд к выделению или убрать его оттуда (Shift/Ctrl + клик).</summary>
+        public void ToggleInGroup(Squad squad)
+        {
+            var next = new List<Squad>(group);
+            if (!next.Remove(squad))
+            {
+                next.Add(squad);
+            }
+
+            SetGroup(next);
+        }
+
+        /// <summary>Все свои отряды того же рода войск, что видны на экране.</summary>
+        public void SelectSameTypeOnScreen(Squad sample)
+        {
+            var same = new List<Squad> { sample };
+            foreach (Squad squad in match.Squads)
+            {
+                if (squad != sample && squad.Side == playerSide && !squad.IsCamp && !squad.IsRouting && squad.Type == sample.Type
+                    && cameraController.IsVisible(squad.Position))
+                {
+                    same.Add(squad);
+                }
+            }
+
+            SetGroup(same);
+        }
+
+        /// <summary>Свой отряд под точкой экрана (или null).</summary>
+        public Squad FindOwnSquadAtScreen(Vector2 screen)
+        {
+            return FindSquadAt(cameraController.ScreenToWorld(screen), own: true);
+        }
+
+        public Squad FindEnemySquadAtScreen(Vector2 screen)
+        {
+            return FindSquadAt(cameraController.ScreenToWorld(screen), own: false);
+        }
+
+        public Building FindBuildingAtScreen(Vector2 screen, bool own)
+        {
+            return FindBuildingAt(cameraController.ScreenToWorld(screen), own);
+        }
+
+        /// <summary>
+        /// Выделенные идут к точке: центр группы — в точку, взаимное расположение сохраняется. Фронт — заданный,
+        /// а если не задан — от группы к точке.
+        /// </summary>
+        public void OrderMove(float2 destination, float? facing)
+        {
+            if (group.Count == 0)
+            {
+                return;
+            }
+
+            float2 center = GroupMove.Center(group);
+            float2 toTarget = destination - center;
+            float front = facing ?? (math.lengthsq(toTarget) > 1e-4f ? Angles.Of(toTarget) : selected.Facing);
+            GroupMove.Enqueue(match, group, destination, front, selected.Facing, autoRoute: true);
+        }
+
+        /// <summary>Выделенные атакуют вражеский отряд: пехота и конница — в штыки, пушки — берут его целью.</summary>
+        /// <param name="gunsOnly">Только пушкам указать цель (простой тап по врагу при выбранной пушке).</param>
+        public void OrderAttack(Squad enemy, bool gunsOnly = false)
+        {
+            foreach (Squad squad in group)
+            {
+                if (gunsOnly && !squad.IsArtillery)
+                {
+                    continue;
+                }
+
+                if (squad.IsArtillery)
+                {
+                    if (squad.CanReceiveOrders)
+                    {
+                        match.Enqueue(new TargetCommand(squad.Id, enemy.Id));
+                    }
+                }
+                else if (ChargeRules.CanCharge(squad))
+                {
+                    match.Enqueue(new ChargeCommand(squad.Id, enemy.Id));
+                }
+            }
+        }
+
+        /// <summary>Выделенные штурмуют вражеское здание (пушки — бьют по нему).</summary>
+        public void OrderAssault(Building target, bool gunsOnly = false)
+        {
+            foreach (Squad squad in group)
+            {
+                if (gunsOnly && !squad.IsArtillery)
+                {
+                    continue;
+                }
+
+                if (squad.IsArtillery)
+                {
+                    if (squad.CanReceiveOrders)
+                    {
+                        match.Enqueue(TargetCommand.AtBuilding(squad.Id, target.Id));
+                    }
+                }
+                else if (ChargeRules.CanCharge(squad))
+                {
+                    match.Enqueue(new AssaultCommand(squad.Id, target.Id));
+                }
+            }
+        }
+
+        /// <summary>Показать предпросмотр приказа главного отряда (протяжка правой кнопкой).</summary>
+        public void ShowOrderPreview(float2 from, float2 to, float facing)
+        {
+            if (selected != null)
+            {
+                orderPreview.Show(from, to, facing, selected.TargetFormation, selected.Alive, match.Settings.squads);
+            }
+        }
+
+        public void HideOrderPreview()
+        {
+            orderPreview.Hide();
+        }
+
+        /// <summary>Esc: отменить режим (постановка здания, выбор цели), иначе — снять выделение.</summary>
+        public void CancelOrDeselect()
+        {
+            if (isPlacing)
+            {
+                CancelPlacement();
+                return;
+            }
+
+            if (isChargeTargeting)
+            {
+                SetChargeTargeting(false);
+                return;
+            }
+
+            Select(null);
+            SelectBuilding(null);
+            SelectCamp(null);
         }
     }
 }

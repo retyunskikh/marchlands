@@ -56,51 +56,27 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void FaceDuringMarch_SuspendsMarch_UntilEnemiesAreGone()
+        public void FaceDuringMarch_CancelsMarch()
         {
             var match = new Match(1, TestSettings.Create());
             match.SetRetreatPoint(Side.Austria, new float2(200f, 0f));
             Squad squad = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
             Squad enemy = match.AddSquad(Side.Austria, new float2(10f, 2f), 180f, Formation.Line);
-            var goal = new float2(0f, 40f);
-            match.Enqueue(new MoveCommand(squad.Id, goal, 90f));
+            match.Enqueue(new MoveCommand(squad.Id, new float2(0f, 40f), 90f));
             match.Tick();
 
-            // Развернули к врагу — встал, марш отложен.
+            // Развернули на месте — прежний приказ идти отменён.
             match.Enqueue(new FaceCommand(squad.Id, 0f));
             Run(match, 5f);
             Assert.AreEqual(SquadOrderType.None, squad.Order.Type);
-            Assert.IsTrue(squad.IsMarchSuspended, "Марш не отменён, а отложен");
-            float2 standing = squad.Position;
-            Run(match, 5f);
-            Assert.Less(math.distance(standing, squad.Position), 0.01f, "Пока враг рядом — стоит");
+            Assert.IsFalse(squad.IsMarchSuspended, "Марш отменён, а не отложен");
+            Assert.AreEqual(0f, Angles.Delta(0f, squad.Facing), 0.5f);
 
-            // Враг бежит — отряд сам продолжает марш.
+            // И враг ушёл — всё равно стоит.
             MoraleSystem.Rout(match, enemy);
-            for (int i = 0; i < 1000 && math.distance(squad.Position, goal) > 0.1f; i++)
-            {
-                match.Tick();
-            }
-
-            Assert.Less(math.distance(squad.Position, goal), 0.1f, "Дошёл до цели марша");
-            Assert.IsFalse(squad.IsMarchSuspended);
-        }
-
-        [Test]
-        public void NewMoveOrder_DropsSuspendedMarch()
-        {
-            var match = new Match(1, TestSettings.Create());
-            Squad squad = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line);
-            match.AddSquad(Side.Austria, new float2(10f, 2f), 180f, Formation.Line);
-            match.Enqueue(new MoveCommand(squad.Id, new float2(0f, 40f), 90f));
-            match.Tick();
-            match.Enqueue(new FaceCommand(squad.Id, 0f));
-            match.Tick();
-            Assert.IsTrue(squad.IsMarchSuspended);
-
-            match.Enqueue(new StopCommand(squad.Id));
-            match.Tick();
-            Assert.IsFalse(squad.IsMarchSuspended, "Стоп отменяет и отложенный марш");
+            float2 standing = squad.Position;
+            Run(match, 10f);
+            Assert.Less(math.distance(standing, squad.Position), 0.01f, "Никуда не идёт");
         }
 
         [Test]

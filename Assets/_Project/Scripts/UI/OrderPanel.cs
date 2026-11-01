@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Core;
@@ -72,6 +73,9 @@ namespace Marchlands.UI
 
         private Match match;
         private Squad squad;
+
+        // Все выделенные (первый — главный, по нему вид кнопок): приказы кнопками уходят каждому, кто может.
+        private readonly List<Squad> group = new List<Squad>();
         private bool isChargeTargeting;
         private Image chargeImage;
         private Sprite volleySprite;
@@ -98,8 +102,30 @@ namespace Marchlands.UI
             SetSquad(null);
         }
 
+        /// <summary>Выделенные отряды (первый — главный); кнопки приказывают всем.</summary>
+        public void SetSquads(IReadOnlyList<Squad> squads)
+        {
+            group.Clear();
+            group.AddRange(squads);
+            SetSquad(group.Count > 0 ? group[0] : null, keepGroup: true);
+        }
+
         public void SetSquad(Squad squad)
         {
+            SetSquad(squad, keepGroup: false);
+        }
+
+        private void SetSquad(Squad squad, bool keepGroup)
+        {
+            if (!keepGroup)
+            {
+                group.Clear();
+                if (squad != null)
+                {
+                    group.Add(squad);
+                }
+            }
+
             this.squad = squad;
             panel.SetActive(squad != null);
             Refresh();
@@ -135,7 +161,7 @@ namespace Marchlands.UI
             // Конница не стреляет — кнопок огня у неё нет. У пушки на месте «Залпа» — выбор заряда.
             bool canFire = UnitStats.CanFire(squad, match.Settings) || gun;
             volleyButton.gameObject.SetActive(canFire);
-            bool canVolley = gun ? obeys : VolleyRules.CanVolley(match, squad);
+            bool canVolley = gun ? obeys : AnyCanVolley();
             volleyButton.interactable = canVolley;
             volleyLabel.text = gun
                 ? (squad.FireState == FireState.Reloading && squad.IsInMelee ? fightingText
@@ -259,6 +285,41 @@ namespace Marchlands.UI
             charge.position = center + new Vector3(pivotOffset.x, pivotOffset.y, 0f);
         }
 
+        /// <summary>Кто-нибудь из выделенных может дать залп.</summary>
+        private bool AnyCanVolley()
+        {
+            foreach (Squad member in group)
+            {
+                if (!member.IsArtillery && VolleyRules.CanVolley(match, member))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>«Залп!» (кнопка или клавиша): залп даёт каждый выделенный, кто может; у пушки — выбор цели.</summary>
+        public void Volley()
+        {
+            OnVolley();
+        }
+
+        public void ToggleFormation()
+        {
+            OnFormation();
+        }
+
+        public void Charge()
+        {
+            OnCharge();
+        }
+
+        public void Stop()
+        {
+            OnStop();
+        }
+
         private void OnVolley()
         {
             if (squad == null)
@@ -273,7 +334,13 @@ namespace Marchlands.UI
                 return;
             }
 
-            match.Enqueue(new VolleyCommand(squad.Id));
+            foreach (Squad member in group)
+            {
+                if (!member.IsArtillery && VolleyRules.CanVolley(match, member))
+                {
+                    match.Enqueue(new VolleyCommand(member.Id));
+                }
+            }
         }
 
         private void OnFormation()
@@ -283,8 +350,15 @@ namespace Marchlands.UI
                 return;
             }
 
+            // Строй меняют все, у кого он есть (пехота), — к тому же строю, что у главного.
             Formation next = squad.TargetFormation == Formation.Line ? Formation.Column : Formation.Line;
-            match.Enqueue(new ChangeFormationCommand(squad.Id, next));
+            foreach (Squad member in group)
+            {
+                if (member.Type != UnitType.Cavalry && !member.IsArtillery)
+                {
+                    match.Enqueue(new ChangeFormationCommand(member.Id, next));
+                }
+            }
         }
 
         private void OnCharge()
@@ -297,9 +371,9 @@ namespace Marchlands.UI
 
         private void OnStop()
         {
-            if (squad != null)
+            foreach (Squad member in group)
             {
-                match.Enqueue(new StopCommand(squad.Id));
+                match.Enqueue(new StopCommand(member.Id));
             }
         }
     }

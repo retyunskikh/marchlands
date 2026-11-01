@@ -17,7 +17,8 @@ namespace Marchlands.View
         private readonly List<int> staleIds = new List<int>();
 
         private Match match;
-        private Squad selected;
+        private readonly HashSet<int> selectedIds = new HashSet<int>();
+        private int hoveredId = -1;
 
         public SquadViewStyle Style => style;
 
@@ -31,10 +32,42 @@ namespace Marchlands.View
 
         public void SetSelected(Squad squad)
         {
-            selected = squad;
+            SetSelected(squad != null ? new[] { squad } : System.Array.Empty<Squad>());
+        }
+
+        /// <summary>Выделенные отряды (кольцо у каждого).</summary>
+        public void SetSelected(IReadOnlyList<Squad> squads)
+        {
+            selectedIds.Clear();
+            foreach (Squad squad in squads)
+            {
+                selectedIds.Add(squad.Id);
+            }
+
             foreach (SquadView view in views.Values)
             {
-                view.SetSelected(view.Squad == squad);
+                view.SetSelected(selectedIds.Contains(view.Squad.Id));
+            }
+        }
+
+        /// <summary>Отряд под курсором мыши; null — никого.</summary>
+        public void SetHovered(Squad squad)
+        {
+            int id = squad != null ? squad.Id : -1;
+            if (id == hoveredId)
+            {
+                return;
+            }
+
+            if (views.TryGetValue(hoveredId, out SquadView previous))
+            {
+                previous.SetHovered(false);
+            }
+
+            hoveredId = id;
+            if (views.TryGetValue(hoveredId, out SquadView current))
+            {
+                current.SetHovered(true);
             }
         }
 
@@ -71,7 +104,8 @@ namespace Marchlands.View
                 var view = viewObject.AddComponent<SquadView>();
                 view.Initialize(squad, match, style, casualties);
                 view.BuildingSize = BuildingSize;
-                view.SetSelected(squad == selected);
+                view.SetSelected(selectedIds.Contains(squad.Id));
+                view.SetHovered(squad.Id == hoveredId);
                 views.Add(squad.Id, view);
             }
 

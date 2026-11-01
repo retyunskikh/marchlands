@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Marchlands.Input
 {
@@ -30,6 +31,38 @@ namespace Marchlands.Input
         [SerializeField] private float holdToAimTime = 0.45f;
         [Tooltip("Насколько палец может сдвинуться и всё ещё считаться неподвижным, dp.")]
         [SerializeField] private float holdStillTolerance = 10f;
+
+        [Header("Мышь и клавиатура (ПК)")]
+        [Tooltip("Скорость прокрутки карты клавишами и у края экрана — доля видимой высоты в секунду.")]
+        [SerializeField] private float keyPanSpeed = 0.9f;
+        [Tooltip("Ширина полосы у края экрана, где курсор двигает карту, px (0 — выключено).")]
+        [SerializeField] private float edgePanBorder = 12f;
+        [Tooltip("Насколько сдвинуть правую кнопку, чтобы это была протяжка (фронт), а не клик, dp.")]
+        [SerializeField] private float rightDragMinMove = 12f;
+        [SerializeField] private Key volleyKey = Key.F;
+        [SerializeField] private Key chargeKey = Key.C;
+        [SerializeField] private Key formationKey = Key.R;
+        [SerializeField] private Key stopKey = Key.X;
+        [SerializeField] private Key pauseKey = Key.Space;
+        [SerializeField] private Key cancelKey = Key.Escape;
+
+        public float KeyPanSpeed => keyPanSpeed;
+
+        public float EdgePanBorder => edgePanBorder;
+
+        public float RightDragMinMove => rightDragMinMove;
+
+        public Key VolleyKey => volleyKey;
+
+        public Key ChargeKey => chargeKey;
+
+        public Key FormationKey => formationKey;
+
+        public Key StopKey => stopKey;
+
+        public Key PauseKey => pauseKey;
+
+        public Key CancelKey => cancelKey;
 
         public float TapMaxMove => tapMaxMove;
 

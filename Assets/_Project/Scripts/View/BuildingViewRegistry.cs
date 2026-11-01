@@ -150,6 +150,15 @@ namespace Marchlands.View
             }
         }
 
+        /// <summary>Здание под курсором мыши; null — никакое.</summary>
+        public void SetHovered(Building building)
+        {
+            foreach (BuildingView view in views.Values)
+            {
+                view.SetHovered(view.Building == building);
+            }
+        }
+
         public void SetSelected(Building building)
         {
             selected = building;
