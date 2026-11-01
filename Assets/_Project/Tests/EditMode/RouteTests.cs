@@ -60,7 +60,11 @@ namespace Marchlands.Tests.EditMode
             for (int i = 0; i < squad.RouteWaypoints.Count - 1; i++)
             {
                 float2 point = squad.RouteWaypoints[i];
-                passesBend |= math.distance(point, bend) < 0.01f;
+                // Путь прорежен: вершины не обязаны совпадать с опорной точкой, но линия пути идёт через изгиб.
+                float2 next = squad.RouteWaypoints[i + 1];
+                float2 along = next - point;
+                float t = math.saturate(math.dot(bend - point, along) / math.max(1e-6f, math.lengthsq(along)));
+                passesBend |= math.distance(point + along * t, bend) < 0.3f;
                 if (map.IsOnRoad(point, settings.terrain.roadHalfWidth + settings.terrain.pathCellSize))
                 {
                     Assert.IsTrue(map.IsOnRoad(point, 0.01f), $"Точка пути {point} — на оси дороги");

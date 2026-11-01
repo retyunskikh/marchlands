@@ -41,6 +41,13 @@ namespace Marchlands.Simulation.Terrain
         private readonly SortedSet<(float f, int index)> open = new SortedSet<(float f, int index)>();
         private readonly List<float2> raw = new List<float2>();
 
+        // Скорость местности в мелкой сетке (шаг — шаг проверки отрезка), посчитанная заранее.
+        // Спрямление пути проверяет тысячи отрезков, а полная проверка точки (лес, вода, дорога, переправы) дорогая.
+        private readonly float[] fineSpeed;
+        private readonly float fineStep;
+        private readonly int fineColumns;
+        private readonly int fineRows;
+
         /// <param name="forestClearance">На сколько обходить опушку, u.</param>
         public TerrainPathfinder(TerrainMap map, TerrainSettings settings, float forestClearance = 0f)
         {
@@ -51,6 +58,19 @@ namespace Marchlands.Simulation.Terrain
             float2 size = map.BoundsMax - map.BoundsMin;
             columns = math.max(1, (int)math.ceil(size.x / cellSize));
             rows = math.max(1, (int)math.ceil(size.y / cellSize));
+
+            fineStep = cellSize * SampleStepFraction;
+            fineColumns = math.max(1, (int)math.ceil(size.x / fineStep));
+            fineRows = math.max(1, (int)math.ceil(size.y / fineStep));
+            fineSpeed = new float[fineColumns * fineRows];
+            // Заполняем сразу, при загрузке боя: иначе первый дальний приказ подтормаживает, пока сетка набирается.
+            for (int y = 0; y < fineRows; y++)
+            {
+                for (int x = 0; x < fineColumns; x++)
+                {
+                    fineSpeed[y * fineColumns + x] = PathSpeed(map.BoundsMin + (new float2(x, y) + 0.5f) * fineStep);
+                }
+            }
 
             int count = columns * rows;
             cellCost = new float[count];
@@ -162,7 +182,7 @@ namespace Marchlands.Simulation.Terrain
             for (int i = 0; i < samples; i++)
             {
                 float2 point = math.lerp(a, b, (i + 0.5f) / samples);
-                float speed = PathSpeed(point);
+                float speed = CachedSpeed(point);
                 if (speed <= 0f)
                 {
                     return float.PositiveInfinity;
@@ -175,6 +195,18 @@ namespace Marchlands.Simulation.Terrain
         }
 
         /// <summary>Скорость для поиска пути: как на местности, но рощи шире на forestClearance.</summary>
+        /// <summary>Скорость местности в точке по мелкой сетке (за картой — 0).</summary>
+        private float CachedSpeed(float2 point)
+        {
+            if (!map.Contains(point))
+            {
+                return 0f;
+            }
+
+            int2 cell = math.clamp((int2)math.floor((point - map.BoundsMin) / fineStep), int2.zero, new int2(fineColumns - 1, fineRows - 1));
+            return fineSpeed[cell.y * fineColumns + cell.x];
+        }
+
         private float PathSpeed(float2 point)
         {
             if (!map.Contains(point))
@@ -182,9 +214,12 @@ namespace Marchlands.Simulation.Terrain
                 return 0f;
             }
 
+            // Запас от рощи (чтобы строй не задевал деревья) на дороге не действует: дорога, огибающая рощу,
+            // остаётся дорогой — иначе путь уходил с неё в поле, порой к самому краю карты.
+            bool onRoad = map.IsOnRoad(point, settings.roadHalfWidth);
             foreach (Forest forest in map.Forests)
             {
-                float radius = forest.Radius + forestClearance;
+                float radius = forest.Radius + (onRoad ? 0f : forestClearance);
                 if (math.distancesq(point, forest.Center) <= radius * radius)
                 {
                     return settings.forestSpeedMultiplier;
@@ -192,7 +227,7 @@ namespace Marchlands.Simulation.Terrain
             }
 
             float speed = map.SpeedMultiplier(point, settings);
-            if (settings.pathRoadPreference > 1f && map.IsOnRoad(point, settings.roadHalfWidth))
+            if (settings.pathRoadPreference > 1f && onRoad)
             {
                 speed *= settings.pathRoadPreference;
             }

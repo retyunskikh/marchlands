@@ -395,6 +395,18 @@ namespace Marchlands.Simulation.Squads
 
             float2 target = Steer(squad, match, goal, out bool onBridge);
             bool detour = waypoint || (math.any(target != squad.Order.Target) && !onBridge);
+            // Точка маршрута у самого края карты: строй туда целиком не встанет (край отжимает) — идём докуда
+            // дотягиваемся, и это засчитывается как точка пройдена.
+            bool edgeWaypoint = false;
+            if (waypoint && !onBridge && math.all(target == goal) && match.Terrain != null)
+            {
+                float2 reachableWaypoint = match.Terrain.Clamp(target, ProjectedHalfExtents(squad, squad.Facing, settings.squads));
+                if (math.any(reachableWaypoint != target))
+                {
+                    target = reachableWaypoint;
+                    edgeWaypoint = true;
+                }
+            }
             float arrival = settings.squads.arrivalTolerance;
             if (!detour && match.Terrain != null)
             {
@@ -432,14 +444,16 @@ namespace Marchlands.Simulation.Squads
             float2 toTarget = target - squad.Position;
             float distance = math.length(toTarget);
 
-            // Рядом с целью, но несколько секунд не может подойти ближе (вода, край, тесно) — считаем, что дошёл:
-            // топтаться у недостижимой точки хуже, чем встать в паре шагов от неё.
-            if (!detour)
+            // Рядом с целью (или точкой маршрута), но несколько секунд не может подойти ближе (вода, край, тесно) —
+            // считаем, что дошёл: топтаться у недостижимой точки хуже, чем встать (или пойти дальше) в паре шагов от неё.
+            bool stallTracked = !detour || (waypoint && !onBridge);
+            float2 stallGoal = waypoint ? goal : squad.Order.Target;
+            if (stallTracked)
             {
-                // Новая цель (новый приказ, продолженный марш) — простой считаем заново.
-                if (math.any(squad.StallTarget != squad.Order.Target))
+                // Новая цель (новый приказ, следующая точка маршрута) — простой считаем заново.
+                if (math.any(squad.StallTarget != stallGoal))
                 {
-                    squad.StallTarget = squad.Order.Target;
+                    squad.StallTarget = stallGoal;
                     squad.BestDistance = float.MaxValue;
                     squad.StallTime = 0f;
                 }
@@ -458,6 +472,13 @@ namespace Marchlands.Simulation.Squads
                 float near = math.length(FormationLayout.GetHalfExtents(squad, settings.squads)) + settings.squads.rankSpacing;
                 if (squad.StallTime >= StallSeconds && distance <= near)
                 {
+                    if (waypoint)
+                    {
+                        // Точка маршрута недостижима — к следующей.
+                        squad.RouteIndex++;
+                        return;
+                    }
+
                     arrival = math.max(arrival, distance);
                 }
             }
@@ -527,7 +548,7 @@ namespace Marchlands.Simulation.Squads
             // Дошли до точки маршрута или переправы — приказ продолжается со следующего тика.
             if (detour)
             {
-                if (waypoint && (math.all(target == goal) || onBridge))
+                if (waypoint && (math.all(target == goal) || onBridge || edgeWaypoint))
                 {
                     squad.RouteIndex++;
                 }

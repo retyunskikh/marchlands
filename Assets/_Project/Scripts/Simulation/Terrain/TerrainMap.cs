@@ -28,6 +28,12 @@ namespace Marchlands.Simulation.Terrain
         // Шаг проверки отрезка на воду, u: меньше полуширины любой реки.
         private const float WaterSampleStep = 0.5f;
 
+        // Шаг, с которым дороги и реки сглаживаются сплайном (той же кривой их и рисуют), u.
+        public const float CurveStep = 0.5f;
+
+        // Сколько отрезков линии в одном куске с общей рамкой (по рамкам далёкие куски пропускаются).
+        private const int ChunkSegments = 8;
+
         // Насколько точки берегов переправы отстоят от воды и насколько круг переправы шире реки, u.
         private const float BankOffset = 1.5f;
         private const float CrossingMargin = 2f;
@@ -37,6 +43,16 @@ namespace Marchlands.Simulation.Terrain
         private readonly List<River> rivers = new List<River>();
         private readonly List<Crossing> crossings = new List<Crossing>();
         private readonly List<Hill> hills = new List<Hill>();
+
+        // Сетка отрезков дорог и рек для быстрых проверок «на дороге» и «в воде»: клетка и запас, u.
+        private const float GridCell = 4f;
+        private const float GridMargin = 3f;
+
+        private SegmentGrid roadGrid;
+        private SegmentGrid riverGrid;
+
+        // Рамки кусков каждой линии (дороги, реки): xy — минимум, zw — максимум.
+        private readonly Dictionary<float2[], float4[]> chunkBounds = new Dictionary<float2[], float4[]>();
 
         public TerrainMap(float2 boundsMin, float2 boundsMax)
         {
@@ -60,15 +76,13 @@ namespace Marchlands.Simulation.Terrain
 
         public IReadOnlyList<Hill> Hills => hills;
 
+        /// <summary>Река через опорные точки: русло — сглаженная кривая (как на экране).</summary>
         public void AddRiver(IReadOnlyList<float2> points, float halfWidth)
         {
-            var copy = new float2[points.Count];
-            for (int i = 0; i < copy.Length; i++)
-            {
-                copy[i] = points[i];
-            }
-
-            rivers.Add(new River(copy, halfWidth));
+            float2[] line = Spline.Smooth(points, CurveStep);
+            chunkBounds[line] = BuildChunks(line);
+            rivers.Add(new River(line, halfWidth));
+            riverGrid = null;
         }
 
         /// <summary>
@@ -107,15 +121,41 @@ namespace Marchlands.Simulation.Terrain
             forests.Add(new Forest(center, radius));
         }
 
+        /// <summary>Дорога через опорные точки: ось — сглаженная кривая (как на экране), по ней и ходят.</summary>
         public void AddRoad(IReadOnlyList<float2> points)
         {
-            var copy = new float2[points.Count];
-            for (int i = 0; i < copy.Length; i++)
+            float2[] line = Spline.Smooth(points, CurveStep);
+            chunkBounds[line] = BuildChunks(line);
+            roads.Add(line);
+            roadGrid = null;
+        }
+
+        private static float4[] BuildChunks(float2[] line)
+        {
+            int segments = math.max(0, line.Length - 1);
+            var bounds = new float4[(segments + ChunkSegments - 1) / ChunkSegments];
+            for (int c = 0; c < bounds.Length; c++)
             {
-                copy[i] = points[i];
+                int first = c * ChunkSegments;
+                int last = math.min(line.Length - 1, first + ChunkSegments);
+                float2 min = line[first];
+                float2 max = line[first];
+                for (int i = first + 1; i <= last; i++)
+                {
+                    min = math.min(min, line[i]);
+                    max = math.max(max, line[i]);
+                }
+
+                bounds[c] = new float4(min, max);
             }
 
-            roads.Add(copy);
+            return bounds;
+        }
+
+        private static float DistanceToBox(float2 point, float4 box)
+        {
+            float2 outside = math.max(math.max(box.xy - point, point - box.zw), 0f);
+            return math.length(outside);
         }
 
         public bool Contains(float2 point)
@@ -211,10 +251,17 @@ namespace Marchlands.Simulation.Terrain
             {
                 waypoints.Add(Aligned[Aligned.Count - 1]);
             }
+
+            // По изгибам дороги точки идут часто — лишние (почти на прямой) выкидываем, чтобы строй не доворачивался
+            // на каждом шаге, а путь не отходил от оси дороги больше допуска.
+            Spline.Simplify(waypoints, RouteTolerance);
         }
 
         private static readonly List<float2> Aligned = new List<float2>();
         private const float AlignEpsilon = 0.3f;
+
+        // Насколько прореженный путь может отойти от оси дороги, u.
+        private const float RouteTolerance = 0.2f;
 
         /// <summary>Ближайшая точка оси дороги не дальше <paramref name="reach"/>: какая дорога, какой отрезок.</summary>
         private bool TryNearestRoad(float2 point, float reach, out int road, out int segment, out float2 nearest)
@@ -226,8 +273,15 @@ namespace Marchlands.Simulation.Terrain
             for (int r = 0; r < roads.Count; r++)
             {
                 float2[] points = roads[r];
+                float4[] boxes = chunkBounds[points];
                 for (int i = 0; i + 1 < points.Length; i++)
                 {
+                    if (i % ChunkSegments == 0 && DistanceToBox(point, boxes[i / ChunkSegments]) > best)
+                    {
+                        i += ChunkSegments - 1;
+                        continue;
+                    }
+
                     float2 a = points[i];
                     float2 ab = points[i + 1] - a;
                     float lengthSq = math.lengthsq(ab);
@@ -249,14 +303,30 @@ namespace Marchlands.Simulation.Terrain
 
         public bool IsOnRoad(float2 point, float halfWidth)
         {
-            foreach (float2[] road in roads)
+            if (halfWidth <= GridMargin && RoadGrid.TryGetNear(point, out List<int2> near))
             {
-                for (int i = 0; i + 1 < road.Length; i++)
+                if (near == null)
                 {
-                    if (DistanceToSegment(point, road[i], road[i + 1]) <= halfWidth)
+                    return false;
+                }
+
+                foreach (int2 segment in near)
+                {
+                    float2[] road = roads[segment.x];
+                    if (DistanceToSegment(point, road[segment.y], road[segment.y + 1]) <= halfWidth)
                     {
                         return true;
                     }
+                }
+
+                return false;
+            }
+
+            foreach (float2[] road in roads)
+            {
+                if (DistanceToPolyline(point, road, halfWidth) <= halfWidth)
+                {
+                    return true;
                 }
             }
 
@@ -313,9 +383,36 @@ namespace Marchlands.Simulation.Terrain
                 return false;
             }
 
+            return IsInRiverBand(point);
+        }
+
+        /// <summary>Сетка отрезков дорог (строится при первом обращении после добавления дорог).</summary>
+        private SegmentGrid RoadGrid => roadGrid ??= new SegmentGrid(roads, BoundsMin, BoundsMax, GridCell, GridMargin);
+
+        private SegmentGrid RiverGrid
+        {
+            get
+            {
+                if (riverGrid == null)
+                {
+                    var lines = new List<float2[]>(rivers.Count);
+                    foreach (River river in rivers)
+                    {
+                        lines.Add(river.Points);
+                    }
+
+                    riverGrid = new SegmentGrid(lines, BoundsMin, BoundsMax, GridCell, GridMargin);
+                }
+
+                return riverGrid;
+            }
+        }
+
+        private bool IsInRiverBandSlow(float2 point)
+        {
             foreach (River river in rivers)
             {
-                if (DistanceToPolyline(point, river.Points) < river.HalfWidth)
+                if (DistanceToPolyline(point, river.Points, river.HalfWidth) < river.HalfWidth)
                 {
                     return true;
                 }
@@ -384,6 +481,14 @@ namespace Marchlands.Simulation.Terrain
 
             bridge = default;
             return false;
+        }
+
+        /// <summary>На настиле моста: в его круге, в русле и не дальше <paramref name="deckHalfWidth"/> от оси.</summary>
+        public bool IsOnDeck(float2 point, float deckHalfWidth)
+        {
+            int index = CrossingAt(point);
+            return index >= 0 && crossings[index].Type == CrossingType.Bridge
+                && DistanceToSegment(point, crossings[index].BankA, crossings[index].BankB) <= deckHalfWidth;
         }
 
         public bool IsOnBridge(float2 point)
@@ -477,6 +582,22 @@ namespace Marchlands.Simulation.Terrain
         /// сначала выходит на ось в <paramref name="leadIn"/> от въезда — и на настил входит уже прямо,
         /// а не углом, свешиваясь над водой.
         /// </summary>
+        /// <summary>
+        /// Куда идти, чтобы выйти на ось моста перед въездом <paramref name="entry"/>: к точке оси чуть ближе к мосту,
+        /// чем сам отряд («морковка»), но не ближе AxisApproachMin заезда к въезду. Строй плавно сходится на ось
+        /// и не кружит вокруг точки захода; стоящий сбоку у самой реки сперва отходит на ось перед въездом.
+        /// </summary>
+        private static float2 AxisApproach(float2 from, float2 entry, float2 outward, float leadIn)
+        {
+            // Непрерывно по положению отряда: без порогов цель не скачет, и строй не качается туда-обратно.
+            float along = math.dot(from - entry, outward);
+            return entry + outward * math.max(along - leadIn * AxisLookahead, leadIn * AxisApproachMin);
+        }
+
+        // Морковка на оси моста: насколько впереди отряда (в долях заезда) и с какого расстояния перед въездом.
+        private const float AxisLookahead = 0.5f;
+        private const float AxisApproachMin = 0.6f;
+
         public float2 Steer(float2 from, float2 to, float leadIn, float tolerance)
         {
             // С заходом по оси нужна ли переправа, решает само русло: прямая, задевшая лишь край круга моста,
@@ -509,7 +630,7 @@ namespace Marchlands.Simulation.Terrain
                     float side = math.abs(math.dot(from - entry, new float2(-outward.y, outward.x)));
                     if (side > tolerance && math.dot(from - entry, outward) > -tolerance)
                     {
-                        return entry + outward * leadIn;
+                        return AxisApproach(from, entry, outward, leadIn);
                     }
                 }
                 return math.distancesq(from, exit) > 0.04f ? exit : to;
@@ -553,7 +674,7 @@ namespace Marchlands.Simulation.Terrain
                 float side = math.abs(math.dot(from - best, new float2(-outward.y, outward.x)));
                 if (side > tolerance)
                 {
-                    return best + outward * leadIn;
+                    return AxisApproach(from, best, outward, leadIn);
                 }
             }
 
@@ -564,9 +685,12 @@ namespace Marchlands.Simulation.Terrain
         /// Точка в реке (вне переправ) сдвигается на берег — на тот, что ближе к <paramref name="side"/>;
         /// точка на суше не меняется.
         /// </summary>
-        public float2 OutOfWater(float2 point, float2 side)
+        /// <param name="deckHalfWidth">Полуширина настила моста: в круге моста, но дальше от его оси — тоже вода.</param>
+        public float2 OutOfWater(float2 point, float2 side, float deckHalfWidth = float.MaxValue)
         {
-            if (!IsWater(point) || !TryNearestRiverPoint(point, out float2 axis, out float2 along, out float halfWidth))
+            // В воде — и в круге переправы, если не на настиле моста и не на броде: рядом с мостом всё равно река.
+            bool wet = IsWater(point) || (IsInRiverBand(point) && !IsOnDeck(point, deckHalfWidth) && !IsFord(point));
+            if (!wet || !TryNearestRiverPoint(point, out float2 axis, out float2 along, out float halfWidth))
             {
                 return point;
             }
@@ -610,15 +734,37 @@ namespace Marchlands.Simulation.Terrain
 
         private bool IsInRiverBand(float2 point)
         {
-            foreach (River river in rivers)
+            if (RiverGrid.TryGetNear(point, out List<int2> near) && MaxRiverHalfWidth() <= GridMargin)
             {
-                if (DistanceToPolyline(point, river.Points) < river.HalfWidth)
+                if (near == null)
                 {
-                    return true;
+                    return false;
                 }
+
+                foreach (int2 segment in near)
+                {
+                    River river = rivers[segment.x];
+                    if (DistanceToSegment(point, river.Points[segment.y], river.Points[segment.y + 1]) < river.HalfWidth)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
-            return false;
+            return IsInRiverBandSlow(point);
+        }
+
+        private float MaxRiverHalfWidth()
+        {
+            float widest = 0f;
+            foreach (River river in rivers)
+            {
+                widest = math.max(widest, river.HalfWidth);
+            }
+
+            return widest;
         }
 
         /// <summary>Ближайшее к точке (не дальше 10 u) пересечение дороги с рекой: где, направления дороги и реки, полуширина реки.</summary>
@@ -712,12 +858,36 @@ namespace Marchlands.Simulation.Terrain
             return best < float.MaxValue;
         }
 
-        private static float DistanceToPolyline(float2 point, float2[] points)
+        /// <summary>
+        /// Расстояние от точки до ломаной. Куски, чья рамка дальше уже найденного (или дальше <paramref name="limit"/>),
+        /// пропускаются: если до линии дальше limit, вернётся что-то больше limit, не обязательно точное расстояние.
+        /// </summary>
+        private float DistanceToPolyline(float2 point, float2[] points, float limit = float.MaxValue)
         {
             float best = float.MaxValue;
-            for (int i = 0; i + 1 < points.Length; i++)
+            if (!chunkBounds.TryGetValue(points, out float4[] boxes))
             {
-                best = math.min(best, DistanceToSegment(point, points[i], points[i + 1]));
+                for (int i = 0; i + 1 < points.Length; i++)
+                {
+                    best = math.min(best, DistanceToSegment(point, points[i], points[i + 1]));
+                }
+
+                return best;
+            }
+
+            for (int c = 0; c < boxes.Length; c++)
+            {
+                float boxDistance = DistanceToBox(point, boxes[c]);
+                if (boxDistance >= best || boxDistance > limit)
+                {
+                    continue;
+                }
+
+                int last = math.min(points.Length - 1, (c + 1) * ChunkSegments);
+                for (int i = c * ChunkSegments; i < last; i++)
+                {
+                    best = math.min(best, DistanceToSegment(point, points[i], points[i + 1]));
+                }
             }
 
             return best;
@@ -735,7 +905,7 @@ namespace Marchlands.Simulation.Terrain
             return math.clamp(point, min, max);
         }
 
-        private static float DistanceToSegment(float2 point, float2 a, float2 b)
+        internal static float DistanceToSegment(float2 point, float2 a, float2 b)
         {
             float2 ab = b - a;
             float lengthSq = math.lengthsq(ab);

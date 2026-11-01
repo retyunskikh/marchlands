@@ -42,7 +42,7 @@ namespace Marchlands.Simulation.Commands
             {
                 target = match.Terrain.Clamp(target, SquadMovementSystem.ProjectedHalfExtents(squad, facing, match.Settings.squads));
                 // Точка в реке — на ближний берег (с той стороны, где отряд).
-                target = match.Terrain.OutOfWater(target, squad.Position);
+                target = match.Terrain.OutOfWater(target, squad.Position, match.Settings.terrain.bridgeHalfWidth);
             }
 
             squad.ClearRoute();
