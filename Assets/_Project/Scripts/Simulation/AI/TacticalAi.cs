@@ -538,9 +538,11 @@ namespace Marchlands.Simulation.AI
             AiSettings ai = match.Settings.ai;
             Village best = null;
             float bestDistance = ai.opportunityVillageDistance * ai.opportunityVillageDistance;
+            CollectDangers(match, Side, Dangers);
             foreach (Village village in match.Villages)
             {
-                if (village.Owner == Side)
+                // Деревня под огнём вражеского здания — не «по пути»: туда только по необходимости (SelectVillage).
+                if (village.Owner == Side || IsInDanger(village.Position, Dangers))
                 {
                     continue;
                 }
@@ -586,11 +588,27 @@ namespace Marchlands.Simulation.AI
             Village best = null;
             float bestDistance = float.MaxValue;
             bool bestReserved = true;
+            bool bestDangerous = true;
+            CollectDangers(match, Side, Dangers);
             foreach (Village village in match.Villages)
             {
                 if (village.Owner == Side)
                 {
                     continue;
+                }
+
+                // Деревня под огнём вражеского блокгауза — только если других нет: стоять там — терять людей и дух.
+                bool dangerous = IsInDanger(village.Position, Dangers);
+                if (best != null && dangerous && !bestDangerous)
+                {
+                    continue;
+                }
+
+                if (best != null && !dangerous && bestDangerous)
+                {
+                    best = null;
+                    bestReserved = true;
+                    bestDistance = float.MaxValue;
                 }
 
                 bool reserved = IsReservedByOther(match, squad, village);
@@ -603,6 +621,7 @@ namespace Marchlands.Simulation.AI
                     best = village;
                     bestDistance = distance;
                     bestReserved = reserved;
+                    bestDangerous = dangerous;
                 }
             }
 
@@ -762,13 +781,16 @@ namespace Marchlands.Simulation.AI
             float2 next = goal;
             float facing = finalFacing;
 
-            if (match.Pathfinder != null && math.distance(squad.Position, goal) > ai.directApproachDistance)
+            // Зоны огня вражеских зданий: путь их обходит (и вблизи — если прямая к цели через такую зону).
+            CollectDangers(match, squad.Side, Dangers);
+            bool throughFire = CrossesDanger(squad.Position, goal, Dangers);
+            if (match.Pathfinder != null && (math.distance(squad.Position, goal) > ai.directApproachDistance || throughFire))
             {
                 if (brain.Path.Count == 0 || math.distance(brain.PathGoal, goal) > ai.repathDistance)
                 {
                     brain.PathGoal = goal;
                     brain.PathIndex = 0;
-                    if (!match.Pathfinder.FindPath(squad.Position, goal, brain.Path))
+                    if (!match.Pathfinder.FindPath(squad.Position, goal, brain.Path, Dangers, ai.buildingDangerCost))
                     {
                         brain.Path.Clear();
                     }
@@ -801,6 +823,65 @@ namespace Marchlands.Simulation.AI
             {
                 Issue(match, brain, new MoveCommand(squad.Id, next, facing));
             }
+        }
+
+        private static readonly List<float3> Dangers = new List<float3>();
+
+        /// <summary>Зоны огня построенных вражеских зданий (блокгаузы, часовые): центр и дальность с запасом.</summary>
+        public static void CollectDangers(Match match, Side side, List<float3> dangers)
+        {
+            dangers.Clear();
+            if (match.Settings.ai.buildingDangerCost <= 0f)
+            {
+                return;
+            }
+
+            foreach (Building building in match.Buildings)
+            {
+                if (building.Owner == side || building.IsDestroyed || !building.IsBuilt)
+                {
+                    continue;
+                }
+
+                Volley volley = Volley.Of(building, match.Settings.buildings);
+                if (volley.Shots > 0 && volley.Range > 0f)
+                {
+                    dangers.Add(new float3(building.Position, volley.Range + match.Settings.ai.buildingDangerMargin));
+                }
+            }
+        }
+
+        /// <summary>Под огнём ли точка.</summary>
+        public static bool IsInDanger(float2 point, List<float3> dangers)
+        {
+            foreach (float3 danger in dangers)
+            {
+                if (math.distancesq(point, danger.xy) <= danger.z * danger.z)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Проходит ли прямая от отряда к цели через зону огня, в которой нет самой цели (то есть зря).</summary>
+        private static bool CrossesDanger(float2 from, float2 to, List<float3> dangers)
+        {
+            foreach (float3 danger in dangers)
+            {
+                if (math.distancesq(to, danger.xy) <= danger.z * danger.z)
+                {
+                    continue;
+                }
+
+                if (Terrain.TerrainMap.DistanceToSegment(danger.xy, from, to) < danger.z)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

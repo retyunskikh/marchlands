@@ -89,6 +89,55 @@ namespace Marchlands.Tests.EditMode
                 "Разброс момента залпа — на большую часть volleyDelay");
         }
 
+        /// <summary>Поле с местностью, ИИ избегает огня зданий; французский блокгауз посреди пути.</summary>
+        private static Match FieldWithBlockhouse(out Squad ai, out Marchlands.Simulation.Buildings.Building blockhouse)
+        {
+            var settings = TestSettings.Create();
+            settings.ai.buildingDangerCost = 4f;
+            settings.ai.buildingDangerMargin = 2f;
+            var match = new Match(1, settings);
+            match.SetTerrain(new Marchlands.Simulation.Terrain.TerrainMap(new float2(-80f, -40f), new float2(80f, 40f)));
+            match.AddHeadquarters(Side.Austria, new float2(70f, 0f));
+            blockhouse = match.AddBlockhouse(Side.France, new float2(0f, 0f));
+            ai = match.AddSquad(Side.Austria, new float2(40f, 0f), 180f, Formation.Line);
+            match.AddController(new TacticalAi(Side.Austria));
+            return match;
+        }
+
+        [Test]
+        public void Ai_GoesAroundBlockhouse_InsteadOfMarchingPastIt()
+        {
+            Match match = FieldWithBlockhouse(out Squad ai, out var blockhouse);
+            Village village = match.AddVillage(new float2(-40f, 0f));
+            float range = Marchlands.Simulation.Buildings.Volley.Of(blockhouse, match.Settings.buildings).Range;
+
+            float closest = float.MaxValue;
+            for (int i = 0; i < TicksFor(200f) && village.Owner != Side.Austria; i++)
+            {
+                match.Tick();
+                closest = math.min(closest, math.distance(ai.Position, blockhouse.Position));
+            }
+
+            Assert.AreEqual(Side.Austria, village.Owner, "Деревня взята");
+            Assert.Greater(closest, range, "Обошёл блокгауз, не подставляясь под его огонь");
+            Assert.AreEqual(UnitStats.Of(ai, match.Settings).squadSize, ai.Alive, "Без потерь");
+        }
+
+        [Test]
+        public void Ai_PrefersVillageOutOfBlockhouseFire()
+        {
+            Match match = FieldWithBlockhouse(out Squad ai, out _);
+            // Ближняя деревня — под самым блокгаузом, дальняя — в стороне.
+            Village covered = match.AddVillage(new float2(6f, 0f));
+            Village safe = match.AddVillage(new float2(30f, 35f));
+            RunTicks(match, TicksFor(3f));
+
+            Assert.AreEqual(SquadOrderType.Move, ai.Order.Type);
+            Assert.Greater(math.distance(ai.Order.Target, covered.Position), 10f, "Не идёт под огонь");
+            RunTicks(match, TicksFor(60f));
+            Assert.AreEqual(Side.Austria, safe.Owner, "Взял деревню в стороне");
+        }
+
         [Test]
         public void Ai_CapturesNearbyVillage_WhenNoEnemyClose_EvenIfThreatElsewhere()
         {

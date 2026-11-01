@@ -97,6 +97,51 @@ namespace Marchlands.Simulation.Terrain
         /// </summary>
         public bool FindPath(float2 from, float2 to, List<float2> waypoints)
         {
+            return FindPath(from, to, waypoints, null, 0f);
+        }
+
+        /// <summary>
+        /// Путь с опасными зонами (круги xy — центр, z — радиус): шаг внутри зоны дороже на
+        /// <paramref name="dangerCost"/> за u — путь их обходит, а если цель внутри, заходит в зону как можно позже.
+        /// </summary>
+        public bool FindPath(float2 from, float2 to, List<float2> waypoints, IReadOnlyList<float3> dangers, float dangerCost)
+        {
+            activeDangers = dangers != null && dangers.Count > 0 && dangerCost > 0f ? dangers : null;
+            activeDangerCost = dangerCost;
+            try
+            {
+                return FindPathCore(from, to, waypoints);
+            }
+            finally
+            {
+                activeDangers = null;
+            }
+        }
+
+        private IReadOnlyList<float3> activeDangers;
+        private float activeDangerCost;
+
+        /// <summary>Добавка к стоимости шага в точке за опасные зоны (0 — вне зон).</summary>
+        private float DangerAt(float2 point)
+        {
+            if (activeDangers == null)
+            {
+                return 0f;
+            }
+
+            foreach (float3 danger in activeDangers)
+            {
+                if (math.distancesq(point, danger.xy) <= danger.z * danger.z)
+                {
+                    return activeDangerCost;
+                }
+            }
+
+            return 0f;
+        }
+
+        private bool FindPathCore(float2 from, float2 to, List<float2> waypoints)
+        {
             waypoints.Clear();
             to = map.Clamp(to, float2.zero);
             int start = CellIndex(map.Clamp(from, float2.zero));
@@ -147,7 +192,8 @@ namespace Marchlands.Simulation.Terrain
                     }
 
                     float length = step.x != 0 && step.y != 0 ? Sqrt2 : 1f;
-                    float tentative = gScore[current] + length * cellSize * 0.5f * (cellCost[current] + cellCost[next]);
+                    float danger = activeDangers != null ? DangerAt(CellCenter(nx, ny)) : 0f;
+                    float tentative = gScore[current] + length * cellSize * (0.5f * (cellCost[current] + cellCost[next]) + danger);
                     if (tentative >= gScore[next])
                     {
                         continue;
@@ -188,7 +234,7 @@ namespace Marchlands.Simulation.Terrain
                     return float.PositiveInfinity;
                 }
 
-                cost += 1f / speed;
+                cost += 1f / speed + DangerAt(point);
             }
 
             return cost * length / samples;

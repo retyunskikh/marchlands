@@ -70,5 +70,14 @@ namespace Marchlands.Simulation.Config
         public float volleyDelayMin;
 
         public float volleyDelayMax;
+
+        /// <summary>
+        /// Насколько дороже для пути ИИ каждый шаг под огнём вражеского здания (блокгауз, часовые) — в долях обычной
+        /// стоимости: без нужды ИИ обходит такие зоны, а если цель внутри — заходит в зону как можно позже.
+        /// </summary>
+        public float buildingDangerCost;
+
+        /// <summary>Запас к дальности огня здания, внутри которого ИИ считает себя под обстрелом, u.</summary>
+        public float buildingDangerMargin;
     }
 }

@@ -177,6 +177,8 @@ MonoBehaviour:
       opportunityVillageDistance: 15
       volleyDelayMin: 0
       volleyDelayMax: 2.5
+      buildingDangerCost: 4
+      buildingDangerMargin: 2
     economy:
       captureRadius: 5
       captureTime: 15
