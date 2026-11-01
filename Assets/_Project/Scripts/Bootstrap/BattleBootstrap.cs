@@ -42,8 +42,10 @@ namespace Marchlands.Bootstrap
         [SerializeField] private float networkAdaptInterval = 1f;
         [Tooltip("Раз в столько тиков стороны сверяют контрольную сумму состояния.")]
         [SerializeField] private int networkHashInterval = 10;
-        [Tooltip("Сколько тиков можно догонять за раз после задержки соперника.")]
+        [Tooltip("Сколько тиков можно накопить, ожидая соперника (дальше — не копим).")]
         [SerializeField] private int networkMaxBacklog = 10;
+        [Tooltip("Сколько тиков за кадр догонять после ожидания: больше — быстрее догоняет, но рывком.")]
+        [SerializeField] private int networkCatchUpPerFrame = 2;
         [Tooltip("Через сколько секунд ожидания приказов соперника показывать «Ожидание соперника…».")]
         [SerializeField] private float networkWaitingNotice = 1f;
         [SerializeField] private int targetFrameRate = 60;
@@ -99,7 +101,13 @@ namespace Marchlands.Bootstrap
         public Match Match => match;
 
         /// <summary>Доля шага между последним выполненным тиком и следующим, в [0, 1).</summary>
-        public float InterpolationAlpha => clock.Alpha;
+        public float InterpolationAlpha => RenderAlpha;
+
+        /// <summary>
+        /// Доля шага для плавного движения между тиками. В сетевом бою, пока ждём соперника или догоняем, тик не
+        /// выполнен, а часы идут: отряды стоят на последнем посчитанном месте (иначе откатывались бы назад).
+        /// </summary>
+        private float RenderAlpha => lockstep != null && backlog > 0 ? 1f : clock.Alpha;
 
         private void Awake()
         {
@@ -319,7 +327,8 @@ namespace Marchlands.Bootstrap
 
             backlog = Mathf.Min(backlog + ticks, networkMaxBacklog);
             int done = 0;
-            while (backlog > 0 && lockstep.TryAdvance())
+            int perFrame = Mathf.Max(1, networkCatchUpPerFrame);
+            while (backlog > 0 && done < perFrame && lockstep.TryAdvance())
             {
                 backlog--;
                 done++;
@@ -378,10 +387,10 @@ namespace Marchlands.Bootstrap
         {
             RunTicks();
 
-            squadViews.Render(clock.Alpha);
+            squadViews.Render(RenderAlpha);
             villageViews.Render();
             buildingViews.Render();
-            fireArc.Render(clock.Alpha);
+            fireArc.Render(RenderAlpha);
         }
 
         private void AfterTick()
