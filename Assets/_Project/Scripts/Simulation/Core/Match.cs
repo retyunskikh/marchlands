@@ -438,9 +438,21 @@ namespace Marchlands.Simulation.Core
             commands.Enqueue(tick, command);
         }
 
-        /// <summary>Ставит команду на ближайший невыполненный тик.</summary>
+        /// <summary>
+        /// Куда отправлять приказы игрока в сетевой игре: если задан, <see cref="Enqueue(ICommand)"/> не ставит команду
+        /// сам, а передаёт сюда (lockstep рассылает её и ставит на общий тик через <see cref="Enqueue(int, ICommand)"/>).
+        /// </summary>
+        public Action<ICommand> CommandRouter { get; set; }
+
+        /// <summary>Ставит команду на ближайший невыполненный тик (в сетевой игре — передаёт в <see cref="CommandRouter"/>).</summary>
         public void Enqueue(ICommand command)
         {
+            if (CommandRouter != null)
+            {
+                CommandRouter(command);
+                return;
+            }
+
             commands.Enqueue(CurrentTick, command);
         }
 

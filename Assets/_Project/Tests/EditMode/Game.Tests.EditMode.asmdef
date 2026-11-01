@@ -3,6 +3,7 @@
     "rootNamespace": "Marchlands.Tests.EditMode",
     "references": [
         "Game.Simulation",
+        "Game.Network",
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

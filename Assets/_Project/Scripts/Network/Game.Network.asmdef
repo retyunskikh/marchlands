@@ -1,0 +1,17 @@
+{
+    "name": "Game.Network",
+    "rootNamespace": "Marchlands.Network",
+    "references": [
+        "Game.Simulation",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
