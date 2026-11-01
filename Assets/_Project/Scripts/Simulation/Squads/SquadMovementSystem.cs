@@ -37,7 +37,14 @@ namespace Marchlands.Simulation.Squads
             ReformToLineNearEnemy(squad, match);
 
             // Пушка едет только на передке: пока её снимают или берут на передок, стоит.
-            if (squad.IsArtillery && Combat.ArtillerySystem.WantsToMove(squad, settings) && (!squad.IsLimbered || squad.IsLimbering))
+            if (squad.IsArtillery && Combat.ArtillerySystem.WantsToMove(squad, match.Settings) && (!squad.IsLimbered || squad.IsLimbering))
+            {
+                return;
+            }
+
+            // Пока расчёт обходит пушку (берёт на передок или снимает), пушка стоит и не поворачивается: её место
+            // двигает расчёт вдоль ствола. Развернётся сразу после.
+            if (squad.IsArtillery && squad.IsLimbering)
             {
                 return;
             }
@@ -556,10 +563,10 @@ namespace Marchlands.Simulation.Squads
                     squad.Position = target;
                     time = 0f;
                 }
-                else if (marchTurns && speed > 0f && CanTurnOnTheMove(squad, desired, distance, speed, settings.squads.rotationSpeed))
+                else if (marchTurns && speed > 0f && CanTurnOnTheMove(squad, desired, distance, speed, RotationSpeed(squad, settings)))
                 {
                     float delta = Angles.Delta(squad.Facing, desired);
-                    float turn = math.min(math.abs(delta), settings.squads.rotationSpeed * time);
+                    float turn = math.min(math.abs(delta), RotationSpeed(squad, settings) * time);
                     squad.Facing = Angles.Normalize(squad.Facing + math.sign(delta) * turn);
                     float marchStep = speed * time;
                     if (marchStep < distance)
@@ -573,7 +580,7 @@ namespace Marchlands.Simulation.Squads
                 }
                 else
                 {
-                    if (!RotateTowards(squad, desired, settings.squads.rotationSpeed, ref time))
+                    if (!RotateTowards(squad, desired, RotationSpeed(squad, settings), ref time))
                     {
                         return;
                     }
@@ -608,7 +615,7 @@ namespace Marchlands.Simulation.Squads
 
             squad.HasArrived = true;
             squad.ArrivedTarget = squad.Order.Target;
-            if (RotateTowards(squad, BridgeFacing(squad, match, squad.Order.FinalFacing), settings.squads.rotationSpeed, ref time))
+            if (RotateTowards(squad, BridgeFacing(squad, match, squad.Order.FinalFacing), RotationSpeed(squad, settings), ref time))
             {
                 squad.Order = SquadOrder.None;
                 // Развернулись на месте посреди марша — маршрут ждёт, пока рядом не станет врагов.
@@ -623,6 +630,13 @@ namespace Marchlands.Simulation.Squads
         /// Дотянется ли колонна до точки, поворачивая на ходу: точка не позади и не внутри круга поворота
         /// (радиус — скорость / угловая скорость). Иначе колонна сначала разворачивается на месте.
         /// </summary>
+        /// <summary>Угловая скорость отряда: пушки разворачиваются быстрее пехоты (rotationSpeedMultiplier).</summary>
+        private static float RotationSpeed(Squad squad, SimulationSettings settings)
+        {
+            float speed = settings.squads.rotationSpeed;
+            return squad.IsArtillery && settings.guns.rotationSpeedMultiplier > 0f ? speed * settings.guns.rotationSpeedMultiplier : speed;
+        }
+
         private static bool CanTurnOnTheMove(Squad squad, float desired, float distance, float speed, float rotationSpeed)
         {
             float delta = math.abs(Angles.Delta(squad.Facing, desired));
@@ -649,7 +663,7 @@ namespace Marchlands.Simulation.Squads
             float time = deltaTime;
             float2 toTarget = Steer(squad, match, target.Position) - squad.Position;
             if (math.lengthsq(toTarget) <= 0f
-                || !RotateTowards(squad, Angles.Of(toTarget), match.Settings.squads.rotationSpeed, ref time))
+                || !RotateTowards(squad, Angles.Of(toTarget), RotationSpeed(squad, match.Settings), ref time))
             {
                 return;
             }
@@ -678,7 +692,7 @@ namespace Marchlands.Simulation.Squads
             float2 toTarget = Steer(squad, match, target.Position) - squad.Position;
             float time = deltaTime;
             if (distance <= 0f || math.lengthsq(toTarget) <= 0f
-                || !RotateTowards(squad, Angles.Of(toTarget), match.Settings.squads.rotationSpeed, ref time))
+                || !RotateTowards(squad, Angles.Of(toTarget), RotationSpeed(squad, match.Settings), ref time))
             {
                 return;
             }

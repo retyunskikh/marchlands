@@ -14221,6 +14221,8 @@ MonoBehaviour:
   boxSortingOrder: 400
   boxMinDrag: 8
   groupDoublePressTime: 0.35
+  placeDoubleClickTime: 0.4
+  placeDoubleClickDistance: 24
 --- !u!1 &1016649667
 GameObject:
   m_ObjectHideFlags: 0
@@ -16914,9 +16916,19 @@ MonoBehaviour:
   explosionColor: {r: 1, g: 0.78, b: 0.35, a: 0.95}
   fireColor: {r: 1, g: 0.5, b: 0.15, a: 0.9}
   blastSmokeColor: {r: 0.32, g: 0.29, b: 0.26, a: 0.8}
-  explosionSize: 2.6
-  explosionTime: 0.35
+  explosionSize: 4.4
+  explosionTime: 0.5
   explosionVolume: 0.7
+  explosionCoreColor: {r: 1, g: 0.97, b: 0.82, a: 1}
+  explosionOuterColor: {r: 0.85, g: 0.22, b: 0.06, a: 0.75}
+  shockwaveSprite: {fileID: 21300000, guid: b6cb92c132d19f947854d3db7c821888, type: 3}
+  shockwaveColor: {r: 1, g: 0.9, b: 0.7, a: 0.85}
+  shockwaveSize: 7
+  dirtColor: {r: 0.33, g: 0.24, b: 0.14, a: 1}
+  scorchColor: {r: 0.1, g: 0.08, b: 0.06, a: 0.6}
+  scorchSize: 3.4
+  scorchTime: 10
+  scorchSortingOrder: -40
   explosionPitch: 0.33
 --- !u!4 &1314512049
 Transform:

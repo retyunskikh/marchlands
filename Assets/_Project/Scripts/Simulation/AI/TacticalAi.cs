@@ -265,7 +265,7 @@ namespace Marchlands.Simulation.AI
                 return;
             }
 
-            if (gun.Order.Type == SquadOrderType.Move && ArtillerySystem.WantsToMove(gun, match.Settings.squads))
+            if (gun.Order.Type == SquadOrderType.Move && ArtillerySystem.WantsToMove(gun, match.Settings))
             {
                 Issue(match, brain, new StopCommand(gun.Id));
                 return;

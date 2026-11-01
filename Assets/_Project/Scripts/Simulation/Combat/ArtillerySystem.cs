@@ -37,11 +37,18 @@ namespace Marchlands.Simulation.Combat
         }
 
         /// <summary>Хочет ли пушка ехать: приказ движения в другую точку (разворот на месте ехать не требует).</summary>
-        public static bool WantsToMove(Squad squad, SquadSettings settings)
+        public static bool WantsToMove(Squad squad, SimulationSettings settings)
         {
+            // Пока расчёт обходит пушку (передок), отряд смещается — считаем от места, где пушка стояла: разворот на
+            // месте не повод брать передок.
+            float2 standing = squad.Position - Angles.Direction(squad.Facing) * squad.LimberShift;
+            float tolerance = settings.squads.arrivalTolerance + StandingMargin;
             return !squad.IsRouting && squad.Order.Type == SquadOrderType.Move
-                && math.distance(squad.Order.Target, squad.Position) > settings.arrivalTolerance;
+                && math.distance(squad.Order.Target, standing) > tolerance;
         }
+
+        // Запас к «стоит на месте» сверх обхода расчёта, u.
+        private const float StandingMargin = 0.3f;
 
         private static void UpdateLimber(Match match, Squad squad, float deltaTime)
         {
@@ -58,7 +65,7 @@ namespace Marchlands.Simulation.Combat
                 return;
             }
 
-            bool needLimbered = WantsToMove(squad, match.Settings.squads);
+            bool needLimbered = WantsToMove(squad, match.Settings);
             float2 forward = Angles.Direction(squad.Facing);
             if (squad.IsLimbered == needLimbered)
             {
@@ -93,7 +100,16 @@ namespace Marchlands.Simulation.Combat
             squad.LimberRemaining -= deltaTime;
             if (squad.LimberRemaining <= TimerEpsilon)
             {
+                float2 standing = squad.Position - forward * squad.LimberShift;
                 squad.Position += forward * (target - squad.LimberShift);
+                // Приказ «стоять здесь» (разворот на месте) — теперь «здесь» на новом месте расчёта, иначе пушка
+                // решила бы, что её надо везти обратно, и снова взяла бы передок.
+                if (squad.Order.Type == SquadOrderType.Move
+                    && math.distance(squad.Order.Target, standing) <= match.Settings.squads.arrivalTolerance + StandingMargin)
+                {
+                    squad.Order = SquadOrder.Move(squad.Position, squad.Order.FinalFacing);
+                }
+
                 squad.LimberRemaining = 0f;
                 squad.LimberShift = 0f;
                 squad.IsLimbered = needLimbered;

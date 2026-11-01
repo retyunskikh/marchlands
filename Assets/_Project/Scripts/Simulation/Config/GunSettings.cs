@@ -18,6 +18,9 @@ namespace Marchlands.Simulation.Config
         /// <summary>Насколько пушка на передке тянется позади тыла расчёта, u.</summary>
         public float towLength;
 
+        /// <summary>Во сколько раз пушка с расчётом разворачивается быстрее пехоты (rotationSpeed отрядов).</summary>
+        public float rotationSpeedMultiplier;
+
         /// <summary>Перезарядка пушки, s.</summary>
         public float reloadTime;
 

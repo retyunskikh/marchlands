@@ -98,12 +98,13 @@ MonoBehaviour:
       chargeBonusMultiplier: 1
       targetHitMultiplier: 0.7
     guns:
-      limberTime: 4
+      limberTime: 2.5
       gunAhead: 1.6
       towLength: 3.7
+      rotationSpeedMultiplier: 2
       reloadTime: 12
       aimTime: 1
-      fireArcHalfAngle: 25
+      fireArcHalfAngle: 35
       roundShotMinRange: 6
       roundShotRange: 32
       roundShotSpread: 0.06

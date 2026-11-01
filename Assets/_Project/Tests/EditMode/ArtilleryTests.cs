@@ -151,6 +151,54 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void Gun_TurnsFasterThanInfantry_ByMultiplier()
+        {
+            var settings = TestSettings.Create();
+            settings.guns.rotationSpeedMultiplier = 2f;
+            var match = new Match(1, settings);
+            Squad gun = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, UnitType.Artillery);
+            gun.IsLimbered = false;
+            Squad line = match.AddSquad(Side.France, new float2(30f, 0f), 90f, Formation.Line);
+            match.Enqueue(new FaceCommand(gun.Id, 180f));
+            match.Enqueue(new FaceCommand(line.Id, 180f));
+            float seconds = 90f / settings.squads.rotationSpeed;
+            for (int i = 0; i < (int)math.round(seconds * 0.5f * SimulationTime.TicksPerSecond) + 1; i++)
+            {
+                match.Tick();
+            }
+
+            Assert.AreEqual(180f, gun.Facing, 1f, "пушка развернулась вдвое быстрее");
+            Assert.Less(math.abs(Angles.Delta(line.Facing, 180f)), 50f);
+            Assert.Greater(math.abs(Angles.Delta(line.Facing, 180f)), 30f, "пехота ещё на полпути");
+        }
+
+        [Test]
+        public void Gun_OnLimber_TurnInPlace_UnlimbersOnce_ThenTurns_WithoutFlicker()
+        {
+            var settings = TestSettings.Create();
+            settings.guns.rotationSpeedMultiplier = 2f;
+            var match = new Match(1, settings);
+            Squad gun = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, UnitType.Artillery);
+            match.Enqueue(new FaceCommand(gun.Id, 180f));
+            int limberStarts = 0;
+            bool wasLimbering = false;
+            for (int i = 0; i < 120; i++)
+            {
+                match.Tick();
+                if (gun.IsLimbering && !wasLimbering)
+                {
+                    limberStarts++;
+                }
+
+                wasLimbering = gun.IsLimbering;
+            }
+
+            Assert.AreEqual(1, limberStarts, "снялась с передка один раз, без дёрганья туда-сюда");
+            Assert.IsFalse(gun.IsLimbered);
+            Assert.AreEqual(180f, gun.Facing, 1f);
+        }
+
+        [Test]
         public void RoundShot_MoraleShock_EvenWithoutCasualties()
         {
             var settings = TestSettings.Create();

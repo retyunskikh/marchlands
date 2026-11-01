@@ -314,6 +314,19 @@ namespace Marchlands.View
         [SerializeField] private float explosionSize = 2.6f;
         [SerializeField] private float explosionTime = 0.35f;
         [SerializeField] private float explosionVolume = 0.7f;
+        [Tooltip("Раскалённое ядро вспышки и тёмно-красный внешний огонь.")]
+        [SerializeField] private Color explosionCoreColor = new Color(1f, 0.97f, 0.82f, 1f);
+        [SerializeField] private Color explosionOuterColor = new Color(0.85f, 0.22f, 0.06f, 0.75f);
+        [Tooltip("Ударная волна — расходящееся кольцо (спрайт кольца), до какого размера, u.")]
+        [SerializeField] private Sprite shockwaveSprite;
+        [SerializeField] private Color shockwaveColor = new Color(1f, 0.9f, 0.7f, 0.85f);
+        [SerializeField] private float shockwaveSize = 7f;
+        [Tooltip("Комья земли и опалённая воронка, которая медленно тает.")]
+        [SerializeField] private Color dirtColor = new Color(0.33f, 0.24f, 0.14f, 1f);
+        [SerializeField] private Color scorchColor = new Color(0.1f, 0.08f, 0.06f, 0.6f);
+        [SerializeField] private float scorchSize = 2.4f;
+        [SerializeField] private float scorchTime = 10f;
+        [SerializeField] private int scorchSortingOrder = -40;
         [SerializeField] private float explosionPitch = 0.33f;
 
         private sealed class Ball
@@ -330,14 +343,21 @@ namespace Marchlands.View
 
         private readonly List<Ball> balls = new List<Ball>();
 
+        /// <summary>Слой взрыва: растёт от StartSize до EndSize за Duration и гаснет (воронка — гаснет только в конце).</summary>
         private sealed class Blast
         {
             public SpriteRenderer Renderer;
             public float Age;
+            public float Duration;
+            public float StartSize;
+            public float EndSize;
+            public Color Color;
+            public bool Lingers;
         }
 
         private readonly List<Blast> blasts = new List<Blast>();
         private Sprite ballSprite;
+        private Sprite glowSprite;
 
         /// <summary>Выстрелы пушек за тик: дым у ствола, ядро по дуге с рикошетом или веер картечи, гулкий звук.</summary>
         public void PlayArtillery(IReadOnlyList<ArtilleryShot> shots)
@@ -379,6 +399,11 @@ namespace Marchlands.View
                 ballSprite = CreateBallSprite();
             }
 
+            if (glowSprite == null)
+            {
+                glowSprite = CreateGlowSprite();
+            }
+
             var ball = new Ball
             {
                 From = shot.Muzzle,
@@ -402,6 +427,29 @@ namespace Marchlands.View
             renderer.sortingOrder = order;
             go.transform.localScale = Vector3.one * ballSize;
             return renderer;
+        }
+
+        /// <summary>Мягкий круг: непрозрачный в центре, плавно гаснет к краю.</summary>
+        private static Sprite CreateGlowSprite()
+        {
+            const int size = 64;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            var pixels = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x + 0.5f) / size * 2f - 1f;
+                    float dy = (y + 0.5f) / size * 2f - 1f;
+                    float r = math.saturate(math.sqrt(dx * dx + dy * dy));
+                    float alpha = math.pow(1f - r * r, 1.4f);
+                    pixels[y * size + x] = new Color32(255, 255, 255, (byte)math.round(alpha * 255f));
+                }
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
         }
 
         private static Sprite CreateBallSprite()
@@ -472,29 +520,84 @@ namespace Marchlands.View
         }
 
         /// <summary>
-        /// Ядро ударило в землю: вспышка, выброс огня и тёмного дыма, комья земли и глухой удар.
+        /// Ядро ударило в землю — взрыв: белая вспышка, огненный шар, тёмно-красный огонь по краю, ударная волна,
+        /// искры и огненные языки во все стороны, комья земли, клубы тёмного дыма, поднимающиеся вверх, пыль,
+        /// опалённая воронка (тает за scorchTime) и глухой удар.
         /// </summary>
         private void Explode(float2 at)
         {
-            var blast = new Blast { Renderer = CreateBallRenderer("Blast", explosionColor, ballSortingOrder + 1) };
-            blast.Renderer.transform.position = new Vector3(at.x, at.y, 0f);
-            blasts.Add(blast);
-
-            for (int i = 0; i < 8; i++)
+            if (ballSprite == null)
             {
-                float2 direction = Angles.Direction(Random.Range(0f, 360f));
-                EmitParticle(at + direction * 0.2f, direction * Random.Range(1.5f, 3.5f), fireColor, Random.Range(0.4f, 0.8f), smokeDuration * 0.12f);
+                ballSprite = CreateBallSprite();
             }
 
-            for (int i = 0; i < 6; i++)
+            AddBlast(at, explosionOuterColor, 1.4f, explosionSize * 1.5f, explosionTime * 1.6f, ballSortingOrder + 1);
+            AddBlast(at, explosionColor, 0.9f, explosionSize, explosionTime * 1.3f, ballSortingOrder + 2);
+            AddBlast(at, explosionCoreColor, 0.5f, explosionSize * 0.55f, explosionTime * 0.45f, ballSortingOrder + 3);
+            if (shockwaveSprite != null)
             {
-                float2 direction = Angles.Direction(Random.Range(0f, 360f));
-                EmitParticle(at + direction * 0.4f, direction * Random.Range(0.4f, 1.2f) + new float2(0f, 0.4f), blastSmokeColor,
-                    Random.Range(puffSize.x, puffSize.y) * 1.1f, smokeDuration * 0.5f);
+                Blast ring = AddBlast(at, shockwaveColor, 1f, shockwaveSize, explosionTime * 1.2f, ballSortingOrder + 1);
+                ring.Renderer.sprite = shockwaveSprite;
             }
 
-            EmitDust(at, 1.8f);
+            Blast scorch = AddBlast(at, scorchColor, scorchSize, scorchSize, scorchTime, scorchSortingOrder);
+            scorch.Lingers = true;
+            scorch.Renderer.transform.rotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
+
+            for (int i = 0; i < 16; i++)
+            {
+                // Искры — мелкие и быстрые.
+                float2 direction = Angles.Direction(Random.Range(0f, 360f));
+                EmitParticle(at + direction * 0.2f, direction * Random.Range(3f, 6.5f), explosionCoreColor, Random.Range(0.15f, 0.3f), smokeDuration * 0.1f);
+            }
+
+            for (int i = 0; i < 12; i++)
+            {
+                // Огненные языки.
+                float2 direction = Angles.Direction(Random.Range(0f, 360f));
+                EmitParticle(at + direction * 0.3f, direction * Random.Range(1.5f, 3.5f), fireColor, Random.Range(0.5f, 1f), smokeDuration * 0.15f);
+            }
+
+            for (int i = 0; i < 10; i++)
+            {
+                // Комья земли разлетаются.
+                float2 direction = Angles.Direction(Random.Range(0f, 360f));
+                EmitParticle(at + direction * 0.2f, direction * Random.Range(2f, 4.5f), dirtColor, Random.Range(0.15f, 0.32f), smokeDuration * 0.12f);
+            }
+
+            for (int i = 0; i < 10; i++)
+            {
+                // Тёмный дым клубится и поднимается.
+                float2 direction = Angles.Direction(Random.Range(0f, 360f));
+                EmitParticle(at + direction * Random.Range(0.2f, 0.9f), direction * Random.Range(0.3f, 1.1f) + new float2(0f, Random.Range(0.4f, 1f)),
+                    blastSmokeColor, Random.Range(puffSize.x, puffSize.y) * 1.4f, smokeDuration * 0.75f);
+            }
+
+            EmitDust(at, 2.4f);
             PlayExplosion(at);
+        }
+
+        private Blast AddBlast(float2 at, Color color, float startSize, float endSize, float duration, int order)
+        {
+            var blast = new Blast
+            {
+                Renderer = CreateBallRenderer("Blast", color, order),
+                Duration = math.max(0.01f, duration),
+                // Огонь и воронка — мягкое свечение от центра к краю, без резкой кромки.
+                StartSize = startSize,
+                EndSize = endSize,
+                Color = color
+            };
+            if (glowSprite == null)
+            {
+                glowSprite = CreateGlowSprite();
+            }
+
+            blast.Renderer.sprite = glowSprite;
+            blast.Renderer.transform.position = new Vector3(at.x, at.y, 0f);
+            blast.Renderer.transform.localScale = Vector3.one * startSize;
+            blasts.Add(blast);
+            return blast;
         }
 
         private void EmitParticle(float2 position, float2 velocity, Color color, float size, float lifetime)
@@ -518,7 +621,7 @@ namespace Marchlands.View
             {
                 Blast blast = blasts[i];
                 blast.Age += Time.deltaTime;
-                float t = explosionTime > 0f ? blast.Age / explosionTime : 1f;
+                float t = blast.Age / blast.Duration;
                 if (t >= 1f)
                 {
                     Destroy(blast.Renderer.gameObject);
@@ -526,10 +629,19 @@ namespace Marchlands.View
                     continue;
                 }
 
-                // Быстро вспыхивает и медленнее гаснет.
-                blast.Renderer.transform.localScale = Vector3.one * explosionSize * math.sqrt(t);
-                Color color = explosionColor;
-                color.a *= 1f - t * t;
+                Color color = blast.Color;
+                if (blast.Lingers)
+                {
+                    // Воронка лежит и тает только под конец.
+                    color.a *= 1f - math.saturate((t - 0.7f) / 0.3f);
+                }
+                else
+                {
+                    // Быстро вспыхивает и медленнее гаснет.
+                    blast.Renderer.transform.localScale = Vector3.one * math.lerp(blast.StartSize, blast.EndSize, math.sqrt(t));
+                    color.a *= 1f - t * t;
+                }
+
                 blast.Renderer.color = color;
             }
         }
