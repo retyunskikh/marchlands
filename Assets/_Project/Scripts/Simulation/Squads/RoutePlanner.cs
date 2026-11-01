@@ -94,6 +94,28 @@ namespace Marchlands.Simulation.Squads
             return false;
         }
 
+        /// <summary>Убирает предпоследние точки маршрута, стоящие почти у цели (не на мосту).</summary>
+        private static void DropCrowdedEnd(Match match, List<float2> waypoints, float mergeDistance)
+        {
+            if (mergeDistance <= 0f)
+            {
+                return;
+            }
+
+            float deck = match.Settings.terrain.bridgeHalfWidth;
+            while (waypoints.Count >= 2)
+            {
+                float2 previous = waypoints[waypoints.Count - 2];
+                if (math.distance(previous, waypoints[waypoints.Count - 1]) >= mergeDistance
+                    || (match.Terrain != null && match.Terrain.IsOnDeck(previous, deck)))
+                {
+                    return;
+                }
+
+                waypoints.RemoveAt(waypoints.Count - 2);
+            }
+        }
+
         public static bool TryPlan(Match match, Squad squad, float2 target)
         {
             SquadSettings settings = match.Settings.squads;
@@ -145,6 +167,7 @@ namespace Marchlands.Simulation.Squads
                 return false;
             }
 
+            DropCrowdedEnd(match, Waypoints, settings.routeEndMergeDistance);
             squad.Route.AddRange(Waypoints);
             squad.RouteIndex = 0;
             if (reform)

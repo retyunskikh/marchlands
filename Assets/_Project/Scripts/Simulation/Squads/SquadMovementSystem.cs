@@ -419,8 +419,11 @@ namespace Marchlands.Simulation.Squads
         {
             SimulationSettings settings = match.Settings;
             float time = deltaTime;
-            // Колонна на марше поворачивает на ходу, как по изгибу дороги; линия разворачивается на месте и идёт прямо.
-            bool marchTurns = squad.Formation == Formation.Column && !squad.IsChangingFormation;
+            // Колонна на марше поворачивает на ходу, как по изгибу дороги. Линия идёт по промежуточным точкам маршрута
+            // (к мосту, по дороге) так же — заходит плечом, а не встаёт у каждого изгиба; к самой цели она
+            // разворачивается на месте и идёт прямо.
+            bool onRouteLeg = squad.RouteIndex < squad.Route.Count - 1 && !squad.SuspendedOrder.HasValue;
+            bool marchTurns = !squad.IsChangingFormation && (squad.Formation == Formation.Column || onRouteLeg);
 
             // Дальний марш — по точкам маршрута (отложенный марш маршрут не трогает); если по пути река — сначала
             // к переправе, дальше снова к цели.
