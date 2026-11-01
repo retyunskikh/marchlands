@@ -7,6 +7,8 @@ Wants=network-online.target
 Type=simple
 User=marchlands
 WorkingDirectory=/opt/marchlands/server
+# Своя «домашняя» папка: Unity хранит там настройки (без неё — безвредные предупреждения в логе).
+Environment=HOME=/opt/marchlands
 ExecStart=/opt/marchlands/server/MarchlandsServer.x86_64 -batchmode -nographics -logfile - -port 7777
 Restart=always
 RestartSec=3
