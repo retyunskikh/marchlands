@@ -71,6 +71,10 @@ namespace Marchlands.UI
         [SerializeField] private string noHorsesStatus = "Найм: нет коней — расширьте конюшню или постройте ещё одну";
         [Tooltip("Конюшню расширяют (больше коней).")]
         [SerializeField] private string expandTitle = "Расширить";
+        [Tooltip("Подсказки кнопки улучшения: у казармы, у штаба и блокгауза, у конюшни.")]
+        [SerializeField, TextArea(2, 5)] private string upgradeBarracksTip = "<b>Усилить казарму</b>\nУсиленная казарма нанимает вдвое быстрее. Подробнее — «i».";
+        [SerializeField, TextArea(2, 5)] private string fortifyTip = "<b>Укрепить</b>\nКаменные штаб и блокгауз крепче и сильнее. Подробнее — «i».";
+        [SerializeField, TextArea(2, 5)] private string expandStableTip = "<b>Расширить конюшню</b>\nБольше коней — можно нанять и держать больше конницы. Подробнее — «i».";
         [SerializeField] private string stableExpandingStatus = "Конюшню расширяют — найм стоит";
         [SerializeField] private Sprite upgradeStableIcon;
         [Tooltip("{0} — название, {1} — цена.")]
@@ -484,6 +488,12 @@ namespace Marchlands.UI
             upgradeToggle.Button.interactable = can;
             upgradeToggle.SetName(building.Type == BuildingType.Barracks ? upgradeTitle
                 : building.Type == BuildingType.Stable ? expandTitle : fortifyTitle);
+            HoverTip tip = upgradeToggle.GetComponentInChildren<HoverTip>(true) ?? upgradeToggle.GetComponentInParent<HoverTip>();
+            if (tip != null)
+            {
+                tip.Text = building.Type == BuildingType.Barracks ? upgradeBarracksTip
+                    : building.Type == BuildingType.Stable ? expandStableTip : fortifyTip;
+            }
             upgradeToggle.SetIcon(UpgradeIconOf(building.Type));
             upgradeToggle.SetAvailable(can || building.IsUpgrading);
             float time = BuildRules.GetUpgradeTime(match, building.Type);

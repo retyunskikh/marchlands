@@ -14690,6 +14690,9 @@ MonoBehaviour:
     aimLowerTime: 0.35
     thrustRate: 1.1
     regroupSpeed: 3
+    regroupWalkSpeed: 1.2
+    hitLineMemory: 0.5
+    hitLineReach: 1.2
     showCount: 0
     countSize: 0.95
     countGap: 0.35
@@ -15206,6 +15209,8 @@ MonoBehaviour:
     holeSize: 1.1
     sentryRangeColor: {r: 1, g: 0.35, b: 0.25, a: 0.35}
     upgradedScale: 1.2
+    stableGrowthPerLevel: 0.12
+    stableWoodRoofSprite: {fileID: 21300000, guid: fdd22236f0637fa44b4e00ac6dd8e9a3, type: 3}
     sentryPosts:
     - {x: 0.47, y: 0.43}
     - {x: 0.47, y: -0.43}
@@ -15236,6 +15241,7 @@ MonoBehaviour:
     keepoutColor: {r: 1, g: 0.45, b: 0.3, a: 0.75}
     keepoutBlockingColor: {r: 1, g: 0.2, b: 0.15, a: 1}
     siteCenterSize: 0.9
+    rejectedFlashTime: 0.6
     bodySortingOrder: -30
     overlaySortingOrder: 55
   squadViews: {fileID: 1066568540}
@@ -16261,6 +16267,19 @@ MonoBehaviour:
     \u0438\u043B\u0438 \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u0442\u0435 \u0435\u0449\u0451
     \u043E\u0434\u043D\u0443"
   expandTitle: "\u0420\u0430\u0441\u0448\u0438\u0440\u0438\u0442\u044C"
+  upgradeBarracksTip: "<b>\u0423\u0441\u0438\u043B\u0438\u0442\u044C \u043A\u0430\u0437\u0430\u0440\u043C\u0443</b>\n\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F
+    \u043A\u0430\u0437\u0430\u0440\u043C\u0430 \u043D\u0430\u043D\u0438\u043C\u0430\u0435\u0442
+    \u0432\u0434\u0432\u043E\u0435 \u0431\u044B\u0441\u0442\u0440\u0435\u0435. \u041F\u043E\u0434\u0440\u043E\u0431\u043D\u0435\u0435
+    \u2014 \xABi\xBB."
+  fortifyTip: "<b>\u0423\u043A\u0440\u0435\u043F\u0438\u0442\u044C</b>\n\u041A\u0430\u043C\u0435\u043D\u043D\u044B\u0435
+    \u0448\u0442\u0430\u0431 \u0438 \u0431\u043B\u043E\u043A\u0433\u0430\u0443\u0437
+    \u043A\u0440\u0435\u043F\u0447\u0435 \u0438 \u0441\u0438\u043B\u044C\u043D\u0435\u0435.
+    \u041F\u043E\u0434\u0440\u043E\u0431\u043D\u0435\u0435 \u2014 \xABi\xBB."
+  expandStableTip: "<b>\u0420\u0430\u0441\u0448\u0438\u0440\u0438\u0442\u044C \u043A\u043E\u043D\u044E\u0448\u043D\u044E</b>\n\u0411\u043E\u043B\u044C\u0448\u0435
+    \u043A\u043E\u043D\u0435\u0439 \u2014 \u043C\u043E\u0436\u043D\u043E \u043D\u0430\u043D\u044F\u0442\u044C
+    \u0438 \u0434\u0435\u0440\u0436\u0430\u0442\u044C \u0431\u043E\u043B\u044C\u0448\u0435
+    \u043A\u043E\u043D\u043D\u0438\u0446\u044B. \u041F\u043E\u0434\u0440\u043E\u0431\u043D\u0435\u0435
+    \u2014 \xABi\xBB."
   stableExpandingStatus: "\u041A\u043E\u043D\u044E\u0448\u043D\u044E \u0440\u0430\u0441\u0448\u0438\u0440\u044F\u044E\u0442
     \u2014 \u043D\u0430\u0439\u043C \u0441\u0442\u043E\u0438\u0442"
   upgradeStableIcon: {fileID: 21300000, guid: 5a740232792cadd44aa2586e873015cc, type: 3}
@@ -25417,6 +25436,7 @@ MonoBehaviour:
   noGoldText: "\u041D\u0435 \u0445\u0432\u0430\u0442\u0430\u0435\u0442 \u0437\u043E\u043B\u043E\u0442\u0430"
   atLimitText: "\u0422\u0430\u043A\u043E\u0435 \u0437\u0434\u0430\u043D\u0438\u0435
     \u0443\u0436\u0435 \u0435\u0441\u0442\u044C"
+  rejectedHintTime: 2.5
 --- !u!1 &2122035412
 GameObject:
   m_ObjectHideFlags: 0

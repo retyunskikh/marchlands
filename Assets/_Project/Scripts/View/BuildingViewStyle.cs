@@ -152,6 +152,10 @@ namespace Marchlands.View
         [SerializeField] private Color sentryRangeColor = new Color(1f, 0.35f, 0.25f, 0.35f);
         [Tooltip("Во сколько раз крупнее усиленная казарма.")]
         [SerializeField] private float upgradedScale = 1.2f;
+        [Tooltip("Конюшня с каждым расширением крупнее на эту долю (уровень 2 — ×1.12, уровень 3 — ×1.24).")]
+        [SerializeField] private float stableGrowthPerLevel = 0.12f;
+        [Tooltip("Крыша новой (не расширенной) конюшни — тёсовая.")]
+        [SerializeField] private Sprite stableWoodRoofSprite;
         [Tooltip("Посты часовых (сначала углы ограды, потом середины стен — у усиленной казармы), доля размера от центра.")]
         [SerializeField] private Vector2[] sentryPosts =
         {
@@ -251,6 +255,7 @@ namespace Marchlands.View
             return type == BuildingType.Barracks ? barracksWoodRoofSprite
                 : type == BuildingType.Headquarters ? headquartersWoodRoofSprite
                 : type == BuildingType.Blockhouse ? blockhouseWoodRoofSprite
+                : type == BuildingType.Stable ? stableWoodRoofSprite
                 : null;
         }
 
@@ -425,6 +430,11 @@ namespace Marchlands.View
         public Vector2 SizeOf(Building building)
         {
             Vector2 size = SizeOf(building.Type);
+            if (building.Type == BuildingType.Stable)
+            {
+                return size * (1f + stableGrowthPerLevel * Mathf.Max(0, building.Level - 1));
+            }
+
             return building.IsUpgraded ? size * upgradedScale : size;
         }
 
