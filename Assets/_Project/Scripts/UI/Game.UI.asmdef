@@ -2,6 +2,7 @@
     "name": "Game.UI",
     "rootNamespace": "Marchlands.UI",
     "references": [
+        "Game.Network",
         "Game.Simulation",
         "Game.View",
         "UnityEngine.UI"

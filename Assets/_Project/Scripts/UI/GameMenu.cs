@@ -1,3 +1,4 @@
+using Marchlands.Network;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Victory;
 using Marchlands.View;
@@ -39,6 +40,17 @@ namespace Marchlands.UI
 
         [SerializeField] private string menuSceneName = "MainMenu";
 
+        [Header("Сетевая игра")]
+        [SerializeField] private string opponentLeftReason = "Соперник покинул бой";
+        [SerializeField] private string connectionLostTitle = "Бой прерван";
+        [SerializeField] private string connectionLostReason = "Связь с соперником потеряна";
+        [SerializeField] private string desyncReason = "Игры разошлись (рассинхронизация) — бой остановлен";
+        [SerializeField] private string waitingText = "Ожидание соперника…";
+        [SerializeField] private Color waitingColor = new Color(0.96f, 0.9f, 0.75f);
+
+        private bool isNetwork;
+        private Text waitingLabel;
+
         private Match match;
         private Side playerSide;
         private MusicDirector music;
@@ -65,6 +77,81 @@ namespace Marchlands.UI
             pauseOverlay.SetActive(false);
             resultOverlay.SetActive(false);
             pauseButton.gameObject.SetActive(match.VictoryEnabled);
+        }
+
+        /// <summary>
+        /// Сетевой матч: меню паузы открывается, но время не останавливается (соперник играет дальше), «Заново» нет,
+        /// выход в меню или из игры сообщает сопернику.
+        /// </summary>
+        public void SetNetworkMatch()
+        {
+            isNetwork = true;
+            pauseRestartButton.gameObject.SetActive(false);
+            resultRestartButton.gameObject.SetActive(false);
+            if (pauseQuitButton != null)
+            {
+                pauseQuitButton.onClick.RemoveAllListeners();
+                pauseQuitButton.onClick.AddListener(() =>
+                {
+                    LeaveNetwork();
+                    Application.Quit();
+                });
+            }
+        }
+
+        /// <summary>Сетевой матч закончился не по правилам боя: соперник ушёл, связь потеряна или игры разошлись.</summary>
+        public void ShowNetworkEnd(bool opponentLeft, bool desync)
+        {
+            if (resultShown)
+            {
+                return;
+            }
+
+            resultShown = true;
+            SetWaiting(false);
+            resultTitle.text = opponentLeft ? victoryText : connectionLostTitle;
+            resultReason.text = opponentLeft ? opponentLeftReason : desync ? desyncReason : connectionLostReason;
+            pauseOverlay.SetActive(false);
+            pauseButton.gameObject.SetActive(false);
+            resultOverlay.SetActive(true);
+            if (opponentLeft && fireworks != null)
+            {
+                fireworks.Play();
+            }
+        }
+
+        public bool IsOver => resultShown;
+
+        /// <summary>Надпись «Ожидание соперника…», пока он отстаёт или его приказы не дошли.</summary>
+        public void SetWaiting(bool waiting)
+        {
+            if (waitingLabel == null)
+            {
+                if (!waiting)
+                {
+                    return;
+                }
+
+                var labelObject = new GameObject("Ожидание соперника", typeof(RectTransform), typeof(Text), typeof(Outline));
+                var rect = (RectTransform)labelObject.transform;
+                rect.SetParent(resultOverlay.transform.parent, false);
+                rect.anchorMin = new Vector2(0.5f, 1f);
+                rect.anchorMax = new Vector2(0.5f, 1f);
+                rect.anchoredPosition = new Vector2(0f, -130f);
+                rect.sizeDelta = new Vector2(900f, 70f);
+                waitingLabel = labelObject.GetComponent<Text>();
+                waitingLabel.font = resultTitle.font;
+                waitingLabel.fontSize = 44;
+                waitingLabel.alignment = TextAnchor.MiddleCenter;
+                waitingLabel.color = waitingColor;
+                waitingLabel.raycastTarget = false;
+                waitingLabel.text = waitingText;
+            }
+
+            if (waitingLabel.gameObject.activeSelf != waiting)
+            {
+                waitingLabel.gameObject.SetActive(waiting);
+            }
         }
 
         private void Update()
@@ -117,8 +204,13 @@ namespace Marchlands.UI
 
         private void Pause()
         {
-            Time.timeScale = 0f;
             pauseOverlay.SetActive(true);
+            if (isNetwork)
+            {
+                return;
+            }
+
+            Time.timeScale = 0f;
             SetMusicPaused(true);
         }
 
@@ -127,6 +219,17 @@ namespace Marchlands.UI
             Time.timeScale = 1f;
             pauseOverlay.SetActive(false);
             SetMusicPaused(false);
+        }
+
+        private void LeaveNetwork()
+        {
+            if (!isNetwork || !NetworkGame.IsActive)
+            {
+                return;
+            }
+
+            NetworkGame.SendToPeer(LobbyProtocol.Quit());
+            NetworkGame.Shutdown();
         }
 
         private void SetMusicPaused(bool paused)
@@ -145,6 +248,7 @@ namespace Marchlands.UI
 
         private void OpenMenu()
         {
+            LeaveNetwork();
             Time.timeScale = 1f;
             SceneManager.LoadScene(menuSceneName);
         }

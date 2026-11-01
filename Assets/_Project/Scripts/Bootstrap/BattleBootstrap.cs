@@ -4,6 +4,7 @@ using Marchlands.Input;
 using Marchlands.Simulation.AI;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
+using Marchlands.Network;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
 using Marchlands.Simulation.Terrain;
@@ -28,6 +29,16 @@ namespace Marchlands.Bootstrap
         [SerializeField] private ScenarioConfig tutorialScenario;
         [SerializeField] private TutorialDirector tutorial;
         [SerializeField] private int seed = 1;
+
+        [Header("Сетевая игра")]
+        [Tooltip("Через сколько тиков исполняется приказ (обе машины — на одном тике): запас на задержку сети.")]
+        [SerializeField] private int networkInputDelay = 3;
+        [Tooltip("Раз в столько тиков стороны сверяют контрольную сумму состояния.")]
+        [SerializeField] private int networkHashInterval = 10;
+        [Tooltip("Сколько тиков можно догонять за раз после задержки соперника.")]
+        [SerializeField] private int networkMaxBacklog = 10;
+        [Tooltip("Через сколько секунд ожидания приказов соперника показывать «Ожидание соперника…».")]
+        [SerializeField] private float networkWaitingNotice = 1f;
         [SerializeField] private int targetFrameRate = 60;
 
         [Header("Сцена")]
@@ -58,6 +69,19 @@ namespace Marchlands.Bootstrap
         private FixedStepClock clock;
 
         private bool isTutorial;
+        private Side playerSide;
+        private MatchSetup network;
+        private LockstepSession lockstep;
+        private int backlog;
+        private float waitingTime;
+
+        private sealed class PeerLink : ILockstepLink
+        {
+            public void Send(byte[] message)
+            {
+                NetworkGame.SendToPeer(message);
+            }
+        }
         private GatedController enemyTactics;
         private GatedController enemyStrategy;
 
@@ -71,8 +95,14 @@ namespace Marchlands.Bootstrap
             // На мобильных Unity по умолчанию ограничивает частоту 30 кадрами.
             Application.targetFrameRate = targetFrameRate;
 
-            isTutorial = MapChoice.Tutorial && tutorialScenario != null && tutorial != null;
-            if (isTutorial)
+            // Сетевой матч: карта, seed и сторона — из лобби, ИИ нет.
+            network = NetworkGame.IsActive ? NetworkGame.Setup : null;
+            isTutorial = network == null && MapChoice.Tutorial && tutorialScenario != null && tutorial != null;
+            if (network != null && maps != null && maps.Length > 0)
+            {
+                scenario = maps[Mathf.Clamp(network.Map, 0, maps.Length - 1)];
+            }
+            else if (isTutorial)
             {
                 scenario = tutorialScenario;
             }
@@ -81,7 +111,8 @@ namespace Marchlands.Bootstrap
                 scenario = maps[Mathf.Clamp(MapChoice.Selected, 0, maps.Length - 1)];
             }
 
-            match = new Match(unchecked((ulong)seed), balance.CreateSettings());
+            playerSide = network != null ? network.LocalSide : playerSide;
+            match = new Match(network != null ? network.Seed : unchecked((ulong)seed), balance.CreateSettings());
             clock = new FixedStepClock(SimulationTime.TicksPerSecond, SimulationTime.MaxTicksPerAdvance);
             SpawnScenario();
 
@@ -116,12 +147,12 @@ namespace Marchlands.Bootstrap
                 terrainView.Initialize(match);
             }
             // Туман войны — в обычном бою по выбору в меню; в обучении и песочницах его нет.
-            if (!isTutorial && maps != null && maps.Length > 0 && MapChoice.FogOfWar)
+            if (network != null ? network.FogOfWar : !isTutorial && maps != null && maps.Length > 0 && MapChoice.FogOfWar)
             {
                 match.EnableFogOfWar();
             }
 
-            squadViews.Initialize(match, scenario.PlayerSide);
+            squadViews.Initialize(match, playerSide);
             villageViews.Initialize(match, scenario.VillageLayouts, scenario.GetVillageDoors);
             buildingViews.Initialize(match);
             fireArc.Initialize(match);
@@ -130,27 +161,32 @@ namespace Marchlands.Bootstrap
             {
                 rainView.Initialize(match);
             }
-            battleSounds.Initialize(match, scenario.PlayerSide);
-            music.Initialize(match, scenario.PlayerSide);
-            input.Initialize(match, scenario.PlayerSide);
+            battleSounds.Initialize(match, playerSide);
+            music.Initialize(match, playerSide);
+            input.Initialize(match, playerSide);
             orderPanel.Initialize(match);
             if (squadCard != null)
             {
-                squadCard.Initialize(match, scenario.PlayerSide);
+                squadCard.Initialize(match, playerSide);
             }
-            topBar.Initialize(match, scenario.PlayerSide);
-            buildPanel.Initialize(match, scenario.PlayerSide);
-            buildingPanel.Initialize(match, scenario.PlayerSide);
-            formSquadPanel.Initialize(match, scenario.PlayerSide);
-            gameMenu.Initialize(match, scenario.PlayerSide, music);
+            topBar.Initialize(match, playerSide);
+            buildPanel.Initialize(match, playerSide);
+            buildingPanel.Initialize(match, playerSide);
+            formSquadPanel.Initialize(match, playerSide);
+            gameMenu.Initialize(match, playerSide, music);
             if (campPanel != null)
             {
-                campPanel.Initialize(match, scenario.PlayerSide);
+                campPanel.Initialize(match, playerSide);
             }
 
             if (isTutorial && enemyTactics != null)
             {
-                tutorial.Initialize(match, scenario.PlayerSide, input, enemyTactics, enemyStrategy);
+                tutorial.Initialize(match, playerSide, input, enemyTactics, enemyStrategy);
+            }
+
+            if (network != null)
+            {
+                StartNetworkMatch();
             }
 
             input.SelectionChanged += OnSelectionChanged;
@@ -199,21 +235,77 @@ namespace Marchlands.Bootstrap
             }
         }
 
-        private void Update()
+        /// <summary>Сетевой матч: приказы игрока уходят в lockstep, сообщения соперника — в него же; камера — у своего штаба.</summary>
+        private void StartNetworkMatch()
+        {
+            lockstep = new LockstepSession(match, playerSide, networkInputDelay, networkHashInterval, new PeerLink());
+            match.CommandRouter = lockstep.Submit;
+            lockstep.Desynced += () => gameMenu.ShowNetworkEnd(false, true);
+            NetworkGame.Handler = OnNetworkMessage;
+            NetworkGame.Disconnected += connection =>
+            {
+                if (connection == NetworkGame.PeerConnection || !NetworkGame.Session.IsHost)
+                {
+                    gameMenu.ShowNetworkEnd(false, false);
+                }
+            };
+            gameMenu.SetNetworkMatch();
+
+            Building headquarters = match.GetHeadquarters(playerSide);
+            if (playerSide != scenario.PlayerSide && headquarters != null)
+            {
+                input.CameraRig.CenterOn(headquarters.Position);
+            }
+        }
+
+        private void OnNetworkMessage(int connection, byte[] message)
+        {
+            if (LobbyProtocol.TypeOf(message) == NetMessageType.Quit)
+            {
+                gameMenu.ShowNetworkEnd(true, false);
+                return;
+            }
+
+            lockstep?.Receive(message);
+        }
+
+        /// <summary>Тики, которые пора выполнить: в сетевой игре — пока есть приказы обеих сторон (догоняя отставание).</summary>
+        private int RunTicks()
         {
             int ticks = clock.Advance(Time.deltaTime);
-            for (int i = 0; i < ticks; i++)
+            if (lockstep == null)
             {
-                match.Tick();
-                volleyEffects.Play(match.LastTickVolleys);
-                volleyEffects.PlaySentries(match.LastTickSentryVolleys);
-                volleyEffects.PlayArtillery(match.LastTickArtilleryShots);
-                buildingViews.PlaySentries(match.LastTickSentryVolleys);
-                battleSounds.Play(match.LastTickCaptures);
-                villageViews.Play(match.LastTickReinforcements);
-                buildingViews.PlayDisbands(match.LastTickDisbands);
-                SelectFormedSquad();
+                for (int i = 0; i < ticks; i++)
+                {
+                    match.Tick();
+                    AfterTick();
+                }
+
+                return ticks;
             }
+
+            if (gameMenu.IsOver)
+            {
+                return 0;
+            }
+
+            backlog = Mathf.Min(backlog + ticks, networkMaxBacklog);
+            int done = 0;
+            while (backlog > 0 && lockstep.TryAdvance())
+            {
+                backlog--;
+                done++;
+                AfterTick();
+            }
+
+            waitingTime = lockstep.IsWaiting && backlog > 0 ? waitingTime + Time.unscaledDeltaTime : 0f;
+            gameMenu.SetWaiting(waitingTime >= networkWaitingNotice);
+            return done;
+        }
+
+        private void Update()
+        {
+            RunTicks();
 
             squadViews.Render(clock.Alpha);
             villageViews.Render();
@@ -221,12 +313,24 @@ namespace Marchlands.Bootstrap
             fireArc.Render(clock.Alpha);
         }
 
+        private void AfterTick()
+        {
+            volleyEffects.Play(match.LastTickVolleys);
+            volleyEffects.PlaySentries(match.LastTickSentryVolleys);
+            volleyEffects.PlayArtillery(match.LastTickArtilleryShots);
+            buildingViews.PlaySentries(match.LastTickSentryVolleys);
+            battleSounds.Play(match.LastTickCaptures);
+            villageViews.Play(match.LastTickReinforcements);
+            buildingViews.PlayDisbands(match.LastTickDisbands);
+            SelectFormedSquad();
+        }
+
         /// <summary>Только что построенный отряд игрока сразу выделяется.</summary>
         private void SelectFormedSquad()
         {
             foreach (Squad formed in match.LastTickFormedSquads)
             {
-                if (formed.Side == scenario.PlayerSide)
+                if (formed.Side == playerSide)
                 {
                     input.SelectSquad(formed);
                 }
@@ -268,7 +372,7 @@ namespace Marchlands.Bootstrap
                     match.AddController(enemyTactics);
                     match.AddController(enemyStrategy);
                 }
-                else if (scenario.IsAiControlled(side))
+                else if (scenario.IsAiControlled(side) && network == null)
                 {
                     match.AddController(new TacticalAi(side));
                     match.AddController(new StrategicAi(side));
@@ -335,7 +439,7 @@ namespace Marchlands.Bootstrap
             buildingViews.SetSelected(building);
             // О блокгаузе рассказывает карточка внизу слева, как об отряде; у своего снизу ещё кнопка «Укрепить».
             bool blockhouse = building != null && building.Type == BuildingType.Blockhouse;
-            bool ownBlockhouse = blockhouse && building.Owner == scenario.PlayerSide;
+            bool ownBlockhouse = blockhouse && building.Owner == playerSide;
             buildingPanel.SetBuilding(!blockhouse || ownBlockhouse ? building : null);
             if (squadCard != null)
             {
@@ -345,10 +449,10 @@ namespace Marchlands.Bootstrap
 
         private void OnCampSelectionChanged(UnitType? type)
         {
-            buildingViews.SetSelectedCamp(scenario.PlayerSide, type);
+            buildingViews.SetSelectedCamp(playerSide, type);
             if (squadCard != null)
             {
-                squadCard.SetCamp(scenario.PlayerSide, type);
+                squadCard.SetCamp(playerSide, type);
             }
 
             if (campPanel != null)

@@ -2,6 +2,7 @@
     "name": "Game.Bootstrap",
     "rootNamespace": "Marchlands.Bootstrap",
     "references": [
+        "Game.Network",
         "Game.Simulation",
         "Game.View",
         "Game.Input",

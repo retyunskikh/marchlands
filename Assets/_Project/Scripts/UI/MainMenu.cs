@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -67,6 +68,25 @@ namespace Marchlands.UI
             }
 
             Select(Mathf.Clamp(MapChoice.Selected, 0, Mathf.Max(0, mapButtons.Length - 1)));
+        }
+
+        /// <summary>Названия карт — подписи карточек, по порядку (для сетевой комнаты).</summary>
+        public IReadOnlyList<string> MapNames
+        {
+            get
+            {
+                var names = new List<string>();
+                if (mapButtons != null)
+                {
+                    foreach (Button button in mapButtons)
+                    {
+                        Text label = button != null ? button.GetComponentInChildren<Text>(true) : null;
+                        names.Add(label != null ? label.text : string.Empty);
+                    }
+                }
+
+                return names;
+            }
         }
 
         private void ShowFog()
