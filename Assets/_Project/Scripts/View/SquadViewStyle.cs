@@ -115,6 +115,19 @@ namespace Marchlands.View
         [SerializeField] private float limberScale = 1.4f;
         [SerializeField] private Color franceColor = new Color(0.2f, 0.35f, 0.85f);
         [SerializeField] private Color austriaColor = new Color(0.95f, 0.95f, 0.95f);
+        [Tooltip("Цвет второй стороны, если у обеих одна нация (сетевой бой «Франция против Франции»).")]
+        [SerializeField] private Color alternateColor = new Color(0.8f, 0.16f, 0.14f);
+
+        [Header("Знамя отряда")]
+        [Tooltip("Полотнище знамени (белое — красится цветом игрока), опора — у древка слева.")]
+        [SerializeField] private Sprite bannerSprite;
+        [Tooltip("Высота знамени с древком, u, и ширина полотнища.")]
+        [SerializeField] private float bannerHeight = 0.95f;
+        [SerializeField] private float bannerClothWidth = 0.6f;
+        [SerializeField] private float bannerPoleWidth = 0.06f;
+        [SerializeField] private Color bannerPoleColor = new Color(0.3f, 0.2f, 0.12f);
+        [Tooltip("Зазор между полоской морали и знаменем, u.")]
+        [SerializeField] private float bannerGap = 0.2f;
         [SerializeField] private Color selectionColor = new Color(1f, 0.9f, 0.3f, 0.3f);
         [Tooltip("Брошенная пушка разбитого расчёта: сколько лежит, за сколько тает (s), насколько темнее.")]
         [SerializeField] private float abandonedGunLieTime = 8f;
@@ -272,13 +285,13 @@ namespace Marchlands.View
 
         public Sprite GetWalkSprite(Side side, UnitType type, SoldierRole role, int frame)
         {
-            SoldierSprites sprites = side == Side.France ? franceSoldiers : austriaSoldiers;
+            SoldierSprites sprites = Armies.NationOf(side) == Nation.France ? franceSoldiers : austriaSoldiers;
             return sprites?.GetWalk(type, role, frame);
         }
 
         public bool TryGetMeleeSprites(Side side, UnitType type, SoldierRole role, out Sprite body, out Sprite arms)
         {
-            SoldierSprites sprites = side == Side.France ? franceSoldiers : austriaSoldiers;
+            SoldierSprites sprites = Armies.NationOf(side) == Nation.France ? franceSoldiers : austriaSoldiers;
             body = null;
             arms = null;
             return sprites != null && sprites.TryGetMelee(type, role, out body, out arms);
@@ -287,7 +300,7 @@ namespace Marchlands.View
         /// <summary>Нарисованная фигурка; null — рисовать запасной, окрашенной в цвет стороны.</summary>
         public Sprite GetSoldierSprite(Side side, UnitType type, SoldierRole role)
         {
-            SoldierSprites sprites = side == Side.France ? franceSoldiers : austriaSoldiers;
+            SoldierSprites sprites = Armies.NationOf(side) == Nation.France ? franceSoldiers : austriaSoldiers;
             return sprites != null && sprites.IsComplete ? sprites.Get(type, role) : null;
         }
 
@@ -359,9 +372,30 @@ namespace Marchlands.View
             return Color.Lerp(moraleLowColor, moraleHighColor, morale01);
         }
 
+        /// <summary>
+        /// Цвет игрока (крыши, флаги, деревни, знамёна): по нации — Франция синяя, Австрия белая; если нации у сторон
+        /// совпали, у второй стороны (Австрии) — запасной.
+        /// </summary>
         public Color GetSideColor(Side side)
         {
-            return side == Side.France ? franceColor : austriaColor;
+            if (Armies.SameNation && side == Side.Austria)
+            {
+                return alternateColor;
+            }
+
+            return Armies.NationOf(side) == Nation.France ? franceColor : austriaColor;
         }
+
+        public Sprite BannerSprite => bannerSprite;
+
+        public float BannerHeight => bannerHeight;
+
+        public float BannerClothWidth => bannerClothWidth;
+
+        public float BannerPoleWidth => bannerPoleWidth;
+
+        public Color BannerPoleColor => bannerPoleColor;
+
+        public float BannerGap => bannerGap;
     }
 }

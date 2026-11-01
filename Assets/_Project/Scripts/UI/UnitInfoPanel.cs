@@ -2,6 +2,7 @@ using System.Globalization;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
+using Marchlands.View;
 using Marchlands.Simulation.Squads;
 using UnityEngine;
 using UnityEngine.UI;
@@ -71,7 +72,7 @@ namespace Marchlands.UI
 
         public void Show(UnitType type, Side side)
         {
-            Sprite[] portraits = side == Side.France ? francePortraits : austriaPortraits;
+            Sprite[] portraits = Armies.NationOf(side) == Nation.France ? francePortraits : austriaPortraits;
             if (portrait != null && portraits != null && (int)type < portraits.Length && portraits[(int)type] != null)
             {
                 portrait.sprite = portraits[(int)type];

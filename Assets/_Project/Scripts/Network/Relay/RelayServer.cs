@@ -130,6 +130,26 @@ namespace Marchlands.Network.Relay
                 case NetMessageType.Chat:
                     Chat(connection, room, message);
                     break;
+                case NetMessageType.SetNation:
+                    if (room.Started)
+                    {
+                        break;
+                    }
+
+                    Nation nation = LobbyProtocol.ReadSetNation(message);
+                    if (connection == room.Host)
+                    {
+                        room.State.HostNation = nation;
+                    }
+                    else
+                    {
+                        room.State.GuestNation = nation;
+                    }
+
+                    room.State.HostReady = false;
+                    room.State.GuestReady = false;
+                    BroadcastState(room);
+                    break;
                 case NetMessageType.RoomSettings:
                     if (connection != room.Host || room.Started)
                     {
@@ -235,6 +255,7 @@ namespace Marchlands.Network.Relay
             LeaveRoom(connection);
             room.Guest = connection;
             room.State.GuestName = NameOr(playerName, "Гость");
+            room.State.GuestNation = Nation.France;
             room.State.HostReady = false;
             room.State.GuestReady = false;
             roomOf[connection] = room;
@@ -289,7 +310,9 @@ namespace Marchlands.Network.Relay
                 Seed = seedSource(),
                 Map = room.State.Map,
                 HostSide = room.State.HostSide,
-                FogOfWar = room.State.FogOfWar
+                FogOfWar = room.State.FogOfWar,
+                HostNation = room.State.HostNation,
+                GuestNation = room.State.GuestNation
             };
             byte[] start = LobbyProtocol.StartMatch(setup);
             Send(room.Host, start);
@@ -325,6 +348,7 @@ namespace Marchlands.Network.Relay
 
             room.Guest = -1;
             room.State.GuestName = string.Empty;
+            room.State.GuestNation = Nation.France;
             room.State.GuestReady = false;
             room.State.HostReady = false;
             BroadcastState(room);

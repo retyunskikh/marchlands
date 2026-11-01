@@ -53,9 +53,13 @@ namespace Marchlands.UI
         [SerializeField] private Color dimText = new Color(0.8f, 0.8f, 0.72f);
         [SerializeField] private Color errorText = new Color(1f, 0.6f, 0.5f);
 
-        [Header("Тексты")]
+        [Header("Нации и цвета игроков (как в бою)")]
         [SerializeField] private string franceName = "Франция";
         [SerializeField] private string austriaName = "Австрия";
+        [SerializeField] private Color franceColor = new Color(0.2f, 0.35f, 0.85f);
+        [SerializeField] private Color austriaColor = new Color(0.95f, 0.95f, 0.95f);
+        [Tooltip("Цвет второго игрока, если нации совпали.")]
+        [SerializeField] private Color alternateColor = new Color(0.8f, 0.16f, 0.14f);
 
         private Sprite sprite;
         private Font font;
@@ -93,11 +97,14 @@ namespace Marchlands.UI
         private Text guestRow;
         private Image hostRowBox;
         private Image guestRowBox;
+        private Image hostSwatch;
+        private Image guestSwatch;
+        private Button nationButton;
+        private Text nationLabel;
         private Text mapLabel;
         private Image mapPreview;
         private Button mapPrevious;
         private Button mapNext;
-        private Button swapButton;
         private Button fogButton;
         private Text fogLabel;
         private Button readyButton;
@@ -604,12 +611,16 @@ namespace Marchlands.UI
                 ? "Адрес для подключения: " + LocalAddresses() + ", порт " + NetworkGame.Session.Port
                 : NetworkGame.IsRelay ? "Комната на сервере Marchlands" : string.Empty;
 
-            hostRow.text = $"{SideName(state.HostSide)}:  {state.HostName}{(isHost ? " (вы)" : string.Empty)}   {(state.HostReady ? "— готов" : "— не готов")}";
+            hostRow.text = $"{state.HostName}{(isHost ? " (вы)" : string.Empty)}  —  {NationName(state.HostNation)}  {(state.HostReady ? "— готов" : "— не готов")}";
             hostRowBox.color = state.HostReady ? readyColor : grayButton;
+            hostSwatch.color = PlayerColor(state, true);
             guestRow.text = state.HasGuest
-                ? $"{SideName(state.GuestSide)}:  {state.GuestName}{(isHost ? string.Empty : " (вы)")}   {(state.GuestReady ? "— готов" : "— не готов")}"
-                : $"{SideName(state.GuestSide)}:  ожидание соперника…";
+                ? $"{state.GuestName}{(isHost ? string.Empty : " (вы)")}  —  {NationName(state.GuestNation)}  {(state.GuestReady ? "— готов" : "— не готов")}"
+                : "ожидание соперника…";
             guestRowBox.color = state.HasGuest && state.GuestReady ? readyColor : grayButton;
+            guestSwatch.color = PlayerColor(state, false);
+            guestSwatch.gameObject.SetActive(state.HasGuest);
+            nationLabel.text = "Ваша нация: " + NationName(isHost ? state.HostNation : state.GuestNation);
 
             mapLabel.text = state.Map >= 0 && state.Map < MapNames.Count ? MapNames[state.Map] : "Карта " + (state.Map + 1);
             Sprite preview = state.Map >= 0 && state.Map < MapPreviews.Count ? MapPreviews[state.Map] : null;
@@ -617,7 +628,6 @@ namespace Marchlands.UI
             mapPreview.enabled = preview != null;
             mapPrevious.gameObject.SetActive(isHost);
             mapNext.gameObject.SetActive(isHost);
-            swapButton.interactable = isHost;
             fogButton.interactable = isHost;
             fogLabel.text = state.FogOfWar ? "Туман войны: вкл" : "Туман войны: выкл";
 
@@ -658,6 +668,18 @@ namespace Marchlands.UI
             }
 
             lobby.SetMap((lobby.State.Map + step + MapNames.Count) % MapNames.Count);
+        }
+
+        private void ToggleNation()
+        {
+            ILobby lobby = NetworkGame.Lobby;
+            if (lobby?.State == null)
+            {
+                return;
+            }
+
+            Nation mine = lobby.IsHost ? lobby.State.HostNation : lobby.State.GuestNation;
+            lobby.SetNation(mine == Nation.France ? Nation.Austria : Nation.France);
         }
 
         private void ToggleReady()
@@ -796,9 +818,11 @@ namespace Marchlands.UI
             roomAddress = Label(room, string.Empty, new Vector2(0f, 390f), new Vector2(1700f, 50f), 30, dimText, TextAnchor.MiddleCenter);
             Label(room, "Игроки", new Vector2(-430f, 310f), new Vector2(760f, 60f), 40, lightText, TextAnchor.MiddleLeft);
             hostRowBox = Box(room.transform, "Создатель", new Vector2(-430f, 230f), new Vector2(760f, 80f), grayButton);
-            hostRow = Label(hostRowBox.gameObject, string.Empty, Vector2.zero, new Vector2(720f, 80f), 34, darkText, TextAnchor.MiddleLeft);
+            hostSwatch = Box(hostRowBox.transform, "Цвет", new Vector2(-344f, 0f), new Vector2(40f, 40f), franceColor);
+            hostRow = Label(hostRowBox.gameObject, string.Empty, new Vector2(30f, 0f), new Vector2(660f, 80f), 34, darkText, TextAnchor.MiddleLeft);
             guestRowBox = Box(room.transform, "Соперник", new Vector2(-430f, 140f), new Vector2(760f, 80f), grayButton);
-            guestRow = Label(guestRowBox.gameObject, string.Empty, Vector2.zero, new Vector2(720f, 80f), 34, darkText, TextAnchor.MiddleLeft);
+            guestSwatch = Box(guestRowBox.transform, "Цвет", new Vector2(-344f, 0f), new Vector2(40f, 40f), franceColor);
+            guestRow = Label(guestRowBox.gameObject, string.Empty, new Vector2(30f, 0f), new Vector2(660f, 80f), 34, darkText, TextAnchor.MiddleLeft);
             // Длинное имя не выталкивает «готов» за край — текст строки сам уменьшается.
             foreach (Text row in new[] { hostRow, guestRow })
             {
@@ -807,6 +831,7 @@ namespace Marchlands.UI
                 row.resizeTextForBestFit = true;
                 row.resizeTextMinSize = 20;
                 row.resizeTextMaxSize = 34;
+                row.rectTransform.sizeDelta = new Vector2(660f, 44f);
             }
             // Карта: название и превью (одинаковые у обоих — номер карты в состоянии комнаты), у создателя — стрелки.
             mapLabel = Label(room, string.Empty, new Vector2(-430f, 65f), new Vector2(760f, 56f), 38, lightText, TextAnchor.MiddleCenter, true);
@@ -819,8 +844,9 @@ namespace Marchlands.UI
             mapPreview.raycastTarget = false;
             mapPrevious = MakeButton(room, "‹", new Vector2(-680f, -78f), new Vector2(90f, 140f), lightButton, 56, () => ChangeMap(-1));
             mapNext = MakeButton(room, "›", new Vector2(-180f, -78f), new Vector2(90f, 140f), lightButton, 56, () => ChangeMap(1));
-            swapButton = MakeButton(room, "Поменять стороны", new Vector2(-623f, -248f), new Vector2(374f, 72f), lightButton, 32,
-                () => NetworkGame.Lobby?.SwapSides());
+            // Свою нацию выбирает каждый игрок сам.
+            nationButton = MakeButton(room, "Ваша нация: Франция", new Vector2(-623f, -248f), new Vector2(374f, 72f), lightButton, 30, ToggleNation);
+            nationLabel = nationButton.GetComponentInChildren<Text>();
             fogButton = MakeButton(room, "Туман войны: вкл", new Vector2(-237f, -248f), new Vector2(374f, 72f), lightButton, 32, () =>
             {
                 ILobby lobby = NetworkGame.Lobby;
@@ -955,9 +981,20 @@ namespace Marchlands.UI
 
         private IReadOnlyList<Sprite> MapPreviews => mainMenu != null ? mainMenu.MapPreviews : Array.Empty<Sprite>();
 
-        private string SideName(Side side)
+        private string NationName(Nation nation)
         {
-            return side == Side.France ? franceName : austriaName;
+            return nation == Nation.France ? franceName : austriaName;
+        }
+
+        /// <summary>Цвет игрока, как в бою: по нации, у второго при совпадении наций — запасной.</summary>
+        private Color PlayerColor(LobbyState state, bool host)
+        {
+            if (!host && state.HostNation == state.GuestNation)
+            {
+                return alternateColor;
+            }
+
+            return (host ? state.HostNation : state.GuestNation) == Nation.France ? franceColor : austriaColor;
         }
 
         private static string DefaultRoomName()

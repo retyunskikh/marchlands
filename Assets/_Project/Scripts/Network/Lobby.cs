@@ -101,6 +101,10 @@ namespace Marchlands.Network
                     State.GuestReady = LobbyProtocol.ReadReady(message);
                     Broadcast();
                     break;
+                case NetMessageType.SetNation:
+                    State.GuestNation = LobbyProtocol.ReadSetNation(message);
+                    ChangeSettings();
+                    break;
                 case NetMessageType.Chat:
                     LobbyProtocol.ReadChat(message, out _, out string text);
                     Say(State.GuestName, text);
@@ -142,6 +146,18 @@ namespace Marchlands.Network
             ChangeSettings();
         }
 
+        /// <summary>Нация создателя.</summary>
+        public void SetNation(Nation nation)
+        {
+            if (State.HostNation == nation)
+            {
+                return;
+            }
+
+            State.HostNation = nation;
+            ChangeSettings();
+        }
+
         public void SetFogOfWar(bool fog)
         {
             if (State.FogOfWar == fog)
@@ -179,6 +195,8 @@ namespace Marchlands.Network
                 Map = State.Map,
                 HostSide = State.HostSide,
                 FogOfWar = State.FogOfWar,
+                HostNation = State.HostNation,
+                GuestNation = State.GuestNation,
                 IsHost = true
             };
             transport.Send(guestConnection, LobbyProtocol.StartMatch(setup));
@@ -202,6 +220,7 @@ namespace Marchlands.Network
 
             guestConnection = connection;
             State.GuestName = string.IsNullOrWhiteSpace(name) ? "Гость" : name.Trim();
+            State.GuestNation = Nation.France;
             State.GuestReady = false;
             State.HostReady = false;
             transport.Send(connection, LobbyProtocol.Welcome());
@@ -287,8 +306,9 @@ namespace Marchlands.Network
         {
         }
 
-        public void SwapSides()
+        public void SetNation(Nation nation)
         {
+            send(LobbyProtocol.SetNation(nation));
         }
 
         public void SetFogOfWar(bool fog)

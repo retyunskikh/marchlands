@@ -111,7 +111,16 @@ namespace Marchlands.Bootstrap
                 scenario = maps[Mathf.Clamp(MapChoice.Selected, 0, maps.Length - 1)];
             }
 
-            playerSide = network != null ? network.LocalSide : playerSide;
+            playerSide = network != null ? network.LocalSide : scenario.PlayerSide;
+            // Нации сторон: в сетевом бою — выбранные игроками (могут совпасть), иначе Франция и Австрия.
+            if (network != null)
+            {
+                Armies.Configure(network.NationOf(Side.France), network.NationOf(Side.Austria));
+            }
+            else
+            {
+                Armies.Reset();
+            }
             match = new Match(network != null ? network.Seed : unchecked((ulong)seed), balance.CreateSettings());
             clock = new FixedStepClock(SimulationTime.TicksPerSecond, SimulationTime.MaxTicksPerAdvance);
             SpawnScenario();

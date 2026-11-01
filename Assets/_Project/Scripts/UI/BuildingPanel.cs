@@ -3,6 +3,7 @@ using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Commands;
 using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
+using Marchlands.View;
 using Marchlands.Simulation.Squads;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -339,7 +340,7 @@ namespace Marchlands.UI
                 return;
             }
 
-            Sprite[] portraits = building.Owner == Side.France ? francePortraits : austriaPortraits;
+            Sprite[] portraits = Armies.NationOf(building.Owner) == Nation.France ? francePortraits : austriaPortraits;
             if (portraits != null && (int)type < portraits.Length)
             {
                 toggle.SetIcon(portraits[(int)type]);
@@ -369,7 +370,7 @@ namespace Marchlands.UI
                 return;
             }
 
-            Sprite[] portraits = building.Owner == Side.France ? francePortraits : austriaPortraits;
+            Sprite[] portraits = Armies.NationOf(building.Owner) == Nation.France ? francePortraits : austriaPortraits;
             if (portraits != null && (int)UnitType.Artillery < portraits.Length)
             {
                 toggle.SetIcon(portraits[(int)UnitType.Artillery]);

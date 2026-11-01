@@ -336,6 +336,20 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void Lobby_GuestChoosesNation_HostSeesIt()
+        {
+            var transport = new RecordingTransport();
+            var host = new LobbyHost("Сервер", string.Empty, "Хост", transport);
+            host.Receive(1, LobbyProtocol.Hello("Гость", string.Empty));
+            host.SetReady(true);
+            host.Receive(1, LobbyProtocol.SetNation(Nation.Austria));
+            Assert.AreEqual(Nation.Austria, host.State.GuestNation);
+            Assert.IsFalse(host.State.HostReady, "смена нации снимает готовность");
+            host.SetNation(Nation.Austria);
+            Assert.AreEqual(Nation.Austria, LobbyProtocol.ReadState(transport.Last(1, NetMessageType.LobbyState)).HostNation);
+        }
+
+        [Test]
         public void Lobby_NoPassword_AcceptsAnyone()
         {
             var transport = new RecordingTransport();

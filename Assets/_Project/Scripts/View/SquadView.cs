@@ -42,6 +42,8 @@ namespace Marchlands.View
         private SpriteRenderer targetMarker;
         private SpriteRenderer moraleBackground;
         private SpriteRenderer moraleFill;
+        private SpriteRenderer bannerCloth;
+        private SpriteRenderer bannerPole;
 
         private readonly List<SoldierRole> roles = new List<SoldierRole>();
 
@@ -126,6 +128,12 @@ namespace Marchlands.View
             targetMarker.enabled = false;
             moraleBackground = CreateRenderer("Morale", style.MarkerSprite, style.MoraleBarBackground, style.RingSortingOrder);
             moraleFill = CreateRenderer("Morale Fill", style.MarkerSprite, style.MoraleRoutingColor, style.RingSortingOrder + 1);
+            if (style.BannerSprite != null)
+            {
+                // Знамя цвета игрока: отряды одной нации у разных игроков различимы.
+                bannerPole = CreateRenderer("Banner Pole", style.MarkerSprite, style.BannerPoleColor, style.RingSortingOrder);
+                bannerCloth = CreateRenderer("Banner", style.BannerSprite, style.GetSideColor(squad.Side), style.RingSortingOrder + 1);
+            }
             CreateRing();
             if (squad.IsArtillery)
             {
@@ -308,6 +316,8 @@ namespace Marchlands.View
             {
                 across = -across;
             }
+
+            RenderBanner(barCenter, barSize, -across);
 
             float barAcross = math.abs(across.x) * barSize.x * 0.5f + math.abs(across.y) * barSize.y * 0.5f;
             float2 countAt = barCenter + across * (barAcross + style.CountGap);
@@ -614,6 +624,43 @@ namespace Marchlands.View
 
             // Пушку на передке тянут позади расчёта — индикаторы за ней, а не поверх.
             return squad.IsArtillery && squad.IsLimbered ? halfDepth + match.Settings.guns.towLength + GunRearGap : halfDepth;
+        }
+
+        /// <summary>
+        /// Знамя цвета игрока — с той стороны полоски морали, где нет численности (поперёк направления в тыл, так что
+        /// не налезает ни на отряд, ни на кольцо перезарядки): под полоской или слева от неё; полотнище — вровень.
+        /// </summary>
+        private void RenderBanner(float2 barCenter, Vector2 barSize, float2 side)
+        {
+            if (bannerCloth == null)
+            {
+                return;
+            }
+
+            float height = style.BannerHeight;
+            float clothHeight = height * 0.45f;
+            float clothWidth = style.BannerClothWidth;
+            float poleWidth = style.BannerPoleWidth;
+            float2 clothCenter;
+            if (math.abs(side.y) >= math.abs(side.x))
+            {
+                // Под полоской: полотнище сразу под ней, древко у его левого края.
+                clothCenter = new float2(barCenter.x, barCenter.y - barSize.y * 0.5f - style.BannerGap - clothHeight * 0.5f);
+            }
+            else
+            {
+                // Слева от полоски, вровень с ней.
+                clothCenter = new float2(barCenter.x - barSize.x * 0.5f - style.BannerGap - clothWidth * 0.5f, barCenter.y);
+            }
+
+            float poleX = clothCenter.x - clothWidth * 0.5f - poleWidth * 0.5f;
+            float poleTop = clothCenter.y + clothHeight * 0.5f;
+            bannerPole.transform.SetPositionAndRotation(new Vector3(poleX, poleTop - height * 0.5f, 0f), Quaternion.identity);
+            bannerPole.transform.localScale = new Vector3(poleWidth, height, 1f);
+
+            Vector2 spriteSize = style.BannerSprite.bounds.size;
+            bannerCloth.transform.SetPositionAndRotation(new Vector3(clothCenter.x, clothCenter.y, 0f), Quaternion.identity);
+            bannerCloth.transform.localScale = new Vector3(clothWidth / spriteSize.x, clothHeight / spriteSize.y, 1f);
         }
 
         /// <summary>Горизонтальная полоска морали: заполнение слева направо, цвет по состоянию.</summary>

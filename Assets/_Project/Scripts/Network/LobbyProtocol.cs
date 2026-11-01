@@ -30,6 +30,10 @@ namespace Marchlands.Network
         public bool HostReady;
         public bool GuestReady;
 
+        /// <summary>Нация каждого игрока — выбирает сам, по умолчанию Франция.</summary>
+        public Nation HostNation = Nation.France;
+        public Nation GuestNation = Nation.France;
+
         public bool HasGuest => !string.IsNullOrEmpty(GuestName);
 
         public Side GuestSide => HostSide == Side.France ? Side.Austria : Side.France;
@@ -43,6 +47,14 @@ namespace Marchlands.Network
         public Side HostSide;
         public bool FogOfWar;
         public bool IsHost;
+        public Nation HostNation;
+        public Nation GuestNation;
+
+        /// <summary>Нация стороны боя: у стороны хоста — его, у другой — гостя.</summary>
+        public Nation NationOf(Side side)
+        {
+            return side == HostSide ? HostNation : GuestNation;
+        }
 
         public Side LocalSide => IsHost ? HostSide : (HostSide == Side.France ? Side.Austria : Side.France);
     }
@@ -53,7 +65,7 @@ namespace Marchlands.Network
     /// </summary>
     public static class LobbyProtocol
     {
-        public const int Version = 1;
+        public const int Version = 2;
         internal const int MaxNameLength = 32;
         private const int MaxChatLength = 200;
 
@@ -126,6 +138,8 @@ namespace Marchlands.Network
                 writer.Write(state.FogOfWar);
                 writer.Write(state.HostReady);
                 writer.Write(state.GuestReady);
+                writer.Write((byte)state.HostNation);
+                writer.Write((byte)state.GuestNation);
             });
         }
 
@@ -142,7 +156,9 @@ namespace Marchlands.Network
                     HostSide = reader.ReadByte() == (byte)Side.Austria ? Side.Austria : Side.France,
                     FogOfWar = reader.ReadBoolean(),
                     HostReady = reader.ReadBoolean(),
-                    GuestReady = reader.ReadBoolean()
+                    GuestReady = reader.ReadBoolean(),
+                    HostNation = ReadNation(reader),
+                    GuestNation = ReadNation(reader)
                 };
             }
         }
@@ -187,6 +203,8 @@ namespace Marchlands.Network
                 writer.Write(setup.Map);
                 writer.Write((byte)setup.HostSide);
                 writer.Write(setup.FogOfWar);
+                writer.Write((byte)setup.HostNation);
+                writer.Write((byte)setup.GuestNation);
             });
         }
 
@@ -201,9 +219,30 @@ namespace Marchlands.Network
                     Map = reader.ReadInt32(),
                     HostSide = reader.ReadByte() == (byte)Side.Austria ? Side.Austria : Side.France,
                     FogOfWar = reader.ReadBoolean(),
+                    HostNation = ReadNation(reader),
+                    GuestNation = ReadNation(reader),
                     IsHost = false
                 };
             }
+        }
+
+        /// <summary>Игрок выбрал себе нацию.</summary>
+        public static byte[] SetNation(Nation nation)
+        {
+            return Build(NetMessageType.SetNation, writer => writer.Write((byte)nation));
+        }
+
+        public static Nation ReadSetNation(byte[] message)
+        {
+            using (BinaryReader reader = Open(message))
+            {
+                return ReadNation(reader);
+            }
+        }
+
+        private static Nation ReadNation(BinaryReader reader)
+        {
+            return reader.ReadByte() == (byte)Nation.Austria ? Nation.Austria : Nation.France;
         }
 
         public static byte[] Leave()

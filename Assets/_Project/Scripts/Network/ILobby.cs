@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Marchlands.Simulation.Core;
 
 namespace Marchlands.Network
 {
@@ -30,7 +31,8 @@ namespace Marchlands.Network
 
         void SetMap(int map);
 
-        void SwapSides();
+        /// <summary>Выбрать себе нацию (любой игрок; снимает готовность).</summary>
+        void SetNation(Nation nation);
 
         void SetFogOfWar(bool fog);
 

@@ -12,6 +12,7 @@ namespace Marchlands.Network
         Chat = 6,
         StartMatch = 7,
         Leave = 8,
+        SetNation = 9,
 
         // Матч.
         TickInput = 20,

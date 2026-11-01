@@ -179,6 +179,37 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void EachPlayerChoosesNation_DefaultFrance_ResetsReady_PassedToMatch()
+        {
+            Net net = CreateNet();
+            RelayLobby host = net.Connect(1, "Хост");
+            RelayLobby guest = net.Connect(2, "Гость");
+            host.Create("Комната", string.Empty);
+            guest.Join(1, string.Empty);
+            Assert.AreEqual(Nation.France, host.State.HostNation, "по умолчанию — Франция");
+            Assert.AreEqual(Nation.France, host.State.GuestNation);
+
+            host.SetReady(true);
+            guest.SetReady(true);
+            guest.SetNation(Nation.Austria);
+            Assert.AreEqual(Nation.Austria, host.State.GuestNation, "гость выбрал сам");
+            Assert.AreEqual(Nation.France, host.State.HostNation);
+            Assert.IsFalse(host.State.HostReady || host.State.GuestReady, "смена нации снимает готовность");
+
+            guest.SetNation(Nation.France);
+            host.SetReady(true);
+            guest.SetReady(true);
+            MatchSetup hostSetup = null;
+            MatchSetup guestSetup = null;
+            host.Started += setup => hostSetup = setup;
+            guest.Started += setup => guestSetup = setup;
+            host.StartMatch();
+            Assert.AreEqual(Nation.France, guestSetup.NationOf(Side.France));
+            Assert.AreEqual(Nation.France, guestSetup.NationOf(Side.Austria), "обе стороны — французы");
+            Assert.AreEqual(hostSetup.HostNation, guestSetup.HostNation);
+        }
+
+        [Test]
         public void HostLeavesBeforeMatch_RoomClosed_GuestLeaves_RoomStays()
         {
             Net net = CreateNet();

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
+using Marchlands.View;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -28,6 +29,9 @@ namespace Marchlands.UI
         [SerializeField] private string dominationFormat = "{0} держит деревни: {1}";
         [SerializeField] private string franceName = "Франция";
         [SerializeField] private string austriaName = "Австрия";
+        [Tooltip("Если у обеих сторон одна нация: кто удерживает деревни.")]
+        [SerializeField] private string youName = "Вы";
+        [SerializeField] private string enemyName = "Противник";
         [SerializeField] private Color ownDominationColor = new Color(0.6f, 1f, 0.6f);
         [SerializeField] private Color enemyDominationColor = new Color(1f, 0.55f, 0.45f);
 
@@ -125,7 +129,9 @@ namespace Marchlands.UI
             }
 
             shownDominationSeconds = remaining;
-            string sideName = leader == Side.France ? franceName : austriaName;
+            // Одна нация у обоих — по названию не отличить: «Вы» и «Противник».
+            string sideName = Armies.SameNation ? (leader == playerSide ? youName : enemyName)
+                : Armies.NationOf(leader) == Nation.France ? franceName : austriaName;
             dominationLabel.text = string.Format(dominationFormat, sideName, $"{remaining / 60}:{remaining % 60:00}");
             dominationLabel.color = leader == playerSide ? ownDominationColor : enemyDominationColor;
         }

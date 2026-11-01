@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Marchlands.Simulation.Core;
 
 namespace Marchlands.Network.Relay
 {
@@ -134,6 +135,14 @@ namespace Marchlands.Network.Relay
             if (IsHost && State != null)
             {
                 send(RelayProtocol.RoomSettings(State.Map, State.GuestSide, State.FogOfWar));
+            }
+        }
+
+        public void SetNation(Nation nation)
+        {
+            if (IsJoined)
+            {
+                send(LobbyProtocol.SetNation(nation));
             }
         }
 

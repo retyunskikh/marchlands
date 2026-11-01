@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Core;
+using Marchlands.View;
 using Marchlands.Simulation.Morale;
 using Marchlands.Simulation.Squads;
 using UnityEngine;
@@ -326,7 +327,7 @@ namespace Marchlands.UI
 
         private void SetPortrait(Side side, UnitType type)
         {
-            Sprite[] portraits = side == Side.France ? francePortraits : austriaPortraits;
+            Sprite[] portraits = Armies.NationOf(side) == Nation.France ? francePortraits : austriaPortraits;
             int index = (int)type;
             if (portraits != null && index < portraits.Length && portraits[index] != null && portrait.sprite != portraits[index])
             {
