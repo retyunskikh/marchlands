@@ -22,8 +22,8 @@ namespace Marchlands.Network
     {
         private readonly Match match;
         private readonly ILockstepLink link;
-        private readonly int inputDelay;
         private readonly int hashInterval;
+        private int inputDelay;
         private readonly List<ICommand> pending = new List<ICommand>();
         private readonly Dictionary<int, List<ICommand>>[] inputs =
         {
@@ -33,6 +33,9 @@ namespace Marchlands.Network
         private readonly Dictionary<int, ulong> localHashes = new Dictionary<int, ulong>();
         private readonly Dictionary<int, ulong> remoteHashes = new Dictionary<int, ulong>();
         private readonly int firstTick;
+
+        // Первые тики (по начальной задержке — она одинакова у обеих машин) пустые у всех без пересылки.
+        private readonly int implicitTicks;
         private int sentUpTo;
 
         public LockstepSession(Match match, Side localSide, int inputDelay, int hashInterval, ILockstepLink link)
@@ -43,7 +46,18 @@ namespace Marchlands.Network
             this.inputDelay = Math.Max(1, inputDelay);
             this.hashInterval = Math.Max(1, hashInterval);
             firstTick = match.CurrentTick;
+            implicitTicks = this.inputDelay;
             sentUpTo = firstTick + this.inputDelay - 1;
+        }
+
+        /// <summary>
+        /// Через сколько тиков исполняется свой приказ. Можно менять на ходу (подстройка под сеть): при увеличении
+        /// пропущенные тики уходят сопернику пустыми, при уменьшении новые приказы ждут, пока тики догонят уже отправленные.
+        /// </summary>
+        public int InputDelay
+        {
+            get => inputDelay;
+            set => inputDelay = Math.Max(1, value);
         }
 
         public Side LocalSide { get; }
@@ -118,9 +132,10 @@ namespace Marchlands.Network
 
             int tick = match.CurrentTick;
             int closing = tick + inputDelay;
-            if (sentUpTo < closing)
+            // Каждый тик — ровно одно сообщение; приказы — в самый ранний ещё не отправленный тик.
+            while (sentUpTo < closing)
             {
-                SendInput(closing);
+                SendInput(sentUpTo + 1);
             }
 
             if (!HasInput(Side.France, tick) || !HasInput(Side.Austria, tick))
@@ -158,7 +173,7 @@ namespace Marchlands.Network
         private bool HasInput(Side side, int tick)
         {
             // Первые inputDelay тиков ни у кого приказов быть не может — они пустые без пересылки.
-            return tick < firstTick + inputDelay || inputs[(int)side].ContainsKey(tick);
+            return tick < firstTick + implicitTicks || inputs[(int)side].ContainsKey(tick);
         }
 
         private void Schedule(Side side, int tick)

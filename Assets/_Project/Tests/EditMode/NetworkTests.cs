@@ -199,6 +199,67 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void Lockstep_DelayChangesOnTheFly_StaysInSync()
+        {
+            Match france = CreateTwin();
+            Match austria = CreateTwin();
+            var toAustria = new QueueLink();
+            var toFrance = new QueueLink();
+            var a = new LockstepSession(france, Side.France, 3, 10, toAustria);
+            var b = new LockstepSession(austria, Side.Austria, 3, 10, toFrance);
+            bool desync = false;
+            a.Desynced += () => desync = true;
+            b.Desynced += () => desync = true;
+            var random = new System.Random(3);
+            Squad frenchSquad = france.Squads.First(s => s.Side == Side.France);
+            Squad austrianSquad = austria.Squads.First(s => s.Side == Side.Austria);
+            var delays = new[] { 1, 5, 2, 8, 1, 3 };
+
+            for (int frame = 0; frame < 4000 && (france.CurrentTick < 500 || austria.CurrentTick < 500); frame++)
+            {
+                if (frame % 120 == 0)
+                {
+                    a.InputDelay = delays[(frame / 120) % delays.Length];
+                    b.InputDelay = delays[(frame / 120 + 2) % delays.Length];
+                }
+
+                if (random.NextDouble() < 0.05)
+                {
+                    a.Submit(new MoveCommand(frenchSquad.Id, new float2(random.Next(-20, 20), random.Next(0, 20)), 90f));
+                }
+
+                if (random.NextDouble() < 0.05)
+                {
+                    b.Submit(new MoveCommand(austrianSquad.Id, new float2(random.Next(-20, 20), random.Next(20, 40)), 270f));
+                }
+
+                if (random.NextDouble() < 0.8)
+                {
+                    a.TryAdvance();
+                }
+
+                if (random.NextDouble() < 0.8)
+                {
+                    b.TryAdvance();
+                }
+
+                while (toAustria.Sent.Count > 0)
+                {
+                    b.Receive(toAustria.Sent.Dequeue());
+                }
+
+                while (toFrance.Sent.Count > 0)
+                {
+                    a.Receive(toFrance.Sent.Dequeue());
+                }
+            }
+
+            Assert.IsFalse(desync);
+            Assert.GreaterOrEqual(france.CurrentTick, 500, "никто не застрял из-за пропущенного тика");
+            Assert.GreaterOrEqual(austria.CurrentTick, 500);
+        }
+
+        [Test]
         public void Lockstep_WaitsForOpponentInput()
         {
             Match match = CreateTwin();

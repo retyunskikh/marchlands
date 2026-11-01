@@ -31,8 +31,15 @@ namespace Marchlands.Bootstrap
         [SerializeField] private int seed = 1;
 
         [Header("Сетевая игра")]
-        [Tooltip("Через сколько тиков исполняется приказ (обе машины — на одном тике): запас на задержку сети.")]
-        [SerializeField] private int networkInputDelay = 4;
+        [Tooltip("Начальная задержка приказа в тиках (одинакова у обеих машин), дальше — по измеренному пингу.")]
+        [SerializeField] private int networkInputDelay = 3;
+        [Tooltip("Пределы задержки приказа, тиков: в локальной сети — 1 (0,1 с).")]
+        [SerializeField] private int networkMinDelay = 1;
+        [SerializeField] private int networkMaxDelay = 8;
+        [Tooltip("Запас сверх пути приказа до соперника, мс (не меньше двух разбросов пинга).")]
+        [SerializeField] private float networkLatencyMargin = 25f;
+        [Tooltip("Как часто пересчитывать задержку по пингу, с.")]
+        [SerializeField] private float networkAdaptInterval = 1f;
         [Tooltip("Раз в столько тиков стороны сверяют контрольную сумму состояния.")]
         [SerializeField] private int networkHashInterval = 10;
         [Tooltip("Сколько тиков можно догонять за раз после задержки соперника.")]
@@ -74,6 +81,10 @@ namespace Marchlands.Bootstrap
         private LockstepSession lockstep;
         private int backlog;
         private float waitingTime;
+        private float adaptTimer;
+        private float stallSeconds;
+        private int stallExtra;
+        private int quietSeconds;
 
         private sealed class PeerLink : ILockstepLink
         {
@@ -314,9 +325,52 @@ namespace Marchlands.Bootstrap
                 AfterTick();
             }
 
-            waitingTime = lockstep.IsWaiting && backlog > 0 ? waitingTime + Time.unscaledDeltaTime : 0f;
+            bool waiting = lockstep.IsWaiting && backlog > 0;
+            waitingTime = waiting ? waitingTime + Time.unscaledDeltaTime : 0f;
+            stallSeconds += waiting ? Time.unscaledDeltaTime : 0f;
             gameMenu.SetWaiting(waitingTime >= networkWaitingNotice);
+            adaptTimer += Time.unscaledDeltaTime;
+            if (adaptTimer >= networkAdaptInterval)
+            {
+                adaptTimer = 0f;
+                AdaptDelay();
+            }
+
             return done;
+        }
+
+        /// <summary>
+        /// Задержка приказа по сети: путь приказа до соперника (напрямую — половина пинга, через сервер — пинг до
+        /// сервера: половина у нас плюс столько же у соперника) плюс запас, в тиках. Растёт сразу, уменьшается по тику
+        /// в секунду. Если всё же ждём соперника — добавляется тик, пока 10 с не будет спокойно.
+        /// </summary>
+        private void AdaptDelay()
+        {
+            if (stallSeconds > 0.15f)
+            {
+                stallExtra = Mathf.Min(stallExtra + 1, 3);
+                quietSeconds = 0;
+            }
+            else if (++quietSeconds >= 10 && stallExtra > 0)
+            {
+                stallExtra--;
+                quietSeconds = 0;
+            }
+
+            stallSeconds = 0f;
+            NetworkSession session = NetworkGame.Session;
+            if (session == null || !session.TryGetLatency(NetworkGame.PeerConnection, out float roundTrip, out float jitter))
+            {
+                return;
+            }
+
+            float oneWay = NetworkGame.IsRelay ? roundTrip : roundTrip * 0.5f;
+            float needed = oneWay + Mathf.Max(networkLatencyMargin, 2f * jitter);
+            float tickMs = 1000f / SimulationTime.TicksPerSecond;
+            int target = Mathf.Clamp(Mathf.CeilToInt(needed / tickMs) + stallExtra, networkMinDelay, networkMaxDelay);
+            int current = lockstep.InputDelay;
+            lockstep.InputDelay = target > current ? target : target < current ? current - 1 : current;
+            gameMenu.SetNetworkInfo(Mathf.RoundToInt(roundTrip), lockstep.InputDelay * tickMs / 1000f);
         }
 
         private void Update()

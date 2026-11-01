@@ -134,6 +134,24 @@ namespace Marchlands.Network
                 && driver.GetConnectionState(connections[connection]) == NetworkConnection.State.Connected;
         }
 
+        /// <summary>
+        /// Измеренный транспортом пинг соединения (туда-обратно, сглаженный) и его разброс, мс; false — ещё не измерен.
+        /// </summary>
+        public bool TryGetLatency(int connection, out float roundTripMs, out float jitterMs)
+        {
+            roundTripMs = 0f;
+            jitterMs = 0f;
+            if (!IsConnected(connection))
+            {
+                return false;
+            }
+
+            var latency = driver.GetConnectionStatistics(connections[connection]).Latency;
+            roundTripMs = latency.SmoothedCurrent;
+            jitterMs = latency.StandardDeviation;
+            return roundTripMs > 0f;
+        }
+
         public void Send(int connection, byte[] message)
         {
             if (!IsConnected(connection) || message == null)

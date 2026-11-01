@@ -47,9 +47,13 @@ namespace Marchlands.UI
         [SerializeField] private string desyncReason = "Игры разошлись (рассинхронизация) — бой остановлен";
         [SerializeField] private string waitingText = "Ожидание соперника…";
         [SerializeField] private Color waitingColor = new Color(0.96f, 0.9f, 0.75f);
+        [Tooltip("Строка о сети в сетевом бою: {0} — пинг, мс; {1} — через сколько исполняется приказ, с.")]
+        [SerializeField] private string networkInfoFormat = "Пинг {0} мс · приказ через {1:0.0} с";
+        [SerializeField] private Color networkInfoColor = new Color(0.96f, 0.9f, 0.75f, 0.7f);
 
         private bool isNetwork;
         private Text waitingLabel;
+        private Text networkInfoLabel;
 
         private Match match;
         private Side playerSide;
@@ -121,6 +125,30 @@ namespace Marchlands.UI
         }
 
         public bool IsOver => resultShown;
+
+        /// <summary>Пинг и задержка приказа в сетевом бою — мелко в правом нижнем углу.</summary>
+        public void SetNetworkInfo(int pingMs, float delaySeconds)
+        {
+            if (networkInfoLabel == null)
+            {
+                var labelObject = new GameObject("Сеть", typeof(RectTransform), typeof(Text), typeof(Outline));
+                var rect = (RectTransform)labelObject.transform;
+                rect.SetParent(resultOverlay.transform.parent, false);
+                rect.anchorMin = new Vector2(1f, 0f);
+                rect.anchorMax = new Vector2(1f, 0f);
+                rect.pivot = new Vector2(1f, 0f);
+                rect.anchoredPosition = new Vector2(-24f, 12f);
+                rect.sizeDelta = new Vector2(700f, 40f);
+                networkInfoLabel = labelObject.GetComponent<Text>();
+                networkInfoLabel.font = resultTitle.font;
+                networkInfoLabel.fontSize = 26;
+                networkInfoLabel.alignment = TextAnchor.LowerRight;
+                networkInfoLabel.color = networkInfoColor;
+                networkInfoLabel.raycastTarget = false;
+            }
+
+            networkInfoLabel.text = string.Format(System.Globalization.CultureInfo.GetCultureInfo("ru-RU"), networkInfoFormat, pingMs, delaySeconds);
+        }
 
         /// <summary>Надпись «Ожидание соперника…», пока он отстаёт или его приказы не дошли.</summary>
         public void SetWaiting(bool waiting)
