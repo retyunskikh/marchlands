@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
@@ -33,6 +34,32 @@ namespace Marchlands.Editor
             Build(BuildTarget.StandaloneWindows64, Path.Combine(folder, $"Marchlands-{number}", "Marchlands.exe"));
         }
 
+        /// <summary>Сцена выделенного сервера комнат: в клиентские сборки не входит.</summary>
+        private const string ServerScene = "Assets/_Project/Scenes/Server.unity";
+
+        /// <summary>
+        /// Сервер комнат для VPS: Linux Dedicated Server (без графики и звука), Mono — сборке под Linux из Windows так
+        /// не нужен отдельный набор инструментов. Папка Builds/Server/Marchlands-Server-N с MarchlandsServer.x86_64.
+        /// </summary>
+        [MenuItem("Marchlands/Сборка сервера (Linux)")]
+        public static void BuildServer()
+        {
+            string folder = Path.Combine(BuildsRoot, "Server");
+            int number = NextNumber(folder, @"Marchlands-Server-(\d+)$");
+            PlayerSettings.SetScriptingBackend(NamedBuildTarget.Server, ScriptingImplementation.Mono2x);
+            string path = Path.Combine(folder, $"Marchlands-Server-{number}", "MarchlandsServer.x86_64");
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            Run(new BuildPlayerOptions
+            {
+                scenes = new[] { ServerScene },
+                locationPathName = path,
+                target = BuildTarget.StandaloneLinux64,
+                subtarget = (int)StandaloneBuildSubtarget.Server,
+                targetGroup = BuildTargetGroup.Standalone,
+                options = BuildOptions.None
+            });
+        }
+
         /// <summary>Окно ПК-версии: по умолчанию во весь экран, 1920×1080, размер окна можно менять.</summary>
         public static void ApplyWindowsSettings()
         {
@@ -46,16 +73,27 @@ namespace Marchlands.Editor
         private static void Build(BuildTarget target, string path)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
-            var options = new BuildPlayerOptions
+            Run(new BuildPlayerOptions
             {
-                scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray(),
+                scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled && scene.path != ServerScene).Select(scene => scene.path).ToArray(),
                 locationPathName = path,
                 target = target,
                 targetGroup = BuildPipeline.GetBuildTargetGroup(target),
                 options = BuildOptions.None
-            };
+            });
+        }
 
+        private static void Run(BuildPlayerOptions options)
+        {
+            string path = options.locationPathName;
             BuildReport report = BuildPipeline.BuildPlayer(options);
+            // Бывает «успех» без файла (например, модуль платформы установлен, но редактор не перезапущен).
+            if (report.summary.result == BuildResult.Succeeded && !File.Exists(path))
+            {
+                Debug.LogError($"Сборка не удалась: {path} не создан. Если модуль платформы только что установлен — перезапустите редактор.");
+                return;
+            }
+
             if (report.summary.result == BuildResult.Succeeded)
             {
                 // Отладочные данные Burst игроку не нужны (Unity сам называет папку DoNotShip).

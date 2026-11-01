@@ -12,7 +12,10 @@ namespace Marchlands.Network
         WrongPassword = 1,
         Full = 2,
         VersionMismatch = 3,
-        InGame = 4
+        InGame = 4,
+        RoomNotFound = 5,
+        RoomClosed = 6,
+        TooManyRooms = 7
     }
 
     /// <summary>Что видно в комнате: сервер, игроки, карта, стороны, туман, готовность.</summary>
@@ -51,7 +54,7 @@ namespace Marchlands.Network
     public static class LobbyProtocol
     {
         public const int Version = 1;
-        private const int MaxNameLength = 32;
+        internal const int MaxNameLength = 32;
         private const int MaxChatLength = 200;
 
         public static string HashPassword(string password)
@@ -213,7 +216,7 @@ namespace Marchlands.Network
             return Build(NetMessageType.Quit, writer => { });
         }
 
-        private static byte[] Build(NetMessageType type, Action<BinaryWriter> body)
+        internal static byte[] Build(NetMessageType type, Action<BinaryWriter> body)
         {
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream, Encoding.UTF8))
@@ -226,14 +229,14 @@ namespace Marchlands.Network
         }
 
         /// <summary>Читатель тела сообщения (после байта типа).</summary>
-        private static BinaryReader Open(byte[] message)
+        internal static BinaryReader Open(byte[] message)
         {
             var reader = new BinaryReader(new MemoryStream(message), Encoding.UTF8);
             reader.ReadByte();
             return reader;
         }
 
-        private static string Clip(string value, int length)
+        internal static string Clip(string value, int length)
         {
             value = value ?? string.Empty;
             return value.Length <= length ? value : value.Substring(0, length);

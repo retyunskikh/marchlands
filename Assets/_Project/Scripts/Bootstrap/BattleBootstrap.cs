@@ -32,7 +32,7 @@ namespace Marchlands.Bootstrap
 
         [Header("Сетевая игра")]
         [Tooltip("Через сколько тиков исполняется приказ (обе машины — на одном тике): запас на задержку сети.")]
-        [SerializeField] private int networkInputDelay = 3;
+        [SerializeField] private int networkInputDelay = 4;
         [Tooltip("Раз в столько тиков стороны сверяют контрольную сумму состояния.")]
         [SerializeField] private int networkHashInterval = 10;
         [Tooltip("Сколько тиков можно догонять за раз после задержки соперника.")]

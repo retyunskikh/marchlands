@@ -16,6 +16,15 @@ namespace Marchlands.Network
         // Матч.
         TickInput = 20,
         StateHash = 21,
-        Quit = 22
+        Quit = 22,
+
+        // Сервер комнат в интернете (VPS).
+        ListRooms = 30,
+        RoomList = 31,
+        CreateRoom = 32,
+        JoinRoom = 33,
+        RoomSettings = 34,
+        StartRequest = 35,
+        RoomJoined = 36
     }
 }

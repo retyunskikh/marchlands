@@ -1,0 +1,17 @@
+{
+    "name": "Game.Server",
+    "rootNamespace": "Marchlands.Server",
+    "references": [
+        "Game.Network",
+        "Game.Simulation"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

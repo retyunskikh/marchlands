@@ -20,6 +20,12 @@ namespace Marchlands.Network
 
         public static LobbyGuest Guest { get; set; }
 
+        /// <summary>Текущая комната (локальная сеть или сервер в интернете) — для экрана и выхода.</summary>
+        public static ILobby Lobby { get; set; }
+
+        /// <summary>Соединение с сервером комнат в интернете (а не с другим игроком напрямую).</summary>
+        public static bool IsRelay { get; set; }
+
         /// <summary>Параметры начатого сетевого матча; null — обычная игра против ИИ.</summary>
         public static MatchSetup Setup { get; set; }
 
@@ -80,6 +86,8 @@ namespace Marchlands.Network
             Session = null;
             Host = null;
             Guest = null;
+            Lobby = null;
+            IsRelay = false;
             Setup = null;
             handler = null;
             buffered.Clear();
@@ -110,9 +118,9 @@ namespace Marchlands.Network
             {
                 SendToPeer(LobbyProtocol.Quit());
             }
-            else if (Guest != null)
+            else
             {
-                Guest.Leave();
+                Lobby?.Leave();
             }
 
             Shutdown();

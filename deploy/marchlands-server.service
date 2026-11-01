@@ -1,0 +1,20 @@
+[Unit]
+Description=Marchlands room server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=marchlands
+WorkingDirectory=/opt/marchlands/server
+ExecStart=/opt/marchlands/server/MarchlandsServer.x86_64 -batchmode -nographics -logfile - -port 7777
+Restart=always
+RestartSec=3
+# Сервер почти не ест ресурсов; ограничим на всякий случай.
+MemoryMax=512M
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -31,7 +31,7 @@ namespace Marchlands.Network
     /// стороны, туман и готовность, пересылает чат. Любое изменение карты, сторон или тумана снимает готовность.
     /// Начать можно, когда гость есть и оба готовы.
     /// </summary>
-    public sealed class LobbyHost
+    public sealed class LobbyHost : ILobby
     {
         public const int MaxChatLines = 50;
 
@@ -59,8 +59,27 @@ namespace Marchlands.Network
 
         public bool CanStart => State.HasGuest && State.HostReady && State.GuestReady && !IsStarted;
 
+        public bool IsHost => true;
+
         /// <summary>Что-то в комнате изменилось — перерисовать.</summary>
         public event Action Changed;
+
+        public event Action<MatchSetup> Started;
+
+        /// <summary>Начать бой со случайным seed; параметры — в <see cref="Started"/>.</summary>
+        public void StartMatch()
+        {
+            MatchSetup setup = Start(unchecked((ulong)DateTime.Now.Ticks));
+            if (setup != null)
+            {
+                Started?.Invoke(setup);
+            }
+        }
+
+        /// <summary>Уход создателя: соединение закрывает меню (гость увидит разрыв).</summary>
+        public void Leave()
+        {
+        }
 
         public void Receive(int connection, byte[] message)
         {
@@ -239,7 +258,7 @@ namespace Marchlands.Network
     /// Комната на стороне подключившегося (гостя): представляется серверу, получает состояние комнаты и чат,
     /// отправляет готовность и сообщения, узнаёт о старте матча.
     /// </summary>
-    public sealed class LobbyGuest
+    public sealed class LobbyGuest : ILobby
     {
         private readonly List<ChatLine> chat = new List<ChatLine>();
         private readonly Action<byte[]> send;
@@ -257,6 +276,28 @@ namespace Marchlands.Network
         public bool IsJoined { get; private set; }
 
         public IReadOnlyList<ChatLine> Chat => chat;
+
+        public bool IsHost => false;
+
+        public bool HasPassword => false;
+
+        public bool CanStart => false;
+
+        public void SetMap(int map)
+        {
+        }
+
+        public void SwapSides()
+        {
+        }
+
+        public void SetFogOfWar(bool fog)
+        {
+        }
+
+        public void StartMatch()
+        {
+        }
 
         public event Action Changed;
 
@@ -305,6 +346,7 @@ namespace Marchlands.Network
         {
             send(LobbyProtocol.Ready(ready));
         }
+
 
         public void SendChat(string text)
         {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Marchlands.Network;
+using Marchlands.Network.Relay;
 using Marchlands.Simulation.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -12,13 +13,16 @@ using UnityEngine.UI;
 namespace Marchlands.UI
 {
     /// <summary>
-    /// «Сетевая игра» в главном меню: список серверов локальной сети, подключение по IP, создание сервера (имя, пароль
-    /// по желанию), комната с игроками, картой, сторонами, туманом, готовностью и мини-чатом. Экран строится из кода
-    /// в стиле главного меню (спрайт, шрифт и цвета берутся с образца — кнопки «Обучение»).
+    /// «Сетевая игра» в главном меню. Вкладка «Интернет» — комнаты на сервере Marchlands (VPS): список, создание
+    /// с именем и паролем по желанию, вход. Вкладка «Локальная сеть» — серверы, найденные в сети, подключение по IP,
+    /// свой сервер. Комната одинакова для обоих случаев (<see cref="ILobby"/>): игроки, карта, стороны, туман,
+    /// готовность и мини-чат. Экран строится из кода в стиле главного меню (спрайт и шрифт — с образца).
     /// </summary>
     public sealed class NetworkMenu : MonoBehaviour
     {
         private const string PlayerNameKey = "Marchlands.PlayerName";
+        private const string ServerAddressKey = "Marchlands.ServerAddress";
+        private const int RowCount = 5;
 
         [SerializeField] private Button openButton;
         [Tooltip("Образец кнопки: её спрайт и шрифт.")]
@@ -27,10 +31,14 @@ namespace Marchlands.UI
         [SerializeField] private string battleSceneName = "Battle";
 
         [Header("Сеть")]
+        [Tooltip("Адрес сервера комнат в интернете (IP или домен, можно с «:порт»), пока игрок не ввёл свой.")]
+        [SerializeField] private string defaultServerAddress = "";
         [SerializeField] private int port = 7777;
         [SerializeField] private int discoveryPort = 47777;
         [Tooltip("Через сколько миллисекунд без ответа соединение считается оборванным.")]
         [SerializeField] private int disconnectTimeoutMs = 15000;
+        [Tooltip("Как часто обновлять список комнат сервера, с.")]
+        [SerializeField] private float roomListInterval = 3f;
 
         [Header("Цвета")]
         [SerializeField] private Color backdropColor = new Color(0.12f, 0.14f, 0.1f, 1f);
@@ -52,22 +60,32 @@ namespace Marchlands.UI
         private Sprite sprite;
         private Font font;
         private GameObject overlay;
-        private GameObject browser;
+        private GameObject internet;
+        private GameObject lan;
         private GameObject creator;
         private GameObject passwordPrompt;
         private GameObject room;
-        private Text browserStatus;
+        private GameObject header;
+        private Button internetTab;
+        private Button lanTab;
+        private Text internetStatus;
+        private Text lanStatus;
         private Text createStatus;
+        private Text createTitle;
         private Text passwordStatus;
         private Text roomStatus;
         private InputField playerNameField;
-        private InputField addressField;
-        private InputField serverNameField;
-        private InputField serverPasswordField;
+        private InputField serverAddressField;
+        private InputField lanAddressField;
+        private InputField roomNameField;
+        private InputField roomPasswordField;
         private InputField joinPasswordField;
-        private Text passwordServerLabel;
-        private Text emptyListLabel;
-        private readonly List<Button> serverRows = new List<Button>();
+        private Text passwordTargetLabel;
+        private Text internetEmpty;
+        private Text lanEmpty;
+        private readonly List<Button> internetRows = new List<Button>();
+        private readonly List<Button> lanRows = new List<Button>();
+        private readonly List<RelayRoomInfo> shownRooms = new List<RelayRoomInfo>();
         private readonly List<LanServer> shownServers = new List<LanServer>();
         private Text roomTitle;
         private Text roomAddress;
@@ -88,11 +106,17 @@ namespace Marchlands.UI
         private InputField chatField;
 
         private LanDiscovery discovery;
-        private float nextListRefresh;
+        private RelayLobby relay;
+        private bool relayConnected;
+        private float nextRefresh;
+        private bool loading;
+
+        // Куда входить после ввода пароля: в комнату сервера или на сервер локальной сети.
+        private bool pendingRelay;
+        private int pendingRoomId;
         private string pendingAddress;
         private int pendingPort;
-        private string pendingServerName;
-        private bool loading;
+        private string pendingName;
 
         private string PlayerName
         {
@@ -128,18 +152,14 @@ namespace Marchlands.UI
         private void Open()
         {
             overlay.SetActive(true);
-            ShowScreen(browser);
-            SetStatus(browserStatus, string.Empty, false);
-            discovery ??= new LanDiscovery(discoveryPort);
-            if (!discovery.StartListening())
-            {
-                SetStatus(browserStatus, "Поиск серверов недоступен — подключайтесь по адресу.", true);
-            }
+            OpenInternet();
         }
 
         private void Close()
         {
             NetworkGame.Shutdown();
+            relay = null;
+            relayConnected = false;
             discovery?.Dispose();
             discovery = null;
             overlay.SetActive(false);
@@ -160,16 +180,195 @@ namespace Marchlands.UI
                 discovery?.Announce(now, host.State.ServerName, NetworkGame.Session.Port, host.HasPassword, host.State.HasGuest);
             }
 
-            if (browser.activeSelf && Time.unscaledTime >= nextListRefresh)
+            if (Time.unscaledTime < nextRefresh)
             {
-                nextListRefresh = Time.unscaledTime + 0.5f;
-                RefreshServerList();
+                return;
+            }
+
+            if (lan.activeSelf)
+            {
+                nextRefresh = Time.unscaledTime + 0.5f;
+                RefreshLanList();
+            }
+            else if (internet.activeSelf && relayConnected)
+            {
+                nextRefresh = Time.unscaledTime + roomListInterval;
+                relay.RequestRooms();
             }
         }
 
-        // ---------- Список серверов и подключение ----------
+        // ---------- Интернет: сервер комнат ----------
 
-        private void RefreshServerList()
+        private void OpenInternet()
+        {
+            StopLan();
+            ShowScreen(internet);
+            ShowRooms(Array.Empty<RelayRoomInfo>());
+            if (relayConnected)
+            {
+                relay.RequestRooms();
+                return;
+            }
+
+            ConnectToServer();
+        }
+
+        private void ConnectToServer()
+        {
+            NetworkGame.Shutdown();
+            relay = null;
+            relayConnected = false;
+            string text = serverAddressField.text.Trim();
+            if (string.IsNullOrEmpty(text))
+            {
+                SetStatus(internetStatus, "Введите адрес сервера Marchlands.", true);
+                return;
+            }
+
+            PlayerPrefs.SetString(ServerAddressKey, text);
+            PlayerPrefs.Save();
+            SplitAddress(text, out string host, out int targetPort);
+            string address = Resolve(host);
+            NetworkSession session = address != null ? NetworkSession.Join(address, targetPort, disconnectTimeoutMs) : null;
+            if (session == null)
+            {
+                SetStatus(internetStatus, "Не удалось найти сервер «" + host + "».", true);
+                return;
+            }
+
+            NetworkGame.Begin(session);
+            NetworkGame.IsRelay = true;
+            var lobby = new RelayLobby(PlayerName, bytes => session.Send(0, bytes));
+            relay = lobby;
+            NetworkGame.Lobby = lobby;
+            NetworkGame.Handler = (connection, message) => lobby.Receive(message);
+            NetworkGame.Connected += connection =>
+            {
+                relayConnected = true;
+                SetStatus(internetStatus, "Подключено к серверу.", false);
+                lobby.RequestRooms();
+            };
+            NetworkGame.Disconnected += connection =>
+            {
+                bool wasConnected = relayConnected;
+                NetworkGame.Shutdown();
+                relay = null;
+                relayConnected = false;
+                if (overlay.activeSelf && !lan.activeSelf)
+                {
+                    ShowScreen(internet);
+                    ShowRooms(Array.Empty<RelayRoomInfo>());
+                    SetStatus(internetStatus, wasConnected ? "Связь с сервером потеряна." : "Сервер недоступен.", true);
+                }
+            };
+            lobby.RoomsReceived += ShowRooms;
+            lobby.Changed += () =>
+            {
+                if (!lobby.IsJoined || lobby.State == null)
+                {
+                    return;
+                }
+
+                if (!room.activeSelf)
+                {
+                    ShowScreen(room);
+                    SetStatus(roomStatus, string.Empty, false);
+                }
+
+                RefreshRoom();
+            };
+            lobby.Rejected += reason =>
+            {
+                if (reason == RejectReason.WrongPassword && pendingRelay)
+                {
+                    AskPassword("Неверный пароль.");
+                    return;
+                }
+
+                ShowScreen(internet);
+                lobby.RequestRooms();
+                SetStatus(internetStatus, RejectText(reason), true);
+            };
+            lobby.Started += BeginMatch;
+            SetStatus(internetStatus, "Подключение к " + host + "…", false);
+        }
+
+        private void ShowRooms(IReadOnlyList<RelayRoomInfo> rooms)
+        {
+            shownRooms.Clear();
+            shownRooms.AddRange(rooms);
+            for (int i = 0; i < internetRows.Count; i++)
+            {
+                bool visible = i < shownRooms.Count;
+                internetRows[i].gameObject.SetActive(visible);
+                if (!visible)
+                {
+                    continue;
+                }
+
+                RelayRoomInfo info = shownRooms[i];
+                internetRows[i].GetComponentInChildren<Text>().text = info.Name + "  —  " + info.HostName
+                    + (info.HasPassword ? "   (пароль)" : string.Empty) + (info.IsFull ? "   — занята" : string.Empty);
+                internetRows[i].interactable = !info.IsFull;
+            }
+
+            internetEmpty.gameObject.SetActive(relayConnected && shownRooms.Count == 0);
+        }
+
+        private void OnRoomRow(int index)
+        {
+            if (relay == null || index >= shownRooms.Count)
+            {
+                return;
+            }
+
+            RelayRoomInfo info = shownRooms[index];
+            SavePlayerName();
+            relay.PlayerName = PlayerName;
+            pendingRelay = true;
+            pendingRoomId = info.Id;
+            pendingName = info.Name;
+            if (info.HasPassword)
+            {
+                AskPassword(string.Empty);
+            }
+            else
+            {
+                relay.Join(info.Id, string.Empty);
+            }
+        }
+
+        // ---------- Локальная сеть ----------
+
+        private void OpenLan()
+        {
+            // Соединение с сервером комнат закрываем: в локальной сети — своё.
+            NetworkGame.Shutdown();
+            relay = null;
+            relayConnected = false;
+            ShowScreen(lan);
+            SetStatus(lanStatus, string.Empty, false);
+            discovery ??= new LanDiscovery(discoveryPort);
+            if (!discovery.StartListening())
+            {
+                SetStatus(lanStatus, "Поиск серверов недоступен — подключайтесь по адресу.", true);
+            }
+
+            RefreshLanList();
+        }
+
+        private void StopLan()
+        {
+            if (NetworkGame.Host != null || NetworkGame.Guest != null)
+            {
+                NetworkGame.Shutdown();
+            }
+
+            discovery?.Dispose();
+            discovery = null;
+        }
+
+        private void RefreshLanList()
         {
             shownServers.Clear();
             if (discovery != null)
@@ -177,25 +376,25 @@ namespace Marchlands.UI
                 shownServers.AddRange(discovery.Servers.OrderBy(server => server.Name));
             }
 
-            for (int i = 0; i < serverRows.Count; i++)
+            for (int i = 0; i < lanRows.Count; i++)
             {
                 bool visible = i < shownServers.Count;
-                serverRows[i].gameObject.SetActive(visible);
+                lanRows[i].gameObject.SetActive(visible);
                 if (!visible)
                 {
                     continue;
                 }
 
                 LanServer server = shownServers[i];
-                string text = server.Name + (server.HasPassword ? "   (пароль)" : string.Empty) + (server.IsFull ? "   — занят" : string.Empty);
-                serverRows[i].GetComponentInChildren<Text>().text = text;
-                serverRows[i].interactable = !server.IsFull;
+                lanRows[i].GetComponentInChildren<Text>().text = server.Name + (server.HasPassword ? "   (пароль)" : string.Empty)
+                    + (server.IsFull ? "   — занят" : string.Empty);
+                lanRows[i].interactable = !server.IsFull;
             }
 
-            emptyListLabel.gameObject.SetActive(shownServers.Count == 0);
+            lanEmpty.gameObject.SetActive(shownServers.Count == 0);
         }
 
-        private void OnServerRow(int index)
+        private void OnLanRow(int index)
         {
             if (index >= shownServers.Count)
             {
@@ -203,70 +402,59 @@ namespace Marchlands.UI
             }
 
             LanServer server = shownServers[index];
+            pendingRelay = false;
+            pendingAddress = server.Address;
+            pendingPort = server.Port;
+            pendingName = server.Name;
             if (server.HasPassword)
             {
-                AskPassword(server.Address, server.Port, server.Name, string.Empty);
+                AskPassword(string.Empty);
             }
             else
             {
-                Connect(server.Address, server.Port, string.Empty);
+                ConnectLan(server.Address, server.Port, string.Empty);
             }
         }
 
         private void OnConnectByAddress()
         {
-            string text = addressField.text.Trim();
-            string address = text;
-            int targetPort = port;
-            int colon = text.LastIndexOf(':');
-            if (colon > 0 && int.TryParse(text.Substring(colon + 1), out int parsed))
-            {
-                address = text.Substring(0, colon);
-                targetPort = parsed;
-            }
-
+            SplitAddress(lanAddressField.text.Trim(), out string address, out int targetPort);
             if (string.IsNullOrEmpty(address))
             {
-                SetStatus(browserStatus, "Введите адрес сервера, например 192.168.0.10:" + port, true);
+                SetStatus(lanStatus, "Введите адрес сервера, например 192.168.0.10:" + port, true);
                 return;
             }
 
-            Connect(address, targetPort, string.Empty);
-        }
-
-        private void AskPassword(string address, int targetPort, string serverName, string error)
-        {
+            pendingRelay = false;
             pendingAddress = address;
             pendingPort = targetPort;
-            pendingServerName = serverName;
-            passwordServerLabel.text = string.IsNullOrEmpty(serverName) ? $"Сервер {address}:{targetPort}" : $"Сервер «{serverName}»";
-            joinPasswordField.text = string.Empty;
-            SetStatus(passwordStatus, error, true);
-            ShowScreen(passwordPrompt);
+            pendingName = string.Empty;
+            ConnectLan(address, targetPort, string.Empty);
         }
 
-        private void Connect(string address, int targetPort, string password)
+        private void ConnectLan(string address, int targetPort, string password)
         {
             SavePlayerName();
-            NetworkSession session = NetworkSession.Join(address, targetPort, disconnectTimeoutMs);
+            NetworkSession session = NetworkSession.Join(Resolve(address) ?? address, targetPort, disconnectTimeoutMs);
             if (session == null)
             {
-                SetStatus(browserStatus, "Не удалось разобрать адрес «" + address + "».", true);
-                ShowScreen(browser);
+                SetStatus(lanStatus, "Не удалось разобрать адрес «" + address + "».", true);
+                ShowScreen(lan);
                 return;
             }
 
             NetworkGame.Begin(session);
             var guest = new LobbyGuest(PlayerName, bytes => session.Send(0, bytes));
             NetworkGame.Guest = guest;
+            NetworkGame.Lobby = guest;
             NetworkGame.Handler = (connection, message) => guest.Receive(message);
             NetworkGame.Connected += connection => guest.Join(password);
             NetworkGame.Disconnected += connection =>
             {
                 bool joined = guest.IsJoined;
                 NetworkGame.Shutdown();
-                ShowScreen(browser);
-                SetStatus(browserStatus, joined ? "Сервер закрыт или связь потеряна." : "Не удалось подключиться к " + address + ":" + targetPort + ".", true);
+                ShowScreen(lan);
+                SetStatus(lanStatus, joined ? "Сервер закрыт или связь потеряна." : "Не удалось подключиться к " + address + ":" + targetPort + ".", true);
             };
             guest.Changed += () =>
             {
@@ -286,44 +474,21 @@ namespace Marchlands.UI
                 NetworkGame.Shutdown();
                 if (reason == RejectReason.WrongPassword)
                 {
-                    AskPassword(address, targetPort, pendingServerName, string.IsNullOrEmpty(password) ? string.Empty : "Неверный пароль.");
+                    AskPassword(string.IsNullOrEmpty(password) ? string.Empty : "Неверный пароль.");
                     return;
                 }
 
-                ShowScreen(browser);
-                SetStatus(browserStatus, reason == RejectReason.Full ? "На сервере уже два игрока."
-                    : reason == RejectReason.InGame ? "На сервере уже идёт бой."
-                    : "Другая версия игры — обновите обе копии.", true);
+                ShowScreen(lan);
+                SetStatus(lanStatus, RejectText(reason), true);
             };
-            guest.Started += setup =>
-            {
-                NetworkGame.Setup = setup;
-                LoadBattle();
-            };
+            guest.Started += BeginMatch;
 
-            ShowScreen(browser);
-            SetStatus(browserStatus, "Подключение к " + address + ":" + targetPort + "…", false);
+            ShowScreen(lan);
+            SetStatus(lanStatus, "Подключение к " + address + ":" + targetPort + "…", false);
         }
 
-        // ---------- Создание сервера ----------
-
-        private void OpenCreator()
+        private void CreateLanServer(string serverName, string password)
         {
-            SavePlayerName();
-            serverNameField.text = SystemInfo.deviceName + " " + DateTime.Now.ToString("mm:ss");
-            serverPasswordField.text = string.Empty;
-            SetStatus(createStatus, string.Empty, false);
-            ShowScreen(creator);
-        }
-
-        private void CreateServer()
-        {
-            string serverName = serverNameField.text.Trim();
-            if (string.IsNullOrEmpty(serverName))
-            {
-                serverName = SystemInfo.deviceName + " " + DateTime.Now.ToString("mm:ss");
-            }
-
             NetworkSession session = NetworkSession.Host(port, disconnectTimeoutMs);
             if (session == null)
             {
@@ -332,33 +497,111 @@ namespace Marchlands.UI
             }
 
             NetworkGame.Begin(session);
-            var host = new LobbyHost(serverName, serverPasswordField.text, PlayerName, session);
+            var host = new LobbyHost(serverName, password, PlayerName, session);
             host.State.Map = Mathf.Clamp(MapChoice.Selected, 0, Mathf.Max(0, MapNames.Count - 1));
             host.State.FogOfWar = MapChoice.FogOfWar;
             NetworkGame.Host = host;
+            NetworkGame.Lobby = host;
             NetworkGame.Handler = host.Receive;
             NetworkGame.Disconnected += host.OnDisconnected;
             host.Changed += RefreshRoom;
+            host.Started += BeginMatch;
             ShowScreen(room);
             SetStatus(roomStatus, string.Empty, false);
             RefreshRoom();
+        }
+
+        // ---------- Создание комнаты и пароль ----------
+
+        private void OpenCreator()
+        {
+            SavePlayerName();
+            bool internetMode = internet.activeSelf;
+            if (internetMode && !relayConnected)
+            {
+                SetStatus(internetStatus, "Сначала подключитесь к серверу.", true);
+                return;
+            }
+
+            createTitle.text = internetMode ? "Новая комната" : "Новый сервер в локальной сети";
+            roomNameField.text = DefaultRoomName();
+            roomPasswordField.text = string.Empty;
+            SetStatus(createStatus, string.Empty, false);
+            pendingRelay = internetMode;
+            ShowScreen(creator);
+        }
+
+        private void CreateRoom()
+        {
+            string roomName = roomNameField.text.Trim();
+            if (string.IsNullOrEmpty(roomName))
+            {
+                roomName = DefaultRoomName();
+            }
+
+            if (pendingRelay)
+            {
+                if (relay == null || !relayConnected)
+                {
+                    SetStatus(createStatus, "Нет связи с сервером.", true);
+                    return;
+                }
+
+                relay.PlayerName = PlayerName;
+                relay.Create(roomName, roomPasswordField.text);
+                SetStatus(createStatus, "Создаём комнату…", false);
+                return;
+            }
+
+            CreateLanServer(roomName, roomPasswordField.text);
+        }
+
+        private void CancelCreator()
+        {
+            ShowScreen(pendingRelay ? internet : lan);
+        }
+
+        private void AskPassword(string error)
+        {
+            passwordTargetLabel.text = !string.IsNullOrEmpty(pendingName) ? $"«{pendingName}»" : $"{pendingAddress}:{pendingPort}";
+            joinPasswordField.text = string.Empty;
+            SetStatus(passwordStatus, error, true);
+            ShowScreen(passwordPrompt);
+        }
+
+        private void SubmitPassword()
+        {
+            if (pendingRelay)
+            {
+                relay?.Join(pendingRoomId, joinPasswordField.text);
+            }
+            else
+            {
+                ConnectLan(pendingAddress, pendingPort, joinPasswordField.text);
+            }
+        }
+
+        private void CancelPassword()
+        {
+            ShowScreen(pendingRelay ? internet : lan);
         }
 
         // ---------- Комната ----------
 
         private void RefreshRoom()
         {
-            LobbyHost host = NetworkGame.Host;
-            LobbyGuest guest = NetworkGame.Guest;
-            LobbyState state = host != null ? host.State : guest?.State;
+            ILobby lobby = NetworkGame.Lobby;
+            LobbyState state = lobby?.State;
             if (state == null || !room.activeSelf)
             {
                 return;
             }
 
-            bool isHost = host != null;
-            roomTitle.text = state.ServerName + (isHost && host.HasPassword ? "  (с паролем)" : string.Empty);
-            roomAddress.text = isHost ? "Адрес для подключения: " + LocalAddresses() + ", порт " + NetworkGame.Session.Port : string.Empty;
+            bool isHost = lobby.IsHost;
+            roomTitle.text = state.ServerName + (lobby.HasPassword ? "  (с паролем)" : string.Empty);
+            roomAddress.text = lobby is LobbyHost && NetworkGame.Session != null
+                ? "Адрес для подключения: " + LocalAddresses() + ", порт " + NetworkGame.Session.Port
+                : NetworkGame.IsRelay ? "Комната на сервере Marchlands" : string.Empty;
 
             hostRow.text = $"{SideName(state.HostSide)}:  {state.HostName}{(isHost ? " (вы)" : string.Empty)}   {(state.HostReady ? "— готов" : "— не готов")}";
             hostRowBox.color = state.HostReady ? readyColor : grayButton;
@@ -378,22 +621,23 @@ namespace Marchlands.UI
             readyLabel.text = myReady ? "Не готов" : "Готов";
             readyButton.image.color = myReady ? readyColor : lightButton;
             startButton.gameObject.SetActive(isHost);
-            startButton.interactable = isHost && host.CanStart;
+            startButton.interactable = isHost && lobby.CanStart;
 
-            List<ChatLine> lines = (isHost ? host.Chat : guest.Chat).ToList();
+            List<ChatLine> lines = lobby.Chat.ToList();
             chatLog.text = string.Join("\n", lines.Skip(Math.Max(0, lines.Count - 9)).Select(line => line.Sender + ": " + line.Text));
 
             if (isHost && !state.HasGuest)
             {
-                SetStatus(roomStatus, "Сервер виден в локальной сети. Ждём соперника.", false);
+                SetStatus(roomStatus, NetworkGame.IsRelay ? "Комната видна в списке на сервере. Ждём соперника."
+                    : "Сервер виден в локальной сети. Ждём соперника.", false);
             }
-            else if (isHost && !host.CanStart)
+            else if (isHost && !lobby.CanStart)
             {
                 SetStatus(roomStatus, "Начать можно, когда оба готовы.", false);
             }
             else if (!isHost)
             {
-                SetStatus(roomStatus, state.HostReady && state.GuestReady ? "Оба готовы — ждём, когда хост начнёт." : "Отметьте готовность.", false);
+                SetStatus(roomStatus, state.HostReady && state.GuestReady ? "Оба готовы — ждём, когда создатель начнёт." : "Отметьте готовность.", false);
             }
             else
             {
@@ -403,71 +647,58 @@ namespace Marchlands.UI
 
         private void ChangeMap(int step)
         {
-            LobbyHost host = NetworkGame.Host;
-            if (host == null || MapNames.Count == 0)
+            ILobby lobby = NetworkGame.Lobby;
+            if (lobby?.State == null || !lobby.IsHost || MapNames.Count == 0)
             {
                 return;
             }
 
-            host.SetMap((host.State.Map + step + MapNames.Count) % MapNames.Count);
+            lobby.SetMap((lobby.State.Map + step + MapNames.Count) % MapNames.Count);
         }
 
         private void ToggleReady()
         {
-            if (NetworkGame.Host != null)
+            ILobby lobby = NetworkGame.Lobby;
+            if (lobby?.State == null)
             {
-                NetworkGame.Host.SetReady(!NetworkGame.Host.State.HostReady);
+                return;
             }
-            else if (NetworkGame.Guest?.State != null)
-            {
-                NetworkGame.Guest.SetReady(!NetworkGame.Guest.State.GuestReady);
-            }
+
+            lobby.SetReady(!(lobby.IsHost ? lobby.State.HostReady : lobby.State.GuestReady));
         }
 
         private void SendChat()
         {
             string text = chatField.text;
             chatField.text = string.Empty;
-            if (string.IsNullOrWhiteSpace(text))
+            if (!string.IsNullOrWhiteSpace(text))
             {
-                return;
-            }
-
-            if (NetworkGame.Host != null)
-            {
-                NetworkGame.Host.SendChat(text);
-            }
-            else
-            {
-                NetworkGame.Guest?.SendChat(text);
+                NetworkGame.Lobby?.SendChat(text);
             }
 
             chatField.ActivateInputField();
         }
 
-        private void StartMatch()
+        private void LeaveRoom()
         {
-            LobbyHost host = NetworkGame.Host;
-            MatchSetup setup = host?.Start(unchecked((ulong)DateTime.Now.Ticks));
-            if (setup == null)
+            if (NetworkGame.IsRelay && relay != null)
             {
+                // На сервере комнат соединение остаётся — возвращаемся к списку.
+                relay.Leave();
+                ShowScreen(internet);
+                relay.RequestRooms();
+                SetStatus(internetStatus, string.Empty, false);
                 return;
             }
 
-            NetworkGame.Setup = setup;
-            LoadBattle();
-        }
-
-        private void LeaveRoom()
-        {
-            NetworkGame.Guest?.Leave();
+            NetworkGame.Lobby?.Leave();
             NetworkGame.Shutdown();
-            ShowScreen(browser);
-            SetStatus(browserStatus, string.Empty, false);
+            OpenLan();
         }
 
-        private void LoadBattle()
+        private void BeginMatch(MatchSetup setup)
         {
+            NetworkGame.Setup = setup;
             loading = true;
             MapChoice.Tutorial = false;
             NetworkGame.Handler = null;
@@ -492,66 +723,92 @@ namespace Marchlands.UI
             overlayCanvas.sortingOrder = 100;
             overlay.AddComponent<GraphicRaycaster>();
 
-            browser = MakeScreen("Список");
-            Label(browser, "Сетевая игра", new Vector2(0f, 450f), new Vector2(1400f, 100f), 70, lightText, TextAnchor.MiddleCenter, true);
-            Label(browser, "Ваше имя", new Vector2(-470f, 350f), new Vector2(300f, 80f), 38, dimText, TextAnchor.MiddleRight);
-            playerNameField = Field(browser, new Vector2(30f, 350f), new Vector2(640f, 80f), "Имя игрока", false);
+            // Общая шапка списков: заголовок, вкладки, имя игрока.
+            header = MakeScreen("Шапка");
+            Label(header, "Сетевая игра", new Vector2(0f, 465f), new Vector2(1400f, 90f), 66, lightText, TextAnchor.MiddleCenter, true);
+            internetTab = MakeButton(header, "Интернет", new Vector2(-230f, 375f), new Vector2(440f, 80f), lightButton, 40, OpenInternet, true);
+            lanTab = MakeButton(header, "Локальная сеть", new Vector2(230f, 375f), new Vector2(440f, 80f), grayButton, 40, OpenLan, true);
+            Label(header, "Ваше имя", new Vector2(-470f, 285f), new Vector2(300f, 76f), 36, dimText, TextAnchor.MiddleRight);
+            playerNameField = Field(header, new Vector2(30f, 285f), new Vector2(640f, 76f), "Имя игрока", false);
             playerNameField.text = PlayerPrefs.GetString(PlayerNameKey, SystemInfo.deviceName);
-            Label(browser, "Серверы в локальной сети", new Vector2(0f, 265f), new Vector2(1200f, 60f), 40, lightText, TextAnchor.MiddleCenter);
-            for (int i = 0; i < 5; i++)
+
+            internet = MakeScreen("Интернет");
+            Label(internet, "Сервер", new Vector2(-470f, 195f), new Vector2(300f, 76f), 36, dimText, TextAnchor.MiddleRight);
+            serverAddressField = Field(internet, new Vector2(-40f, 195f), new Vector2(500f, 76f), "адрес сервера", false);
+            serverAddressField.text = PlayerPrefs.GetString(ServerAddressKey, defaultServerAddress);
+            MakeButton(internet, "Подключиться", new Vector2(420f, 195f), new Vector2(360f, 76f), lightButton, 34, ConnectToServer);
+            for (int i = 0; i < RowCount; i++)
             {
                 int index = i;
-                serverRows.Add(MakeButton(browser, string.Empty, new Vector2(0f, 190f - i * 88f), new Vector2(1100f, 78f), lightButton, 36,
-                    () => OnServerRow(index)));
+                internetRows.Add(MakeButton(internet, string.Empty, new Vector2(0f, 105f - i * 82f), new Vector2(1100f, 72f), lightButton, 34,
+                    () => OnRoomRow(index)));
             }
 
-            emptyListLabel = Label(browser, "Серверов пока нет — создайте свой или подключитесь по адресу.", new Vector2(0f, 100f),
-                new Vector2(1200f, 60f), 34, dimText, TextAnchor.MiddleCenter);
-            Label(browser, "Адрес", new Vector2(-560f, -270f), new Vector2(200f, 80f), 38, dimText, TextAnchor.MiddleRight);
-            addressField = Field(browser, new Vector2(-130f, -270f), new Vector2(620f, 80f), "192.168.0.10:" + port, false);
-            MakeButton(browser, "Подключиться", new Vector2(390f, -270f), new Vector2(380f, 80f), lightButton, 38, OnConnectByAddress);
-            browserStatus = Label(browser, string.Empty, new Vector2(0f, -355f), new Vector2(1400f, 60f), 34, dimText, TextAnchor.MiddleCenter);
-            MakeButton(browser, "Создать сервер", new Vector2(-250f, -450f), new Vector2(440f, 100f), accentButton, 44, OpenCreator, true);
-            MakeButton(browser, "Назад", new Vector2(250f, -450f), new Vector2(440f, 100f), grayButton, 44, Close);
+            internetEmpty = Label(internet, "Комнат пока нет — создайте свою.", new Vector2(0f, 30f), new Vector2(1200f, 60f), 34, dimText,
+                TextAnchor.MiddleCenter);
+            internetStatus = Label(internet, string.Empty, new Vector2(0f, -340f), new Vector2(1500f, 60f), 34, dimText, TextAnchor.MiddleCenter);
+            MakeButton(internet, "Создать комнату", new Vector2(-250f, -450f), new Vector2(440f, 100f), accentButton, 44, OpenCreator, true);
+            MakeButton(internet, "Назад", new Vector2(250f, -450f), new Vector2(440f, 100f), grayButton, 44, Close);
+
+            lan = MakeScreen("Локальная сеть");
+            for (int i = 0; i < RowCount; i++)
+            {
+                int index = i;
+                lanRows.Add(MakeButton(lan, string.Empty, new Vector2(0f, 195f - i * 82f), new Vector2(1100f, 72f), lightButton, 34,
+                    () => OnLanRow(index)));
+            }
+
+            lanEmpty = Label(lan, "Серверов в сети пока нет — создайте свой или подключитесь по адресу.", new Vector2(0f, 120f),
+                new Vector2(1300f, 60f), 34, dimText, TextAnchor.MiddleCenter);
+            Label(lan, "Адрес", new Vector2(-560f, -250f), new Vector2(200f, 76f), 36, dimText, TextAnchor.MiddleRight);
+            lanAddressField = Field(lan, new Vector2(-130f, -250f), new Vector2(620f, 76f), "192.168.0.10:" + port, false);
+            MakeButton(lan, "Подключиться", new Vector2(390f, -250f), new Vector2(380f, 76f), lightButton, 36, OnConnectByAddress);
+            lanStatus = Label(lan, string.Empty, new Vector2(0f, -340f), new Vector2(1500f, 60f), 34, dimText, TextAnchor.MiddleCenter);
+            MakeButton(lan, "Создать сервер", new Vector2(-250f, -450f), new Vector2(440f, 100f), accentButton, 44, OpenCreator, true);
+            MakeButton(lan, "Назад", new Vector2(250f, -450f), new Vector2(440f, 100f), grayButton, 44, Close);
 
             creator = MakeScreen("Создание");
-            Label(creator, "Новый сервер", new Vector2(0f, 400f), new Vector2(1400f, 100f), 70, lightText, TextAnchor.MiddleCenter, true);
-            Label(creator, "Имя сервера", new Vector2(-470f, 200f), new Vector2(400f, 80f), 38, dimText, TextAnchor.MiddleRight);
-            serverNameField = Field(creator, new Vector2(150f, 200f), new Vector2(800f, 80f), "Имя сервера", false);
+            createTitle = Label(creator, "Новая комната", new Vector2(0f, 400f), new Vector2(1600f, 100f), 66, lightText, TextAnchor.MiddleCenter, true);
+            Label(creator, "Название", new Vector2(-470f, 200f), new Vector2(400f, 80f), 38, dimText, TextAnchor.MiddleRight);
+            roomNameField = Field(creator, new Vector2(150f, 200f), new Vector2(800f, 80f), "Название", false);
             Label(creator, "Пароль", new Vector2(-470f, 80f), new Vector2(400f, 80f), 38, dimText, TextAnchor.MiddleRight);
-            serverPasswordField = Field(creator, new Vector2(150f, 80f), new Vector2(800f, 80f), "необязательно", true);
-            Label(creator, "Без пароля подключиться может любой в вашей сети.", new Vector2(150f, 0f), new Vector2(800f, 60f), 30, dimText,
-                TextAnchor.MiddleLeft);
+            roomPasswordField = Field(creator, new Vector2(150f, 80f), new Vector2(800f, 80f), "необязательно", true);
+            Label(creator, "Без пароля войти может любой.", new Vector2(150f, 0f), new Vector2(800f, 60f), 30, dimText, TextAnchor.MiddleLeft);
             createStatus = Label(creator, string.Empty, new Vector2(0f, -150f), new Vector2(1400f, 60f), 34, dimText, TextAnchor.MiddleCenter);
-            MakeButton(creator, "Создать", new Vector2(-250f, -450f), new Vector2(440f, 100f), accentButton, 44, CreateServer, true);
-            MakeButton(creator, "Отмена", new Vector2(250f, -450f), new Vector2(440f, 100f), grayButton, 44, () => ShowScreen(browser));
+            MakeButton(creator, "Создать", new Vector2(-250f, -450f), new Vector2(440f, 100f), accentButton, 44, CreateRoom, true);
+            MakeButton(creator, "Отмена", new Vector2(250f, -450f), new Vector2(440f, 100f), grayButton, 44, CancelCreator);
 
             passwordPrompt = MakeScreen("Пароль");
-            Label(passwordPrompt, "Нужен пароль", new Vector2(0f, 300f), new Vector2(1400f, 100f), 70, lightText, TextAnchor.MiddleCenter, true);
-            passwordServerLabel = Label(passwordPrompt, string.Empty, new Vector2(0f, 170f), new Vector2(1400f, 60f), 40, dimText, TextAnchor.MiddleCenter);
+            Label(passwordPrompt, "Нужен пароль", new Vector2(0f, 300f), new Vector2(1400f, 100f), 66, lightText, TextAnchor.MiddleCenter, true);
+            passwordTargetLabel = Label(passwordPrompt, string.Empty, new Vector2(0f, 170f), new Vector2(1400f, 60f), 40, dimText, TextAnchor.MiddleCenter);
             joinPasswordField = Field(passwordPrompt, new Vector2(0f, 60f), new Vector2(700f, 80f), "Пароль", true);
-            joinPasswordField.onSubmit.AddListener(_ => Connect(pendingAddress, pendingPort, joinPasswordField.text));
+            joinPasswordField.onSubmit.AddListener(_ => SubmitPassword());
             passwordStatus = Label(passwordPrompt, string.Empty, new Vector2(0f, -40f), new Vector2(1400f, 60f), 34, errorText, TextAnchor.MiddleCenter);
-            MakeButton(passwordPrompt, "Войти", new Vector2(-250f, -250f), new Vector2(440f, 100f), accentButton, 44,
-                () => Connect(pendingAddress, pendingPort, joinPasswordField.text), true);
-            MakeButton(passwordPrompt, "Отмена", new Vector2(250f, -250f), new Vector2(440f, 100f), grayButton, 44, () => ShowScreen(browser));
+            MakeButton(passwordPrompt, "Войти", new Vector2(-250f, -250f), new Vector2(440f, 100f), accentButton, 44, SubmitPassword, true);
+            MakeButton(passwordPrompt, "Отмена", new Vector2(250f, -250f), new Vector2(440f, 100f), grayButton, 44, CancelPassword);
 
             room = MakeScreen("Комната");
             roomTitle = Label(room, string.Empty, new Vector2(0f, 455f), new Vector2(1700f, 90f), 60, lightText, TextAnchor.MiddleCenter, true);
             roomAddress = Label(room, string.Empty, new Vector2(0f, 390f), new Vector2(1700f, 50f), 30, dimText, TextAnchor.MiddleCenter);
             Label(room, "Игроки", new Vector2(-430f, 310f), new Vector2(760f, 60f), 40, lightText, TextAnchor.MiddleLeft);
-            hostRowBox = Box(room.transform, "Хост", new Vector2(-430f, 230f), new Vector2(760f, 80f), grayButton);
+            hostRowBox = Box(room.transform, "Создатель", new Vector2(-430f, 230f), new Vector2(760f, 80f), grayButton);
             hostRow = Label(hostRowBox.gameObject, string.Empty, Vector2.zero, new Vector2(720f, 80f), 34, darkText, TextAnchor.MiddleLeft);
-            guestRowBox = Box(room.transform, "Гость", new Vector2(-430f, 140f), new Vector2(760f, 80f), grayButton);
+            guestRowBox = Box(room.transform, "Соперник", new Vector2(-430f, 140f), new Vector2(760f, 80f), grayButton);
             guestRow = Label(guestRowBox.gameObject, string.Empty, Vector2.zero, new Vector2(720f, 80f), 34, darkText, TextAnchor.MiddleLeft);
             Label(room, "Карта", new Vector2(-430f, 50f), new Vector2(760f, 50f), 34, dimText, TextAnchor.MiddleLeft);
             mapPrevious = MakeButton(room, "‹", new Vector2(-760f, -20f), new Vector2(90f, 80f), lightButton, 50, () => ChangeMap(-1));
             mapLabel = Label(room, string.Empty, new Vector2(-430f, -20f), new Vector2(560f, 80f), 40, lightText, TextAnchor.MiddleCenter, true);
             mapNext = MakeButton(room, "›", new Vector2(-100f, -20f), new Vector2(90f, 80f), lightButton, 50, () => ChangeMap(1));
             swapButton = MakeButton(room, "Поменять стороны", new Vector2(-430f, -120f), new Vector2(760f, 80f), lightButton, 36,
-                () => NetworkGame.Host?.SwapSides());
-            fogButton = MakeButton(room, "Туман войны: вкл", new Vector2(-430f, -215f), new Vector2(760f, 80f), lightButton, 36,
-                () => NetworkGame.Host?.SetFogOfWar(!NetworkGame.Host.State.FogOfWar));
+                () => NetworkGame.Lobby?.SwapSides());
+            fogButton = MakeButton(room, "Туман войны: вкл", new Vector2(-430f, -215f), new Vector2(760f, 80f), lightButton, 36, () =>
+            {
+                ILobby lobby = NetworkGame.Lobby;
+                if (lobby?.State != null)
+                {
+                    lobby.SetFogOfWar(!lobby.State.FogOfWar);
+                }
+            });
             fogLabel = fogButton.GetComponentInChildren<Text>();
 
             Label(room, "Чат", new Vector2(430f, 310f), new Vector2(760f, 60f), 40, lightText, TextAnchor.MiddleLeft);
@@ -567,7 +824,8 @@ namespace Marchlands.UI
             roomStatus = Label(room, string.Empty, new Vector2(0f, -320f), new Vector2(1600f, 60f), 34, dimText, TextAnchor.MiddleCenter);
             readyButton = MakeButton(room, "Готов", new Vector2(-500f, -440f), new Vector2(420f, 100f), lightButton, 46, ToggleReady, true);
             readyLabel = readyButton.GetComponentInChildren<Text>();
-            startButton = MakeButton(room, "Начать", new Vector2(0f, -440f), new Vector2(420f, 100f), accentButton, 46, StartMatch, true);
+            startButton = MakeButton(room, "Начать", new Vector2(0f, -440f), new Vector2(420f, 100f), accentButton, 46,
+                () => NetworkGame.Lobby?.StartMatch(), true);
             MakeButton(room, "Выйти", new Vector2(500f, -440f), new Vector2(420f, 100f), grayButton, 46, LeaveRoom);
         }
 
@@ -582,14 +840,15 @@ namespace Marchlands.UI
 
         private void ShowScreen(GameObject screen)
         {
-            browser.SetActive(screen == browser);
+            internet.SetActive(screen == internet);
+            lan.SetActive(screen == lan);
             creator.SetActive(screen == creator);
             passwordPrompt.SetActive(screen == passwordPrompt);
             room.SetActive(screen == room);
-            if (screen == browser)
-            {
-                RefreshServerList();
-            }
+            bool list = screen == internet || screen == lan;
+            header.SetActive(list);
+            internetTab.image.color = screen == internet ? accentButton : grayButton;
+            lanTab.image.color = screen == lan ? accentButton : grayButton;
         }
 
         private Image Box(Transform parent, string boxName, Vector2 position, Vector2 size, Color color)
@@ -651,7 +910,7 @@ namespace Marchlands.UI
             field.placeholder = placeholderText;
             field.targetGraphic = image;
             field.lineType = InputField.LineType.SingleLine;
-            field.characterLimit = 48;
+            field.characterLimit = 64;
             if (password)
             {
                 field.contentType = InputField.ContentType.Password;
@@ -677,6 +936,73 @@ namespace Marchlands.UI
         private string SideName(Side side)
         {
             return side == Side.France ? franceName : austriaName;
+        }
+
+        private static string DefaultRoomName()
+        {
+            return SystemInfo.deviceName + " " + DateTime.Now.ToString("mm:ss");
+        }
+
+        private static string RejectText(RejectReason reason)
+        {
+            switch (reason)
+            {
+                case RejectReason.WrongPassword:
+                    return "Неверный пароль.";
+                case RejectReason.Full:
+                    return "В комнате уже два игрока.";
+                case RejectReason.InGame:
+                    return "Там уже идёт бой.";
+                case RejectReason.RoomNotFound:
+                    return "Комнаты уже нет.";
+                case RejectReason.RoomClosed:
+                    return "Создатель закрыл комнату.";
+                case RejectReason.TooManyRooms:
+                    return "На сервере слишком много комнат — попробуйте позже.";
+                default:
+                    return "Другая версия игры — обновите игру.";
+            }
+        }
+
+        /// <summary>«хост:порт» или «хост» (порт по умолчанию).</summary>
+        private void SplitAddress(string text, out string host, out int targetPort)
+        {
+            host = text;
+            targetPort = port;
+            int colon = text.LastIndexOf(':');
+            if (colon > 0 && int.TryParse(text.Substring(colon + 1), out int parsed))
+            {
+                host = text.Substring(0, colon);
+                targetPort = parsed;
+            }
+        }
+
+        /// <summary>IPv4-адрес по IP или имени (домену); null — не найден.</summary>
+        private static string Resolve(string host)
+        {
+            if (string.IsNullOrWhiteSpace(host))
+            {
+                return null;
+            }
+
+            if (IPAddress.TryParse(host, out IPAddress parsed))
+            {
+                return parsed.ToString();
+            }
+
+            try
+            {
+                IPAddress address = Dns.GetHostAddresses(host).FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork);
+                return address?.ToString();
+            }
+            catch (SocketException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
         }
 
         private static string LocalAddresses()
