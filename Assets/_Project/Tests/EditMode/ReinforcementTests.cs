@@ -78,20 +78,32 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
-        public void NoReinforcement_OutsideOwnVillage_ForRoutingOrCavalry()
+        public void NoReinforcement_OutsideOwnVillage()
         {
             Match match = CreateMatchWithOwnVillage(out _);
             Village enemyVillage = match.AddVillage(new float2(40f, 0f));
             enemyVillage.Owner = Side.Austria;
             Squad outside = match.AddSquad(Side.France, new float2(0f, 20f), 90f, Formation.Line, 30);
             Squad inEnemyVillage = match.AddSquad(Side.France, new float2(40f, 0f), 90f, Formation.Line, 30);
-            Squad cavalry = match.AddSquad(Side.France, new float2(1f, 0f), 90f, Formation.Line, UnitType.Cavalry, 20);
 
             RunTicks(match, TicksFor(12f));
 
             Assert.AreEqual(30, outside.Alive);
             Assert.AreEqual(30, inEnemyVillage.Alive);
-            Assert.AreEqual(20, cavalry.Alive, "Конница из деревень не пополняется");
+        }
+
+        [Test]
+        public void Cavalry_ReinforcesInOwnVillage_TwiceAsSlow()
+        {
+            Match match = CreateMatchWithOwnVillage(out _);
+            Squad cavalry = match.AddSquad(Side.France, new float2(1f, 0f), 90f, Formation.Line, UnitType.Cavalry, 10);
+
+            RunTicks(match, TicksFor(12f) - 1);
+            Assert.AreEqual(10, cavalry.Alive, "Пехотного интервала коннице мало");
+            Assert.IsTrue(cavalry.IsReinforcing);
+
+            RunTicks(match, 1);
+            Assert.AreEqual(11, cavalry.Alive, "Всадник — за два пехотных интервала");
         }
 
         [Test]

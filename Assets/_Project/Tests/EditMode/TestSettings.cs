@@ -200,7 +200,8 @@ namespace Marchlands.Tests.EditMode
                     villageIncome = 3,
                     hqIncome = 2,
                     startGold = 150,
-                    reinforceInterval = 6f
+                    reinforceInterval = 6f,
+                    cavalryReinforceIntervalMultiplier = 2f
                 },
                 buildings = new BuildingSettings
                 {

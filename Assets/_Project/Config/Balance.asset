@@ -188,6 +188,7 @@ MonoBehaviour:
       hqIncome: 2
       startGold: 150
       reinforceInterval: 6
+      cavalryReinforceIntervalMultiplier: 2
     buildings:
       barracksCost: 120
       barracksBuildTime: 30

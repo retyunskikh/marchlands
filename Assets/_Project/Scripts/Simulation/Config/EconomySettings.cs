@@ -29,5 +29,8 @@ namespace Marchlands.Simulation.Config
 
         /// <summary>Раз в столько секунд пехотный отряд в своей деревне получает одного человека, s.</summary>
         public float reinforceInterval;
+
+        /// <summary>Во сколько раз реже пополняется в своей деревне конница (всадник — раз в reinforceInterval × это).</summary>
+        public float cavalryReinforceIntervalMultiplier;
     }
 }

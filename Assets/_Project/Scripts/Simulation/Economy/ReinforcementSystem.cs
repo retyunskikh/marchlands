@@ -7,8 +7,9 @@ using Unity.Mathematics;
 namespace Marchlands.Simulation.Economy
 {
     /// <summary>
-    /// Пополнение из деревень: не бегущий пехотный отряд в зоне своей деревни раз в reinforceInterval получает
-    /// одного человека, пока не наберёт полную численность своего рода войск. Даже в бою; конница так не пополняется.
+    /// Пополнение из деревень: не бегущий пехотный или конный отряд в зоне своей деревни раз в reinforceInterval
+    /// получает одного человека, пока не наберёт полную численность своего рода войск. Даже в бою. Конница — в
+    /// cavalryReinforceIntervalMultiplier раз реже, пушки так не пополняются.
     /// Пополняется, только пока у стороны есть свободные места (население ниже предела).
     /// </summary>
     internal static class ReinforcementSystem
@@ -18,9 +19,11 @@ namespace Marchlands.Simulation.Economy
 
         public static void Update(Match match, float deltaTime)
         {
-            float interval = match.Settings.economy.reinforceInterval;
+            float infantryInterval = match.Settings.economy.reinforceInterval;
+            float cavalryInterval = infantryInterval * match.Settings.economy.cavalryReinforceIntervalMultiplier;
             foreach (Squad squad in match.Squads)
             {
+                float interval = squad.Type == UnitType.Cavalry ? cavalryInterval : infantryInterval;
                 Village village = interval > 0f && CanReinforce(match, squad) ? FindOwnVillage(match, squad) : null;
                 squad.IsReinforcing = village != null;
                 if (village == null)
@@ -49,8 +52,7 @@ namespace Marchlands.Simulation.Economy
 
         private static bool CanReinforce(Match match, Squad squad)
         {
-            return squad.Type != UnitType.Cavalry
-                && !squad.IsArtillery
+            return !squad.IsArtillery
                 && !squad.IsRouting
                 && !squad.IsWithdrawn
                 && squad.Alive > 0
