@@ -40,20 +40,20 @@ namespace Marchlands.Bootstrap
         [Tooltip("Тексты уроков по шагам (Welcome, Camera, Select, Move, Rotate, Column, Village, Volley, Morale, Charge, Barracks, Hiring, Forming, Goal).")]
         [SerializeField, TextArea(2, 4)] private string[] messages =
         {
-            "Добро пожаловать в обучение! Вы командуете французами — синими. Пройдём основы шаг за шагом.",
-            "Двигайте карту пальцем, приближайте и отдаляйте двумя пальцами.",
-            "Тапните по своему отряду — синей линии солдат. Внизу появятся его приказы.",
-            "Проведите пальцем от отряда туда, куда ему идти, — он пойдёт. Можно и дважды тапнуть по земле. В дальний путь отряд сам перестроится в колонну и пойдёт по дорогам.",
-            "Потяните за кольцо вокруг выделенного отряда — он развернётся на месте. Линия стреляет только вперёд, в жёлтый сектор.",
-            "Кнопка «Марш» перестраивает отряд в колонну: она быстрее ходит, но почти не стреляет. «В линию» — обратно.",
-            "Деревни дают золото. Приведите отряд в деревню и постойте в ней — флаг станет вашим.",
-            "Австрийцы выступили! Встретьте их линией. Когда враг войдёт в жёлтый сектор, нажмите «Залп!». Чем ближе враг, тем больше попаданий.",
-            "После залпа отряд перезаряжается — кольцо за отрядом заполняется. Полоска над отрядом — боевой дух: потери его снижают, а отряд с низким духом бежит.",
-            "Добейте врага в штыки: «В штыки», затем тап по врагу. Удар во фланг или в тыл страшнее, чем в лоб.",
-            "Пора нанимать войска. Тапните по своему штабу — большому зданию слева — и постройте казарму.",
-            "Когда казарма достроится, тапните по ней и включите найм фузилёров или гренадёров.",
-            "Рекруты собираются у казармы. Когда их наберётся на отряд, нажмите его кружок слева вверху — отряд встанет в строй.",
-            "Цель боя — захватить все деревни или разрушить вражеский штаб: выделите отряд и тапните по вражескому зданию. Дальше — сами. Удачи!"
+            "Добро пожаловать! Вы командуете французами (синие). Нажмите «Далее».",
+            "Сдвиньте карту пальцем. Двумя пальцами — приблизьте или отдалите.",
+            "Тапните по своему отряду — он обведён кругом.",
+            "Проведите пальцем от отряда в любую точку поля — отряд пойдёт туда.",
+            "Потяните за кольцо вокруг отряда — он развернётся. Линия стреляет только вперёд, в жёлтый сектор.",
+            "Нажмите «Марш» — отряд встанет в колонну (быстрее идёт, почти не стреляет). «В линию» — обратно.",
+            "Отправьте отряд в обведённую деревню и стойте там, пока флаг не станет синим. Деревни дают золото.",
+            "Враг идёт на вас (обведён)! Разверните к нему линию. Когда он войдёт в жёлтый сектор — нажмите «Залп!».",
+            "Отряд перезаряжается — кольцо за ним заполняется. Полоска над отрядом — боевой дух: при потерях он падает, и отряд бежит. Нажмите «Далее».",
+            "Нажмите «В штыки» и тапните по обведённому врагу. Удар во фланг или в тыл сильнее.",
+            "Тапните по своему штабу (обведён), нажмите «Казарма», тапните место рядом со штабом и нажмите «Поставить».",
+            "Тапните по казарме (обведена), когда она достроится, и включите найм фузилёров.",
+            "Рекруты собираются у казармы. Когда их хватит на отряд, нажмите его кружок слева вверху. Нажмите «Далее».",
+            "Захватите все деревни или разрушьте вражеский штаб: выделите отряд и тапните по вражескому зданию. Дальше — сами. Удачи!"
         };
 
         [Tooltip("На сколько нужно сдвинуть карту (u) или изменить приближение, чтобы урок камеры засчитался.")]
@@ -61,6 +61,16 @@ namespace Marchlands.Bootstrap
         [Tooltip("На сколько нужно уйти отряду (u) или развернуться (градусы), чтобы урок засчитался.")]
         [SerializeField] private float moveToPass = 3f;
         [SerializeField] private float turnToPass = 25f;
+
+        [Header("Подсветка цели шага")]
+        [Tooltip("Кольцо вокруг того, с чем работать на этом шаге (отряд, деревня, враг, штаб, казарма).")]
+        [SerializeField] private Sprite highlightSprite;
+        [SerializeField] private Color highlightColor = new Color(1f, 0.85f, 0.2f, 0.95f);
+        [Tooltip("Запас кольца вокруг цели, u, и сколько раз в секунду оно пульсирует.")]
+        [SerializeField] private float highlightPadding = 2f;
+        [SerializeField] private float highlightPulseRate = 1.5f;
+        [SerializeField] private float highlightPulse = 0.12f;
+        [SerializeField] private int highlightSortingOrder = 300;
 
         private Match match;
         private Side side;
@@ -70,6 +80,7 @@ namespace Marchlands.Bootstrap
         private GatedController enemyStrategy;
 
         private int step = -1;
+        private SpriteRenderer highlight;
         private Squad selected;
         private Vector3 cameraStart;
         private float zoomStart;
@@ -110,10 +121,153 @@ namespace Marchlands.Bootstrap
                 return;
             }
 
+            // Игрок ушёл вперёд уроков (все деревни или уже казарма) — противник воюет в полную силу.
+            if (match.CountVillages(side) >= match.Villages.Count || HasOwn(b => b.Type == BuildingType.Barracks))
+            {
+                enemyTactics.Active = true;
+                enemyStrategy.Active = true;
+            }
+
             if (IsDone((Step)step))
             {
                 Go(step + 1);
+                return;
             }
+
+            UpdateHighlight((Step)step);
+        }
+
+        /// <summary>Кольцо вокруг цели шага: свой отряд, деревня, ближайший враг, штаб, казарма.</summary>
+        private void UpdateHighlight(Step current)
+        {
+            float2 at = float2.zero;
+            float radius = 0f;
+            bool show = TryGetHighlight(current, ref at, ref radius);
+            if (highlight == null)
+            {
+                if (!show || highlightSprite == null)
+                {
+                    return;
+                }
+
+                var ring = new GameObject("Tutorial Highlight");
+                highlight = ring.AddComponent<SpriteRenderer>();
+                highlight.sprite = highlightSprite;
+                highlight.color = highlightColor;
+                highlight.sortingOrder = highlightSortingOrder;
+            }
+
+            highlight.enabled = show;
+            if (!show)
+            {
+                return;
+            }
+
+            float pulse = 1f + highlightPulse * Mathf.Sin(Time.unscaledTime * highlightPulseRate * Mathf.PI * 2f);
+            float size = (radius + highlightPadding) * 2f * pulse / Mathf.Max(0.01f, highlightSprite.bounds.size.x);
+            highlight.transform.position = new Vector3(at.x, at.y, 0f);
+            highlight.transform.localScale = new Vector3(size, size, 1f);
+        }
+
+        private bool TryGetHighlight(Step current, ref float2 at, ref float radius)
+        {
+            switch (current)
+            {
+                case Step.Select:
+                    foreach (Squad squad in OwnSquads())
+                    {
+                        at = squad.Position;
+                        radius = math.length(FormationLayout.GetHalfExtents(squad, match.Settings.squads));
+                        return true;
+                    }
+
+                    return false;
+                case Step.Village:
+                    return TryNearestVillage(ref at, ref radius);
+                case Step.Volley:
+                case Step.Charge:
+                    return TryNearestEnemy(ref at, ref radius);
+                case Step.Barracks:
+                    return TryOwnBuilding(BuildingType.Headquarters, ref at, ref radius);
+                case Step.Hiring:
+                    return TryOwnBuilding(BuildingType.Barracks, ref at, ref radius);
+                default:
+                    return false;
+            }
+        }
+
+        private bool TryNearestVillage(ref float2 at, ref float radius)
+        {
+            float2 from = AnyOwnPosition();
+            float best = float.MaxValue;
+            foreach (Simulation.Economy.Village village in match.Villages)
+            {
+                if (village.Owner == side)
+                {
+                    continue;
+                }
+
+                float distance = math.distance(from, village.Position);
+                if (distance < best)
+                {
+                    best = distance;
+                    at = village.Position;
+                    radius = match.Settings.economy.captureRadius;
+                }
+            }
+
+            return best < float.MaxValue;
+        }
+
+        private bool TryNearestEnemy(ref float2 at, ref float radius)
+        {
+            float2 from = AnyOwnPosition();
+            float best = float.MaxValue;
+            foreach (Squad squad in match.Squads)
+            {
+                if (squad.Side == side || squad.IsCamp || squad.IsRouting || squad.Alive <= 0)
+                {
+                    continue;
+                }
+
+                float distance = math.distance(from, squad.Position);
+                if (distance < best)
+                {
+                    best = distance;
+                    at = squad.Position;
+                    radius = math.length(FormationLayout.GetHalfExtents(squad, match.Settings.squads));
+                }
+            }
+
+            return best < float.MaxValue;
+        }
+
+        private bool TryOwnBuilding(BuildingType type, ref float2 at, ref float radius)
+        {
+            foreach (Building building in match.Buildings)
+            {
+                if (building.Owner == side && building.Type == type)
+                {
+                    at = building.Position;
+                    radius = HighlightBuildingRadius;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Радиус кольца вокруг здания (штаба, казармы), u.
+        private const float HighlightBuildingRadius = 4.5f;
+
+        private float2 AnyOwnPosition()
+        {
+            foreach (Squad squad in OwnSquads())
+            {
+                return squad.Position;
+            }
+
+            return float2.zero;
         }
 
         private void OnNext()
@@ -155,9 +309,15 @@ namespace Marchlands.Bootstrap
                 facingsAtStart[squad.Id] = squad.Facing;
             }
 
-            if (current == Step.Volley)
+            // Противник включается по ходу: с урока о деревнях спорит за них и воюет, с урока о казарме — нанимает и строит.
+            if (current >= Step.Village)
             {
                 enemyTactics.Active = true;
+            }
+
+            if (current >= Step.Barracks)
+            {
+                enemyStrategy.Active = true;
             }
         }
 
@@ -236,6 +396,11 @@ namespace Marchlands.Bootstrap
         {
             step = messages.Length;
             panel.Hide();
+            if (highlight != null)
+            {
+                highlight.enabled = false;
+            }
+
             enemyTactics.Active = true;
             enemyStrategy.Active = true;
         }

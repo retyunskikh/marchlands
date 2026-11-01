@@ -18,13 +18,19 @@ namespace Marchlands.UI
         [SerializeField] private Text hintLabel;
         [SerializeField] private string chooseSiteText = "Тапните, где поставить здание";
         [SerializeField] private string validSiteText = "Место подходит";
-        [SerializeField] private string invalidSiteText = "Здесь нельзя: далеко от штаба, тесно или мало золота";
+        [Header("Почему здесь нельзя")]
+        [SerializeField] private string farFromHeadquartersText = "Слишком далеко от штаба — ближе к нему";
+        [SerializeField] private string tooCloseToBuildingText = "Вплотную к другому зданию — отступите от него";
+        [SerializeField] private string tooCloseToVillageText = "Вплотную к деревне — отступите от неё";
+        [SerializeField] private string noGoldText = "Не хватает золота";
+        [SerializeField] private string atLimitText = "Такое здание уже есть";
 
         private Match match;
         private Side playerSide;
         private bool isPlacing;
         private bool hasSite;
         private bool canConfirm;
+        private SiteProblem problem;
 
         public event Action ConfirmRequested;
 
@@ -37,17 +43,18 @@ namespace Marchlands.UI
             confirmButton.onClick.AddListener(() => ConfirmRequested?.Invoke());
             cancelButton.onClick.AddListener(() => CancelRequested?.Invoke());
             gameObject.SetActive(match.GetHeadquarters(playerSide) != null);
-            SetPlacementState(false, false, false);
+            SetPlacementState(false, false, SiteProblem.None);
         }
 
         /// <param name="placing">Идёт выбор места.</param>
         /// <param name="siteChosen">Место уже выбрано тапом.</param>
-        /// <param name="confirmable">Выбранное место подходит и золота хватает.</param>
-        public void SetPlacementState(bool placing, bool siteChosen, bool confirmable)
+        /// <param name="siteProblem">Почему на выбранном месте строить нельзя; None — можно.</param>
+        public void SetPlacementState(bool placing, bool siteChosen, SiteProblem siteProblem)
         {
             isPlacing = placing;
             hasSite = siteChosen;
-            canConfirm = confirmable;
+            problem = siteProblem;
+            canConfirm = placing && siteChosen && siteProblem == SiteProblem.None;
             Refresh();
         }
 
@@ -63,7 +70,26 @@ namespace Marchlands.UI
         {
             placementButtons.SetActive(isPlacing);
             confirmButton.interactable = canConfirm;
-            hintLabel.text = !hasSite ? chooseSiteText : canConfirm ? validSiteText : invalidSiteText;
+            hintLabel.text = !hasSite ? chooseSiteText : canConfirm ? validSiteText : ProblemText(problem);
+        }
+
+        private string ProblemText(SiteProblem siteProblem)
+        {
+            switch (siteProblem)
+            {
+                case SiteProblem.FarFromHeadquarters:
+                    return farFromHeadquartersText;
+                case SiteProblem.TooCloseToBuilding:
+                    return tooCloseToBuildingText;
+                case SiteProblem.TooCloseToVillage:
+                    return tooCloseToVillageText;
+                case SiteProblem.NoGold:
+                    return noGoldText;
+                case SiteProblem.AtLimit:
+                    return atLimitText;
+                default:
+                    return farFromHeadquartersText;
+            }
         }
     }
 }

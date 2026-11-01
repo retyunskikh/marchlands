@@ -62,6 +62,46 @@ namespace Marchlands.Simulation.Buildings
             return true;
         }
 
+        /// <summary>Почему здание нельзя поставить в эту точку (первая из причин); None — можно.</summary>
+        public static SiteProblem GetSiteProblem(Match match, Side side, BuildingType type, float2 point)
+        {
+            BuildingSettings settings = match.Settings.buildings;
+            Building headquarters = match.GetHeadquarters(side);
+            if (headquarters == null)
+            {
+                return SiteProblem.NoHeadquarters;
+            }
+
+            if (IsAtLimit(match, side, type))
+            {
+                return SiteProblem.AtLimit;
+            }
+
+            if (math.distance(point, headquarters.Position) > settings.buildRadiusFromHQ)
+            {
+                return SiteProblem.FarFromHeadquarters;
+            }
+
+            foreach (Building building in match.Buildings)
+            {
+                float spacing = settings.buildingSpacing + (building.Type == BuildingType.Headquarters ? settings.annexSpacing : 0f);
+                if (math.distance(point, building.Position) < spacing)
+                {
+                    return SiteProblem.TooCloseToBuilding;
+                }
+            }
+
+            foreach (Village village in match.Villages)
+            {
+                if (math.distance(point, village.Position) < settings.buildingSpacing)
+                {
+                    return SiteProblem.TooCloseToVillage;
+                }
+            }
+
+            return CanAfford(match, side, type) ? SiteProblem.None : SiteProblem.NoGold;
+        }
+
         /// <summary>Казарму и конюшню ставят по одним правилам: в радиусе штаба и не впритык к другим.</summary>
         public static bool CanBuild(Match match, Side side, BuildingType type, float2 point)
         {

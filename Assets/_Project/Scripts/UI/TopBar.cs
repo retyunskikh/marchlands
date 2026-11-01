@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace Marchlands.UI
 {
     /// <summary>
-    /// Верхняя панель: золото, деревни и население игрока, а пока кто-то держит ⅔ деревень — таймер
+    /// Верхняя панель: золото, деревни и население игрока (значки слева от чисел), а пока кто-то держит ⅔ деревень — таймер
     /// доминирования (раздел 4 docs/design.md).
     /// </summary>
     public sealed class TopBar : MonoBehaviour
@@ -18,12 +18,12 @@ namespace Marchlands.UI
         [Tooltip("Население из мест; без штаба (песочницы) скрыто.")]
         [SerializeField] private Text populationLabel;
         [Tooltip("{0} — население, {1} — мест.")]
-        [SerializeField] private string populationFormat = "Население: {0}/{1}";
+        [SerializeField] private string populationFormat = "{0}/{1}";
         [SerializeField] private Color populationFullColor = new Color(1f, 0.55f, 0.45f);
         [Tooltip("{0} — золото.")]
-        [SerializeField] private string goldFormat = "Золото: {0}";
+        [SerializeField] private string goldFormat = "{0}";
         [Tooltip("{0} — свои деревни, {1} — всего.")]
-        [SerializeField] private string villagesFormat = "Деревни: {0} / {1}";
+        [SerializeField] private string villagesFormat = "{0} / {1}";
         [Tooltip("{0} — сторона, {1} — сколько осталось до победы (м:сс).")]
         [SerializeField] private string dominationFormat = "{0} держит деревни: {1}";
         [SerializeField] private string franceName = "Франция";

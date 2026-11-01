@@ -119,11 +119,28 @@ namespace Marchlands.UI
 
         private void LateUpdate()
         {
-            if (strengthIcon != null && strengthIcon.activeSelf != (building == null))
+            bool showIcon = building == null;
+            if (strengthIcon != null && strengthIcon.activeSelf != showIcon)
             {
-                strengthIcon.SetActive(building == null);
+                strengthIcon.SetActive(showIcon);
+                // У здания значка нет — надпись прочности встаёт с левого края текстов карточки и шире.
+                RectTransform label = strengthLabel.rectTransform;
+                if (!strengthLayoutSaved)
+                {
+                    strengthPosition = label.anchoredPosition;
+                    strengthSize = label.sizeDelta;
+                    strengthLayoutSaved = true;
+                }
+
+                RectTransform title = titleLabel.rectTransform;
+                label.anchoredPosition = showIcon ? strengthPosition : new Vector2(title.anchoredPosition.x, strengthPosition.y);
+                label.sizeDelta = showIcon ? strengthSize : new Vector2(title.sizeDelta.x, strengthSize.y);
             }
         }
+
+        private bool strengthLayoutSaved;
+        private Vector2 strengthPosition;
+        private Vector2 strengthSize;
 
         /// <summary>Карточка группы толпы рекрутов этого рода войск; null — скрыть (если не выделен отряд).</summary>
         public void SetCamp(Side side, UnitType? type)

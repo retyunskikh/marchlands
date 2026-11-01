@@ -61,6 +61,7 @@ namespace Marchlands.Input
         private BuildingType placementType;
         private float2? placementSite;
         private bool lastPlacementConfirmable;
+        private SiteProblem lastPlacementProblem;
 
         /// <summary>Выделенный отряд изменился; null — выделение снято.</summary>
         public event Action<Squad> SelectionChanged;
@@ -72,7 +73,8 @@ namespace Marchlands.Input
         public event Action<UnitType?> CampSelectionChanged;
 
         /// <summary>Режим постановки здания: включён ли он, выбрано ли место и можно ли там поставить здание.</summary>
-        public event Action<bool, bool, bool> PlacementChanged;
+        /// <summary>Идёт выбор места; место выбрано; почему там нельзя строить (None — можно).</summary>
+        public event Action<bool, bool, SiteProblem> PlacementChanged;
 
         /// <summary>Включился или выключился выбор цели для «В штыки».</summary>
         public event Action<bool> ChargeTargetingChanged;
@@ -578,8 +580,10 @@ namespace Marchlands.Input
         /// <summary>Перерисовывает предпросмотр и сообщает, если изменилось, можно ли ставить (золото тоже может измениться).</summary>
         private void RefreshPlacement(bool force)
         {
-            bool confirmable = isPlacing && placementSite.HasValue
-                && BuildRules.CanBuild(match, playerSide, placementType, placementSite.Value);
+            SiteProblem problem = isPlacing && placementSite.HasValue
+                ? BuildRules.GetSiteProblem(match, playerSide, placementType, placementSite.Value)
+                : SiteProblem.None;
+            bool confirmable = isPlacing && placementSite.HasValue && problem == SiteProblem.None;
             if (isPlacing)
             {
                 Building headquarters = match.GetHeadquarters(playerSide);
@@ -587,10 +591,11 @@ namespace Marchlands.Input
                 buildingViews.ShowPlacement(headquarters.Position, site, confirmable, placementType);
             }
 
-            if (force || confirmable != lastPlacementConfirmable)
+            if (force || problem != lastPlacementProblem || confirmable != lastPlacementConfirmable)
             {
                 lastPlacementConfirmable = confirmable;
-                PlacementChanged?.Invoke(isPlacing, placementSite.HasValue, confirmable);
+                lastPlacementProblem = problem;
+                PlacementChanged?.Invoke(isPlacing, placementSite.HasValue, problem);
             }
         }
 
