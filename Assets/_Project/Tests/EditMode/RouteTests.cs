@@ -208,6 +208,34 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void ManualColumn_ReformsToLine_WhenMarchingUpToEnemy()
+        {
+            var settings = TestSettings.Create();
+            settings.squads.autoLineEnemyRadius = 15f;
+            var match = new Match(1, settings);
+            Squad squad = match.AddSquad(Side.France, new float2(-40f, 0f), 0f, Formation.Column);
+            match.AddSquad(Side.Austria, new float2(10f, 0f), 180f, Formation.Line);
+            // Колонну построили вручную и ведут к врагу (без маршрута).
+            match.Enqueue(new MoveCommand(squad.Id, new float2(-2f, 0f), 0f));
+            match.Tick();
+            Assert.AreEqual(Formation.Column, squad.TargetFormation, "Враг пока далеко — идёт колонной");
+            bool reformed = false;
+            for (int i = 0; i < TicksFor(60f) && squad.Order.Type == SquadOrderType.Move; i++)
+            {
+                match.Tick();
+                float distance = math.distance(squad.Position, new float2(10f, 0f));
+                if (squad.TargetFormation == Formation.Line)
+                {
+                    reformed = true;
+                    Assert.LessOrEqual(distance, 15.5f, "Перестраивается, только когда враг близко");
+                    break;
+                }
+            }
+
+            Assert.IsTrue(reformed, "Подходя к врагу, колонна разворачивается в линию");
+        }
+
+        [Test]
         public void AutoColumn_ReformsToLine_WhenEnemyApproaches()
         {
             Match match = ForestAndRoad(1.5f, out Squad squad);
