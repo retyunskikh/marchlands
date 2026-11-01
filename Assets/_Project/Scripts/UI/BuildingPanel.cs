@@ -40,6 +40,10 @@ namespace Marchlands.UI
         [SerializeField] private string upgradingStatus = "Казарму усиливают — найм стоит";
         [Tooltip("Штаб и блокгауз из деревянных укрепляют в каменные.")]
         [SerializeField] private string fortifyTitle = "Укрепить";
+        [Tooltip("Значки кнопки: на ней — каким здание станет (усиленная казарма, каменный штаб, каменный блокгауз).")]
+        [SerializeField] private Sprite upgradeBarracksIcon;
+        [SerializeField] private Sprite upgradeHeadquartersIcon;
+        [SerializeField] private Sprite upgradeBlockhouseIcon;
         [SerializeField] private string headquartersFortifyingStatus = "Штаб укрепляют";
         [SerializeField] private string blockhouseFortifyingStatus = "Блокгауз укрепляют";
 
@@ -440,6 +444,8 @@ namespace Marchlands.UI
             bool can = BuildRules.CanUpgrade(match, building);
             upgradeToggle.Button.interactable = can;
             upgradeToggle.SetName(building.Type == BuildingType.Barracks ? upgradeTitle : fortifyTitle);
+            upgradeToggle.SetIcon(building.Type == BuildingType.Headquarters ? upgradeHeadquartersIcon
+                : building.Type == BuildingType.Blockhouse ? upgradeBlockhouseIcon : upgradeBarracksIcon);
             upgradeToggle.SetAvailable(can || building.IsUpgrading);
             float time = BuildRules.GetUpgradeTime(match, building.Type);
             // Идёт усиление — полоса заполняется с первого тика (чуть видна сразу), вместо цены — проценты.

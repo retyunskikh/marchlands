@@ -3411,6 +3411,9 @@ MonoBehaviour:
   upgradingStatus: "\u041A\u0430\u0437\u0430\u0440\u043C\u0443 \u0443\u0441\u0438\u043B\u0438\u0432\u0430\u044E\u0442
     \u2014 \u043D\u0430\u0439\u043C \u0441\u0442\u043E\u0438\u0442"
   fortifyTitle: "\u0423\u043A\u0440\u0435\u043F\u0438\u0442\u044C"
+  upgradeBarracksIcon: {fileID: 21300000, guid: 818a9c2ce3eab4842bfa2ba98b14eea7, type: 3}
+  upgradeHeadquartersIcon: {fileID: 21300000, guid: 0ce59a060e7241f47b96e9df70ab41f7, type: 3}
+  upgradeBlockhouseIcon: {fileID: 21300000, guid: 900e98a33b51b784f9e85d96b5198dc6, type: 3}
   headquartersFortifyingStatus: "\u0428\u0442\u0430\u0431 \u0443\u043A\u0440\u0435\u043F\u043B\u044F\u044E\u0442"
   blockhouseFortifyingStatus: "\u0411\u043B\u043E\u043A\u0433\u0430\u0443\u0437 \u0443\u043A\u0440\u0435\u043F\u043B\u044F\u044E\u0442"
   headquartersPanelWidth: 1360
