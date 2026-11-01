@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Marchlands.Simulation.Buildings;
 using Marchlands.Simulation.Combat;
+using Marchlands.Simulation.Config;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Squads;
@@ -101,6 +102,10 @@ namespace Marchlands.View
         private SpriteRenderer campMarker;
         private SpriteRenderer radiusPreview;
         private SpriteRenderer sitePreview;
+        private SpriteRenderer radiusEdge;
+        private SpriteRenderer siteCenter;
+        private Sprite zoneSprite;
+        private readonly List<SpriteRenderer> keepoutZones = new List<SpriteRenderer>();
 
         public BuildingViewStyle Style => style;
 
@@ -111,6 +116,9 @@ namespace Marchlands.View
             radiusPreview = CreatePreview("Build Radius", style.CircleSprite, style.BodySortingOrder - 2);
             sitePreview = CreatePreview("Barracks Site", style.SquareSprite, style.OverlaySortingOrder);
             sitePreview.transform.localScale = new Vector3(style.BarracksSize.x, style.BarracksSize.y, 1f);
+            zoneSprite = CreateZoneSprite();
+            radiusEdge = CreatePreview("Build Radius Edge", zoneSprite, style.BodySortingOrder - 1);
+            siteCenter = CreatePreview("Site Center", style.CircleSprite, style.OverlaySortingOrder + 1);
             campMarker = CreatePreview("Camp Selection", squadViews.Style.MarkerSprite, style.BodySortingOrder + 4);
             campMarker.color = squadViews.Style.SelectionColor;
             campMarker.enabled = false;
@@ -972,18 +980,130 @@ namespace Marchlands.View
             radiusPreview.transform.localScale = Vector3.one * (match.Settings.buildings.buildRadiusFromHQ * 2f);
             radiusPreview.color = style.BuildRadiusColor;
 
+            radiusEdge.enabled = true;
+            radiusEdge.transform.position = headquarters;
+            radiusEdge.transform.localScale = radiusPreview.transform.localScale;
+            radiusEdge.color = style.BuildRadiusEdgeColor;
+
             sitePreview.enabled = site.HasValue;
+            siteCenter.enabled = site.HasValue;
             if (site.HasValue)
             {
                 sitePreview.transform.position = site.Value;
                 sitePreview.color = valid ? style.ValidSiteColor : style.InvalidSiteColor;
+                siteCenter.transform.position = site.Value;
+                siteCenter.transform.localScale = Vector3.one * style.SiteCenterSize;
+                siteCenter.color = valid ? style.ValidSiteColor : style.KeepoutBlockingColor;
             }
+
+            ShowKeepoutZones(headquarters, site);
+        }
+
+        /// <summary>
+        /// Запретные зоны вокруг зданий и деревень у штаба: круг радиусом buildingSpacing (у штаба — больше на
+        /// annexSpacing) с пунктиром по краю. Центр нового здания должен быть вне всех кругов — видно, на сколько
+        /// отступить; круг, в который он попал, горит ярче.
+        /// </summary>
+        private void ShowKeepoutZones(Vector2 headquarters, Vector2? site)
+        {
+            BuildingSettings settings = match.Settings.buildings;
+            float reach = settings.buildRadiusFromHQ + settings.buildingSpacing + settings.annexSpacing;
+            int used = 0;
+            foreach (Building building in match.Buildings)
+            {
+                if (building.IsDestroyed)
+                {
+                    continue;
+                }
+
+                float spacing = settings.buildingSpacing + (building.Type == BuildingType.Headquarters ? settings.annexSpacing : 0f);
+                used = PlaceZone(used, building.Position, spacing, headquarters, reach, site);
+            }
+
+            foreach (Village village in match.Villages)
+            {
+                used = PlaceZone(used, village.Position, settings.buildingSpacing, headquarters, reach, site);
+            }
+
+            for (int i = used; i < keepoutZones.Count; i++)
+            {
+                keepoutZones[i].enabled = false;
+            }
+        }
+
+        private int PlaceZone(int used, float2 center, float radius, Vector2 headquarters, float reach, Vector2? site)
+        {
+            var position = new Vector2(center.x, center.y);
+            if (Vector2.Distance(position, headquarters) > reach)
+            {
+                return used;
+            }
+
+            if (used == keepoutZones.Count)
+            {
+                keepoutZones.Add(CreatePreview("Keepout Zone", zoneSprite, style.BodySortingOrder - 1));
+            }
+
+            SpriteRenderer zone = keepoutZones[used];
+            zone.enabled = true;
+            zone.transform.position = position;
+            zone.transform.localScale = Vector3.one * (radius * 2f);
+            bool blocking = site.HasValue && Vector2.Distance(site.Value, position) < radius;
+            zone.color = blocking ? style.KeepoutBlockingColor : style.KeepoutColor;
+            return used + 1;
         }
 
         public void HidePlacement()
         {
             radiusPreview.enabled = false;
             sitePreview.enabled = false;
+            if (radiusEdge != null)
+            {
+                radiusEdge.enabled = false;
+                siteCenter.enabled = false;
+            }
+
+            foreach (SpriteRenderer zone in keepoutZones)
+            {
+                zone.enabled = false;
+            }
+        }
+
+        /// <summary>Круг-зона: лёгкая заливка и чёткий пунктир по краю (красится цветом спрайта).</summary>
+        private static Sprite CreateZoneSprite()
+        {
+            const int size = 512;
+            const float edge = 0.018f;
+            const int dashes = 48;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var pixels = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x + 0.5f) / size * 2f - 1f;
+                    float dy = (y + 0.5f) / size * 2f - 1f;
+                    float r = math.sqrt(dx * dx + dy * dy);
+                    float alpha = 0f;
+                    if (r <= 1f)
+                    {
+                        alpha = 0.16f;
+                        float angle = math.atan2(dy, dx) / (2f * math.PI) + 0.5f;
+                        bool dash = math.frac(angle * dashes) < 0.6f;
+                        float toEdge = 1f - r;
+                        if (dash && toEdge < edge * 2f)
+                        {
+                            alpha = math.max(alpha, math.saturate(1f - math.abs(toEdge - edge) / edge));
+                        }
+                    }
+
+                    pixels[y * size + x] = new Color32(255, 255, 255, (byte)(alpha * 255f));
+                }
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
         }
 
         private SpriteRenderer CreatePreview(string objectName, Sprite sprite, int sortingOrder)

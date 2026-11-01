@@ -189,6 +189,14 @@ namespace Marchlands.View
         [SerializeField] private Color buildRadiusColor = new Color(1f, 1f, 1f, 0.35f);
         [SerializeField] private Color validSiteColor = new Color(0.4f, 1f, 0.4f, 0.6f);
         [SerializeField] private Color invalidSiteColor = new Color(1f, 0.3f, 0.3f, 0.6f);
+        [Tooltip("Граница радиуса застройки (пунктир по краю круга).")]
+        [SerializeField] private Color buildRadiusEdgeColor = new Color(1f, 1f, 1f, 0.9f);
+        [Tooltip("Запретная зона вокруг зданий и деревень: центр нового здания не может быть внутри.")]
+        [SerializeField] private Color keepoutColor = new Color(1f, 0.45f, 0.3f, 0.75f);
+        [Tooltip("Зона, в которую попал центр нового здания, — ярче.")]
+        [SerializeField] private Color keepoutBlockingColor = new Color(1f, 0.2f, 0.15f, 1f);
+        [Tooltip("Метка центра нового здания: по ней видно, вышел ли он из запретной зоны.")]
+        [SerializeField] private float siteCenterSize = 0.9f;
 
         [SerializeField] private int bodySortingOrder = -30;
         [SerializeField] private int overlaySortingOrder = 55;
@@ -342,6 +350,14 @@ namespace Marchlands.View
         public Color ValidSiteColor => validSiteColor;
 
         public Color InvalidSiteColor => invalidSiteColor;
+
+        public Color BuildRadiusEdgeColor => buildRadiusEdgeColor;
+
+        public Color KeepoutColor => keepoutColor;
+
+        public Color KeepoutBlockingColor => keepoutBlockingColor;
+
+        public float SiteCenterSize => siteCenterSize;
 
         public Color DamagedTint => damagedTint;
 

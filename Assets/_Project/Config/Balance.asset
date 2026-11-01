@@ -212,7 +212,7 @@ MonoBehaviour:
       upgradedBlockhouseRange: 16
       fortifiedHealthMultiplier: 1.5
       upgradedSentryShots: 7
-      buildRadiusFromHQ: 24
+      buildRadiusFromHQ: 30
       buildingSpacing: 10.5
       hireCost: 3
       hireInterval: 3
