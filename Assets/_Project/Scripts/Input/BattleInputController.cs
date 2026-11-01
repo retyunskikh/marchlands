@@ -94,14 +94,7 @@ namespace Marchlands.Input
         /// <summary>Управление мышью и клавиатурой (ПК, редактор), а не пальцами.</summary>
         public static bool UsesMouse
         {
-            get
-            {
-#if UNITY_EDITOR
-                return true;
-#else
-                return !Application.isMobilePlatform;
-#endif
-            }
+            get { return Platform.IsDesktop; }
         }
 
         public bool IsPlacing => isPlacing;
@@ -636,14 +629,27 @@ namespace Marchlands.Input
             }
         }
 
+        /// <summary>
+        /// Здание под точкой: внутри его видимого прямоугольника (с запасом в полпальца) или, для маленьких,
+        /// ближе buildingTapRadius к центру. Из нескольких — ближайшее к точке.
+        /// </summary>
         private Building FindBuildingAt(float2 world, bool own)
         {
             Building best = null;
-            float bestDistance = config.BuildingTapRadius;
+            float bestDistance = float.MaxValue;
+            float pad = cameraController.PixelsToWorld(ScreenUnits.DpToPixels(config.MinTouchTarget)) * 0.25f;
             foreach (Building building in match.Buildings)
             {
+                if ((building.Owner == playerSide) != own || building.IsDestroyed)
+                {
+                    continue;
+                }
+
+                float2 half = (float2)buildingViews.Style.SizeOf(building) * 0.5f + pad;
+                float2 offset = math.abs(world - building.Position);
                 float distance = math.distance(world, building.Position);
-                if ((building.Owner == playerSide) == own && !building.IsDestroyed && distance <= bestDistance)
+                bool inside = math.all(offset <= half) || distance <= config.BuildingTapRadius;
+                if (inside && distance < bestDistance)
                 {
                     best = building;
                     bestDistance = distance;

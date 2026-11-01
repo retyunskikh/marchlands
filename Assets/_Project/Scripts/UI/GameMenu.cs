@@ -20,6 +20,8 @@ namespace Marchlands.UI
         [SerializeField] private Button resumeButton;
         [SerializeField] private Button pauseRestartButton;
         [SerializeField] private Button pauseMenuButton;
+        [Tooltip("Выход из игры из меню паузы.")]
+        [SerializeField] private Button pauseQuitButton;
 
         [Header("Результат")]
         [SerializeField] private GameObject resultOverlay;
@@ -53,6 +55,10 @@ namespace Marchlands.UI
             resumeButton.onClick.AddListener(Resume);
             pauseRestartButton.onClick.AddListener(Restart);
             pauseMenuButton.onClick.AddListener(OpenMenu);
+            if (pauseQuitButton != null)
+            {
+                pauseQuitButton.onClick.AddListener(Application.Quit);
+            }
             resultRestartButton.onClick.AddListener(Restart);
             resultMenuButton.onClick.AddListener(OpenMenu);
 

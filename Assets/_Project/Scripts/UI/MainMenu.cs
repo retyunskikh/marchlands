@@ -19,6 +19,8 @@ namespace Marchlands.UI
         [SerializeField] private Color selectedMapColor = new Color(1f, 0.85f, 0.4f);
         [SerializeField] private Color mapColor = new Color(0.95f, 0.92f, 0.82f);
         [SerializeField] private Button stressButton;
+        [Tooltip("Выход из игры.")]
+        [SerializeField] private Button quitButton;
         [SerializeField] private string stressSceneName = "Sandbox_Stress";
         [SerializeField] private int targetFrameRate = 60;
 
@@ -33,6 +35,10 @@ namespace Marchlands.UI
             }
 
             stressButton.onClick.AddListener(() => SceneManager.LoadScene(stressSceneName));
+            if (quitButton != null)
+            {
+                quitButton.onClick.AddListener(Application.Quit);
+            }
             stressButton.gameObject.SetActive(Debug.isDebugBuild);
 
             if (mapButtons == null)
