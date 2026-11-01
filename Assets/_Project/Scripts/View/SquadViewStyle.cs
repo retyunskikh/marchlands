@@ -111,6 +111,11 @@ namespace Marchlands.View
         [SerializeField] private Sprite gunSprite;
         [Tooltip("Передок (зарядный ящик на колёсах) сверху, дышлом вверх.")]
         [SerializeField] private Sprite limberSprite;
+        [Tooltip("Окраска станин лафета и крышки зарядного ящика (белая маска, красится цветом игрока).")]
+        [SerializeField] private Sprite gunTrimSprite;
+        [SerializeField] private Sprite limberTrimSprite;
+        [Tooltip("Насколько темнее цвета игрока краска лафета (1 — как знамя).")]
+        [SerializeField] private float gunTrimShade = 0.8f;
         [SerializeField] private float gunScale = 1.7f;
         [SerializeField] private float limberScale = 1.4f;
         [SerializeField] private Color franceColor = new Color(0.2f, 0.35f, 0.85f);
@@ -333,6 +338,18 @@ namespace Marchlands.View
         public Sprite LimberSprite => limberSprite;
 
         public float GunScale => gunScale;
+
+        public Sprite GunTrimSprite => gunTrimSprite;
+
+        public Sprite LimberTrimSprite => limberTrimSprite;
+
+        /// <summary>Краска лафета: цвет игрока, чуть темнее.</summary>
+        public Color GetGunTrimColor(Side side)
+        {
+            Color color = GetSideColor(side) * gunTrimShade;
+            color.a = 1f;
+            return color;
+        }
 
         public float LimberScale => limberScale;
 

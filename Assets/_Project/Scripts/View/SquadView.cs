@@ -111,6 +111,8 @@ namespace Marchlands.View
         // Пушка и передок у отряда-пушки.
         private SpriteRenderer gunRenderer;
         private SpriteRenderer limberRenderer;
+        private SpriteRenderer gunTrim;
+        private SpriteRenderer limberTrim;
 
         internal void Initialize(Squad squad, Match match, SquadViewStyle style, CasualtiesView casualties)
         {
@@ -141,6 +143,8 @@ namespace Marchlands.View
                 gunRenderer.transform.localScale = Vector3.one * style.GunScale;
                 limberRenderer = CreateRenderer("Limber", style.LimberSprite, Color.white, style.SoldierSortingOrder);
                 limberRenderer.transform.localScale = Vector3.one * style.LimberScale;
+                gunTrim = CreateTrim("Gun Paint", style.GunTrimSprite, gunRenderer);
+                limberTrim = CreateTrim("Limber Paint", style.LimberTrimSprite, limberRenderer);
             }
 
             countLabel = gameObject.AddComponent<SquadCountLabel>();
@@ -350,6 +354,7 @@ namespace Marchlands.View
             }
 
             gunRenderer.enabled = true;
+            SetTrim(gunTrim, true);
             GunSettings guns = match.Settings.guns;
             // 0 — снята с передка (стволом к врагу перед расчётом), 1 — на передке (позади расчёта, её тянут).
             float towed = squad.IsLimbered ? 1f : 0f;
@@ -379,6 +384,7 @@ namespace Marchlands.View
 
             // Передок подводят, когда пушку уже развернули, — между расчётом и пушкой.
             limberRenderer.enabled = towed > 0.5f;
+            SetTrim(limberTrim, limberRenderer.enabled);
             if (limberRenderer.enabled)
             {
                 float2 limber = gun + forward * (guns.towLength * LimberShare);
@@ -406,6 +412,32 @@ namespace Marchlands.View
             abandoned.AddComponent<FadingSprite>().Initialize(copy, style.AbandonedGunLieTime, style.AbandonedGunFadeTime);
             gunRenderer.enabled = false;
             limberRenderer.enabled = false;
+            SetTrim(gunTrim, false);
+            SetTrim(limberTrim, false);
+        }
+
+        /// <summary>Краска цвета игрока поверх пушки или передка (дочерняя фигура, ходит вместе с ними).</summary>
+        private SpriteRenderer CreateTrim(string objectName, Sprite sprite, SpriteRenderer owner)
+        {
+            if (sprite == null)
+            {
+                return null;
+            }
+
+            SpriteRenderer trim = CreateRenderer(objectName, sprite, style.GetGunTrimColor(squad.Side), owner.sortingOrder + 1);
+            trim.transform.SetParent(owner.transform, false);
+            trim.transform.localPosition = Vector3.zero;
+            trim.transform.localRotation = Quaternion.identity;
+            trim.transform.localScale = Vector3.one;
+            return trim;
+        }
+
+        private static void SetTrim(SpriteRenderer trim, bool visible)
+        {
+            if (trim != null)
+            {
+                trim.enabled = visible;
+            }
         }
 
         private const float RecoilTime = 0.6f;
