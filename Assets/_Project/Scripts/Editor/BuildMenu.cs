@@ -58,6 +58,13 @@ namespace Marchlands.Editor
             BuildReport report = BuildPipeline.BuildPlayer(options);
             if (report.summary.result == BuildResult.Succeeded)
             {
+                // Отладочные данные Burst игроку не нужны (Unity сам называет папку DoNotShip).
+                string folder = Path.GetDirectoryName(path);
+                foreach (string debug in Directory.GetDirectories(folder, "*_DoNotShip"))
+                {
+                    Directory.Delete(debug, true);
+                }
+
                 Debug.Log($"Сборка готова: {path} ({report.summary.totalSize / (1024 * 1024)} МБ)");
             }
             else

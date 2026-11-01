@@ -171,7 +171,7 @@ namespace Marchlands.Tests.EditMode
         {
             Match match = ForestAndRoad(1.5f, out Squad squad);
             match.Settings.squads.autoLineEnemyRadius = 20f;
-            match.AddSquad(Side.Austria, new float2(-40f, 26f), -90f, Formation.Line);
+            match.AddSquad(Side.Austria, new float2(-28f, 20f), -90f, Formation.Line);
             match.Enqueue(new MoveCommand(squad.Id, new float2(40f, 12f), 0f, autoRoute: true));
             match.Tick();
             Assert.AreEqual(Formation.Line, squad.TargetFormation, "Враг рядом — в колонну не встаёт, как ни далеко цель");
@@ -186,7 +186,7 @@ namespace Marchlands.Tests.EditMode
             }
 
             Assert.AreEqual(Formation.Column, column.Formation);
-            second.AddSquad(Side.Austria, new float2(-40f, 26f), -90f, Formation.Line);
+            second.AddSquad(Side.Austria, new float2(-28f, 20f), -90f, Formation.Line);
             second.Enqueue(new MoveCommand(column.Id, new float2(40f, 12f), 0f, autoRoute: true));
             second.Tick();
             Assert.AreEqual(Formation.Line, column.TargetFormation, "Из колонны — в линию");
@@ -233,6 +233,23 @@ namespace Marchlands.Tests.EditMode
             }
 
             Assert.IsTrue(reformed, "Подходя к врагу, колонна разворачивается в линию");
+        }
+
+        [Test]
+        public void Column_MarchingAwayFromEnemy_StaysColumn()
+        {
+            var settings = TestSettings.Create();
+            settings.squads.autoLineEnemyRadius = 15f;
+            var match = new Match(1, settings);
+            // Враг в 8 u сзади, колонна уходит от него.
+            Squad squad = match.AddSquad(Side.France, new float2(0f, 0f), 180f, Formation.Column);
+            match.AddSquad(Side.Austria, new float2(8f, 0f), 180f, Formation.Line);
+            match.Enqueue(new MoveCommand(squad.Id, new float2(-40f, 0f), 180f, autoRoute: true));
+            for (int i = 0; i < TicksFor(20f); i++)
+            {
+                match.Tick();
+                Assert.AreEqual(Formation.Column, squad.TargetFormation, "Уходит от врага колонной");
+            }
         }
 
         [Test]

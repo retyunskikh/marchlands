@@ -177,20 +177,27 @@ namespace Marchlands.Simulation.Squads
         }
 
         /// <summary>
-        /// Пехотная колонна на марше при подходе врага разворачивается в линию на ходу — в колонне перед врагом
+        /// Пехотная колонна на марше при подходе к врагу впереди (не сзади — от него можно уходить колонной) разворачивается в линию на ходу — в колонне перед врагом
         /// отряд почти беззащитен. Дальше идёт линией; если колонну строили ради марша, после него уже не перестраивается.
         /// </summary>
         private static void ReformToLineNearEnemy(Squad squad, Match match)
         {
             if (squad.Type == UnitType.Cavalry || squad.IsArtillery
                 || squad.Formation != Formation.Column || squad.IsChangingFormation || squad.Order.Type != SquadOrderType.Move
-                || !RoutePlanner.IsEnemyNear(match, squad, match.Settings.squads.autoLineEnemyRadius))
+                || !RoutePlanner.IsEnemyAhead(match, squad, match.Settings.squads.autoLineEnemyRadius, Heading(squad)))
             {
                 return;
             }
 
             squad.RestoreFormation = null;
             Commands.ChangeFormationCommand.Start(match, squad, Formation.Line);
+        }
+
+        /// <summary>Куда отряд сейчас идёт: к ближайшей точке маршрута или к цели приказа.</summary>
+        private static float2 Heading(Squad squad)
+        {
+            float2 goal = squad.RouteIndex < squad.Route.Count - 1 ? squad.Route[squad.RouteIndex] : squad.Order.Target;
+            return goal - squad.Position;
         }
 
         /// <summary>

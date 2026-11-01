@@ -60,7 +60,7 @@ namespace Marchlands.Simulation.Commands
             {
                 // Враг рядом — пехота в колонне разворачивается в линию, куда бы ни шла.
                 if (squad.Type != UnitType.Cavalry && !squad.IsArtillery && squad.TargetFormation == Formation.Column
-                    && RoutePlanner.IsEnemyNear(match, squad, match.Settings.squads.autoLineEnemyRadius))
+                    && RoutePlanner.IsEnemyAhead(match, squad, match.Settings.squads.autoLineEnemyRadius, target - squad.Position))
                 {
                     ChangeFormationCommand.Start(match, squad, Formation.Line);
                 }
@@ -85,7 +85,7 @@ namespace Marchlands.Simulation.Commands
             }
 
             float radius = settings.autoLineEnemyRadius;
-            if (RoutePlanner.IsEnemyNear(match, squad, radius))
+            if (RoutePlanner.IsEnemyAhead(match, squad, radius, target - squad.Position))
             {
                 return true;
             }

@@ -65,6 +65,35 @@ namespace Marchlands.Simulation.Squads
             return false;
         }
 
+        /// <summary>
+        /// Есть ли ближе <paramref name="radius"/> не бегущий враг впереди по ходу — в полуплоскости перед отрядом
+        /// по направлению <paramref name="heading"/>. Враг сзади (от него уходят) не в счёт.
+        /// </summary>
+        public static bool IsEnemyAhead(Match match, Squad squad, float radius, float2 heading)
+        {
+            if (radius <= 0f)
+            {
+                return false;
+            }
+
+            bool anyDirection = math.lengthsq(heading) < 1e-6f;
+            foreach (Squad other in match.Squads)
+            {
+                if (other.Side == squad.Side || other.IsRouting || other.IsWithdrawn || other.IsCamp || other.Alive <= 0)
+                {
+                    continue;
+                }
+
+                float2 offset = other.Position - squad.Position;
+                if (math.lengthsq(offset) <= radius * radius && (anyDirection || math.dot(offset, heading) > 0f))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public static bool TryPlan(Match match, Squad squad, float2 target)
         {
             SquadSettings settings = match.Settings.squads;
@@ -98,7 +127,7 @@ namespace Marchlands.Simulation.Squads
             // Пехота на марше встаёт в колонну, только если идти далеко и враг не рядом; иначе идёт тем строем, что есть.
             bool keepsFormation = squad.Type == UnitType.Cavalry || squad.IsArtillery
                 || math.distance(squad.Position, target) < settings.autoColumnMinDistance
-                || IsEnemyNear(match, squad, settings.autoLineEnemyRadius);
+                || IsEnemyAhead(match, squad, settings.autoLineEnemyRadius, target - squad.Position);
             Formation marching = keepsFormation ? squad.TargetFormation : Formation.Column;
             float marchSpeed = math.max(0.01f, UnitStats.Speed(squad, marching, match.Settings));
             bool reform = squad.TargetFormation != marching;
