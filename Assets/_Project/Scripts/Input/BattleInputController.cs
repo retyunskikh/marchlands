@@ -618,7 +618,15 @@ namespace Marchlands.Input
             {
                 Building headquarters = match.GetHeadquarters(playerSide);
                 Vector2? site = placementSite.HasValue ? (Vector2)placementSite.Value : (Vector2?)null;
-                buildingViews.ShowPlacement(headquarters.Position, site, confirmable, placementType);
+                bool shownValid = confirmable;
+                // На ПК, пока место не выбрано кликом, здание показывается под курсором — сразу видно, можно ли там.
+                if (!site.HasValue && UsesMouse && TryGetHoverSite(out float2 hover))
+                {
+                    site = hover;
+                    shownValid = BuildRules.GetSiteProblem(match, playerSide, placementType, hover) == SiteProblem.None;
+                }
+
+                buildingViews.ShowPlacement(headquarters.Position, site, shownValid, placementType);
             }
 
             if (force || problem != lastPlacementProblem || confirmable != lastPlacementConfirmable)
@@ -628,6 +636,28 @@ namespace Marchlands.Input
                 PlacementChanged?.Invoke(isPlacing, placementSite.HasValue, problem);
             }
         }
+
+        /// <summary>Точка карты под курсором мыши (не над интерфейсом).</summary>
+        private bool TryGetHoverSite(out float2 site)
+        {
+            site = float2.zero;
+            Mouse mouse = Mouse.current;
+            if (mouse == null)
+            {
+                return false;
+            }
+
+            Vector2 pointer = mouse.position.ReadValue();
+            if (TouchGestures.IsOverUi(pointer, hoverUiHits))
+            {
+                return false;
+            }
+
+            site = cameraController.ScreenToWorld(pointer);
+            return true;
+        }
+
+        private readonly List<UnityEngine.EventSystems.RaycastResult> hoverUiHits = new List<UnityEngine.EventSystems.RaycastResult>();
 
         /// <summary>
         /// Здание под точкой: внутри его видимого прямоугольника (с запасом в полпальца) или, для маленьких,
