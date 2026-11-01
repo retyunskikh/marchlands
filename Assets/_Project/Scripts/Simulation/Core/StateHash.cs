@@ -1,4 +1,5 @@
 using Marchlands.Simulation.Buildings;
+using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Economy;
 using Marchlands.Simulation.Squads;
 using Unity.Mathematics;
@@ -47,6 +48,13 @@ namespace Marchlands.Simulation.Core
                 Mix(ref hash, squad.FireTimer);
                 Mix(ref hash, (int)squad.Order.Type);
                 Mix(ref hash, squad.MeleeOpponents);
+            }
+
+            foreach (RoundShotFlight shot in match.RoundShots)
+            {
+                Mix(ref hash, shot.GunId);
+                Mix(ref hash, shot.Impact);
+                Mix(ref hash, shot.Age);
             }
 
             foreach (Building building in match.Buildings)

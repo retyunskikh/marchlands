@@ -49,6 +49,9 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Фронт в начале последнего тика — для интерполяции в отображении.</summary>
         public float PreviousFacing { get; internal set; }
 
+        /// <summary>Сколько отряд прошёл за прошлый тик, u (по этому пушки бьют с упреждением).</summary>
+        public float2 LastStep { get; internal set; }
+
         public Formation Formation { get; internal set; }
 
         /// <summary>Строй, в который отряд перестраивается; совпадает с <see cref="Formation"/>, если перестроения нет.</summary>

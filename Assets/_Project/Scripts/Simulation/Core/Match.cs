@@ -29,6 +29,7 @@ namespace Marchlands.Simulation.Core
         private readonly List<VolleyEvent> lastTickVolleys = new List<VolleyEvent>();
         private readonly List<SentryVolley> lastTickSentryVolleys = new List<SentryVolley>();
         private readonly List<ArtilleryShot> lastTickArtilleryShots = new List<ArtilleryShot>();
+        private readonly List<RoundShotFlight> roundShots = new List<RoundShotFlight>();
         private readonly List<MeleeEngagement> engagements = new List<MeleeEngagement>();
         private readonly List<IMatchController> controllers = new List<IMatchController>();
         private readonly List<Village> villages = new List<Village>();
@@ -84,6 +85,9 @@ namespace Marchlands.Simulation.Core
 
         /// <summary>Выстрелы пушек за последний выполненный тик.</summary>
         public IReadOnlyList<ArtilleryShot> LastTickArtilleryShots => lastTickArtilleryShots;
+
+        /// <summary>Ядра в полёте и на рикошете.</summary>
+        internal List<RoundShotFlight> RoundShots => roundShots;
 
         public IReadOnlyList<Village> Villages => villages;
 
@@ -510,6 +514,7 @@ namespace Marchlands.Simulation.Core
             {
                 SquadMovementSystem.Update(squad, this, deltaTime);
                 squad.IsOnHill = Terrain != null && Terrain.IsOnHill(squad.Position);
+                squad.LastStep = squad.Position - squad.PreviousPosition;
             }
 
             MeleeSystem.Update(this, deltaTime);

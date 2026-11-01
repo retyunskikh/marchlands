@@ -337,6 +337,7 @@ namespace Marchlands.View
             public float2 Impact;
             public float2 End;
             public float Flight;
+            public float RollSpeed;
             public float Age;
             public float NextBounce;
         }
@@ -409,7 +410,8 @@ namespace Marchlands.View
                 From = shot.Muzzle,
                 Impact = shot.Impact,
                 End = shot.RicochetEnd,
-                Flight = math.max(0.2f, math.distance(shot.Muzzle, shot.Impact) / 10f * ballFlightPer10),
+                Flight = shot.FlightTime > 0f ? shot.FlightTime : math.max(0.2f, math.distance(shot.Muzzle, shot.Impact) / 10f * ballFlightPer10),
+                RollSpeed = shot.RicochetSpeed > 0f ? shot.RicochetSpeed : ricochetSpeed,
                 Renderer = CreateBallRenderer("Ball", Color.black * 0.85f + Color.white * 0.1f, ballSortingOrder),
                 Shadow = CreateBallRenderer("Ball Shadow", new Color(0f, 0f, 0f, 0.3f), ballSortingOrder - 1)
             };
@@ -490,7 +492,7 @@ namespace Marchlands.View
                 }
                 else
                 {
-                    float rolled = (ball.Age - ball.Flight) * ricochetSpeed;
+                    float rolled = (ball.Age - ball.Flight) * ball.RollSpeed;
                     float length = math.distance(ball.Impact, ball.End);
                     if (rolled >= length)
                     {

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Marchlands.Simulation.Combat;
 using Marchlands.Simulation.Core;
 using Marchlands.Simulation.Squads;
 using UnityEngine;
@@ -89,6 +90,30 @@ namespace Marchlands.View
         }
 
         /// <param name="alpha">Доля шага между предыдущим и текущим тиком.</param>
+        /// <summary>Ядра этого тика: в отрядах на их пути падают те, через кого ядро прошло.</summary>
+        public void RegisterShots(IReadOnlyList<ArtilleryShot> shots)
+        {
+            if (shots == null)
+            {
+                return;
+            }
+
+            foreach (ArtilleryShot shot in shots)
+            {
+                if (shot.Mode != ShotMode.RoundShot)
+                {
+                    continue;
+                }
+
+                foreach (SquadView view in views.Values)
+                {
+                    // Павшие — когда ядро долетит и прокатится (плюс запас).
+                    float travel = shot.FlightTime + (shot.RicochetSpeed > 0f ? Vector2.Distance(shot.Impact, shot.RicochetEnd) / shot.RicochetSpeed : 0f);
+                    view.AddHitLine(shot.Impact, shot.RicochetEnd, travel);
+                }
+            }
+        }
+
         public void Render(float alpha)
         {
             SyncViews();

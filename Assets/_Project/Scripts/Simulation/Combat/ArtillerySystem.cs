@@ -24,6 +24,7 @@ namespace Marchlands.Simulation.Combat
 
         public static void Update(Match match, float deltaTime, List<ArtilleryShot> shots)
         {
+            UpdateRoundShots(match, deltaTime);
             foreach (Squad squad in match.Squads)
             {
                 if (!squad.IsArtillery || squad.Alive <= 0 || squad.IsWithdrawn)
@@ -311,6 +312,17 @@ namespace Marchlands.Simulation.Combat
         {
             GunSettings guns = match.Settings.guns;
             float2 muzzle = Muzzle(gun, match.Settings.squads);
+
+            // Упреждение: по идущему отряду пушка бьёт туда, где он будет к прилёту ядра, но путь его оценивает
+            // с ошибкой ± leadError.
+            if (target != null)
+            {
+                float2 velocity = target.LastStep / SimulationTime.TickDuration;
+                float flight = FlightTime(math.distance(muzzle, aim), guns);
+                float2 lead = velocity * FlightTime(math.distance(muzzle, aim + velocity * flight), guns);
+                aim += lead * (1f + match.Random.Range(-1f, 1f) * guns.leadError);
+            }
+
             float2 toAim = aim - muzzle;
             float distance = math.length(toAim);
             float2 direction = distance > 0f ? toAim / distance : Angles.Direction(gun.Facing);
@@ -322,15 +334,80 @@ namespace Marchlands.Simulation.Combat
             float2 impact = aim + direction * along + side * lateral;
             float2 end = impact + direction * guns.ricochetLength;
 
-            int total = 0;
-            foreach (Squad victim in match.Squads)
+            var flightShot = new RoundShotFlight
             {
-                if (victim.Side == gun.Side || victim.Alive <= 0 || victim.IsWithdrawn)
+                GunId = gun.Id,
+                Side = gun.Side,
+                Muzzle = muzzle,
+                Impact = impact,
+                End = end,
+                FlightTime = FlightTime(math.distance(muzzle, impact), guns)
+            };
+            match.RoundShots.Add(flightShot);
+            shots.Add(new ArtilleryShot(match.CurrentTick, gun.Id, gun.Side, ShotMode.RoundShot, muzzle, impact, end, 0,
+                target != null ? target.Id : 0, flightShot.FlightTime, guns.ricochetSpeed));
+        }
+
+        private static float FlightTime(float distance, GunSettings guns)
+        {
+            return guns.roundShotFlightSpeed > 0f ? distance / guns.roundShotFlightSpeed : 0f;
+        }
+
+        /// <summary>
+        /// Ядра в полёте: долетев, ядро бьёт здания у точки падения, затем катится рикошетом и проходит сквозь
+        /// отряды на своём пути — каждый получает потери, когда ядро до него докатилось.
+        /// </summary>
+        private static void UpdateRoundShots(Match match, float deltaTime)
+        {
+            GunSettings guns = match.Settings.guns;
+            List<RoundShotFlight> flying = match.RoundShots;
+            for (int i = 0; i < flying.Count; i++)
+            {
+                RoundShotFlight shot = flying[i];
+                shot.Age += deltaTime;
+                if (shot.Age + TimerEpsilon < shot.FlightTime)
                 {
                     continue;
                 }
 
-                int onPath = MenOnPath(victim, impact, end, match.Settings.squads, guns.roundShotMenPerRank);
+                if (!shot.Landed)
+                {
+                    shot.Landed = true;
+                    DamageBuildings(match, shot, guns);
+                }
+
+                float length = math.distance(shot.Impact, shot.End);
+                float rolled = guns.ricochetSpeed > 0f ? math.min(length, (shot.Age - shot.FlightTime) * guns.ricochetSpeed) : length;
+                StrikeSquads(match, shot, rolled, guns);
+                shot.Rolled = rolled;
+            }
+
+            flying.RemoveAll(shot => shot.Landed && shot.Rolled >= math.distance(shot.Impact, shot.End) - TimerEpsilon);
+        }
+
+        /// <summary>Ядро докатилось до отряда: потери по всему его пути сквозь строй, удар по духу.</summary>
+        private static void StrikeSquads(Match match, RoundShotFlight shot, float rolled, GunSettings guns)
+        {
+            float length = math.distance(shot.Impact, shot.End);
+            float2 direction = length > 0f ? (shot.End - shot.Impact) / length : float2.zero;
+            float2 from = shot.Impact + direction * shot.Rolled;
+            float2 to = shot.Impact + direction * rolled;
+            Squad gun = match.FindSquad(shot.GunId);
+            foreach (Squad victim in match.Squads)
+            {
+                if (victim.Side == shot.Side || victim.Alive <= 0 || victim.IsWithdrawn || shot.HitSquads.Contains(victim.Id))
+                {
+                    continue;
+                }
+
+                // Дошло ли ядро за этот тик до строя (или упало прямо в него).
+                if (MenOnPath(victim, from, to, match.Settings.squads) <= 0)
+                {
+                    continue;
+                }
+
+                shot.HitSquads.Add(victim.Id);
+                int onPath = MenOnPath(victim, from, shot.End, match.Settings.squads, guns.roundShotMenPerRank);
                 if (onPath <= 0)
                 {
                     continue;
@@ -344,15 +421,17 @@ namespace Marchlands.Simulation.Combat
 
                 int aliveBefore = victim.Alive;
                 int casualties = VolleyMath.RollCasualties(match.Random, onPath, guns.roundShotKillChance, aliveBefore);
-                Hit(match, gun, victim, casualties, aliveBefore, false);
-                total += casualties;
+                Hit(match, gun, shot.Muzzle, victim, casualties, aliveBefore, false);
             }
+        }
 
+        private static void DamageBuildings(Match match, RoundShotFlight shot, GunSettings guns)
+        {
             Damaged.Clear();
             foreach (Building building in match.Buildings)
             {
-                if (building.Owner != gun.Side && !building.IsDestroyed
-                    && math.distance(building.Position, impact) <= guns.roundShotBuildingRadius)
+                if (building.Owner != shot.Side && !building.IsDestroyed
+                    && math.distance(building.Position, shot.Impact) <= guns.roundShotBuildingRadius)
                 {
                     Damaged.Add(building);
                 }
@@ -371,8 +450,6 @@ namespace Marchlands.Simulation.Combat
             }
 
             Damaged.Clear();
-
-            shots.Add(new ArtilleryShot(match.CurrentTick, gun.Id, gun.Side, ShotMode.RoundShot, muzzle, impact, end, total, target != null ? target.Id : 0));
         }
 
         /// <summary>
@@ -458,15 +535,24 @@ namespace Marchlands.Simulation.Combat
 
         private static void Hit(Match match, Squad gun, Squad victim, int casualties, int aliveBefore, bool pointBlank)
         {
+            Hit(match, gun, gun.Position, victim, casualties, aliveBefore, pointBlank);
+        }
+
+        /// <summary>Потери от пушки; <paramref name="gun"/> может уже не быть (ядро долетело после гибели расчёта).</summary>
+        private static void Hit(Match match, Squad gun, float2 from, Squad victim, int casualties, int aliveBefore, bool pointBlank)
+        {
             if (casualties <= 0)
             {
                 return;
             }
 
             victim.Alive = aliveBefore - casualties;
-            bool flank = MoraleMath.IsFlank(victim, gun.Position, match.Settings.morale);
+            bool flank = MoraleMath.IsFlank(victim, from, match.Settings.morale);
             MoraleMath.ApplyLoss(victim, casualties, aliveBefore, pointBlank, flank, match.Settings);
-            MoraleMath.ApplyKills(gun, casualties, match.Settings);
+            if (gun != null)
+            {
+                MoraleMath.ApplyKills(gun, casualties, match.Settings);
+            }
         }
     }
 }

@@ -110,6 +110,9 @@ MonoBehaviour:
       roundShotSpread: 0.06
       roundShotLateralSpread: 0.02
       ricochetLength: 14
+      roundShotFlightSpeed: 18
+      ricochetSpeed: 14
+      leadError: 0.3
       roundShotKillChance: 0.8
       roundShotMenPerRank: 3.5
       roundShotMoraleShock: 8

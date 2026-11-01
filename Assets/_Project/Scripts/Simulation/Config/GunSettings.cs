@@ -45,6 +45,18 @@ namespace Marchlands.Simulation.Config
         /// <summary>Упав, ядро рикошетом катится по прямой ещё столько, сметая всех на пути, u.</summary>
         public float ricochetLength;
 
+        /// <summary>Скорость полёта ядра от ствола до точки падения, u/s (≤ 0 — мгновенно).</summary>
+        public float roundShotFlightSpeed;
+
+        /// <summary>Скорость ядра, катящегося рикошетом, u/s (≤ 0 — мгновенно).</summary>
+        public float ricochetSpeed;
+
+        /// <summary>
+        /// Ошибка упреждения по движущейся цели: пушка целит туда, где отряд будет к прилёту ядра, но путь отряда
+        /// за полёт оценивает с ошибкой ± эта доля.
+        /// </summary>
+        public float leadError;
+
         /// <summary>Вероятность, что ядро убьёт (выведет из строя) человека на своём пути.</summary>
         public float roundShotKillChance;
 

@@ -820,12 +820,14 @@ namespace Marchlands.Input
                     continue;
                 }
 
-                if (!SquadFootprint.Of(squad, match.Settings.squads).Contains(world, minHalfExtent))
+                bool onCrew = SquadFootprint.Of(squad, match.Settings.squads).Contains(world, minHalfExtent);
+                float onGun = squad.IsArtillery ? DistanceToGun(squad, world) : float.MaxValue;
+                if (!onCrew && onGun > math.max(GunPickRadius, minHalfExtent))
                 {
                     continue;
                 }
 
-                float distance = math.distancesq(world, squad.Position);
+                float distance = onCrew ? math.distancesq(world, squad.Position) : onGun * onGun;
                 if (distance < bestDistance)
                 {
                     best = squad;
@@ -834,6 +836,27 @@ namespace Marchlands.Input
             }
 
             return best;
+        }
+
+        // Насколько далеко от пушки и её сцепки с расчётом ещё засчитывается тап по ней, u.
+        private const float GunPickRadius = 1.2f;
+
+        /// <summary>
+        /// Расстояние от точки до пушки вместе со сцепкой (передком): отрезок от расчёта до пушки — впереди фронта
+        /// в бою, позади тыла на марше (как её рисует вид).
+        /// </summary>
+        private float DistanceToGun(Squad gun, float2 world)
+        {
+            GunSettings guns = match.Settings.guns;
+            float halfDepth = FormationLayout.GetHalfExtents(gun, match.Settings.squads).y;
+            float2 forward = Angles.Direction(gun.Facing);
+            float2 end = gun.IsLimbered
+                ? gun.Position - forward * (halfDepth + guns.towLength)
+                : gun.Position + forward * (halfDepth + guns.gunAhead);
+            float2 segment = end - gun.Position;
+            float length = math.lengthsq(segment);
+            float t = length > 0f ? math.saturate(math.dot(world - gun.Position, segment) / length) : 0f;
+            return math.distance(world, gun.Position + segment * t);
         }
 
         /// <summary>Выделить отряд снаружи — например, только что построенный из резерва.</summary>

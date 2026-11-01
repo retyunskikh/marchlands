@@ -217,8 +217,79 @@ namespace Marchlands.Tests.EditMode
             }
 
             Assert.IsTrue(shot);
+            match.Tick();
             Assert.AreEqual(30, target.Alive, "никого не убило");
             Assert.Less(target.Morale, before - 7f, "но дух упал от ядра сквозь строй");
+        }
+
+        [Test]
+        public void RoundShot_HitsWhenItArrives_NotWhenFired()
+        {
+            var settings = TestSettings.Create();
+            settings.guns.roundShotFlightSpeed = 10f;
+            settings.guns.ricochetSpeed = 10f;
+            settings.guns.roundShotKillChance = 1f;
+            settings.guns.roundShotSpread = 0f;
+            settings.guns.roundShotLateralSpread = 0f;
+            var match = new Match(1, settings);
+            Squad gun = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, UnitType.Artillery);
+            gun.IsLimbered = false;
+            Squad target = match.AddSquad(Side.Austria, new float2(0f, 20f), 270f, Formation.Column, 30);
+            bool shot = false;
+            for (int i = 0; i < 400 && !shot; i++)
+            {
+                match.Tick();
+                shot = match.LastTickArtilleryShots.Count > 0;
+            }
+
+            Assert.IsTrue(shot);
+            float flight = match.LastTickArtilleryShots[0].FlightTime;
+            Assert.Greater(flight, 1f, "летит ~2 с");
+            Assert.AreEqual(30, target.Alive, "в момент выстрела потерь нет");
+            int ticks = (int)math.ceil(flight * SimulationTime.TicksPerSecond) - 2;
+            for (int i = 0; i < ticks; i++)
+            {
+                match.Tick();
+            }
+
+            Assert.AreEqual(30, target.Alive, "ядро ещё в воздухе");
+            for (int i = 0; i < 10; i++)
+            {
+                match.Tick();
+            }
+
+            Assert.Less(target.Alive, 30, "долетело — потери");
+        }
+
+        [Test]
+        public void RoundShot_LeadsMovingTarget()
+        {
+            var settings = TestSettings.Create();
+            settings.guns.roundShotFlightSpeed = 10f;
+            settings.guns.leadError = 0f;
+            settings.guns.roundShotSpread = 0f;
+            settings.guns.roundShotLateralSpread = 0f;
+            var match = new Match(1, settings);
+            Squad gun = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, UnitType.Artillery);
+            gun.IsLimbered = false;
+            Squad target = match.AddSquad(Side.Austria, new float2(-6f, 20f), 0f, Formation.Column, 30);
+            match.Enqueue(new MoveCommand(target.Id, new float2(30f, 20f), 0f));
+            ArtilleryShot fired = default;
+            bool shot = false;
+            for (int i = 0; i < 400 && !shot; i++)
+            {
+                match.Tick();
+                shot = match.LastTickArtilleryShots.Count > 0;
+                if (shot)
+                {
+                    fired = match.LastTickArtilleryShots[0];
+                }
+            }
+
+            Assert.IsTrue(shot);
+            float speed = math.length(target.Position - target.PreviousPosition) * SimulationTime.TicksPerSecond;
+            Assert.Greater(speed, 0.1f, "цель идёт");
+            Assert.Greater(fired.Impact.x, target.Position.x + speed * fired.FlightTime * 0.7f, "бьёт туда, где отряд будет");
         }
 
         [Test]

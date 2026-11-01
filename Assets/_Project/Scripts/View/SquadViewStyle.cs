@@ -39,6 +39,11 @@ namespace Marchlands.View
 
         [Tooltip("Как быстро строй смыкается после потерь, 1/s: солдаты не телепортируются на места павших.")]
         [SerializeField] private float regroupSpeed = 3f;
+        [Tooltip("Не быстрее этого солдаты переходят на место павших, u/s (шагом, а не скольжением).")]
+        [SerializeField] private float regroupWalkSpeed = 1.2f;
+        [Tooltip("Сколько секунд помнится путь ядра: павшие в это время — те, кто стоял на пути; и как далеко от пути, u.")]
+        [SerializeField] private float hitLineMemory = 0.5f;
+        [SerializeField] private float hitLineReach = 1.2f;
 
         [Header("Численность отряда")]
         [Tooltip("Писать численность числом у отряда; без него остаются «+1» при пополнении и полоска пополнения.")]
@@ -240,6 +245,12 @@ namespace Marchlands.View
         public float FloaterRise => floaterRise;
 
         public float RegroupSpeed => regroupSpeed;
+
+        public float RegroupWalkSpeed => regroupWalkSpeed;
+
+        public float HitLineMemory => hitLineMemory;
+
+        public float HitLineReach => hitLineReach;
 
         /// <summary>Частота шага (в секунду) и размах покачивания (u) для рода войск.</summary>
         public Vector2 GetGait(UnitType type)

@@ -61,6 +61,15 @@ namespace Marchlands.View
         private Formation slotsFormation;
         private Formation slotsTarget;
         private int slotsAlive = -1;
+
+        // Путь ядра, недавно прошедшего сквозь строй: павшие — те, кто на нём стоял.
+        private float2 hitFrom;
+        private float2 hitTo;
+        private float hitAge = float.MaxValue;
+        private float sinceCasualties = float.MaxValue;
+
+        // Сколько секунд после потерь солдаты идут на новые места шагом, s.
+        private const float CasualtyRegroupWindow = 4f;
         private int slotsFileLimit;
         private bool slotsChanging;
 
@@ -230,6 +239,12 @@ namespace Marchlands.View
                 Quaternion.Euler(0f, 0f, Angles.Of(meleeDirection) + SpriteFacingOffset), meleeBlend);
             float2 spacing = GetSpacing();
             float regroup = 1f - math.exp(-style.RegroupSpeed * Time.deltaTime);
+            // На место павших солдаты переходят шагом, не быстрее regroupWalkSpeed (перестроение и бегство — как раньше).
+            // Только после потерь: сжатие строя на мосту и прочее — как раньше.
+            sinceCasualties += Time.deltaTime;
+            float walkStep = changing || squad.IsRouting || style.RegroupWalkSpeed <= 0f || sinceCasualties > CasualtyRegroupWindow
+                ? float.MaxValue : style.RegroupWalkSpeed * Time.deltaTime;
+            hitAge += Time.deltaTime;
             float headY = UpdateTrail(position, facing, spacing, changing);
             frameTravel = 0f;
             frameMovers = 0;
@@ -249,7 +264,15 @@ namespace Marchlands.View
                     shownSlots[i] = local;
                 }
 
-                local = shownSlots[i] = math.lerp(shownSlots[i], local, regroup);
+                float2 next = math.lerp(shownSlots[i], local, regroup);
+                float2 move = next - shownSlots[i];
+                float moveLength = math.length(move);
+                if (moveLength > walkStep)
+                {
+                    next = shownSlots[i] + move / moveLength * walkStep;
+                }
+
+                local = shownSlots[i] = next;
 
                 Quaternion soldierRotation = rotation;
                 float2 soldierForward = forward;
@@ -1288,6 +1311,7 @@ namespace Marchlands.View
                 }
 
                 soldiers.RemoveAt(fallen);
+                sinceCasualties = 0f;
                 if (arms[fallen] != null)
                 {
                     Destroy(arms[fallen].gameObject);
@@ -1307,8 +1331,59 @@ namespace Marchlands.View
         /// Кто падает: чаще первые шеренги (по ним бьют), знаменосец и офицер — последними.
         /// Выбор постоянный для отряда и его численности — без случайности кадра.
         /// </summary>
+        /// <summary>Ядро прошло от <paramref name="from"/> до <paramref name="to"/>: ближайшие к пути солдаты падут первыми.</summary>
+        internal void AddHitLine(float2 from, float2 to, float travelTime)
+        {
+            hitFrom = from;
+            hitTo = to;
+            hitAge = -travelTime;
+        }
+
+        /// <summary>Солдат, ближе всех стоящий к пути недавнего ядра, если путь проходит сквозь строй; иначе −1.</summary>
+        private int PickOnHitLine()
+        {
+            if (hitAge > style.HitLineMemory)
+            {
+                return -1;
+            }
+
+            int best = -1;
+            float bestDistance = style.HitLineReach;
+            for (int i = 0; i < soldiers.Count; i++)
+            {
+                float2 world = lastWorld[i];
+                if (float.IsNaN(world.x))
+                {
+                    continue;
+                }
+
+                float distance = DistanceToSegment(world, hitFrom, hitTo);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = i;
+                }
+            }
+
+            return best;
+        }
+
+        private static float DistanceToSegment(float2 point, float2 a, float2 b)
+        {
+            float2 ab = b - a;
+            float length = math.lengthsq(ab);
+            float t = length > 0f ? math.saturate(math.dot(point - a, ab) / length) : 0f;
+            return math.distance(point, a + ab * t);
+        }
+
         private int PickFallen()
         {
+            int onLine = PickOnHitLine();
+            if (onLine >= 0)
+            {
+                return onLine;
+            }
+
             int count = soldiers.Count;
             int front = math.max(1, math.min(count, (count + 1) / 2));
             uint hash = (uint)(squad.Id * 7919 + count * 104729) * 2654435761u;

@@ -400,6 +400,7 @@ namespace Marchlands.Bootstrap
             volleyEffects.Play(match.LastTickVolleys);
             volleyEffects.PlaySentries(match.LastTickSentryVolleys);
             volleyEffects.PlayArtillery(match.LastTickArtilleryShots);
+            squadViews.RegisterShots(match.LastTickArtilleryShots);
             buildingViews.PlaySentries(match.LastTickSentryVolleys);
             battleSounds.Play(match.LastTickCaptures);
             villageViews.Play(match.LastTickReinforcements);

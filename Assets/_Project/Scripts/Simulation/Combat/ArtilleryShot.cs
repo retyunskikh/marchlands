@@ -9,8 +9,11 @@ namespace Marchlands.Simulation.Combat
     /// </summary>
     public readonly struct ArtilleryShot
     {
-        public ArtilleryShot(int tick, int shooterId, Side side, ShotMode mode, float2 muzzle, float2 impact, float2 ricochetEnd, int casualties, int targetId)
+        public ArtilleryShot(int tick, int shooterId, Side side, ShotMode mode, float2 muzzle, float2 impact, float2 ricochetEnd, int casualties, int targetId,
+            float flightTime = 0f, float ricochetSpeed = 0f)
         {
+            FlightTime = flightTime;
+            RicochetSpeed = ricochetSpeed;
             Tick = tick;
             ShooterId = shooterId;
             Side = side;
@@ -23,6 +26,12 @@ namespace Marchlands.Simulation.Combat
         }
 
         public int Tick { get; }
+
+        /// <summary>Сколько секунд ядро летит до точки падения (0 — вид считает сам).</summary>
+        public float FlightTime { get; }
+
+        /// <summary>С какой скоростью катится рикошетом, u/s (0 — вид считает сам).</summary>
+        public float RicochetSpeed { get; }
 
         public int ShooterId { get; }
 
