@@ -44,7 +44,8 @@ namespace Marchlands.UI
         [SerializeField] private string moraleFormat = "Дух: {0}";
         [Tooltip("Опытный отряд: {0} — дух, {1} — предел, {2} — знак, {3} — убито врагов.")]
         [SerializeField] private string veteranMoraleFormat = "Дух: {0}/{1}, {2} (убито {3})";
-        [SerializeField] private string experiencedName = "опытные";
+        [Tooltip("Дух выше 100, но знака ещё нет: {0} — дух, {1} — предел.")]
+        [SerializeField] private string raisedMoraleFormat = "Дух: {0}/{1}";
         [SerializeField] private string[] veteranRankNames = { "бронзовая звезда", "серебряная звезда", "орден" };
         [SerializeField] private Color moraleHigh = new Color(0.35f, 0.8f, 0.3f);
         [SerializeField] private Color moraleLow = new Color(0.9f, 0.25f, 0.2f);
@@ -268,7 +269,12 @@ namespace Marchlands.UI
             }
 
             int rank = squad.VeteranRank;
-            string rankName = rank > 0 && veteranRankNames != null && rank <= veteranRankNames.Length ? veteranRankNames[rank - 1] : experiencedName;
+            if (rank <= 0 || veteranRankNames == null || rank > veteranRankNames.Length)
+            {
+                return string.Format(raisedMoraleFormat, Mathf.RoundToInt(morale), Mathf.RoundToInt(squad.MaxMorale));
+            }
+
+            string rankName = veteranRankNames[rank - 1];
             return string.Format(veteranMoraleFormat, Mathf.RoundToInt(morale), Mathf.RoundToInt(squad.MaxMorale), rankName, kills);
         }
 
