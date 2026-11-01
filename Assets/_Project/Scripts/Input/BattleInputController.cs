@@ -80,6 +80,9 @@ namespace Marchlands.Input
         /// <summary>Идёт выбор места; место выбрано; почему там нельзя строить (None — можно).</summary>
         public event Action<bool, bool, SiteProblem> PlacementChanged;
 
+        /// <summary>Тап по месту, где строить нельзя: место не выбирается, только мигает и называется причина.</summary>
+        public event Action<SiteProblem> PlacementRejected;
+
         /// <summary>Включился или выключился выбор цели для «В штыки».</summary>
         public event Action<bool> ChargeTargetingChanged;
 
@@ -270,6 +273,16 @@ namespace Marchlands.Input
             float2 world = cameraController.ScreenToWorld(screenPosition);
             if (isPlacing)
             {
+                // Место, где нельзя (далеко от штаба, впритык к зданию или деревне), не выбирается: силуэт коротко
+                // мигает красным и гаснет, прежний выбор (если был) остаётся.
+                SiteProblem problem = BuildRules.GetSiteProblem(match, playerSide, placementType, world);
+                if (IsSiteProblem(problem))
+                {
+                    buildingViews.FlashRejectedSite(world, placementType);
+                    PlacementRejected?.Invoke(problem);
+                    return;
+                }
+
                 placementSite = world;
                 RefreshPlacement(force: true);
                 return;
@@ -647,6 +660,12 @@ namespace Marchlands.Input
                 lastPlacementProblem = problem;
                 PlacementChanged?.Invoke(isPlacing, placementSite.HasValue, problem);
             }
+        }
+
+        private static bool IsSiteProblem(SiteProblem problem)
+        {
+            return problem == SiteProblem.FarFromHeadquarters || problem == SiteProblem.TooCloseToBuilding
+                || problem == SiteProblem.TooCloseToVillage;
         }
 
         /// <summary>Точка карты под курсором мыши (не над интерфейсом).</summary>

@@ -169,6 +169,7 @@ MonoBehaviour:
       chargeBonus: 1.5
       chargeBonusDuration: 6
       flankMeleeMultiplier: 1.5
+      veteranMeleeBonus: 0.15
       chargeMaxDuration: 10
       contactDistance: 0.5
     ai:

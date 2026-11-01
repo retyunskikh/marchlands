@@ -104,6 +104,8 @@ namespace Marchlands.View
         private SpriteRenderer sitePreview;
         private SpriteRenderer radiusEdge;
         private SpriteRenderer siteCenter;
+        private SpriteRenderer rejectedSite;
+        private float rejectedAge = float.MaxValue;
         private Sprite zoneSprite;
         private readonly List<SpriteRenderer> keepoutZones = new List<SpriteRenderer>();
 
@@ -119,6 +121,8 @@ namespace Marchlands.View
             zoneSprite = CreateZoneSprite();
             radiusEdge = CreatePreview("Build Radius Edge", zoneSprite, style.BodySortingOrder - 1);
             siteCenter = CreatePreview("Site Center", style.CircleSprite, style.OverlaySortingOrder + 1);
+            rejectedSite = CreatePreview("Rejected Site", style.SquareSprite, style.OverlaySortingOrder);
+            rejectedSite.enabled = false;
             campMarker = CreatePreview("Camp Selection", squadViews.Style.MarkerSprite, style.BodySortingOrder + 4);
             campMarker.color = squadViews.Style.SelectionColor;
             campMarker.enabled = false;
@@ -178,6 +182,7 @@ namespace Marchlands.View
 
         public void Render()
         {
+            UpdateRejectedFlash(Time.unscaledDeltaTime);
             foreach (Building building in match.Buildings)
             {
                 // Казарму усилили — она крупнее и часовых больше: вид собирается заново.
@@ -1053,8 +1058,45 @@ namespace Marchlands.View
             return used + 1;
         }
 
+        /// <summary>Здесь строить нельзя: силуэт здания вспыхивает красным и за rejectedFlashTime гаснет, ничего не оставляя.</summary>
+        public void FlashRejectedSite(Vector2 at, BuildingType type)
+        {
+            Vector2 size = style.SizeOf(type);
+            rejectedSite.transform.position = at;
+            rejectedSite.transform.localScale = new Vector3(size.x, size.y, 1f);
+            rejectedAge = 0f;
+            rejectedSite.enabled = true;
+            UpdateRejectedFlash(0f);
+        }
+
+        private void UpdateRejectedFlash(float deltaTime)
+        {
+            if (rejectedSite == null || !rejectedSite.enabled)
+            {
+                return;
+            }
+
+            rejectedAge += deltaTime;
+            float time = style.RejectedFlashTime;
+            float t = time > 0f ? rejectedAge / time : 1f;
+            if (t >= 1f)
+            {
+                rejectedSite.enabled = false;
+                return;
+            }
+
+            Color color = style.InvalidSiteColor;
+            color.a *= 1f - t * t;
+            rejectedSite.color = color;
+        }
+
         public void HidePlacement()
         {
+            if (rejectedSite != null)
+            {
+                rejectedSite.enabled = false;
+            }
+
             radiusPreview.enabled = false;
             sitePreview.enabled = false;
             if (radiusEdge != null)

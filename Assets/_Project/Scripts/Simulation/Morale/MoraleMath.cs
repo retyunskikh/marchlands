@@ -69,7 +69,7 @@ namespace Marchlands.Simulation.Morale
 
             squad.Kills += kills;
             squad.MaxMorale = GetMaxMorale(squad.Kills, settings.morale);
-            squad.VeteranRank = GetVeteranRank(squad.Kills, settings.morale);
+            squad.VeteranRank = math.max(squad.VeteranRank, GetVeteranRank(squad.Kills, settings.morale));
             ApplyGain(squad, kills * settings.morale.killMoraleGain);
         }
 

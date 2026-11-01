@@ -230,6 +230,7 @@ namespace Marchlands.Bootstrap
             input.CampSelectionChanged += OnCampSelectionChanged;
             input.ChargeTargetingChanged += orderPanel.SetChargeTargeting;
             input.PlacementChanged += buildPanel.SetPlacementState;
+            input.PlacementRejected += buildPanel.ShowRejected;
             orderPanel.ChargeRequested += input.BeginChargeTargeting;
             buildingPanel.BuildRequested += input.BeginPlacement;
             buildPanel.ConfirmRequested += input.ConfirmPlacement;
@@ -265,6 +266,7 @@ namespace Marchlands.Bootstrap
             if (buildPanel != null)
             {
                 input.PlacementChanged -= buildPanel.SetPlacementState;
+                input.PlacementRejected -= buildPanel.ShowRejected;
                 buildingPanel.BuildRequested -= input.BeginPlacement;
                 buildPanel.ConfirmRequested -= input.ConfirmPlacement;
                 buildPanel.CancelRequested -= input.CancelPlacement;

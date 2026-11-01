@@ -197,6 +197,8 @@ namespace Marchlands.View
         [SerializeField] private Color keepoutBlockingColor = new Color(1f, 0.2f, 0.15f, 1f);
         [Tooltip("Метка центра нового здания: по ней видно, вышел ли он из запретной зоны.")]
         [SerializeField] private float siteCenterSize = 0.9f;
+        [Tooltip("За сколько секунд гаснет красный силуэт после тапа туда, где строить нельзя.")]
+        [SerializeField] private float rejectedFlashTime = 0.6f;
 
         [SerializeField] private int bodySortingOrder = -30;
         [SerializeField] private int overlaySortingOrder = 55;
@@ -358,6 +360,8 @@ namespace Marchlands.View
         public Color KeepoutBlockingColor => keepoutBlockingColor;
 
         public float SiteCenterSize => siteCenterSize;
+
+        public float RejectedFlashTime => rejectedFlashTime;
 
         public Color DamagedTint => damagedTint;
 

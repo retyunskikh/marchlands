@@ -25,6 +25,9 @@ namespace Marchlands.Simulation.Config
 
         public float flankMeleeMultiplier;
 
+        /// <summary>Опытные бьются в рукопашной сильнее: +veteranMeleeBonus за каждую степень ветерана (звезда, звезда, орден).</summary>
+        public float veteranMeleeBonus;
+
         /// <summary>Если за это время атака не дошла до контакта (путь перекрыт), отряд останавливается, s.</summary>
         public float chargeMaxDuration;
 

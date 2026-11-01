@@ -131,6 +131,28 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void VeteranCharge_HitsHarder()
+        {
+            Match plain = CombatTestScenarios.FacingLines(1, 6f, out Squad attacker1, out Squad defender1);
+            Match veteran = CombatTestScenarios.FacingLines(1, 6f, out Squad attacker2, out Squad defender2);
+            veteran.Settings.melee.veteranMeleeBonus = 0.15f;
+            attacker2.VeteranRank = 3;
+            plain.Enqueue(new ChargeCommand(attacker1.Id, defender1.Id));
+            veteran.Enqueue(new ChargeCommand(attacker2.Id, defender2.Id));
+            RunUntilMelee(plain, attacker1);
+            RunUntilMelee(veteran, attacker2);
+            for (int i = 0; i < TicksFor(3f); i++)
+            {
+                plain.Tick();
+                veteran.Tick();
+            }
+
+            // Орден: ×1.45 — за 3 с защитник теряет ≈ 9.4 вместо ≈ 6.5.
+            Assert.Greater(36 - defender2.Alive, 36 - defender1.Alive + 1, "опытные бьют сильнее");
+            Assert.AreEqual(1.45f, MeleeSystem.VeteranMultiplier(attacker2, veteran.Settings.melee), 1e-4f);
+        }
+
+        [Test]
         public void ChargeBonus_DefenderLosesMoreAtFirst()
         {
             Match match = CombatTestScenarios.FacingLines(1, 6f, out Squad attacker, out Squad defender);

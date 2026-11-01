@@ -235,8 +235,8 @@ namespace Marchlands.Simulation.Melee
                     attackerMultiplier *= melee.flankMeleeMultiplier;
                 }
 
-                attackerMultiplier *= UnitStats.Of(attacker, match.Settings).meleeMultiplier;
-                float defenderMultiplier = UnitStats.Of(defender, match.Settings).meleeMultiplier;
+                attackerMultiplier *= UnitStats.Of(attacker, match.Settings).meleeMultiplier * VeteranMultiplier(attacker, melee);
+                float defenderMultiplier = UnitStats.Of(defender, match.Settings).meleeMultiplier * VeteranMultiplier(defender, melee);
                 defender.MeleeLossAccumulator += attackerStrength * melee.meleeKillRate * attackerMultiplier * deltaTime;
                 attacker.MeleeLossAccumulator += defenderStrength * melee.meleeKillRate * defenderMultiplier * deltaTime;
             }
@@ -264,6 +264,12 @@ namespace Marchlands.Simulation.Melee
         }
 
         /// <summary>Убитых в рукопашной ставят в заслугу противникам по схватке — поровну.</summary>
+        /// <summary>Опытный отряд в рукопашной: ×(1 + veteranMeleeBonus × степень ветерана).</summary>
+        public static float VeteranMultiplier(Squad squad, MeleeSettings melee)
+        {
+            return 1f + math.max(0f, melee.veteranMeleeBonus) * squad.VeteranRank;
+        }
+
         private static void CreditKills(Match match, Squad victim, int casualties)
         {
             int opponents = 0;

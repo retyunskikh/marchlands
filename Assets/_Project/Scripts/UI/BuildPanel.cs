@@ -29,6 +29,10 @@ namespace Marchlands.UI
         private Side playerSide;
         private bool isPlacing;
         private bool hasSite;
+        private SiteProblem rejectedProblem;
+        private float rejectedUntil = float.MinValue;
+        [Tooltip("Сколько секунд показывать, почему здесь нельзя строить, после неудачного тапа.")]
+        [SerializeField] private float rejectedHintTime = 2.5f;
         private bool canConfirm;
         private SiteProblem problem;
 
@@ -58,6 +62,14 @@ namespace Marchlands.UI
             Refresh();
         }
 
+        /// <summary>Тапнули туда, где нельзя: на время называем причину, место не выбрано.</summary>
+        public void ShowRejected(SiteProblem siteProblem)
+        {
+            rejectedProblem = siteProblem;
+            rejectedUntil = Time.unscaledTime + rejectedHintTime;
+            Refresh();
+        }
+
         private void Update()
         {
             if (match != null)
@@ -70,7 +82,9 @@ namespace Marchlands.UI
         {
             placementButtons.SetActive(isPlacing);
             confirmButton.interactable = canConfirm;
-            hintLabel.text = !hasSite ? chooseSiteText : canConfirm ? validSiteText : ProblemText(problem);
+            bool rejected = Time.unscaledTime < rejectedUntil;
+            hintLabel.text = !hasSite ? (rejected ? ProblemText(rejectedProblem) : chooseSiteText)
+                : canConfirm ? validSiteText : ProblemText(problem);
         }
 
         private string ProblemText(SiteProblem siteProblem)
