@@ -37,6 +37,9 @@ namespace Marchlands.UI
 
         [Header("Усиление зданий")]
         [SerializeField] private string upgradeBarracksTitle = "Усилить казарму";
+        [SerializeField] private string expandStableTitle = "Расширить конюшню";
+        [SerializeField] private string expandStableNote = "Конюшню расширяют: в ней встанет больше коней — можно нанять и держать больше конницы. Пока идёт стройка, найм стоит.";
+        [SerializeField] private string horsesName = "Коней в этой конюшне";
         [SerializeField] private string upgradeHeadquartersTitle = "Укрепить штаб";
         [SerializeField] private string upgradeBlockhouseTitle = "Укрепить блокгауз";
         [SerializeField] private string upgradeBarracksNote = "Деревянную казарму перестраивают в каменную. Пока идёт стройка, найм стоит.";
@@ -119,7 +122,13 @@ namespace Marchlands.UI
 
             BuildingSettings settings = match.Settings.buildings;
             string body;
-            if (building.Type == BuildingType.Barracks)
+            if (building.Type == BuildingType.Stable)
+            {
+                titleLabel.text = expandStableTitle;
+                int perLevel = settings.stableHorsesPerLevel;
+                body = expandStableNote + "\n\n" + Change(horsesName, perLevel * building.Level, perLevel * (building.Level + 1));
+            }
+            else if (building.Type == BuildingType.Barracks)
             {
                 titleLabel.text = upgradeBarracksTitle;
                 body = upgradeBarracksNote + "\n\n"
@@ -139,7 +148,7 @@ namespace Marchlands.UI
                     : "\n" + Change(upgradeSentriesName, settings.sentryShots, settings.upgradedSentryShots);
             }
 
-            body += "\n" + string.Format(Russian, upgradeCostFormat, BuildRules.GetUpgradeCost(match, building.Type),
+            body += "\n" + string.Format(Russian, upgradeCostFormat, BuildRules.GetUpgradeCost(match, building),
                 Mathf.RoundToInt(BuildRules.GetUpgradeTime(match, building.Type)));
             bodyLabel.text = body;
             panel.SetActive(true);

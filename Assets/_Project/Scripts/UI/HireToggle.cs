@@ -84,6 +84,27 @@ namespace Marchlands.UI
         {
             if (nameLabel != null && nameLabel.text != text)
             {
+                // Длинное название («Расширить», «Укрепить») не обрезается кружком «i» — шрифт сам уменьшается.
+                if (!nameLabel.resizeTextForBestFit)
+                {
+                    nameLabel.resizeTextMaxSize = nameLabel.fontSize;
+                    nameLabel.resizeTextMinSize = Mathf.Max(10, nameLabel.fontSize / 2);
+                    nameLabel.horizontalOverflow = HorizontalWrapMode.Wrap;
+                    nameLabel.resizeTextForBestFit = true;
+                    // Подпись не заходит под кружок «i» в правом верхнем углу.
+                    if (infoButton != null)
+                    {
+                        var infoRect = (RectTransform)infoButton.transform;
+                        var buttonRect = (RectTransform)transform;
+                        float infoLeft = buttonRect.rect.width + infoRect.anchoredPosition.x - infoRect.rect.width;
+                        float labelRight = buttonRect.rect.width * nameLabel.rectTransform.anchorMax.x;
+                        if (labelRight > infoLeft)
+                        {
+                            nameLabel.rectTransform.offsetMax = new Vector2(infoLeft - labelRight, nameLabel.rectTransform.offsetMax.y);
+                        }
+                    }
+                }
+
                 nameLabel.text = text;
             }
         }

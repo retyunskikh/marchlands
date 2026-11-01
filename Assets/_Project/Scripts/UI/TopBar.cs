@@ -21,6 +21,9 @@ namespace Marchlands.UI
         [Tooltip("{0} — население, {1} — мест.")]
         [SerializeField] private string populationFormat = "{0}/{1}";
         [SerializeField] private Color populationFullColor = new Color(1f, 0.55f, 0.45f);
+        [Tooltip("Кони: заняты / вмещают конюшни; видно, когда есть построенная конюшня.")]
+        [SerializeField] private Text horsesLabel;
+        [SerializeField] private string horsesFormat = "{0}/{1}";
         [Tooltip("{0} — золото.")]
         [SerializeField] private string goldFormat = "{0}";
         [Tooltip("{0} — свои деревни, {1} — всего.")]
@@ -43,6 +46,8 @@ namespace Marchlands.UI
         private int shownGold = -1;
         private int shownVillages = -1;
         private int shownPopulation = -1;
+        private int shownHorses = -1;
+        private int shownHorseCapacity = -1;
         private int shownCapacity = -1;
         private Color populationColor;
         private int shownDominationSeconds = -1;
@@ -86,7 +91,40 @@ namespace Marchlands.UI
             }
 
             RefreshPopulation();
+            RefreshHorses();
             RefreshDomination();
+        }
+
+        /// <summary>Кони справа от населения — после постройки первой конюшни; места кончились — красноватым.</summary>
+        private void RefreshHorses()
+        {
+            if (horsesLabel == null)
+            {
+                return;
+            }
+
+            int capacity = match.GetHeadquarters(playerSide) != null ? BuildRules.GetHorseCapacity(match, playerSide) : 0;
+            bool visible = capacity > 0;
+            if (horsesLabel.gameObject.activeSelf != visible)
+            {
+                horsesLabel.gameObject.SetActive(visible);
+            }
+
+            if (!visible)
+            {
+                return;
+            }
+
+            int horses = BuildRules.GetHorses(match, playerSide);
+            if (horses == shownHorses && capacity == shownHorseCapacity)
+            {
+                return;
+            }
+
+            shownHorses = horses;
+            shownHorseCapacity = capacity;
+            horsesLabel.text = string.Format(horsesFormat, horses, capacity);
+            horsesLabel.color = horses >= capacity ? populationFullColor : populationColor;
         }
 
         private void RefreshPopulation()

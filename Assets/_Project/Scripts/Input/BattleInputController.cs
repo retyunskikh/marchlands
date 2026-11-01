@@ -154,6 +154,18 @@ namespace Marchlands.Input
             CancelPlacement();
         }
 
+        /// <summary>Поставить здание, если выбранное место годится; иначе ничего (режим постановки остаётся).</summary>
+        public bool TryConfirmPlacement()
+        {
+            if (!isPlacing || !placementSite.HasValue || !BuildRules.CanBuild(match, playerSide, placementType, placementSite.Value))
+            {
+                return false;
+            }
+
+            ConfirmPlacement();
+            return true;
+        }
+
         public void CancelPlacement()
         {
             if (!isPlacing)

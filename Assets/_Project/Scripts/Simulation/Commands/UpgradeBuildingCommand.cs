@@ -25,7 +25,7 @@ namespace Marchlands.Simulation.Commands
                 return;
             }
 
-            match.GetPlayer(building.Owner).Gold -= BuildRules.GetUpgradeCost(match, building.Type);
+            match.GetPlayer(building.Owner).Gold -= BuildRules.GetUpgradeCost(match, building);
             building.UpgradeRemaining = BuildRules.GetUpgradeTime(match, building.Type);
         }
     }

@@ -15,6 +15,9 @@ namespace Marchlands.Simulation.Buildings
         /// <summary>Нет мест: население упёрлось в предел — нужен дом у штаба.</summary>
         NoHousing,
 
+        /// <summary>Нет коней: все места в конюшнях заняты — расширьте конюшню или постройте ещё одну.</summary>
+        NoHorses,
+
         /// <summary>Не хватает золота.</summary>
         NoGold
     }

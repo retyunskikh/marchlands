@@ -31,7 +31,7 @@ namespace Marchlands.Simulation.Buildings
                 ? new Volley(building.IsUpgraded ? settings.upgradedBlockhouseShots : settings.blockhouseShots,
                     settings.blockhouseInterval, settings.blockhouseHitChance,
                     building.IsUpgraded ? settings.upgradedBlockhouseRange : settings.blockhouseRange)
-                : new Volley(building.IsUpgraded ? settings.upgradedSentryShots : settings.sentryShots,
+                : new Volley(building.IsUpgraded && building.Type != BuildingType.Stable ? settings.upgradedSentryShots : settings.sentryShots,
                     settings.sentryInterval, settings.sentryHitChance, settings.sentryRange);
         }
     }

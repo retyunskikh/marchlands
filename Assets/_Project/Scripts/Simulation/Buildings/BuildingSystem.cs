@@ -59,7 +59,7 @@ namespace Marchlands.Simulation.Buildings
                         building.Level++;
                         // Каменные штаб и блокгауз крепче: запас здоровья растёт, доля повреждений сохраняется.
                         float multiplier = match.Settings.buildings.fortifiedHealthMultiplier;
-                        if (building.Type != BuildingType.Barracks && multiplier > 0f)
+                        if ((building.Type == BuildingType.Headquarters || building.Type == BuildingType.Blockhouse) && multiplier > 0f)
                         {
                             building.MaxHealth *= multiplier;
                             building.Health *= multiplier;

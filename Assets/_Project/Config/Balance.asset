@@ -196,6 +196,11 @@ MonoBehaviour:
       barracksCost: 120
       barracksBuildTime: 30
       barracksUpgradeCost: 200
+      stableHorsesPerLevel: 20
+      stableMaxLevel: 3
+      stableExpandCost: 150
+      stableSecondExpandCost: 250
+      stableExpandTime: 30
       barracksUpgradeTime: 40
       barracksUpgradeHireSpeed: 2
       headquartersUpgradeCost: 250

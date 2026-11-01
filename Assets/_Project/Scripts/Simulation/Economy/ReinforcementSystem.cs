@@ -57,7 +57,8 @@ namespace Marchlands.Simulation.Economy
                 && !squad.IsWithdrawn
                 && squad.Alive > 0
                 && squad.Alive < UnitStats.Of(squad, match.Settings).squadSize
-                && BuildRules.HasHousing(match, squad.Side);
+                && BuildRules.HasHousing(match, squad.Side)
+                && (squad.Type != UnitType.Cavalry || BuildRules.HasHorses(match, squad.Side));
         }
 
         private static Village FindOwnVillage(Match match, Squad squad)

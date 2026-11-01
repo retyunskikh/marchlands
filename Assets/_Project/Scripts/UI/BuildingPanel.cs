@@ -68,6 +68,11 @@ namespace Marchlands.UI
         [SerializeField] private string houseBuildingFormat = " · строится дом {0}%";
         [SerializeField] private string housesMaxedText = " · домов больше не пристроить";
         [SerializeField] private string noHousingStatus = "Найм: нет мест — пристройте дом к штабу";
+        [SerializeField] private string noHorsesStatus = "Найм: нет коней — расширьте конюшню или постройте ещё одну";
+        [Tooltip("Конюшню расширяют (больше коней).")]
+        [SerializeField] private string expandTitle = "Расширить";
+        [SerializeField] private string stableExpandingStatus = "Конюшню расширяют — найм стоит";
+        [SerializeField] private Sprite upgradeStableIcon;
         [Tooltip("{0} — название, {1} — цена.")]
         [SerializeField] private string buildFormat = "{1}";
         [SerializeField] private string headquartersBuildStatus = "Постройте казарму или конюшню";
@@ -296,6 +301,7 @@ namespace Marchlands.UI
             if (building.IsUpgrading)
             {
                 statusLabel.text = barracks ? upgradingStatus
+                    : building.Type == BuildingType.Stable ? stableExpandingStatus
                     : blockhouse ? blockhouseFortifyingStatus : headquartersFortifyingStatus;
                 return;
             }
@@ -444,6 +450,8 @@ namespace Marchlands.UI
                     return fullStatus;
                 case HireWait.NoHousing:
                     return noHousingStatus;
+                case HireWait.NoHorses:
+                    return noHorsesStatus;
                 case HireWait.NoGold:
                     return noGoldStatus;
                 default:
@@ -460,7 +468,7 @@ namespace Marchlands.UI
             }
 
             // Усиленной казарме кнопка не нужна — она исчезает.
-            visible &= building.IsBuilt && !building.IsUpgraded;
+            visible &= building.IsBuilt && !BuildRules.IsFullyUpgraded(match, building);
             if (upgradeToggle.gameObject.activeSelf != visible)
             {
                 upgradeToggle.gameObject.SetActive(visible);
@@ -471,10 +479,11 @@ namespace Marchlands.UI
                 return;
             }
 
-            int cost = BuildRules.GetUpgradeCost(match, building.Type);
+            int cost = BuildRules.GetUpgradeCost(match, building);
             bool can = BuildRules.CanUpgrade(match, building);
             upgradeToggle.Button.interactable = can;
-            upgradeToggle.SetName(building.Type == BuildingType.Barracks ? upgradeTitle : fortifyTitle);
+            upgradeToggle.SetName(building.Type == BuildingType.Barracks ? upgradeTitle
+                : building.Type == BuildingType.Stable ? expandTitle : fortifyTitle);
             upgradeToggle.SetIcon(UpgradeIconOf(building.Type));
             upgradeToggle.SetAvailable(can || building.IsUpgrading);
             float time = BuildRules.GetUpgradeTime(match, building.Type);
@@ -525,7 +534,8 @@ namespace Marchlands.UI
         private Sprite UpgradeIconOf(BuildingType type)
         {
             return type == BuildingType.Headquarters ? upgradeHeadquartersIcon
-                : type == BuildingType.Blockhouse ? upgradeBlockhouseIcon : upgradeBarracksIcon;
+                : type == BuildingType.Blockhouse ? upgradeBlockhouseIcon
+                : type == BuildingType.Stable && upgradeStableIcon != null ? upgradeStableIcon : upgradeBarracksIcon;
         }
 
         // Сколько полосы видно в первый миг усиления, чтобы было ясно, что оно пошло.

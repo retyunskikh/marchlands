@@ -78,6 +78,20 @@ namespace Marchlands.Simulation.AI
                 }
             }
 
+            // Кони кончились — расширяет конюшню (если хватает и на это, и на отряд гренадёров).
+            if (!BuildRules.HasHorses(match, Side))
+            {
+                foreach (Building building in match.Buildings)
+                {
+                    if (building.Owner == Side && building.Type == BuildingType.Stable && BuildRules.CanUpgrade(match, building)
+                        && match.GetPlayer(Side).Gold >= BuildRules.GetUpgradeCost(match, building) + reserve)
+                    {
+                        Issue(match, new UpgradeBuildingCommand(building.Id));
+                        return;
+                    }
+                }
+            }
+
             // В тумане войны, разбогатев, изучает воздушный шар.
             if (BuildRules.CanResearchBalloon(match, Side)
                 && match.GetPlayer(Side).Gold >= match.Settings.vision.balloonCost + reserve)

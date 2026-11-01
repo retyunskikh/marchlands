@@ -14,6 +14,19 @@ namespace Marchlands.Simulation.Config
         /// <summary>Цена усиления казармы (казарма у стороны одна — её усиливают, а не строят вторую).</summary>
         public int barracksUpgradeCost;
 
+        /// <summary>Сколько коней даёт конюшня на каждом уровне (1 — построенная, дальше — расширенная).</summary>
+        public int stableHorsesPerLevel;
+
+        /// <summary>До какого уровня расширяется конюшня (3 — до 60 коней при 20 на уровень).</summary>
+        public int stableMaxLevel;
+
+        /// <summary>Расширить конюшню: цена до второго уровня и до третьего, сколько строят, s.</summary>
+        public int stableExpandCost;
+
+        public int stableSecondExpandCost;
+
+        public float stableExpandTime;
+
         /// <summary>Сколько секунд усиливают казарму; в это время она не нанимает, s.</summary>
         public float barracksUpgradeTime;
 

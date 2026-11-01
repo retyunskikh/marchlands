@@ -128,15 +128,45 @@ namespace Marchlands.Simulation.Buildings
             return false;
         }
 
-        /// <summary>Усиливают (укрепляют) казарму, штаб и блокгауз.</summary>
+        /// <summary>Усиливают (укрепляют) казарму, штаб и блокгауз; конюшню — расширяют (больше коней).</summary>
         public static bool IsUpgradable(BuildingType type)
         {
-            return type == BuildingType.Barracks || type == BuildingType.Headquarters || type == BuildingType.Blockhouse;
+            return type == BuildingType.Barracks || type == BuildingType.Headquarters || type == BuildingType.Blockhouse
+                || type == BuildingType.Stable;
+        }
+
+        /// <summary>До какого уровня улучшается здание: конюшня — до stableMaxLevel, остальные — один раз (до 2).</summary>
+        public static int GetMaxLevel(Match match, BuildingType type)
+        {
+            return type == BuildingType.Stable ? math.max(1, match.Settings.buildings.stableMaxLevel) : 2;
+        }
+
+        /// <summary>Улучшено ли здание до предела (кнопки улучшения больше нет).</summary>
+        public static bool IsFullyUpgraded(Match match, Building building)
+        {
+            return building.Level >= GetMaxLevel(match, building.Type);
+        }
+
+        /// <summary>Цена следующего улучшения этого здания (у конюшни — своё на каждый уровень).</summary>
+        public static int GetUpgradeCost(Match match, Building building)
+        {
+            BuildingSettings settings = match.Settings.buildings;
+            if (building.Type == BuildingType.Stable)
+            {
+                return building.Level >= 2 ? settings.stableSecondExpandCost : settings.stableExpandCost;
+            }
+
+            return GetUpgradeCost(match, building.Type);
         }
 
         public static int GetUpgradeCost(Match match, BuildingType type)
         {
             BuildingSettings settings = match.Settings.buildings;
+            if (type == BuildingType.Stable)
+            {
+                return settings.stableExpandCost;
+            }
+
             return type == BuildingType.Headquarters ? settings.headquartersUpgradeCost
                 : type == BuildingType.Blockhouse ? settings.blockhouseUpgradeCost
                 : settings.barracksUpgradeCost;
@@ -145,6 +175,11 @@ namespace Marchlands.Simulation.Buildings
         public static float GetUpgradeTime(Match match, BuildingType type)
         {
             BuildingSettings settings = match.Settings.buildings;
+            if (type == BuildingType.Stable)
+            {
+                return settings.stableExpandTime;
+            }
+
             return type == BuildingType.Headquarters ? settings.headquartersUpgradeTime
                 : type == BuildingType.Blockhouse ? settings.blockhouseUpgradeTime
                 : settings.barracksUpgradeTime;
@@ -166,8 +201,8 @@ namespace Marchlands.Simulation.Buildings
         public static bool CanUpgrade(Match match, Building building)
         {
             return building != null && IsUpgradable(building.Type) && building.IsBuilt && !building.IsDestroyed
-                && !building.IsUpgraded && !building.IsUpgrading
-                && match.GetPlayer(building.Owner).Gold >= GetUpgradeCost(match, building.Type);
+                && !IsFullyUpgraded(match, building) && !building.IsUpgrading
+                && match.GetPlayer(building.Owner).Gold >= GetUpgradeCost(match, building);
         }
 
         public static bool CanBuildBarracks(Match match, Side side, float2 point)
@@ -335,8 +370,8 @@ namespace Marchlands.Simulation.Buildings
         public static float GetHireInterval(Match match, Building building)
         {
             float interval = GetHireInterval(match.Settings.buildings, GetUpcomingHireType(match, building));
-            // Усиленная казарма нанимает быстрее.
-            return building.IsUpgraded && match.Settings.buildings.barracksUpgradeHireSpeed > 0f
+            // Усиленная казарма нанимает быстрее (расширение конюшни — только кони).
+            return building.Type == BuildingType.Barracks && building.IsUpgraded && match.Settings.buildings.barracksUpgradeHireSpeed > 0f
                 ? interval / match.Settings.buildings.barracksUpgradeHireSpeed
                 : interval;
         }
@@ -357,7 +392,8 @@ namespace Marchlands.Simulation.Buildings
             for (int i = 0; i < HireOrder.Length; i++)
             {
                 UnitType type = HireOrder[(building.NextHireType + i) % HireOrder.Length];
-                if (building.IsHiring(type) && player.GetReserve(type) < GetMaxWaiting(match, type))
+                if (building.IsHiring(type) && player.GetReserve(type) < GetMaxWaiting(match, type)
+                    && (type != UnitType.Cavalry || HasHorses(match, building.Owner)))
                 {
                     return type;
                 }
@@ -376,7 +412,12 @@ namespace Marchlands.Simulation.Buildings
 
             if (!NextHireType(match, building).HasValue)
             {
-                return HireWait.Full;
+                // Ждём только из-за коней: конница включена, места в резерве есть, а коней нет.
+                PlayerState owner = match.GetPlayer(building.Owner);
+                return building.IsHiring(UnitType.Cavalry) && !HasHorses(match, building.Owner)
+                    && owner.GetReserve(UnitType.Cavalry) < GetMaxWaiting(match, UnitType.Cavalry)
+                    ? HireWait.NoHorses
+                    : HireWait.Full;
             }
 
             if (!HasHousing(match, building.Owner))
@@ -415,6 +456,50 @@ namespace Marchlands.Simulation.Buildings
             Building headquarters = match.GetHeadquarters(side);
             BuildingSettings settings = match.Settings.buildings;
             return headquarters == null ? int.MaxValue : settings.headquartersPopulation + headquarters.Houses * settings.housePopulation;
+        }
+
+        /// <summary>Сколько коней у стороны: всадники её отрядов (и бегущих) плюс ждущие у конюшен.</summary>
+        public static int GetHorses(Match match, Side side)
+        {
+            int horses = 0;
+            foreach (Squad squad in match.Squads)
+            {
+                if (squad.Side == side && squad.Type == UnitType.Cavalry && !squad.IsCamp && !squad.IsWithdrawn)
+                {
+                    horses += squad.Alive;
+                }
+            }
+
+            return horses + match.GetPlayer(side).GetReserve(UnitType.Cavalry);
+        }
+
+        /// <summary>
+        /// Сколько коней вмещают конюшни стороны: stableHorsesPerLevel на каждый уровень каждой построенной конюшни.
+        /// Без штаба (песочницы) — без предела.
+        /// </summary>
+        public static int GetHorseCapacity(Match match, Side side)
+        {
+            if (match.GetHeadquarters(side) == null)
+            {
+                return int.MaxValue;
+            }
+
+            int capacity = 0;
+            foreach (Building building in match.Buildings)
+            {
+                if (building.Owner == side && building.Type == BuildingType.Stable && building.IsBuilt && !building.IsDestroyed)
+                {
+                    capacity += match.Settings.buildings.stableHorsesPerLevel * building.Level;
+                }
+            }
+
+            return capacity;
+        }
+
+        /// <summary>Есть ли конь ещё для одного всадника.</summary>
+        public static bool HasHorses(Match match, Side side)
+        {
+            return GetHorses(match, side) < GetHorseCapacity(match, side);
         }
 
         /// <summary>Есть ли место ещё для одного человека.</summary>

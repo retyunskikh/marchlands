@@ -30,6 +30,12 @@ namespace Marchlands.Input
         [SerializeField] private float boxMinDrag = 8f;
         [Tooltip("Двойное нажатие цифры группы за это время наводит на неё камеру, s.")]
         [SerializeField] private float groupDoublePressTime = 0.35f;
+        [Tooltip("Двойной щелчок при постановке здания: за сколько секунд и в скольких пикселях — сразу «Поставить».")]
+        [SerializeField] private float placeDoubleClickTime = 0.4f;
+        [SerializeField] private float placeDoubleClickDistance = 24f;
+
+        private float lastPlaceClickTime = -1f;
+        private Vector2 lastPlaceClick;
 
         private readonly List<RaycastResult> uiHits = new List<RaycastResult>();
         private readonly List<int>[] groups = new List<int>[10];
@@ -95,10 +101,30 @@ namespace Marchlands.Input
             UpdateKeyboard(keyboard);
             UpdateCameraKeys(keyboard, pointer);
             UpdateMiddleDrag(mouse, pointer);
+            UpdatePlacementDoubleClick(mouse, pointer);
             UpdateModifiedLeft(mouse, keyboard, pointer);
             UpdateRight(mouse, pointer);
             UpdateHover(pointer);
             UpdateCursor();
+        }
+
+        /// <summary>При постановке здания двойной щелчок по годному месту ставит его сразу, без «Поставить».</summary>
+        private void UpdatePlacementDoubleClick(Mouse mouse, Vector2 pointer)
+        {
+            if (!battleInput.IsPlacing || !mouse.leftButton.wasPressedThisFrame || IsOverUi(pointer))
+            {
+                return;
+            }
+
+            float now = Time.unscaledTime;
+            bool second = lastPlaceClickTime >= 0f && now - lastPlaceClickTime <= placeDoubleClickTime
+                && Vector2.Distance(pointer, lastPlaceClick) <= placeDoubleClickDistance;
+            lastPlaceClickTime = now;
+            lastPlaceClick = pointer;
+            if (second && battleInput.TryConfirmPlacement())
+            {
+                lastPlaceClickTime = -1f;
+            }
         }
 
         private void OnDisable()
