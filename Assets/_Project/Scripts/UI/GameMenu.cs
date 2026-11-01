@@ -23,6 +23,10 @@ namespace Marchlands.UI
         [SerializeField] private Button pauseMenuButton;
         [Tooltip("Выход из игры из меню паузы.")]
         [SerializeField] private Button pauseQuitButton;
+        [Tooltip("Громкость музыки в меню паузы и её подпись ({0} — проценты).")]
+        [SerializeField] private Slider musicVolumeSlider;
+        [SerializeField] private Text musicVolumeLabel;
+        [SerializeField] private string musicVolumeFormat = "Громкость музыки: {0}%";
 
         [Header("Результат")]
         [SerializeField] private GameObject resultOverlay;
@@ -81,6 +85,26 @@ namespace Marchlands.UI
             pauseOverlay.SetActive(false);
             resultOverlay.SetActive(false);
             pauseButton.gameObject.SetActive(match.VictoryEnabled);
+            if (musicVolumeSlider != null)
+            {
+                musicVolumeSlider.minValue = 0f;
+                musicVolumeSlider.maxValue = 1f;
+                musicVolumeSlider.SetValueWithoutNotify(MusicDirector.PlayerVolume);
+                ShowMusicVolume(MusicDirector.PlayerVolume);
+                musicVolumeSlider.onValueChanged.AddListener(value =>
+                {
+                    MusicDirector.PlayerVolume = value;
+                    ShowMusicVolume(value);
+                });
+            }
+        }
+
+        private void ShowMusicVolume(float value)
+        {
+            if (musicVolumeLabel != null)
+            {
+                musicVolumeLabel.text = string.Format(musicVolumeFormat, Mathf.RoundToInt(value * 100f));
+            }
         }
 
         /// <summary>

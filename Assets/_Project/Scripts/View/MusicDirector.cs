@@ -59,6 +59,28 @@ namespace Marchlands.View
 
         private const string EnabledKey = "music.enabled";
         private static bool? musicEnabled;
+        private const string VolumeKey = "music.volume";
+        private static float? playerVolume;
+
+        /// <summary>Громкость музыки, выбранная игроком (0–1), по умолчанию 70%; хранится в PlayerPrefs.</summary>
+        public static float PlayerVolume
+        {
+            get
+            {
+                playerVolume ??= Mathf.Clamp01(PlayerPrefs.GetFloat(VolumeKey, DefaultPlayerVolume));
+                return playerVolume.Value;
+            }
+
+            set
+            {
+                playerVolume = Mathf.Clamp01(value);
+                PlayerPrefs.SetFloat(VolumeKey, playerVolume.Value);
+                PlayerPrefs.Save();
+            }
+        }
+
+        /// <summary>Громкость музыки по умолчанию, пока игрок её не менял.</summary>
+        public const float DefaultPlayerVolume = 0.7f;
 
         /// <summary>Включена ли музыка; выбор игрока хранится в PlayerPrefs.</summary>
         public static bool Enabled
@@ -229,7 +251,7 @@ namespace Marchlands.View
 
             for (int i = 0; i < sources.Length; i++)
             {
-                sources[i].volume = volumes[i] * pauseLevel;
+                sources[i].volume = volumes[i] * pauseLevel * PlayerVolume;
                 if (pauseLevel <= 0f && sources[i].isPlaying)
                 {
                     sources[i].Pause();
@@ -247,7 +269,7 @@ namespace Marchlands.View
             {
                 AudioSource source = sources[i];
                 volumes[i] = Mathf.MoveTowards(volumes[i], targetVolumes[i], step);
-                source.volume = volumes[i] * pauseLevel;
+                source.volume = volumes[i] * pauseLevel * PlayerVolume;
                 if (targetVolumes[i] <= 0f && volumes[i] <= 0f && source.isPlaying)
                 {
                     source.Stop();
@@ -280,7 +302,7 @@ namespace Marchlands.View
             AudioSource source = sources[activeSource];
             source.clip = playlist[index];
             volumes[activeSource] = instant ? volume : 0f;
-            source.volume = volumes[activeSource] * pauseLevel;
+            source.volume = volumes[activeSource] * pauseLevel * PlayerVolume;
             targetVolumes[activeSource] = volume;
             source.Play();
             silent = false;
