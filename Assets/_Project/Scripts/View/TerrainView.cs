@@ -372,7 +372,7 @@ namespace Marchlands.View
                 // Полог — от середины опушки до края видимого и шире карты: под деревьями опушки не просвечивает трава.
                 if (borderCanopySprite != null)
                 {
-                    float start = edge + side * borderEdgeDepth * 0.4f;
+                    float start = edge + side * borderEdgeDepth * CanopyStartShare;
                     float depth = math.abs(outer - start);
                     // До середины боковых рек: стык с лесом за реками прячется под водой, щели у берега нет.
                     CreateTiled("Border Canopy", borderCanopySprite, borderSortingOrder + 2,
@@ -443,14 +443,14 @@ namespace Marchlands.View
                 // Сверху камера видит за край поля лишь немного — там хватает неглубокого слоя.
                 if (side < 0f)
                 {
-                    DrawDeepTrees(new Vector2(riverLeft - ForestToSideRiver, edge - borderDeepDepth), new Vector2(riverRight + ForestToSideRiver, edge - borderEdgeDepth), edge, ref seed, true);
+                    DrawDeepTrees(new Vector2(riverLeft - ForestToSideRiver, edge - borderDeepDepth), new Vector2(riverRight + ForestToSideRiver, edge - borderEdgeDepth * DeepOverlap), edge, ref seed, true);
                 }
                 else
                 {
                     float topDepth = math.min(borderDeepDepth, halfMapY - edge + TopForestMargin);
                     if (topDepth > borderEdgeDepth)
                     {
-                        DrawDeepTrees(new Vector2(riverLeft - ForestToSideRiver, edge + borderEdgeDepth), new Vector2(riverRight + ForestToSideRiver, edge + topDepth), edge + borderEdgeDepth, ref seed, true);
+                        DrawDeepTrees(new Vector2(riverLeft - ForestToSideRiver, edge + borderEdgeDepth * DeepOverlap), new Vector2(riverRight + ForestToSideRiver, edge + topDepth), edge + borderEdgeDepth, ref seed, true);
                     }
                 }
             }
@@ -688,7 +688,8 @@ namespace Marchlands.View
                 List<Vector2> full = ClipAlongX(line, side, math.abs(edge) - MouthOverlap, banks, out float fullStart);
                 if (full != null)
                 {
-                    Mesh mesh = BuildStrip(full, textureWidth, 0f, 1f, tileLength, fullStart / tileLength);
+                    // Конец берегов притока растворяется в берегу боковой реки, а не обрывается прямым срезом.
+                    Mesh mesh = BuildStrip(full, textureWidth, 0f, 1f, tileLength, fullStart / tileLength, fadeOut: MouthBankFade);
                     CreateMeshObject("River Mouth Banks", mesh, fieldRiverTexture, borderSortingOrder + 4);
                 }
 
@@ -698,9 +699,10 @@ namespace Marchlands.View
                     continue;
                 }
 
-                float width = halfWidth * 2f;
-                Mesh waterMesh = BuildStrip(water, width, MouthWaterUMin, MouthWaterUMax, tileLength,
-                    waterStart / tileLength, width * MouthFlare);
+                // Полоса воды — там, где вода видна в текстуре притока (уже русла и чуть к одному берегу).
+                float width = halfWidth * 2f * VisibleWaterShare;
+                Mesh waterMesh = BuildStrip(ShiftLine(water, halfWidth * 2f * VisibleWaterShift), width, MouthWaterUMin, MouthWaterUMax,
+                    tileLength, waterStart / tileLength, width * MouthFlare);
                 CreateMeshObject("River Mouth", waterMesh, fieldRiverTexture, borderSortingOrder + 5);
 
                 // Блики — одной лентой на всё устье, продолжая блики притока: без «окна» без бликов.
@@ -714,7 +716,7 @@ namespace Marchlands.View
 
         /// <summary>
         /// Река, уходящая за верхний или нижний край карты, течёт сквозь пограничный лес просекой: русло с берегами
-        /// поверх полога (деревья опушки на русло не ставятся), блики течения — до конца видимого.
+        /// поверх полога (деревья опушки на русло не ставятся). Без бликов течения: их полоса шире воды и легла бы на полог.
         /// </summary>
         private void DrawRiverThroughForest(TerrainMap terrain, List<Vector2> line, float halfWidth)
         {
@@ -726,7 +728,9 @@ namespace Marchlands.View
             foreach (float side in new[] { -1f, 1f })
             {
                 float edge = side > 0f ? terrain.BoundsMax.y : terrain.BoundsMin.y;
-                List<Vector2> piece = ClipAlongX(swapped, side, math.abs(edge) - MouthOverlap, far, out float start);
+                // С того места, где начинается полог леса (до него видна обычная река), и с плавным началом.
+                float canopyStart = math.abs(edge) + borderEdgeDepth * CanopyStartShare - ForestRiverFadeIn;
+                List<Vector2> piece = ClipAlongX(swapped, side, canopyStart, far, out float start);
                 if (piece == null)
                 {
                     continue;
@@ -734,11 +738,24 @@ namespace Marchlands.View
 
                 piece = Swap(piece);
                 // В лесу — вода с песчаной кромкой, без травы: полоса луга сквозь чащу смотрелась просекой.
-                float share = math.saturate(fieldRiverWaterTexels / math.max(1f, fieldRiverTexture.width)) * ForestRiverBankShare;
-                Mesh mesh = BuildStrip(piece, textureWidth * share, 0.5f - share * 0.5f, 0.5f + share * 0.5f, tileLength, start / tileLength);
+                // Только вода (без песчаной кромки — у текстуры она с одной стороны шире): края закрывают деревья.
+                Mesh mesh = BuildStrip(ShiftLine(piece, halfWidth * 2f * VisibleWaterShift), halfWidth * 2f * VisibleWaterShare,
+                    MouthWaterUMin, MouthWaterUMax, tileLength, start / tileLength, fadeIn: ForestRiverFadeIn);
                 CreateMeshObject("River Through Forest", mesh, fieldRiverTexture, borderSortingOrder + 4);
-                DrawFieldRiverFlow(piece, halfWidth, borderSortingOrder + 6, start);
             }
+        }
+
+        /// <summary>Ломаная, сдвинутая вбок (к стороне u = 0 полосы, как в BuildStrip) на <paramref name="offset"/>, u.</summary>
+        private static List<Vector2> ShiftLine(List<Vector2> line, float offset)
+        {
+            var shifted = new List<Vector2>(line.Count);
+            for (int i = 0; i < line.Count; i++)
+            {
+                Vector2 tangent = (line[math.min(i + 1, line.Count - 1)] - line[math.max(i - 1, 0)]).normalized;
+                shifted.Add(line[i] + new Vector2(-tangent.y, tangent.x) * offset);
+            }
+
+            return shifted;
         }
 
         private static List<Vector2> Swap(List<Vector2> line)
@@ -822,14 +839,18 @@ namespace Marchlands.View
         // Насколько деревья опушки заходят за край поля к воде боковой реки (на её береговую траву), u.
         private const float ForestToSideRiver = 1.6f;
 
+        // Где начинается полог леса за краем (доля глубины опушки) и на какой длине река в лесу проявляется, u.
+        private const float CanopyStartShare = 0.4f;
+        private const float ForestRiverFadeIn = 1.5f;
+
+        // Глубокий слой леса начинается внутри опушки (доля её глубины): без ровной полосы стыка между ними.
+        private const float DeepOverlap = 0.6f;
+
         // Сколько за видимым верхним краем (половиной размера карты) ещё ставить деревья, u.
         private const float TopForestMargin = 6f;
 
-        // Ширина реки в лесу относительно ширины воды: вода и узкая кромка песка.
-        private const float ForestRiverBankShare = 1.12f;
-
         // Насколько от воды (сверх полуширины русла) держатся деревья пограничного леса, u.
-        private const float ForestRiverClearance = 2.2f;
+        private const float ForestRiverClearance = -0.6f;
 
         /// <summary>
         /// Кусок ломаной между |x| = from и |x| = to со стороны <paramref name="side"/> (концы — точно на границах);
@@ -876,6 +897,9 @@ namespace Marchlands.View
             return piece.Count >= 2 ? piece : null;
         }
 
+        // На какой длине берега притока растворяются в берегу боковой реки, u.
+        private const float MouthBankFade = 1.2f;
+
         // Насколько кусок притока с берегами начинается до края поля, u.
         private const float MouthOverlap = 0.5f;
 
@@ -886,8 +910,12 @@ namespace Marchlands.View
         private const float SideRiverBankWidth = 1.55f;
 
         // Полоса текстуры притока, где по всей длине только вода (без песка), — для воды устья.
-        private const float MouthWaterUMin = 0.31f;
-        private const float MouthWaterUMax = 0.69f;
+        // Какая доля номинальной ширины русла в текстуре притока — видимая вода, и насколько она сдвинута к стороне u = 0.
+        private const float VisibleWaterShare = 0.68f;
+        private const float VisibleWaterShift = -0.2f;
+
+        private const float MouthWaterUMin = 0.45f;
+        private const float MouthWaterUMax = 0.55f;
 
         // Во сколько раз устье шире притока там, где впадает.
         private const float MouthFlare = 1f;
@@ -899,8 +927,9 @@ namespace Marchlands.View
         /// Лента вдоль ломаной: ширина от <paramref name="width"/> до <paramref name="endWidth"/> (плавно), текстура поперёк —
         /// от uMin до uMax, вдоль — повтор через tileLength со сдвигом vOffset; цвет вершин — <paramref name="color"/>.
         /// </summary>
+        /// <param name="fadeOut">На какой длине у конца ленты она плавно становится прозрачной (0 — обрыв), u.</param>
         private static Mesh BuildStrip(List<Vector2> line, float width, float uMin, float uMax, float tileLength,
-            float vOffset = 0f, float endWidth = -1f, Color? color = null, float[] taper = null)
+            float vOffset = 0f, float endWidth = -1f, Color? color = null, float[] taper = null, float fadeOut = 0f, float fadeIn = 0f)
         {
             float total = 0f;
             for (int i = 1; i < line.Count; i++)
@@ -935,7 +964,18 @@ namespace Marchlands.View
                 float v = (tileLength > 0f ? length / tileLength : 0f) + vOffset;
                 uvs[i * 2] = new Vector2(uMin, v);
                 uvs[i * 2 + 1] = new Vector2(uMax, v);
-                colors[i * 2] = colors[i * 2 + 1] = tint;
+                Color vertex = tint;
+                if (fadeOut > 0f)
+                {
+                    vertex.a *= Mathf.SmoothStep(0f, 1f, (total - length) / fadeOut);
+                }
+
+                if (fadeIn > 0f)
+                {
+                    vertex.a *= Mathf.SmoothStep(0f, 1f, length / fadeIn);
+                }
+
+                colors[i * 2] = colors[i * 2 + 1] = vertex;
                 if (i + 1 < line.Count)
                 {
                     int t = i * 6;
