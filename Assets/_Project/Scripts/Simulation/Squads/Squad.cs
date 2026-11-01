@@ -77,8 +77,17 @@ namespace Marchlands.Simulation.Squads
         /// <summary>Дальше этого залп текущего прицеливания не пойдёт (ИИ держит огонь до эффективной дальности), u.</summary>
         internal float AimMaxDistance { get; set; } = float.MaxValue;
 
-        /// <summary>Боевой дух, 0–100.</summary>
+        /// <summary>Боевой дух, от 0 до <see cref="MaxMorale"/>.</summary>
         public float Morale { get; internal set; } = MoraleMath.MaxMorale;
+
+        /// <summary>Предел боевого духа: 100, у опытных отрядов выше (см. <see cref="Kills"/>).</summary>
+        public float MaxMorale { get; internal set; } = MoraleMath.MaxMorale;
+
+        /// <summary>Сколько врагов убил отряд за бой — его опыт.</summary>
+        public float Kills { get; internal set; }
+
+        /// <summary>Степень ветерана: 0 — нет, 1 — бронзовая звезда, 2 — серебряная, 3 — орден.</summary>
+        public int VeteranRank { get; internal set; }
 
         public MoraleState MoraleState { get; internal set; } = MoraleState.Steady;
 

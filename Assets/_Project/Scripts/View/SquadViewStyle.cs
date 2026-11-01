@@ -133,6 +133,16 @@ namespace Marchlands.View
         [SerializeField] private Color bannerPoleColor = new Color(0.3f, 0.2f, 0.12f);
         [Tooltip("Зазор между полоской морали и знаменем, u.")]
         [SerializeField] private float bannerGap = 0.2f;
+
+        [Header("Знаки ветеранов")]
+        [Tooltip("Звезда (белая — красится бронзой или серебром) и орден (в цвете) — рядом со знаменем опытного отряда.")]
+        [SerializeField] private Sprite veteranStarSprite;
+        [SerializeField] private Sprite veteranOrderSprite;
+        [SerializeField] private Color veteranBronzeColor = new Color(0.82f, 0.45f, 0.18f);
+        [SerializeField] private Color veteranSilverColor = new Color(0.86f, 0.9f, 0.95f);
+        [Tooltip("Размер знака, u, и зазор до знамени.")]
+        [SerializeField] private float veteranBadgeSize = 1f;
+        [SerializeField] private float veteranBadgeGap = 0.08f;
         [SerializeField] private Color selectionColor = new Color(1f, 0.9f, 0.3f, 0.3f);
         [Tooltip("Брошенная пушка разбитого расчёта: сколько лежит, за сколько тает (s), насколько темнее.")]
         [SerializeField] private float abandonedGunLieTime = 8f;
@@ -414,5 +424,20 @@ namespace Marchlands.View
         public Color BannerPoleColor => bannerPoleColor;
 
         public float BannerGap => bannerGap;
+
+        public float VeteranBadgeSize => veteranBadgeSize;
+
+        public float VeteranBadgeGap => veteranBadgeGap;
+
+        /// <summary>Знак степени ветерана: 1 — бронзовая звезда, 2 — серебряная, 3 — орден; 0 — нет.</summary>
+        public Sprite GetVeteranBadge(int rank)
+        {
+            return rank >= 3 ? veteranOrderSprite : rank > 0 ? veteranStarSprite : null;
+        }
+
+        public Color GetVeteranBadgeColor(int rank)
+        {
+            return rank >= 3 ? Color.white : rank == 2 ? veteranSilverColor : veteranBronzeColor;
+        }
     }
 }

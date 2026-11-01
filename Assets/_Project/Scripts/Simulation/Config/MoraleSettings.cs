@@ -52,6 +52,37 @@ namespace Marchlands.Simulation.Config
         /// <summary>Скорость бегства, u/s.</summary>
         public float routSpeed;
 
+        /// <summary>Радиус «психологического давления»: враги и свои ближе этого считаются, u (от центра до центра).</summary>
+        public float pressureRadius;
+
+        /// <summary>Давление начинается, когда людей у наступающего врага рядом больше, чем у нас (с союзниками), в столько раз.</summary>
+        public float pressureRatio;
+
+        /// <summary>Потеря морали от давления в секунду на каждую единицу перевеса сверх порога (перевес / порог − 1).</summary>
+        public float pressureMoraleLoss;
+
+        /// <summary>Предел потери морали от давления, в секунду.</summary>
+        public float pressureMaxLoss;
+
+        /// <summary>Ниже этого давление само по себе дух не опускает (сломить отряд может только огонь и штык).</summary>
+        public float pressureMoraleFloor;
+
+        /// <summary>Наибольшая прибавка к пределу морали опытного отряда (сверх 100).</summary>
+        public float veteranMaxMoraleBonus;
+
+        /// <summary>
+        /// Опыт: прибавка к пределу = veteranMaxMoraleBonus × (1 − e^(−убито / veteranKillScale)) — первые убитые
+        /// поднимают предел заметно, дальше всё медленнее.
+        /// </summary>
+        public float veteranKillScale;
+
+        /// <summary>Сколько убитых врагов нужно для знаков: бронзовая звезда, серебряная звезда, орден.</summary>
+        public float veteranRank1Kills;
+
+        public float veteranRank2Kills;
+
+        public float veteranRank3Kills;
+
         /// <summary>Скорость разворота бегущего отряда к точке отхода, °/s; бежать он начинает, развернувшись.</summary>
         public float routRotationSpeed;
     }

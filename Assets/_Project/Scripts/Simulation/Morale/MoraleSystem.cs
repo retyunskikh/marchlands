@@ -57,9 +57,58 @@ namespace Marchlands.Simulation.Morale
                 squad.TimeSinceLoss += deltaTime;
                 // В спокойствии дух восстанавливается быстро, в бою — медленно, но всегда.
                 float regen = IsCalm(match, squad) ? math.max(settings.moraleRegen, settings.moraleBaseRegen) : settings.moraleBaseRegen;
-                squad.Morale = math.min(MoraleMath.MaxMorale, squad.Morale + regen * deltaTime);
+                squad.Morale = math.min(squad.MaxMorale, squad.Morale + regen * deltaTime);
+                ApplyPressure(match, squad, deltaTime);
             }
         }
+
+        /// <summary>
+        /// Психологическое давление: на отряд, который остался один против многих, наступают — дух падает тем
+        /// быстрее, чем больше перевес. Считаются люди не бегущих врагов в pressureRadius, которые не уходят прочь,
+        /// против людей самого отряда и не бегущих союзников рядом. Ниже pressureMoraleFloor давление не опускает.
+        /// </summary>
+        private static void ApplyPressure(Match match, Squad squad, float deltaTime)
+        {
+            MoraleSettings settings = match.Settings.morale;
+            if (squad.IsCamp || squad.Alive <= 0 || settings.pressureMoraleLoss <= 0f || squad.Morale <= settings.pressureMoraleFloor)
+            {
+                return;
+            }
+
+            float radiusSq = settings.pressureRadius * settings.pressureRadius;
+            float enemies = 0f;
+            float friends = 0f;
+            foreach (Squad other in match.Squads)
+            {
+                if (other.IsCamp || other.IsRouting || other.IsWithdrawn || other.Alive <= 0
+                    || math.distancesq(other.Position, squad.Position) > radiusSq)
+                {
+                    continue;
+                }
+
+                if (other.Side == squad.Side)
+                {
+                    friends += other.Alive;
+                    continue;
+                }
+
+                // Отходящий враг не давит: он уходит прочь (расстояние за тик выросло).
+                bool leaving = math.distancesq(other.Position, squad.Position) > math.distancesq(other.PreviousPosition, squad.Position) + Leaving;
+                if (!leaving)
+                {
+                    enemies += other.Alive;
+                }
+            }
+
+            float loss = MoraleMath.PressureLoss(enemies, friends, settings) * UnitStats.Of(squad, match.Settings).moraleLossMultiplier * deltaTime;
+            if (loss > 0f)
+            {
+                squad.Morale = math.max(math.min(squad.Morale, settings.pressureMoraleFloor), squad.Morale - loss);
+            }
+        }
+
+        // Насколько (в квадрате расстояния, u²) враг должен отдалиться за тик, чтобы считаться уходящим.
+        private const float Leaving = 1e-4f;
 
         private static bool ShouldRout(Match match, Squad squad)
         {
@@ -128,7 +177,7 @@ namespace Marchlands.Simulation.Morale
                     {
                         if (distance <= settings.enemyRoutRadius)
                         {
-                            other.Morale = math.min(MoraleMath.MaxMorale, other.Morale + settings.enemyRoutBonus);
+                            other.Morale = math.min(other.MaxMorale, other.Morale + settings.enemyRoutBonus);
                         }
 
                         continue;

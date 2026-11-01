@@ -112,6 +112,8 @@ namespace Marchlands.View
         private SpriteRenderer gunRenderer;
         private SpriteRenderer limberRenderer;
         private SpriteRenderer gunTrim;
+        private SpriteRenderer veteranBadge;
+        private int shownRank;
         private SpriteRenderer limberTrim;
 
         internal void Initialize(Squad squad, Match match, SquadViewStyle style, CasualtiesView casualties)
@@ -130,6 +132,8 @@ namespace Marchlands.View
             targetMarker.enabled = false;
             moraleBackground = CreateRenderer("Morale", style.MarkerSprite, style.MoraleBarBackground, style.RingSortingOrder);
             moraleFill = CreateRenderer("Morale Fill", style.MarkerSprite, style.MoraleRoutingColor, style.RingSortingOrder + 1);
+            veteranBadge = CreateRenderer("Veteran Badge", null, Color.white, style.RingSortingOrder + 2);
+            veteranBadge.enabled = false;
             if (style.BannerSprite != null)
             {
                 // Знамя цвета игрока: отряды одной нации у разных игроков различимы.
@@ -693,6 +697,35 @@ namespace Marchlands.View
             Vector2 spriteSize = style.BannerSprite.bounds.size;
             bannerCloth.transform.SetPositionAndRotation(new Vector3(clothCenter.x, clothCenter.y, 0f), Quaternion.identity);
             bannerCloth.transform.localScale = new Vector3(clothWidth / spriteSize.x, clothHeight / spriteSize.y, 1f);
+
+            // Знак ветерана — рядом со знаменем, с внешней стороны: справа от полотнища (под полоской) или слева от древка.
+            float badge = style.VeteranBadgeSize;
+            float2 badgeCenter = math.abs(side.y) >= math.abs(side.x)
+                ? new float2(clothCenter.x + clothWidth * 0.5f + style.VeteranBadgeGap + badge * 0.5f, clothCenter.y)
+                : new float2(poleX - poleWidth * 0.5f - style.VeteranBadgeGap - badge * 0.5f, clothCenter.y);
+            RenderVeteranBadge(badgeCenter, badge);
+        }
+
+        /// <summary>Знак степени ветерана: бронзовая звезда, серебряная, орден (по числу убитых врагов).</summary>
+        private void RenderVeteranBadge(float2 center, float size)
+        {
+            int rank = squad.VeteranRank;
+            if (rank != shownRank)
+            {
+                shownRank = rank;
+                veteranBadge.sprite = style.GetVeteranBadge(rank);
+                veteranBadge.color = style.GetVeteranBadgeColor(rank);
+            }
+
+            veteranBadge.enabled = veteranBadge.sprite != null && !squad.IsRouting;
+            if (!veteranBadge.enabled)
+            {
+                return;
+            }
+
+            Vector2 spriteSize = veteranBadge.sprite.bounds.size;
+            veteranBadge.transform.SetPositionAndRotation(new Vector3(center.x, center.y, 0f), Quaternion.identity);
+            veteranBadge.transform.localScale = new Vector3(size / spriteSize.x, size / spriteSize.y, 1f);
         }
 
         /// <summary>Горизонтальная полоска морали: заполнение слева направо, цвет по состоянию.</summary>
@@ -702,7 +735,8 @@ namespace Marchlands.View
             moraleBackground.transform.SetPositionAndRotation(new Vector3(center.x, center.y, 0f), Quaternion.identity);
             moraleBackground.transform.localScale = new Vector3(size.x, size.y, 1f);
 
-            float morale01 = math.saturate(squad.Morale / MoraleMath.MaxMorale);
+            // Полоска — доля от предела этого отряда (у ветеранов он выше 100).
+            float morale01 = math.saturate(squad.Morale / math.max(1f, squad.MaxMorale));
             float width = size.x * morale01;
             moraleFill.enabled = width > 0f;
             moraleFill.color = squad.IsRouting ? style.MoraleRoutingColor : style.GetSteadyMoraleColor(morale01);

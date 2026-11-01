@@ -42,6 +42,10 @@ namespace Marchlands.UI
         [SerializeField] private string strengthFormat = "{0}/{1}";
         [Tooltip("{0} — дух числом.")]
         [SerializeField] private string moraleFormat = "Дух: {0}";
+        [Tooltip("Опытный отряд: {0} — дух, {1} — предел, {2} — знак, {3} — убито врагов.")]
+        [SerializeField] private string veteranMoraleFormat = "Дух: {0}/{1}, {2} (убито {3})";
+        [SerializeField] private string experiencedName = "опытные";
+        [SerializeField] private string[] veteranRankNames = { "бронзовая звезда", "серебряная звезда", "орден" };
         [SerializeField] private Color moraleHigh = new Color(0.35f, 0.8f, 0.3f);
         [SerializeField] private Color moraleLow = new Color(0.9f, 0.25f, 0.2f);
         [SerializeField] private string standingText = "Стоят";
@@ -241,8 +245,8 @@ namespace Marchlands.UI
             SetPortrait(squad.Side, squad.Type);
             titleLabel.text = GetTitle(squad.Type);
 
-            float morale = Mathf.Clamp(squad.Morale, 0f, MoraleMath.MaxMorale);
-            float share = morale / MoraleMath.MaxMorale;
+            float morale = Mathf.Clamp(squad.Morale, 0f, squad.MaxMorale);
+            float share = morale / Mathf.Max(1f, squad.MaxMorale);
             if (moraleFill != null)
             {
                 moraleFill.fillAmount = share;
@@ -251,7 +255,21 @@ namespace Marchlands.UI
 
             strengthLabel.text = string.Format(strengthFormat, squad.Alive, UnitStats.Of(squad, match.Settings).squadSize);
             // Перезарядку показывает кнопка «Залп» — в карточке её нет.
-            detailsLabel.text = string.Format(moraleFormat, Mathf.RoundToInt(morale)) + "\n" + GetActivity();
+            detailsLabel.text = MoraleText(squad, morale) + "\n" + GetActivity();
+        }
+
+        /// <summary>Дух числом; у опытного отряда — ещё предел, знак и сколько врагов убито.</summary>
+        private string MoraleText(Squad squad, float morale)
+        {
+            int kills = Mathf.FloorToInt(squad.Kills);
+            if (kills <= 0 || squad.MaxMorale < MoraleMath.MaxMorale + 0.5f)
+            {
+                return string.Format(moraleFormat, Mathf.RoundToInt(morale));
+            }
+
+            int rank = squad.VeteranRank;
+            string rankName = rank > 0 && veteranRankNames != null && rank <= veteranRankNames.Length ? veteranRankNames[rank - 1] : experiencedName;
+            return string.Format(veteranMoraleFormat, Mathf.RoundToInt(morale), Mathf.RoundToInt(squad.MaxMorale), rankName, kills);
         }
 
         /// <summary>Сводка группы: портрет главного, сколько выделено, всего людей и худший дух.</summary>
@@ -261,16 +279,17 @@ namespace Marchlands.UI
             titleLabel.text = string.Format(groupTitleFormat, group.Count);
             int alive = 0;
             int full = 0;
-            float worst = MoraleMath.MaxMorale;
+            float worst = float.MaxValue;
+            float share = 1f;
             foreach (Squad member in group)
             {
                 alive += member.Alive;
                 full += UnitStats.Of(member, match.Settings).squadSize;
                 worst = Mathf.Min(worst, member.Morale);
+                share = Mathf.Min(share, Mathf.Clamp01(member.Morale / Mathf.Max(1f, member.MaxMorale)));
             }
 
-            float morale = Mathf.Clamp(worst, 0f, MoraleMath.MaxMorale);
-            float share = morale / MoraleMath.MaxMorale;
+            float morale = Mathf.Max(0f, worst);
             if (moraleFill != null)
             {
                 moraleFill.fillAmount = share;

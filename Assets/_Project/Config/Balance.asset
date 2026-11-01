@@ -150,6 +150,16 @@ MonoBehaviour:
       calmEnemyRadius: 10
       routThreshold: 15
       routSpeed: 2
+      pressureRadius: 24
+      pressureRatio: 1.5
+      pressureMoraleLoss: 1.5
+      pressureMaxLoss: 3
+      pressureMoraleFloor: 35
+      veteranMaxMoraleBonus: 100
+      veteranKillScale: 60
+      veteranRank1Kills: 15
+      veteranRank2Kills: 45
+      veteranRank3Kills: 100
       routRotationSpeed: 240
     melee:
       chargeSpeed: 2.5

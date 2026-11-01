@@ -41,6 +41,7 @@ namespace Marchlands.Simulation.Core
                 Mix(ref hash, squad.Facing);
                 Mix(ref hash, (int)squad.Formation);
                 Mix(ref hash, squad.Morale);
+                Mix(ref hash, squad.Kills);
                 Mix(ref hash, (int)squad.MoraleState);
                 Mix(ref hash, (int)squad.FireState);
                 Mix(ref hash, squad.FireTimer);
