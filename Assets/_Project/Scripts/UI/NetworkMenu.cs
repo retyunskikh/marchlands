@@ -32,7 +32,7 @@ namespace Marchlands.UI
 
         [Header("Сеть")]
         [Tooltip("Адрес сервера комнат в интернете (IP или домен, можно с «:порт»), пока игрок не ввёл свой.")]
-        [SerializeField] private string defaultServerAddress = "";
+        [SerializeField] private string defaultServerAddress = "137.22.145.254";
         [SerializeField] private int port = 7777;
         [SerializeField] private int discoveryPort = 47777;
         [Tooltip("Через сколько миллисекунд без ответа соединение считается оборванным.")]

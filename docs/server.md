@@ -14,7 +14,7 @@ lockstep остаётся на машинах игроков. Нагрузка �
 
 ## 2. Первая установка
 
-Подключитесь к серверу (`ssh root@ВАШ_IP`) и выполните:
+Подключитесь к серверу (`ssh root@137.22.145.254`) и выполните:
 
 ```bash
 # Пользователь без прав входа, от которого работает сервер
@@ -34,8 +34,8 @@ ufw enable
 С вашего компьютера (PowerShell или Git Bash) скопируйте сборку и файл сервиса:
 
 ```bash
-scp -r Builds/Server/Marchlands-Server-N/* root@ВАШ_IP:/opt/marchlands/server/
-scp deploy/marchlands-server.service root@ВАШ_IP:/etc/systemd/system/
+scp -r Builds/Server/Marchlands-Server-N/* root@137.22.145.254:/opt/marchlands/server/
+scp deploy/marchlands-server.service root@137.22.145.254:/etc/systemd/system/
 ```
 
 На сервере:
@@ -66,7 +66,7 @@ systemctl stop marchlands-server            # остановка
 
 ```bash
 # на компьютере
-scp -r Builds/Server/Marchlands-Server-N/* root@ВАШ_IP:/tmp/marchlands-new/
+scp -r Builds/Server/Marchlands-Server-N/* root@137.22.145.254:/tmp/marchlands-new/
 # на сервере
 systemctl stop marchlands-server
 rm -rf /opt/marchlands/server/*

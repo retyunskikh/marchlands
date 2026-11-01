@@ -3385,9 +3385,11 @@ MonoBehaviour:
   styleSample: {fileID: 1028233810}
   mainMenu: {fileID: 1918966608}
   battleSceneName: Battle
+  defaultServerAddress: 137.22.145.254
   port: 7777
   discoveryPort: 47777
   disconnectTimeoutMs: 15000
+  roomListInterval: 3
   backdropColor: {r: 0.12, g: 0.14, b: 0.1, a: 1}
   lightButton: {r: 0.95, g: 0.92, b: 0.82, a: 1}
   accentButton: {r: 0.95, g: 0.78, b: 0.55, a: 1}
