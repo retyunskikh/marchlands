@@ -138,6 +138,16 @@ namespace Marchlands.UI
             if (upgradeToggle != null)
             {
                 upgradeToggle.Button.onClick.AddListener(OnUpgrade);
+                if (upgradeToggle.InfoButton != null)
+                {
+                    upgradeToggle.InfoButton.onClick.AddListener(() =>
+                    {
+                        if (building != null)
+                        {
+                            infoPanel.ShowUpgrade(building, UpgradeIconOf(building.Type));
+                        }
+                    });
+                }
             }
 
             if (buildHouseToggle != null)
@@ -444,8 +454,7 @@ namespace Marchlands.UI
             bool can = BuildRules.CanUpgrade(match, building);
             upgradeToggle.Button.interactable = can;
             upgradeToggle.SetName(building.Type == BuildingType.Barracks ? upgradeTitle : fortifyTitle);
-            upgradeToggle.SetIcon(building.Type == BuildingType.Headquarters ? upgradeHeadquartersIcon
-                : building.Type == BuildingType.Blockhouse ? upgradeBlockhouseIcon : upgradeBarracksIcon);
+            upgradeToggle.SetIcon(UpgradeIconOf(building.Type));
             upgradeToggle.SetAvailable(can || building.IsUpgrading);
             float time = BuildRules.GetUpgradeTime(match, building.Type);
             // Идёт усиление — полоса заполняется с первого тика (чуть видна сразу), вместо цены — проценты.
@@ -454,6 +463,13 @@ namespace Marchlands.UI
                 ? string.Format(upgradeProgressFormat, Mathf.FloorToInt(progress * 100f))
                 : string.Format(buildFormat, string.Empty, cost);
             upgradeToggle.Show(text, building.IsUpgrading, progress);
+        }
+
+        /// <summary>Картинка будущего (каменного) здания на кнопке усиления.</summary>
+        private Sprite UpgradeIconOf(BuildingType type)
+        {
+            return type == BuildingType.Headquarters ? upgradeHeadquartersIcon
+                : type == BuildingType.Blockhouse ? upgradeBlockhouseIcon : upgradeBarracksIcon;
         }
 
         // Сколько полосы видно в первый миг усиления, чтобы было ясно, что оно пошло.

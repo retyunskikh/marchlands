@@ -61,7 +61,7 @@ MonoBehaviour:
       chargeBonusMultiplier: 1
       targetHitMultiplier: 1
     cavalry:
-      squadSize: 16
+      squadSize: 20
       minSquadSize: 4
       speedMultiplier: 2.2
       accuracyMultiplier: 1
@@ -213,7 +213,7 @@ MonoBehaviour:
       stableBuildTime: 40
       cavalryHireCost: 6
       cavalryHireInterval: 4.5
-      depotCost: 320
+      depotCost: 300
       depotBuildTime: 55
       depotHealth: 300
       gunCrewHireCost: 150

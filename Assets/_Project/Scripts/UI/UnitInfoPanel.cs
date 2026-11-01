@@ -32,6 +32,24 @@ namespace Marchlands.UI
         [SerializeField] private string artilleryTitle = "Пушки";
         [SerializeField] private string artilleryNote = "Пушка с расчётом. Медленная; чтобы стрелять, снимается с передка, чтобы ехать — берётся на передок. Ядром бьёт далеко, навесом через своих, рикошетом выкашивает ряды — особенно колонну и строй на мосту. Картечью — страшно, но вблизи. В атаку не ходит.";
 
+        [Header("Усиление зданий")]
+        [SerializeField] private string upgradeBarracksTitle = "Усилить казарму";
+        [SerializeField] private string upgradeHeadquartersTitle = "Укрепить штаб";
+        [SerializeField] private string upgradeBlockhouseTitle = "Укрепить блокгауз";
+        [SerializeField] private string upgradeBarracksNote = "Деревянную казарму перестраивают в каменную. Пока идёт стройка, найм стоит.";
+        [SerializeField] private string upgradeHeadquartersNote = "Деревянный штаб перестраивают в каменный: базу дольше не взять штурмом.";
+        [SerializeField] private string upgradeBlockhouseNote = "Деревянный блокгауз перестраивают в каменный: крепче, больше защитников, бьют дальше.";
+        [Tooltip("Строка «было → станет»: {0} — что, {1} — сейчас, {2} — после.")]
+        [SerializeField] private string upgradeChangeFormat = "{0}: {1} → {2}";
+        [SerializeField] private string upgradeHealthName = "Прочность";
+        [SerializeField] private string upgradeSentriesName = "Ружей у часовых";
+        [SerializeField] private string upgradeDefendersName = "Стрелков";
+        [SerializeField] private string upgradeRangeName = "Дальность огня";
+        [Tooltip("{0} — во сколько раз быстрее нанимают.")]
+        [SerializeField] private string upgradeHireFormat = "Найм: в {0} раза быстрее";
+        [Tooltip("{0} — цена, {1} — секунд стройки.")]
+        [SerializeField] private string upgradeCostFormat = "Цена: {0} золота, строят {1} с";
+
         private static readonly CultureInfo Russian = CultureInfo.GetCultureInfo("ru-RU");
 
         private Match match;
@@ -75,6 +93,53 @@ namespace Marchlands.UI
                 $"Рукопашная: {Percent(unit.meleeMultiplier)}\n" +
                 $"Стойкость: {Percent(1f / unit.moraleLossMultiplier)}";
             panel.SetActive(true);
+        }
+
+        /// <summary>Что даст усиление (укрепление) здания: картинка будущего здания, «было → станет», цена и время.</summary>
+        public void ShowUpgrade(Building building, Sprite picture)
+        {
+            if (portrait != null && picture != null)
+            {
+                portrait.sprite = picture;
+                portrait.preserveAspect = true;
+            }
+
+            BuildingSettings settings = match.Settings.buildings;
+            string body;
+            if (building.Type == BuildingType.Barracks)
+            {
+                titleLabel.text = upgradeBarracksTitle;
+                body = upgradeBarracksNote + "\n\n"
+                    + string.Format(Russian, upgradeHireFormat, Number(settings.barracksUpgradeHireSpeed)) + "\n"
+                    + Change(upgradeSentriesName, settings.sentryShots, settings.upgradedSentryShots);
+            }
+            else
+            {
+                bool blockhouse = building.Type == BuildingType.Blockhouse;
+                titleLabel.text = blockhouse ? upgradeBlockhouseTitle : upgradeHeadquartersTitle;
+                float health = building.MaxHealth;
+                body = (blockhouse ? upgradeBlockhouseNote : upgradeHeadquartersNote) + "\n\n"
+                    + Change(upgradeHealthName, Mathf.RoundToInt(health), Mathf.RoundToInt(health * settings.fortifiedHealthMultiplier));
+                body += blockhouse
+                    ? "\n" + Change(upgradeDefendersName, settings.blockhouseShots, settings.upgradedBlockhouseShots)
+                      + "\n" + Change(upgradeRangeName, Mathf.RoundToInt(settings.blockhouseRange), Mathf.RoundToInt(settings.upgradedBlockhouseRange))
+                    : "\n" + Change(upgradeSentriesName, settings.sentryShots, settings.upgradedSentryShots);
+            }
+
+            body += "\n" + string.Format(Russian, upgradeCostFormat, BuildRules.GetUpgradeCost(match, building.Type),
+                Mathf.RoundToInt(BuildRules.GetUpgradeTime(match, building.Type)));
+            bodyLabel.text = body;
+            panel.SetActive(true);
+        }
+
+        private string Change(string name, int now, int after)
+        {
+            return string.Format(Russian, upgradeChangeFormat, name, now, after);
+        }
+
+        private static string Number(float value)
+        {
+            return value.ToString("0.#", Russian);
         }
 
         public void Hide()
