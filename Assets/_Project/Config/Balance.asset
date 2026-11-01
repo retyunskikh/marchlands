@@ -110,6 +110,8 @@ MonoBehaviour:
       roundShotLateralSpread: 0.02
       ricochetLength: 14
       roundShotKillChance: 0.8
+      roundShotMenPerRank: 3.5
+      roundShotMoraleShock: 8
       roundShotBuildingDamage: 70
       roundShotBuildingRadius: 3
       canisterRange: 10

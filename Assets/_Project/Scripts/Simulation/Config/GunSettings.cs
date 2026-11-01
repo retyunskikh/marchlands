@@ -45,6 +45,15 @@ namespace Marchlands.Simulation.Config
         /// <summary>Вероятность, что ядро убьёт (выведет из строя) человека на своём пути.</summary>
         public float roundShotKillChance;
 
+        /// <summary>
+        /// Сколько человек в каждой шеренге валит ядро, проходя сквозь строй поперёк шеренг (в лоб линии, вдоль колонны):
+        /// само ядро, осколки, отскок. Вдоль шеренги (во фланг) — по человеку на ряд, как и было.
+        /// </summary>
+        public float roundShotMenPerRank;
+
+        /// <summary>Сколько духа теряет отряд, сквозь который прошло ядро (сверх потерь от убитых).</summary>
+        public float roundShotMoraleShock;
+
         /// <summary>Сколько здоровья снимает ядро, упавшее не дальше roundShotBuildingRadius от центра здания.</summary>
         public float roundShotBuildingDamage;
 

@@ -136,6 +136,44 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void RoundShot_ThroughRanks_TakesSeveralPerRank_FlankUnchanged()
+        {
+            var settings = TestSettings.Create().squads;
+            var match = new Match(1, TestSettings.Create());
+            Squad line = match.AddSquad(Side.Austria, float2.zero, -90f, Formation.Line, 30);
+
+            int front = ArtillerySystem.MenOnPath(line, new float2(0f, 5f), new float2(0f, -5f), settings, 3f);
+            int flank = ArtillerySystem.MenOnPath(line, new float2(-10f, 0f), new float2(10f, 0f), settings, 3f);
+
+            Assert.AreEqual(6, front, "по три человека в каждой из двух шеренг");
+            Assert.AreEqual(ArtillerySystem.MenOnPath(line, new float2(-10f, 0f), new float2(10f, 0f), settings), flank,
+                "вдоль шеренги — как прежде, по человеку на ряд");
+        }
+
+        [Test]
+        public void RoundShot_MoraleShock_EvenWithoutCasualties()
+        {
+            var settings = TestSettings.Create();
+            settings.guns.roundShotKillChance = 0f;
+            settings.guns.roundShotMoraleShock = 8f;
+            var match = new Match(1, settings);
+            Squad gun = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, UnitType.Artillery);
+            gun.IsLimbered = false;
+            Squad target = match.AddSquad(Side.Austria, new float2(0f, 20f), 270f, Formation.Column, 30);
+            float before = target.Morale;
+            bool shot = false;
+            for (int i = 0; i < 400 && !shot; i++)
+            {
+                match.Tick();
+                shot = match.LastTickArtilleryShots.Count > 0;
+            }
+
+            Assert.IsTrue(shot);
+            Assert.AreEqual(30, target.Alive, "никого не убило");
+            Assert.Less(target.Morale, before - 7f, "но дух упал от ядра сквозь строй");
+        }
+
+        [Test]
         public void Gun_IgnoresTargetOutsideSector()
         {
             var match = new Match(1, TestSettings.Create());

@@ -314,10 +314,16 @@ namespace Marchlands.Simulation.Combat
                     continue;
                 }
 
-                int onPath = MenOnPath(victim, impact, end, match.Settings.squads);
+                int onPath = MenOnPath(victim, impact, end, match.Settings.squads, guns.roundShotMenPerRank);
                 if (onPath <= 0)
                 {
                     continue;
+                }
+
+                // Ядро сквозь строй страшно само по себе — дух падает и сверх убитых.
+                if (guns.roundShotMoraleShock > 0f)
+                {
+                    victim.Morale = math.max(0f, victim.Morale - guns.roundShotMoraleShock);
                 }
 
                 int aliveBefore = victim.Alive;
@@ -357,7 +363,8 @@ namespace Marchlands.Simulation.Combat
         /// Сколько человек на пути ядра от <paramref name="from"/> до <paramref name="to"/> через строй: отрезок
         /// пути внутри прямоугольника отряда — поперёк шеренг по человеку на шеренгу, вдоль шеренги — по человеку на ряд.
         /// </summary>
-        public static int MenOnPath(Squad squad, float2 from, float2 to, SquadSettings settings)
+        /// <param name="menPerRank">Сколько человек в шеренге валит ядро, идущее поперёк шеренг (≤ 0 — один).</param>
+        public static int MenOnPath(Squad squad, float2 from, float2 to, SquadSettings settings, float menPerRank = 1f)
         {
             SquadFootprint box = SquadFootprint.Of(squad, settings);
             float2 a = from - box.Center;
@@ -370,7 +377,8 @@ namespace Marchlands.Simulation.Combat
             }
 
             float2 delta = math.abs(localB - localA);
-            float men = delta.y / math.max(0.01f, settings.rankSpacing) + delta.x / math.max(0.01f, settings.fileSpacing);
+            float perRank = menPerRank > 0f ? menPerRank : 1f;
+            float men = delta.y / math.max(0.01f, settings.rankSpacing) * perRank + delta.x / math.max(0.01f, settings.fileSpacing);
             return math.max(1, (int)math.round(men));
         }
 
