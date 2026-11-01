@@ -21,16 +21,23 @@ namespace Marchlands.UI
 
         public event Action SkipPressed;
 
+        // Урок мог быть показан раньше, чем проснулась панель (порядок Awake не задан): тогда не прятать его.
+        private bool shown;
+
         private void Awake()
         {
             nextButton.onClick.AddListener(() => NextPressed?.Invoke());
             skipButton.onClick.AddListener(() => SkipPressed?.Invoke());
-            Hide();
+            if (!shown)
+            {
+                Hide();
+            }
         }
 
         /// <param name="waitsForNext">Шаг-пояснение: дальше — по «Далее»; иначе — когда игрок выполнит задание.</param>
         public void Show(string message, bool waitsForNext, int index, int total)
         {
+            shown = true;
             panel.SetActive(true);
             messageLabel.text = message;
             progressLabel.text = string.Format(progressFormat, index + 1, total);
@@ -39,6 +46,7 @@ namespace Marchlands.UI
 
         public void Hide()
         {
+            shown = false;
             panel.SetActive(false);
         }
     }

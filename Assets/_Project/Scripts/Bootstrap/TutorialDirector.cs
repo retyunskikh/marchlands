@@ -56,6 +56,39 @@ namespace Marchlands.Bootstrap
             "Захватите все деревни или разрушьте вражеский штаб: выделите отряд и тапните по вражескому зданию. Дальше — сами. Удачи!"
         };
 
+        [Tooltip("Тексты уроков для ПК (мышь и клавиатура), по тем же шагам.")]
+        [SerializeField, TextArea(2, 4)] private string[] desktopMessages =
+        {
+            "Добро пожаловать! Вы командуете французами (синие). Нажмите «Далее».",
+            "Сдвиньте карту: клавиши WASD или стрелки, мышь у края экрана или средняя кнопка. Колесо — приблизить или отдалить.",
+            "Щёлкните левой кнопкой по своему отряду — он обведён кругом.",
+            "Щёлкните правой кнопкой в любую точку поля — отряд пойдёт туда. Зажмите правую и потяните — он встанет фронтом в ту сторону.",
+            "Потяните левой кнопкой за кольцо вокруг отряда — он развернётся. Линия стреляет только вперёд, в жёлтый сектор.",
+            "Нажмите «Марш» (R) — отряд встанет в колонну (быстрее идёт, почти не стреляет). «В линию» — обратно.",
+            "Отправьте отряд в обведённую деревню и стойте там, пока флаг не станет синим. Деревни дают золото.",
+            "Враг идёт на вас (обведён)! Разверните к нему линию. Когда он войдёт в жёлтый сектор — нажмите «Залп!» (F).",
+            "Отряд перезаряжается — кольцо за ним заполняется. Полоска над отрядом — боевой дух: при потерях он падает, и отряд бежит. Нажмите «Далее».",
+            "Нажмите «В штыки» (C) и щёлкните по обведённому врагу. Удар во фланг или в тыл сильнее.",
+            "Щёлкните по своему штабу (обведён), нажмите «Казарма», выберите место рядом со штабом и нажмите «Поставить».",
+            "Щёлкните по казарме (обведена), когда она достроится, и включите найм фузилёров.",
+            "Рекруты собираются у казармы. Когда их хватит на отряд, нажмите его кружок слева вверху. Нажмите «Далее».",
+            "Захватите все деревни или разрушьте вражеский штаб: выделите отряд и щёлкните правой кнопкой по вражескому зданию. Дальше — сами. Удачи!"
+        };
+
+        [Header("Подсветка кнопок")]
+        [Tooltip("Рамка вокруг кнопки, которую нужно нажать на этом шаге.")]
+        [SerializeField] private Sprite buttonFrameSprite;
+        [SerializeField] private Color buttonFrameColor = new Color(1f, 0.85f, 0.2f, 1f);
+        [Tooltip("Насколько рамка шире кнопки, пикселей холста.")]
+        [SerializeField] private float buttonFramePadding = 10f;
+        [SerializeField] private RectTransform formationButton;
+        [SerializeField] private RectTransform volleyButton;
+        [SerializeField] private RectTransform chargeButton;
+        [SerializeField] private RectTransform buildBarracksButton;
+        [SerializeField] private RectTransform placeButton;
+        [SerializeField] private RectTransform hireFusiliersButton;
+        [SerializeField] private RectTransform formFusiliersButton;
+
         [Tooltip("На сколько нужно сдвинуть карту (u) или изменить приближение, чтобы урок камеры засчитался.")]
         [SerializeField] private float cameraMoveToPass = 4f;
         [Tooltip("На сколько нужно уйти отряду (u) или развернуться (градусы), чтобы урок засчитался.")]
@@ -81,6 +114,11 @@ namespace Marchlands.Bootstrap
 
         private int step = -1;
         private SpriteRenderer highlight;
+        private UnityEngine.UI.Image buttonFrame;
+
+        private string[] Messages => Marchlands.View.Platform.IsDesktop && desktopMessages != null && desktopMessages.Length == messages.Length
+            ? desktopMessages
+            : messages;
         private Squad selected;
         private Vector3 cameraStart;
         private float zoomStart;
@@ -135,6 +173,72 @@ namespace Marchlands.Bootstrap
             }
 
             UpdateHighlight((Step)step);
+            UpdateButtonFrame((Step)step);
+        }
+
+        /// <summary>
+        /// Рамка вокруг кнопки, которую пора нажать: «Марш», «Залп!», «В штыки», «Казарма», «Поставить», найм фузилёров,
+        /// кружок нового отряда. Рамка — дочерний объект кнопки: видна, только пока видна кнопка.
+        /// </summary>
+        private void UpdateButtonFrame(Step current)
+        {
+            RectTransform target = ButtonFor(current);
+            if (target == null || buttonFrameSprite == null)
+            {
+                if (buttonFrame != null)
+                {
+                    buttonFrame.enabled = false;
+                }
+
+                return;
+            }
+
+            if (buttonFrame == null)
+            {
+                var frameObject = new GameObject("Tutorial Button Frame", typeof(RectTransform), typeof(UnityEngine.UI.Image));
+                buttonFrame = frameObject.GetComponent<UnityEngine.UI.Image>();
+                buttonFrame.sprite = buttonFrameSprite;
+                buttonFrame.type = UnityEngine.UI.Image.Type.Sliced;
+                buttonFrame.raycastTarget = false;
+                buttonFrame.color = buttonFrameColor;
+            }
+
+            var rect = (RectTransform)buttonFrame.transform;
+            if (rect.parent != target)
+            {
+                rect.SetParent(target, false);
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.pivot = new Vector2(0.5f, 0.5f);
+            }
+
+            rect.SetAsLastSibling();
+            float pulse = buttonFramePadding * (1f + 0.5f * Mathf.Sin(Time.unscaledTime * highlightPulseRate * Mathf.PI * 2f));
+            rect.offsetMin = new Vector2(-pulse, -pulse);
+            rect.offsetMax = new Vector2(pulse, pulse);
+            buttonFrame.enabled = true;
+        }
+
+        private RectTransform ButtonFor(Step current)
+        {
+            switch (current)
+            {
+                case Step.Column:
+                    return formationButton;
+                case Step.Volley:
+                    return volleyButton;
+                case Step.Charge:
+                    return chargeButton;
+                case Step.Barracks:
+                    // Сначала — кнопка «Казарма» в карточке штаба, потом — «Поставить».
+                    return placeButton != null && placeButton.gameObject.activeInHierarchy ? placeButton : buildBarracksButton;
+                case Step.Hiring:
+                    return hireFusiliersButton;
+                case Step.Forming:
+                    return formFusiliersButton;
+                default:
+                    return null;
+            }
         }
 
         /// <summary>Кольцо вокруг цели шага: свой отряд, деревня, ближайший враг, штаб, казарма.</summary>
@@ -293,7 +397,7 @@ namespace Marchlands.Bootstrap
             }
 
             Enter((Step)step);
-            panel.Show(messages[step], WaitsForNext((Step)step), step, messages.Length);
+            panel.Show(Messages[step], WaitsForNext((Step)step), step, messages.Length);
         }
 
         /// <summary>Начало шага: запомнить, от чего считать выполнение, и включить противника, когда пора.</summary>
@@ -399,6 +503,11 @@ namespace Marchlands.Bootstrap
             if (highlight != null)
             {
                 highlight.enabled = false;
+            }
+
+            if (buttonFrame != null)
+            {
+                buttonFrame.enabled = false;
             }
 
             enemyTactics.Active = true;

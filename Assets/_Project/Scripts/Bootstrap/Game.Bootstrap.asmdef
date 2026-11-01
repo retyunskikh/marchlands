@@ -2,6 +2,7 @@
     "name": "Game.Bootstrap",
     "rootNamespace": "Marchlands.Bootstrap",
     "references": [
+        "UnityEngine.UI",
         "Game.Network",
         "Game.Simulation",
         "Game.View",
