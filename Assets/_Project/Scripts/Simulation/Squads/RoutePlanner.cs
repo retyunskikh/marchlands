@@ -45,6 +45,26 @@ namespace Marchlands.Simulation.Squads
             return total > 0f ? onRoad / total : 0f;
         }
 
+        /// <summary>Есть ли ближе <paramref name="radius"/> не бегущий вражеский отряд (не толпа рекрутов).</summary>
+        public static bool IsEnemyNear(Match match, Squad squad, float radius)
+        {
+            if (radius <= 0f)
+            {
+                return false;
+            }
+
+            foreach (Squad other in match.Squads)
+            {
+                if (other.Side != squad.Side && !other.IsRouting && !other.IsWithdrawn && !other.IsCamp && other.Alive > 0
+                    && math.distancesq(other.Position, squad.Position) <= radius * radius)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public static bool TryPlan(Match match, Squad squad, float2 target)
         {
             SquadSettings settings = match.Settings.squads;
@@ -75,9 +95,13 @@ namespace Marchlands.Simulation.Squads
             // Сравниваем путь по местности с прямым в одном и том же строю: маршрут нужен ради дороги или обхода
             // леса и реки, а не ради колонны. В чистом поле отряд идёт напрямую в своём строю.
             // Конница и пушки строй не меняют: идут по дороге тем строем, что есть.
-            Formation marching = squad.Type == UnitType.Cavalry || squad.IsArtillery ? squad.Formation : Formation.Column;
+            // Пехота на марше встаёт в колонну, только если идти далеко и враг не рядом; иначе идёт тем строем, что есть.
+            bool keepsFormation = squad.Type == UnitType.Cavalry || squad.IsArtillery
+                || math.distance(squad.Position, target) < settings.autoColumnMinDistance
+                || IsEnemyNear(match, squad, settings.autoLineEnemyRadius);
+            Formation marching = keepsFormation ? squad.TargetFormation : Formation.Column;
             float marchSpeed = math.max(0.01f, UnitStats.Speed(squad, marching, match.Settings));
-            bool reform = squad.Formation != marching;
+            bool reform = squad.TargetFormation != marching;
             // Перестроение в колонну на ходу идёт медленнее: пока строятся — скорость прежнего строя × reformMoveSpeedMultiplier.
             float reformLoss = reform ? settings.formationChangeTime * (1f - settings.reformMoveSpeedMultiplier) : 0f;
             float routeTime = routeCost / marchSpeed + reformLoss;

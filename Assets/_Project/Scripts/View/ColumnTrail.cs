@@ -83,6 +83,23 @@ namespace Marchlands.View
             point = head - direction * back;
         }
 
+        /// <summary>
+        /// Как <see cref="Sample"/>, но направление — по хорде следа на ±<paramref name="window"/> вокруг точки:
+        /// на изгибе оно меняется плавно, и шеренга заходит плечом постепенно, а не поворачивает рывком.
+        /// </summary>
+        public void SampleSmooth(float back, float window, out float2 point, out float2 direction)
+        {
+            Sample(back, out point, out direction);
+            if (window <= 0f)
+            {
+                return;
+            }
+
+            Sample(math.max(0f, back - window), out float2 ahead, out float2 _);
+            Sample(back + window, out float2 behind, out float2 _);
+            direction = math.normalizesafe(ahead - behind, direction);
+        }
+
         private void Trim(float keepLength)
         {
             float total = math.distance(head, points[points.Count - 1]);

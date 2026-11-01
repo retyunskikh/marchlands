@@ -109,6 +109,15 @@ namespace Marchlands.Simulation.Combat
             squad.AimMaxDistance = maxDistance;
         }
 
+        /// <summary>Отряд, который целится, стреляет немедленно (на ближайшем шаге огня), не дожидаясь конца прицеливания.</summary>
+        public static void FireNow(Squad squad)
+        {
+            if (squad.FireState == FireState.Aiming)
+            {
+                squad.FireTimer = 0f;
+            }
+        }
+
         public static void CancelAiming(Squad squad)
         {
             if (squad.FireState != FireState.Aiming)

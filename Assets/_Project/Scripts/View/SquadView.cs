@@ -90,6 +90,9 @@ namespace Marchlands.View
 
         // Колонна на марше изгибается по следу головы (см. ColumnTrail): 0 — прямоугольник, 1 — по следу.
         private readonly ColumnTrail trail = new ColumnTrail();
+
+        // По скольким шеренгам вперёд и назад усредняется направление следа: шеренги заходят на изгиб плавно.
+        private const float TrailSmoothRanks = 1.5f;
         private float bend;
         private float2 lastCenter;
         private bool hasLastCenter;
@@ -134,6 +137,29 @@ namespace Marchlands.View
 
             countLabel = gameObject.AddComponent<SquadCountLabel>();
             countLabel.Initialize(style, style.RingSortingOrder + 2);
+        }
+
+        /// <summary>Отряд погиб: все ещё стоящие фигурки отдаются павшим (падают, лежат и плавно исчезают).</summary>
+        internal void ReleaseFallen()
+        {
+            if (casualties == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < soldiers.Count; i++)
+            {
+                SpriteRenderer soldier = soldiers[i];
+                if (soldier == null || !soldier.enabled)
+                {
+                    continue;
+                }
+
+                soldier.sprite = fullSprites[i] != null ? fullSprites[i] : soldier.sprite;
+                casualties.Add(soldier);
+            }
+
+            soldiers.Clear();
         }
 
         internal void SetSelected(bool selected)
@@ -396,7 +422,8 @@ namespace Marchlands.View
                 return rigid;
             }
 
-            trail.Sample(math.max(0f, headY - local.y), out float2 point, out float2 direction);
+            float window = GetSpacing().y * settings.rankSpacing * TrailSmoothRanks;
+            trail.SampleSmooth(math.max(0f, headY - local.y), window, out float2 point, out float2 direction);
             float2 right = new float2(direction.y, -direction.x);
             float2 bent = point + right * local.x;
             float blend = math.smoothstep(0f, 1f, bend);

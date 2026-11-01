@@ -178,6 +178,7 @@ namespace Marchlands.Simulation.Squads
             RouteIndex = 0;
             RestoreFormation = null;
             SuspendedOrder = null;
+            SuspendedByMelee = false;
         }
 
         /// <summary>
@@ -185,6 +186,9 @@ namespace Marchlands.Simulation.Squads
         /// не останется врагов, марш (с маршрутом) продолжится; null — откладывать нечего.
         /// </summary>
         internal SquadOrder? SuspendedOrder { get; set; }
+
+        /// <summary>Марш отложила рукопашная: продолжается сразу, как схватка кончится (враги рядом не помеха).</summary>
+        internal bool SuspendedByMelee { get; set; }
 
         /// <summary>Марш отложен и продолжится, когда рядом не будет врагов.</summary>
         public bool IsMarchSuspended => SuspendedOrder.HasValue;

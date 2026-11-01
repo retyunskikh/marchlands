@@ -58,6 +58,13 @@ namespace Marchlands.Simulation.Commands
             squad.Order = SquadOrder.Move(target, facing);
             if (AutoRoute)
             {
+                // Враг рядом — пехота в колонне разворачивается в линию, куда бы ни шла.
+                if (squad.Type != UnitType.Cavalry && !squad.IsArtillery && squad.TargetFormation == Formation.Column
+                    && RoutePlanner.IsEnemyNear(match, squad, match.Settings.squads.autoLineEnemyRadius))
+                {
+                    ChangeFormationCommand.Start(match, squad, Formation.Line);
+                }
+
                 RoutePlanner.TryPlan(match, squad, target);
             }
         }

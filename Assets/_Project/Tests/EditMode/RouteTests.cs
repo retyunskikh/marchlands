@@ -155,6 +155,69 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void NearbyTarget_NoAutoColumn()
+        {
+            Match match = ForestAndRoad(1.5f, out Squad squad);
+            // Цель ближе порога — в колонну сам не встаёт, даже если по дороге выгоднее.
+            match.Settings.squads.autoColumnMinDistance = 100f;
+            match.Enqueue(new MoveCommand(squad.Id, new float2(40f, 12f), 0f, autoRoute: true));
+            match.Tick();
+
+            Assert.AreEqual(Formation.Line, squad.TargetFormation, "Идёт линией");
+        }
+
+        [Test]
+        public void EnemyNear_NoAutoColumn_AndColumnReformsToLine()
+        {
+            Match match = ForestAndRoad(1.5f, out Squad squad);
+            match.Settings.squads.autoLineEnemyRadius = 20f;
+            match.AddSquad(Side.Austria, new float2(-40f, 26f), -90f, Formation.Line);
+            match.Enqueue(new MoveCommand(squad.Id, new float2(40f, 12f), 0f, autoRoute: true));
+            match.Tick();
+            Assert.AreEqual(Formation.Line, squad.TargetFormation, "Враг рядом — в колонну не встаёт, как ни далеко цель");
+
+            // Стоящий в колонне при приказе движения рядом с врагом разворачивается в линию.
+            Match second = ForestAndRoad(1.5f, out Squad column);
+            second.Settings.squads.autoLineEnemyRadius = 20f;
+            second.Enqueue(new ChangeFormationCommand(column.Id, Formation.Column));
+            for (int i = 0; i < TicksFor(10f); i++)
+            {
+                second.Tick();
+            }
+
+            Assert.AreEqual(Formation.Column, column.Formation);
+            second.AddSquad(Side.Austria, new float2(-40f, 26f), -90f, Formation.Line);
+            second.Enqueue(new MoveCommand(column.Id, new float2(40f, 12f), 0f, autoRoute: true));
+            second.Tick();
+            Assert.AreEqual(Formation.Line, column.TargetFormation, "Из колонны — в линию");
+        }
+
+        [Test]
+        public void AutoColumn_ReformsToLine_WhenEnemyApproaches()
+        {
+            Match match = ForestAndRoad(1.5f, out Squad squad);
+            match.Settings.squads.autoLineEnemyRadius = 15f;
+            match.Enqueue(new MoveCommand(squad.Id, new float2(40f, 12f), 0f, autoRoute: true));
+            match.Tick();
+            Assert.AreEqual(Formation.Column, squad.TargetFormation, "Врага нет — в колонну ради марша");
+
+            // На полпути у дороги появляется враг.
+            match.AddSquad(Side.Austria, new float2(0f, -10f), 90f, Formation.Line);
+            bool reformed = false;
+            for (int i = 0; i < TicksFor(200f) && squad.Order.Type == SquadOrderType.Move; i++)
+            {
+                match.Tick();
+                if (squad.TargetFormation == Formation.Line && math.distance(squad.Position, new float2(0f, -10f)) <= 15.5f)
+                {
+                    reformed = true;
+                }
+            }
+
+            Assert.IsTrue(reformed, "Подходит враг — колонна разворачивается в линию на ходу");
+            Assert.Less(math.distance(squad.Position, new float2(40f, 12f)), 0.5f, "И дошла до цели");
+        }
+
+        [Test]
         public void Route_IsFasterThanStraightLine()
         {
             Match routed = ForestAndRoad(1.5f, out Squad a);

@@ -198,8 +198,9 @@ namespace Marchlands.Simulation.Melee
 
             // Рукопашная прерывает всё, чем был занят защитник.
             defender.Order = SquadOrder.None;
-            FireSystem.CancelAiming(defender);
-            FireSystem.CancelAiming(attacker);
+            // Залп, который уже готовили (приказ отдан), не пропадает: дают его сразу, в упор по тем, кто напал.
+            FireSystem.FireNow(defender);
+            FireSystem.FireNow(attacker);
             SquadMovementSystem.CancelFormationChange(defender);
         }
 
@@ -208,6 +209,7 @@ namespace Marchlands.Simulation.Melee
             if (squad.Order.Type == SquadOrderType.Move && !squad.SuspendedOrder.HasValue)
             {
                 squad.SuspendedOrder = squad.Order;
+                squad.SuspendedByMelee = true;
             }
         }
 

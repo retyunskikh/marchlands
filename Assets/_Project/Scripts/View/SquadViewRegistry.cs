@@ -86,6 +86,13 @@ namespace Marchlands.View
 
             foreach (int id in staleIds)
             {
+                // Отряд погиб целиком (например, одним залпом): его солдаты падают и тают, как все павшие,
+                // а не пропадают вместе с отрядом.
+                if (views[id].Squad.Alive <= 0)
+                {
+                    views[id].ReleaseFallen();
+                }
+
                 Destroy(views[id].gameObject);
                 views.Remove(id);
             }

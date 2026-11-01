@@ -256,6 +256,65 @@ namespace Marchlands.Tests.EditMode
         }
 
         [Test]
+        public void AimingDefender_FiresVolley_WhenChargedBeforeItFired()
+        {
+            Match match = CombatTestScenarios.FacingLines(1, 4f, out Squad attacker, out Squad defender);
+            match.Enqueue(new ChargeCommand(attacker.Id, defender.Id));
+            match.Tick();
+            // Залп приказан, но прицеливание долгое — атакующий успевает добежать раньше.
+            FireSystem.StartAiming(defender, attacker, match.Settings.combat);
+            defender.FireTimer = 1000f;
+
+            bool fired = false;
+            for (int i = 0; i < MaxTicks && !fired; i++)
+            {
+                match.Tick();
+                fired = match.LastTickVolleys.Any(v => v.ShooterId == defender.Id && v.TargetId == attacker.Id);
+                if (!fired && defender.IsInMelee)
+                {
+                    // Схватка началась — залп должен уйти на ближайшем шаге огня, а не пропасть.
+                    match.Tick();
+                    fired = match.LastTickVolleys.Any(v => v.ShooterId == defender.Id && v.TargetId == attacker.Id);
+                    break;
+                }
+            }
+
+            Assert.IsTrue(fired, "Приказанный залп дан в упор по напавшим");
+            Assert.AreNotEqual(FireState.Aiming, defender.FireState);
+        }
+
+        [Test]
+        public void MarchInterruptedByMelee_Resumes_EvenWithEnemiesNearby()
+        {
+            var match = new Match(1, TestSettings.Create());
+            match.SetRetreatPoint(Side.Austria, new float2(0f, 300f));
+            Squad squad = match.AddSquad(Side.France, float2.zero, 90f, Formation.Line, UnitType.Grenadiers);
+            Squad attacker = match.AddSquad(Side.Austria, new float2(0f, 9f), -90f, Formation.Line);
+            attacker.Alive = 12;
+            // Ещё один враг стоит рядом и никуда не уходит.
+            match.AddSquad(Side.Austria, new float2(-12f, 4f), 0f, Formation.Line);
+            var goal = new float2(30f, 0f);
+            match.Enqueue(new MoveCommand(squad.Id, goal, 0f));
+            match.Enqueue(new ChargeCommand(attacker.Id, squad.Id));
+
+            RunUntilMelee(match, squad);
+            Assert.IsTrue(squad.IsMarchSuspended, "Схватка откладывает марш");
+            for (int i = 0; i < MaxTicks && squad.IsInMelee; i++)
+            {
+                match.Tick();
+            }
+
+            Assert.IsFalse(squad.IsInMelee, "Схватка кончилась");
+            Assert.IsFalse(squad.IsRouting);
+            for (int i = 0; i < MaxTicks && math.distance(squad.Position, goal) > 0.2f; i++)
+            {
+                match.Tick();
+            }
+
+            Assert.Less(math.distance(squad.Position, goal), 0.2f, "После схватки дошёл, куда был послан, хотя враг рядом");
+        }
+
+        [Test]
         public void ChargeIsCancelled_WhenTargetRoutsForOtherReasons()
         {
             Match match = CombatTestScenarios.FacingLines(1, 10f, out Squad attacker, out Squad defender);

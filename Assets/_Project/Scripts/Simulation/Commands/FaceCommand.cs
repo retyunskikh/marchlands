@@ -37,6 +37,9 @@ namespace Marchlands.Simulation.Commands
                 squad.ClearRoute();
             }
 
+            // Развернули нарочно — отложенный марш ждёт, пока рядом не станет врагов (даже если его отложила рукопашная).
+            squad.SuspendedByMelee = false;
+
             squad.HasArrived = false;
             squad.BestDistance = float.MaxValue;
             squad.StallTime = 0f;

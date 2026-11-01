@@ -34,6 +34,7 @@ namespace Marchlands.Simulation.Squads
             }
 
             TryResumeMarch(squad, match);
+            ReformToLineNearEnemy(squad, match);
 
             // Пушка едет только на передке: пока её снимают или берут на передок, стоит.
             if (squad.IsArtillery && Combat.ArtillerySystem.WantsToMove(squad, settings) && (!squad.IsLimbered || squad.IsLimbering))
@@ -176,6 +177,23 @@ namespace Marchlands.Simulation.Squads
         }
 
         /// <summary>
+        /// Колонна, в которую отряд встал сам ради марша, при подходе врага разворачивается в линию на ходу —
+        /// дальше идёт линией и после марша уже не перестраивается.
+        /// </summary>
+        private static void ReformToLineNearEnemy(Squad squad, Match match)
+        {
+            if (!squad.RestoreFormation.HasValue || squad.RestoreFormation.Value != Formation.Line
+                || squad.Formation != Formation.Column || squad.IsChangingFormation || squad.Order.Type != SquadOrderType.Move
+                || !RoutePlanner.IsEnemyNear(match, squad, match.Settings.squads.autoLineEnemyRadius))
+            {
+                return;
+            }
+
+            squad.RestoreFormation = null;
+            Commands.ChangeFormationCommand.Start(match, squad, Formation.Line);
+        }
+
+        /// <summary>
         /// Отложенный марш продолжается, когда отряд ничем не занят (развернулся, рукопашная кончилась, не целится)
         /// и ближе resumeMarchEnemyRadius нет не бегущих врагов.
         /// </summary>
@@ -183,6 +201,19 @@ namespace Marchlands.Simulation.Squads
         {
             if (!squad.SuspendedOrder.HasValue || squad.Order.Type != SquadOrderType.None || squad.FireState == FireState.Aiming)
             {
+                return;
+            }
+
+            // Марш прервала рукопашная — после неё идём дальше, к месту, куда приказано: враги рядом не повод стоять.
+            // Развёрнутый на месте отряд ждёт, пока рядом не станет врагов (его развернули к ним нарочно).
+            if (squad.SuspendedByMelee)
+            {
+                if (squad.IsInMelee)
+                {
+                    return;
+                }
+
+                ResumeMarch(squad);
                 return;
             }
 
@@ -196,8 +227,17 @@ namespace Marchlands.Simulation.Squads
                 }
             }
 
+            ResumeMarch(squad);
+        }
+
+        private static void ResumeMarch(Squad squad)
+        {
             squad.Order = squad.SuspendedOrder.Value;
             squad.SuspendedOrder = null;
+            squad.SuspendedByMelee = false;
+            squad.HasArrived = false;
+            squad.BestDistance = float.MaxValue;
+            squad.StallTime = 0f;
         }
 
         /// <summary>В реку вне переправ не войти: шаг в воду отменяется, отряд остаётся на берегу.</summary>
