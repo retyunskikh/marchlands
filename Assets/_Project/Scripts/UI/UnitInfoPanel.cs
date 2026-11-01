@@ -30,7 +30,9 @@ namespace Marchlands.UI
         [SerializeField] private string fusiliersNote = "Основная линейная пехота: дёшевы и быстро набираются, но уступают гренадёрам в стойкости и штыковой.";
         [SerializeField] private string cavalryNote = "Дорогая и быстрая, страшна в атаке в сабли. Стрелять не может.";
         [SerializeField] private string artilleryTitle = "Пушки";
-        [SerializeField] private string artilleryNote = "Пушка с расчётом. Медленная; чтобы стрелять, снимается с передка, чтобы ехать — берётся на передок. Ядром бьёт далеко, навесом через своих, рикошетом выкашивает ряды — особенно колонну и строй на мосту. Картечью — страшно, но вблизи. В атаку не ходит.";
+        [SerializeField] private string artilleryNote = "Пушка с расчётом. Медленная; чтобы стрелять, снимается с передка, чтобы ехать — берётся на передок. Ядром бьёт далеко, навесом через своих, рикошетом выкашивает ряды — особенно колонну и строй на мосту. В атаку не ходит.";
+        [Tooltip("Цена пушки: {0} — сколько стоит следующая пушка с расчётом, {1} — во сколько раз дороже каждая следующая.")]
+        [SerializeField] private string gunCostFormat = "Цена: {0} золота за пушку с расчётом; каждая следующая в {1} раза дороже, пока прежние в строю";
 
         [Header("Усиление зданий")]
         [SerializeField] private string upgradeBarracksTitle = "Усилить казарму";
@@ -78,16 +80,20 @@ namespace Marchlands.UI
             titleLabel.text = type == UnitType.Fusiliers ? fusiliersTitle : cavalry ? cavalryTitle : artillery ? artilleryTitle : grenadiersTitle;
             string note = type == UnitType.Fusiliers ? fusiliersNote : cavalry ? cavalryNote : artillery ? artilleryNote : grenadiersNote;
             string fire = artillery
-                ? $"Ядро: {Mathf.RoundToInt(settings.guns.roundShotMinRange)}–{Mathf.RoundToInt(settings.guns.roundShotRange)} u, картечь: до {Mathf.RoundToInt(settings.guns.canisterRange)} u\nПерезарядка: {Mathf.RoundToInt(settings.guns.reloadTime)} с"
+                ? $"Ядро: {Mathf.RoundToInt(settings.guns.roundShotMinRange)}–{Mathf.RoundToInt(settings.guns.roundShotRange)} u\nПерезарядка: {Mathf.RoundToInt(settings.guns.reloadTime)} с"
                 : unit.canFire
                 ? $"Меткость: {Percent(unit.accuracyMultiplier)}\nДальность огня: {Percent(unit.rangeMultiplier)}"
                 : "Стрелять не может";
             string crew = artillery ? $"Расчёт: {unit.squadSize} чел. (бросает пушку, если меньше {unit.minSquadSize})"
                 : $"Отряд: {unit.squadSize} чел. (бежит, если меньше {unit.minSquadSize})";
+            // Пушку заказывают целиком (с расчётом), и цена растёт с каждой пушкой в строю.
+            string price = artillery
+                ? string.Format(Russian, gunCostFormat, BuildRules.GetGunCost(match, side), Number(settings.buildings.gunCostGrowth))
+                : $"Цена: {cost} золота за человека, {cost * unit.squadSize} за отряд";
             bodyLabel.text =
                 $"{note}\n\n" +
                 $"{crew}\n" +
-                $"Цена: {cost} золота за человека, {cost * unit.squadSize} за отряд\n" +
+                $"{price}\n" +
                 $"Скорость: {Percent(unit.speedMultiplier)}\n" +
                 $"{fire}\n" +
                 $"Рукопашная: {Percent(unit.meleeMultiplier)}\n" +
