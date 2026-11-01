@@ -94,6 +94,7 @@ namespace Marchlands.UI
         private Image hostRowBox;
         private Image guestRowBox;
         private Text mapLabel;
+        private Image mapPreview;
         private Button mapPrevious;
         private Button mapNext;
         private Button swapButton;
@@ -611,6 +612,9 @@ namespace Marchlands.UI
             guestRowBox.color = state.HasGuest && state.GuestReady ? readyColor : grayButton;
 
             mapLabel.text = state.Map >= 0 && state.Map < MapNames.Count ? MapNames[state.Map] : "Карта " + (state.Map + 1);
+            Sprite preview = state.Map >= 0 && state.Map < MapPreviews.Count ? MapPreviews[state.Map] : null;
+            mapPreview.sprite = preview;
+            mapPreview.enabled = preview != null;
             mapPrevious.gameObject.SetActive(isHost);
             mapNext.gameObject.SetActive(isHost);
             swapButton.interactable = isHost;
@@ -795,13 +799,29 @@ namespace Marchlands.UI
             hostRow = Label(hostRowBox.gameObject, string.Empty, Vector2.zero, new Vector2(720f, 80f), 34, darkText, TextAnchor.MiddleLeft);
             guestRowBox = Box(room.transform, "Соперник", new Vector2(-430f, 140f), new Vector2(760f, 80f), grayButton);
             guestRow = Label(guestRowBox.gameObject, string.Empty, Vector2.zero, new Vector2(720f, 80f), 34, darkText, TextAnchor.MiddleLeft);
-            Label(room, "Карта", new Vector2(-430f, 50f), new Vector2(760f, 50f), 34, dimText, TextAnchor.MiddleLeft);
-            mapPrevious = MakeButton(room, "‹", new Vector2(-760f, -20f), new Vector2(90f, 80f), lightButton, 50, () => ChangeMap(-1));
-            mapLabel = Label(room, string.Empty, new Vector2(-430f, -20f), new Vector2(560f, 80f), 40, lightText, TextAnchor.MiddleCenter, true);
-            mapNext = MakeButton(room, "›", new Vector2(-100f, -20f), new Vector2(90f, 80f), lightButton, 50, () => ChangeMap(1));
-            swapButton = MakeButton(room, "Поменять стороны", new Vector2(-430f, -120f), new Vector2(760f, 80f), lightButton, 36,
+            // Длинное имя не выталкивает «готов» за край — текст строки сам уменьшается.
+            foreach (Text row in new[] { hostRow, guestRow })
+            {
+                row.horizontalOverflow = HorizontalWrapMode.Wrap;
+                row.verticalOverflow = VerticalWrapMode.Truncate;
+                row.resizeTextForBestFit = true;
+                row.resizeTextMinSize = 20;
+                row.resizeTextMaxSize = 34;
+            }
+            // Карта: название и превью (одинаковые у обоих — номер карты в состоянии комнаты), у создателя — стрелки.
+            mapLabel = Label(room, string.Empty, new Vector2(-430f, 65f), new Vector2(760f, 56f), 38, lightText, TextAnchor.MiddleCenter, true);
+            Image previewFrame = Box(room.transform, "Превью карты", new Vector2(-430f, -78f), new Vector2(348f, 232f), boxColor);
+            mapPreview = new GameObject("Картинка", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+            var previewRect = (RectTransform)mapPreview.transform;
+            previewRect.SetParent(previewFrame.transform, false);
+            previewRect.sizeDelta = new Vector2(336f, 220f);
+            mapPreview.preserveAspect = true;
+            mapPreview.raycastTarget = false;
+            mapPrevious = MakeButton(room, "‹", new Vector2(-680f, -78f), new Vector2(90f, 140f), lightButton, 56, () => ChangeMap(-1));
+            mapNext = MakeButton(room, "›", new Vector2(-180f, -78f), new Vector2(90f, 140f), lightButton, 56, () => ChangeMap(1));
+            swapButton = MakeButton(room, "Поменять стороны", new Vector2(-623f, -248f), new Vector2(374f, 72f), lightButton, 32,
                 () => NetworkGame.Lobby?.SwapSides());
-            fogButton = MakeButton(room, "Туман войны: вкл", new Vector2(-430f, -215f), new Vector2(760f, 80f), lightButton, 36, () =>
+            fogButton = MakeButton(room, "Туман войны: вкл", new Vector2(-237f, -248f), new Vector2(374f, 72f), lightButton, 32, () =>
             {
                 ILobby lobby = NetworkGame.Lobby;
                 if (lobby?.State != null)
@@ -932,6 +952,8 @@ namespace Marchlands.UI
         }
 
         private IReadOnlyList<string> MapNames => mainMenu != null ? mainMenu.MapNames : Array.Empty<string>();
+
+        private IReadOnlyList<Sprite> MapPreviews => mainMenu != null ? mainMenu.MapPreviews : Array.Empty<Sprite>();
 
         private string SideName(Side side)
         {

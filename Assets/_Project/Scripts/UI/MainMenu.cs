@@ -89,6 +89,37 @@ namespace Marchlands.UI
             }
         }
 
+        /// <summary>Превью карт — картинки карточек, по порядку (для сетевой комнаты); null — у карточки нет картинки.</summary>
+        public IReadOnlyList<Sprite> MapPreviews
+        {
+            get
+            {
+                var previews = new List<Sprite>();
+                if (mapButtons != null)
+                {
+                    foreach (Button button in mapButtons)
+                    {
+                        Sprite preview = null;
+                        if (button != null)
+                        {
+                            foreach (Image image in button.GetComponentsInChildren<Image>(true))
+                            {
+                                if (image.gameObject != button.gameObject)
+                                {
+                                    preview = image.sprite;
+                                    break;
+                                }
+                            }
+                        }
+
+                        previews.Add(preview);
+                    }
+                }
+
+                return previews;
+            }
+        }
+
         private void ShowFog()
         {
             if (fogLabel != null)
