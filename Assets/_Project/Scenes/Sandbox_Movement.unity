@@ -207,6 +207,7 @@ GameObject:
   - component: {fileID: 5826702}
   - component: {fileID: 5826701}
   - component: {fileID: 5826700}
+  - component: {fileID: 5826704}
   m_Layer: 0
   m_Name: "\u0412\u043E\u0437\u0434\u0443\u0448\u043D\u044B\u0439 \u0448\u0430\u0440"
   m_TagString: Untagged
@@ -346,6 +347,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5826698}
   m_CullTransparentMesh: 1
+--- !u!114 &5826704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5826698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0412\u043E\u0437\u0434\u0443\u0448\u043D\u044B\u0439 \u0448\u0430\u0440</b>\n\u0421\u043D\u0438\u043C\u0430\u0435\u0442
+    \u0442\u0443\u043C\u0430\u043D \u0432\u043E\u0439\u043D\u044B \u0434\u043E \u043A\u043E\u043D\u0446\u0430
+    \u0431\u043E\u044F. \u041F\u043E\u0434\u0440\u043E\u0431\u043D\u0435\u0435 \u2014
+    \xABi\xBB."
 --- !u!1 &7357169
 GameObject:
   m_ObjectHideFlags: 0
@@ -992,6 +1009,7 @@ GameObject:
   - component: {fileID: 54454837}
   - component: {fileID: 54454836}
   - component: {fileID: 54454835}
+  - component: {fileID: 54454839}
   m_Layer: 0
   m_Name: "\u0413\u0440\u0435\u043D\u0430\u0434\u0451\u0440\u044B"
   m_TagString: Untagged
@@ -1131,6 +1149,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 54454833}
   m_CullTransparentMesh: 1
+--- !u!114 &54454839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 54454833}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0413\u0440\u0435\u043D\u0430\u0434\u0451\u0440\u044B</b>\n\u0412\u043A\u043B\u044E\u0447\u0438\u0442\u044C
+    \u0438\u043B\u0438 \u0432\u044B\u043A\u043B\u044E\u0447\u0438\u0442\u044C \u043D\u0430\u0439\u043C.
+    \u041E\u0442\u0431\u043E\u0440\u043D\u0430\u044F \u043F\u0435\u0445\u043E\u0442\u0430:
+    \u043C\u0435\u0442\u0447\u0435 \u0438 \u0441\u0442\u043E\u0439\u0447\u0435, \u043D\u043E
+    \u0434\u043E\u0440\u043E\u0436\u0435. \u041F\u043E\u0434\u0440\u043E\u0431\u043D\u0435\u0435
+    \u2014 \xABi\xBB."
 --- !u!1 &61669505
 GameObject:
   m_ObjectHideFlags: 0
@@ -1270,6 +1306,7 @@ GameObject:
   - component: {fileID: 111163634}
   - component: {fileID: 111163633}
   - component: {fileID: 111163632}
+  - component: {fileID: 111163636}
   m_Layer: 0
   m_Name: "\u041F\u043E\u0441\u0442\u0440\u043E\u0438\u0442\u044C \u043A\u043E\u043D\u044E\u0448\u043D\u044E"
   m_TagString: Untagged
@@ -1407,6 +1444,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 111163630}
   m_CullTransparentMesh: 1
+--- !u!114 &111163636
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 111163630}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u041A\u043E\u043D\u044E\u0448\u043D\u044F</b>\n\u041D\u0430\u043D\u0438\u043C\u0430\u0435\u0442
+    \u043A\u043E\u043D\u043D\u0438\u0446\u0443. \u0421\u0442\u0430\u0432\u0438\u0442\u0441\u044F
+    \u0440\u044F\u0434\u043E\u043C \u0441\u043E \u0448\u0442\u0430\u0431\u043E\u043C."
 --- !u!1 &114197039
 GameObject:
   m_ObjectHideFlags: 0
@@ -2923,6 +2975,7 @@ GameObject:
   - component: {fileID: 292482928}
   - component: {fileID: 292482929}
   - component: {fileID: 292482930}
+  - component: {fileID: 292482931}
   m_Layer: 0
   m_Name: Volley
   m_TagString: Untagged
@@ -3064,6 +3117,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
   followSafeArea: 0
+--- !u!114 &292482931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 292482924}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0417\u0430\u043B\u043F!</b>   \u041F\u0440\u043E\u0431\u0435\u043B\n\u0412\u044B\u0434\u0435\u043B\u0435\u043D\u043D\u044B\u0435
+    \u043E\u0442\u0440\u044F\u0434\u044B \u0441\u0442\u0440\u0435\u043B\u044F\u044E\u0442
+    \u043F\u043E \u0431\u043B\u0438\u0436\u0430\u0439\u0448\u0435\u043C\u0443 \u0432\u0440\u0430\u0433\u0443
+    \u0432 \u0436\u0451\u043B\u0442\u043E\u043C \u0441\u0435\u043A\u0442\u043E\u0440\u0435.
+    \u041F\u043E\u0442\u043E\u043C \u2014 \u0434\u043E\u043B\u0433\u0430\u044F \u043F\u0435\u0440\u0435\u0437\u0430\u0440\u044F\u0434\u043A\u0430."
 --- !u!1 &309758623
 GameObject:
   m_ObjectHideFlags: 0
@@ -3456,6 +3526,7 @@ GameObject:
   - component: {fileID: 359218148}
   - component: {fileID: 359218147}
   - component: {fileID: 359218150}
+  - component: {fileID: 359218151}
   m_Layer: 0
   m_Name: "\u0413\u0440\u0435\u043D\u0430\u0434\u0451\u0440\u044B"
   m_TagString: Untagged
@@ -3580,6 +3651,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 0, y: 0}
   followSafeArea: 0
+--- !u!114 &359218151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 359218145}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0421\u043E\u0431\u0440\u0430\u0442\u044C \u043E\u0442\u0440\u044F\u0434</b>\n\u041A\u043E\u0433\u0434\u0430
+    \u0443 \u043A\u0430\u0437\u0430\u0440\u043C\u044B (\u043A\u043E\u043D\u044E\u0448\u043D\u0438,
+    \u0434\u0435\u043F\u043E) \u043D\u0430\u0431\u0440\u0430\u043B\u043E\u0441\u044C
+    \u043B\u044E\u0434\u0435\u0439 \u043D\u0430 \u043E\u0442\u0440\u044F\u0434 \u2014
+    \u043D\u0430\u0436\u043C\u0438\u0442\u0435, \u0447\u0442\u043E\u0431\u044B \u043F\u043E\u0441\u0442\u0440\u043E\u0438\u0442\u044C
+    \u0435\u0433\u043E."
 --- !u!1 &366124975
 GameObject:
   m_ObjectHideFlags: 0
@@ -3924,6 +4013,7 @@ GameObject:
   - component: {fileID: 423380993}
   - component: {fileID: 423380994}
   - component: {fileID: 423380995}
+  - component: {fileID: 423380996}
   m_Layer: 0
   m_Name: Charge
   m_TagString: Untagged
@@ -4063,6 +4153,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
   followSafeArea: 0
+--- !u!114 &423380996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 423380989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0412 \u0448\u0442\u044B\u043A\u0438 / \u0412 \u0430\u0442\u0430\u043A\u0443</b>  
+    C\n\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u0438 \u0449\u0451\u043B\u043A\u043D\u0438\u0442\u0435
+    \u043F\u043E \u0432\u0440\u0430\u0433\u0443 \u2014 \u043E\u0442\u0440\u044F\u0434
+    \u0431\u0440\u043E\u0441\u0438\u0442\u0441\u044F \u0432 \u0440\u0443\u043A\u043E\u043F\u0430\u0448\u043D\u0443\u044E.
+    \u0412\u043E \u0444\u043B\u0430\u043D\u0433 \u0438\u043B\u0438 \u0432 \u0442\u044B\u043B
+    \u2014 \u0441\u0438\u043B\u044C\u043D\u0435\u0435."
 --- !u!1 &426565802
 GameObject:
   m_ObjectHideFlags: 0
@@ -4127,6 +4235,39 @@ MonoBehaviour:
   networkInfoFormat: "\u041F\u0438\u043D\u0433 {0} \u043C\u0441 \xB7 \u043F\u0440\u0438\u043A\u0430\u0437
     \u0447\u0435\u0440\u0435\u0437 {1:0.0} \u0441"
   networkInfoColor: {r: 0.96, g: 0.9, b: 0.75, a: 0.7}
+  hotkeysText: "<b>\u041A\u043B\u0430\u0432\u0438\u0448\u0438 \u0438 \u043C\u044B\u0448\u044C</b>\n\n\u041B\u041A\u041C
+    \u2014 \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u043E\u0442\u0440\u044F\u0434
+    \u0438\u043B\u0438 \u0437\u0434\u0430\u043D\u0438\u0435; Shift + \u0440\u0430\u043C\u043A\u0430
+    \u2014 \u0432\u044B\u0434\u0435\u043B\u0438\u0442\u044C \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u043E;
+    Ctrl + \u0449\u0435\u043B\u0447\u043E\u043A \u2014 \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u044C
+    \u0438\u043B\u0438 \u0443\u0431\u0440\u0430\u0442\u044C\n\u0414\u0432\u043E\u0439\u043D\u043E\u0439
+    \u0449\u0435\u043B\u0447\u043E\u043A \u043F\u043E \u043E\u0442\u0440\u044F\u0434\u0443
+    \u2014 \u0432\u0441\u0435 \u0442\u0430\u043A\u0438\u0435 \u0436\u0435 \u043D\u0430
+    \u044D\u043A\u0440\u0430\u043D\u0435\n\u041F\u041A\u041C \u2014 \u0438\u0434\u0442\u0438
+    \u0438\u043B\u0438 \u0430\u0442\u0430\u043A\u043E\u0432\u0430\u0442\u044C; \u041F\u041A\u041C
+    \u0441 \u043F\u0440\u043E\u0442\u044F\u0436\u043A\u043E\u0439 \u2014 \u0432\u0441\u0442\u0430\u0442\u044C
+    \u0444\u0440\u043E\u043D\u0442\u043E\u043C \u0432 \u0441\u0442\u043E\u0440\u043E\u043D\u0443
+    \u043F\u0440\u043E\u0442\u044F\u0436\u043A\u0438\n\u041F\u043E\u0442\u044F\u043D\u0443\u0442\u044C
+    \u041B\u041A\u041C \u0437\u0430 \u043A\u043E\u043B\u044C\u0446\u043E \u0432\u043E\u043A\u0440\u0443\u0433
+    \u043E\u0442\u0440\u044F\u0434\u0430 \u2014 \u0440\u0430\u0437\u0432\u0435\u0440\u043D\u0443\u0442\u044C
+    \u043D\u0430 \u043C\u0435\u0441\u0442\u0435\n\n\u041F\u0440\u043E\u0431\u0435\u043B
+    \u2014 \u0437\u0430\u043B\u043F   \xB7   C \u2014 \u0432 \u0448\u0442\u044B\u043A\u0438  
+    \xB7   R \u2014 \u043B\u0438\u043D\u0438\u044F / \u043C\u0430\u0440\u0448   \xB7  
+    X \u2014 \u0441\u0442\u043E\u043F\nH \u2014 \u0448\u0442\u0430\u0431   \xB7  
+    B \u2014 \u043A\u0430\u0437\u0430\u0440\u043C\u0430   \xB7   Tab \u2014 \u0441\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439
+    \u043E\u0442\u0440\u044F\u0434\nCtrl + 1\u20269 \u2014 \u0437\u0430\u043F\u043E\u043C\u043D\u0438\u0442\u044C
+    \u0433\u0440\u0443\u043F\u043F\u0443; 1\u20269 \u2014 \u0432\u044B\u0431\u0440\u0430\u0442\u044C
+    \u0435\u0451; \u0434\u0432\u0430\u0436\u0434\u044B \u2014 \u043F\u043E\u043A\u0430\u0437\u0430\u0442\u044C\nWASD
+    \u0438\u043B\u0438 \u0441\u0442\u0440\u0435\u043B\u043A\u0438, \u043A\u0440\u0430\u0439
+    \u044D\u043A\u0440\u0430\u043D\u0430, \u0441\u0440\u0435\u0434\u043D\u044F\u044F
+    \u043A\u043D\u043E\u043F\u043A\u0430 \u2014 \u0434\u0432\u0438\u0433\u0430\u0442\u044C
+    \u043A\u0430\u0440\u0442\u0443; \u043A\u043E\u043B\u0435\u0441\u043E \u2014 \u043C\u0430\u0441\u0448\u0442\u0430\u0431\n\nPause
+    \u0438\u043B\u0438 P \u2014 \u043F\u0430\u0443\u0437\u0430   \xB7   Esc \u2014
+    \u043E\u0442\u043C\u0435\u043D\u0438\u0442\u044C   \xB7   F1 \u2014 \u044D\u0442\u0430
+    \u0441\u043F\u0440\u0430\u0432\u043A\u0430\n\u041D\u0430\u0432\u0435\u0434\u0438\u0442\u0435
+    \u043A\u0443\u0440\u0441\u043E\u0440 \u043D\u0430 \u043A\u043D\u043E\u043F\u043A\u0443
+    \u2014 \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u043F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430."
+  helpBackground: {r: 0.12, g: 0.1, b: 0.08, a: 0.92}
 --- !u!224 &426565804
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4366,6 +4507,7 @@ GameObject:
   - component: {fileID: 470102746}
   - component: {fileID: 470102745}
   - component: {fileID: 470102744}
+  - component: {fileID: 470102747}
   m_Layer: 0
   m_Name: Villages
   m_TagString: Untagged
@@ -4387,7 +4529,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -4435,6 +4577,22 @@ RectTransform:
   m_AnchoredPosition: {x: 394, y: 0}
   m_SizeDelta: {x: 220, y: 70}
   m_Pivot: {x: 0, y: 0.5}
+--- !u!114 &470102747
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 470102743}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0414\u0435\u0440\u0435\u0432\u043D\u0438</b>\n\u0421\u043A\u043E\u043B\u044C\u043A\u043E
+    \u0434\u0435\u0440\u0435\u0432\u0435\u043D\u044C \u0432\u0430\u0448\u0438 \u0438\u0437
+    \u0432\u0441\u0435\u0445. \u0423\u0434\u0435\u0440\u0436\u0438\u0442\u0435 \u0432\u0441\u0435
+    \u2014 \u043F\u043E\u0431\u0435\u0434\u0430."
 --- !u!1 &488606985
 GameObject:
   m_ObjectHideFlags: 0
@@ -4758,6 +4916,7 @@ GameObject:
   - component: {fileID: 532968157}
   - component: {fileID: 532968158}
   - component: {fileID: 532968159}
+  - component: {fileID: 532968160}
   m_Layer: 0
   m_Name: Formation
   m_TagString: Untagged
@@ -4897,6 +5056,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
   followSafeArea: 0
+--- !u!114 &532968160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 532968153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u041B\u0438\u043D\u0438\u044F / \u041C\u0430\u0440\u0448</b>   R\n\u041B\u0438\u043D\u0438\u044F
+    \u0441\u0442\u0440\u0435\u043B\u044F\u0435\u0442 \u0432\u0441\u0435\u043C \u0444\u0440\u043E\u043D\u0442\u043E\u043C.
+    \u041A\u043E\u043B\u043E\u043D\u043D\u0430 (\u043C\u0430\u0440\u0448) \u0438\u0434\u0451\u0442
+    \u0431\u044B\u0441\u0442\u0440\u0435\u0435, \u043D\u043E \u043F\u043E\u0447\u0442\u0438
+    \u043D\u0435 \u0441\u0442\u0440\u0435\u043B\u044F\u0435\u0442."
 --- !u!1 &533905311
 GameObject:
   m_ObjectHideFlags: 0
@@ -5515,6 +5691,7 @@ GameObject:
   - component: {fileID: 614916641}
   - component: {fileID: 614916640}
   - component: {fileID: 614916643}
+  - component: {fileID: 614916644}
   m_Layer: 0
   m_Name: "\u0415\u0433\u0435\u0440\u044F"
   m_TagString: Untagged
@@ -5639,6 +5816,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 0, y: 0}
   followSafeArea: 0
+--- !u!114 &614916644
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 614916638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0421\u043E\u0431\u0440\u0430\u0442\u044C \u043E\u0442\u0440\u044F\u0434</b>\n\u041A\u043E\u0433\u0434\u0430
+    \u0443 \u043A\u0430\u0437\u0430\u0440\u043C\u044B (\u043A\u043E\u043D\u044E\u0448\u043D\u0438,
+    \u0434\u0435\u043F\u043E) \u043D\u0430\u0431\u0440\u0430\u043B\u043E\u0441\u044C
+    \u043B\u044E\u0434\u0435\u0439 \u043D\u0430 \u043E\u0442\u0440\u044F\u0434 \u2014
+    \u043D\u0430\u0436\u043C\u0438\u0442\u0435, \u0447\u0442\u043E\u0431\u044B \u043F\u043E\u0441\u0442\u0440\u043E\u0438\u0442\u044C
+    \u0435\u0433\u043E."
 --- !u!1 &640610501
 GameObject:
   m_ObjectHideFlags: 0
@@ -5912,6 +6107,7 @@ GameObject:
   - component: {fileID: 651229745}
   - component: {fileID: 651229744}
   - component: {fileID: 651229747}
+  - component: {fileID: 651229748}
   m_Layer: 0
   m_Name: "\u041A\u043E\u043D\u043D\u0438\u0446\u0430"
   m_TagString: Untagged
@@ -6036,6 +6232,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 0, y: 0}
   followSafeArea: 0
+--- !u!114 &651229748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 651229742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0421\u043E\u0431\u0440\u0430\u0442\u044C \u043E\u0442\u0440\u044F\u0434</b>\n\u041A\u043E\u0433\u0434\u0430
+    \u0443 \u043A\u0430\u0437\u0430\u0440\u043C\u044B (\u043A\u043E\u043D\u044E\u0448\u043D\u0438,
+    \u0434\u0435\u043F\u043E) \u043D\u0430\u0431\u0440\u0430\u043B\u043E\u0441\u044C
+    \u043B\u044E\u0434\u0435\u0439 \u043D\u0430 \u043E\u0442\u0440\u044F\u0434 \u2014
+    \u043D\u0430\u0436\u043C\u0438\u0442\u0435, \u0447\u0442\u043E\u0431\u044B \u043F\u043E\u0441\u0442\u0440\u043E\u0438\u0442\u044C
+    \u0435\u0433\u043E."
 --- !u!1 &658617171
 GameObject:
   m_ObjectHideFlags: 0
@@ -6882,6 +7096,7 @@ GameObject:
   - component: {fileID: 794412201}
   - component: {fileID: 794412205}
   - component: {fileID: 794412206}
+  - component: {fileID: 794412207}
   m_Layer: 0
   m_Name: Stop
   m_TagString: Untagged
@@ -7021,6 +7236,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 24, y: 0}
   followSafeArea: 0
+--- !u!114 &794412207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794412200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0421\u0442\u043E\u043F</b>   X\n\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C
+    \u043F\u0440\u0438\u043A\u0430\u0437: \u043E\u0442\u0440\u044F\u0434 \u043E\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u0441\u044F
+    \u043D\u0430 \u043C\u0435\u0441\u0442\u0435."
 --- !u!1 &800363889
 GameObject:
   m_ObjectHideFlags: 0
@@ -7538,6 +7768,7 @@ GameObject:
   - component: {fileID: 838762531}
   - component: {fileID: 838762530}
   - component: {fileID: 838762529}
+  - component: {fileID: 838762533}
   m_Layer: 0
   m_Name: "\u041F\u043E\u0441\u0442\u0440\u043E\u0438\u0442\u044C \u043A\u0430\u0437\u0430\u0440\u043C\u0443"
   m_TagString: Untagged
@@ -7675,6 +7906,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 838762527}
   m_CullTransparentMesh: 1
+--- !u!114 &838762533
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 838762527}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u041A\u0430\u0437\u0430\u0440\u043C\u0430</b>\n\u041D\u0430\u043D\u0438\u043C\u0430\u0435\u0442
+    \u043F\u0435\u0445\u043E\u0442\u0443 \u2014 \u0444\u0443\u0437\u0438\u043B\u0451\u0440\u043E\u0432
+    \u0438 \u0433\u0440\u0435\u043D\u0430\u0434\u0451\u0440\u043E\u0432. \u0421\u0442\u0430\u0432\u0438\u0442\u0441\u044F
+    \u0440\u044F\u0434\u043E\u043C \u0441\u043E \u0448\u0442\u0430\u0431\u043E\u043C.
+    \u041A\u043B\u0430\u0432\u0438\u0448\u0430 B \u2014 \u043F\u043E\u043A\u0430\u0437\u0430\u0442\u044C
+    \u043A\u0430\u0437\u0430\u0440\u043C\u0443."
 --- !u!1 &853061295
 GameObject:
   m_ObjectHideFlags: 0
@@ -13808,6 +14057,7 @@ GameObject:
   - component: {fileID: 1057446152}
   - component: {fileID: 1057446151}
   - component: {fileID: 1057446150}
+  - component: {fileID: 1057446154}
   m_Layer: 0
   m_Name: "\u041F\u043E\u0441\u0442\u0440\u043E\u0438\u0442\u044C \u0434\u043E\u043C"
   m_TagString: Untagged
@@ -13945,6 +14195,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1057446148}
   m_CullTransparentMesh: 1
+--- !u!114 &1057446154
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1057446148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0414\u043E\u043C</b>\n\u041F\u0440\u0438\u0441\u0442\u0440\u043E\u0439\u043A\u0430
+    \u043A \u0448\u0442\u0430\u0431\u0443 \u2014 \u0431\u043E\u043B\u044C\u0448\u0435
+    \u043C\u0435\u0441\u0442 \u0434\u043B\u044F \u0432\u043E\u0439\u0441\u043A (\u043D\u0430\u0441\u0435\u043B\u0435\u043D\u0438\u0435)."
 --- !u!1 &1066568539
 GameObject:
   m_ObjectHideFlags: 0
@@ -14467,6 +14732,7 @@ GameObject:
   - component: {fileID: 1091293933}
   - component: {fileID: 1091293932}
   - component: {fileID: 1091293931}
+  - component: {fileID: 1091293935}
   m_Layer: 0
   m_Name: "\u041F\u043E\u0441\u0442\u0440\u043E\u0438\u0442\u044C \u0430\u0440\u0442\u0434\u0435\u043F\u043E"
   m_TagString: Untagged
@@ -14604,6 +14870,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1091293929}
   m_CullTransparentMesh: 1
+--- !u!114 &1091293935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1091293929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0410\u0440\u0442\u0434\u0435\u043F\u043E</b>\n\u0414\u0430\u0451\u0442
+    \u043F\u0443\u0448\u043A\u0438 \u0441 \u0440\u0430\u0441\u0447\u0451\u0442\u043E\u043C.
+    \u0421\u0442\u0430\u0432\u0438\u0442\u0441\u044F \u0440\u044F\u0434\u043E\u043C
+    \u0441\u043E \u0448\u0442\u0430\u0431\u043E\u043C."
 --- !u!1 &1091659193
 GameObject:
   m_ObjectHideFlags: 0
@@ -15160,6 +15442,7 @@ GameObject:
   - component: {fileID: 1149202327}
   - component: {fileID: 1149202329}
   - component: {fileID: 1149202328}
+  - component: {fileID: 1149202330}
   m_Layer: 0
   m_Name: Population
   m_TagString: Untagged
@@ -15201,7 +15484,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -15229,6 +15512,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1149202326}
   m_CullTransparentMesh: 1
+--- !u!114 &1149202330
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1149202326}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u041D\u0430\u0441\u0435\u043B\u0435\u043D\u0438\u0435</b>\n\u0421\u043A\u043E\u043B\u044C\u043A\u043E
+    \u0443 \u0432\u0430\u0441 \u0432\u043E\u0439\u0441\u043A \u0438 \u0441\u043A\u043E\u043B\u044C\u043A\u043E
+    \u043C\u0435\u0441\u0442. \u041C\u0435\u0441\u0442 \u043C\u0430\u043B\u043E \u2014
+    \u043F\u0440\u0438\u0441\u0442\u0440\u043E\u0439\u0442\u0435 \u0434\u043E\u043C
+    \u043A \u0448\u0442\u0430\u0431\u0443."
 --- !u!1 &1158369804
 GameObject:
   m_ObjectHideFlags: 0
@@ -15700,6 +16000,7 @@ GameObject:
   - component: {fileID: 1236920161}
   - component: {fileID: 1236920160}
   - component: {fileID: 1236920159}
+  - component: {fileID: 1236920163}
   m_Layer: 0
   m_Name: "\u0423\u0441\u0438\u043B\u0438\u0442\u044C \u043A\u0430\u0437\u0430\u0440\u043C\u0443"
   m_TagString: Untagged
@@ -15839,6 +16140,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1236920157}
   m_CullTransparentMesh: 1
+--- !u!114 &1236920163
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1236920157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0423\u0441\u0438\u043B\u0438\u0442\u044C / \u0443\u043A\u0440\u0435\u043F\u0438\u0442\u044C</b>\n\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F
+    \u043A\u0430\u0437\u0430\u0440\u043C\u0430 \u043D\u0430\u043D\u0438\u043C\u0430\u0435\u0442
+    \u0432\u0434\u0432\u043E\u0435 \u0431\u044B\u0441\u0442\u0440\u0435\u0435; \u043A\u0430\u043C\u0435\u043D\u043D\u044B\u0435
+    \u0448\u0442\u0430\u0431 \u0438 \u0431\u043B\u043E\u043A\u0433\u0430\u0443\u0437
+    \u043A\u0440\u0435\u043F\u0447\u0435 \u0438 \u0441\u0438\u043B\u044C\u043D\u0435\u0435.
+    \u041F\u043E\u0434\u0440\u043E\u0431\u043D\u0435\u0435 \u2014 \xABi\xBB."
 --- !u!1 &1249197777
 GameObject:
   m_ObjectHideFlags: 0
@@ -16073,6 +16392,7 @@ GameObject:
   - component: {fileID: 1278290923}
   - component: {fileID: 1278290922}
   - component: {fileID: 1278290921}
+  - component: {fileID: 1278290925}
   m_Layer: 0
   m_Name: "\u041F\u0443\u0448\u043A\u0438"
   m_TagString: Untagged
@@ -16197,6 +16517,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1278290919}
   m_CullTransparentMesh: 1
+--- !u!114 &1278290925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1278290919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0421\u043E\u0431\u0440\u0430\u0442\u044C \u043E\u0442\u0440\u044F\u0434</b>\n\u041A\u043E\u0433\u0434\u0430
+    \u0443 \u043A\u0430\u0437\u0430\u0440\u043C\u044B (\u043A\u043E\u043D\u044E\u0448\u043D\u0438,
+    \u0434\u0435\u043F\u043E) \u043D\u0430\u0431\u0440\u0430\u043B\u043E\u0441\u044C
+    \u043B\u044E\u0434\u0435\u0439 \u043D\u0430 \u043E\u0442\u0440\u044F\u0434 \u2014
+    \u043D\u0430\u0436\u043C\u0438\u0442\u0435, \u0447\u0442\u043E\u0431\u044B \u043F\u043E\u0441\u0442\u0440\u043E\u0438\u0442\u044C
+    \u0435\u0433\u043E."
 --- !u!1 &1292310002
 GameObject:
   m_ObjectHideFlags: 0
@@ -17110,6 +17448,7 @@ GameObject:
   - component: {fileID: 1435568600}
   - component: {fileID: 1435568599}
   - component: {fileID: 1435568598}
+  - component: {fileID: 1435568602}
   m_Layer: 0
   m_Name: "\u041A\u043E\u043D\u043D\u0438\u0446\u0430"
   m_TagString: Untagged
@@ -17249,6 +17588,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1435568596}
   m_CullTransparentMesh: 1
+--- !u!114 &1435568602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1435568596}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u041A\u043E\u043D\u043D\u0438\u0446\u0430</b>\n\u0412\u043A\u043B\u044E\u0447\u0438\u0442\u044C
+    \u0438\u043B\u0438 \u0432\u044B\u043A\u043B\u044E\u0447\u0438\u0442\u044C \u043D\u0430\u0439\u043C.
+    \u0411\u044B\u0441\u0442\u0440\u0430\u044F, \u0441\u0442\u0440\u0430\u0448\u043D\u0430
+    \u0432 \u0430\u0442\u0430\u043A\u0435, \u043D\u0435 \u0441\u0442\u0440\u0435\u043B\u044F\u0435\u0442."
 --- !u!1 &1444262592
 GameObject:
   m_ObjectHideFlags: 0
@@ -17587,6 +17942,7 @@ GameObject:
   - component: {fileID: 1488958729}
   - component: {fileID: 1488958730}
   - component: {fileID: 1488958731}
+  - component: {fileID: 1488958732}
   m_Layer: 0
   m_Name: Pause
   m_TagString: Untagged
@@ -17726,6 +18082,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 32, y: 0}
   followSafeArea: 0
+--- !u!114 &1488958732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1488958725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u041F\u0430\u0443\u0437\u0430</b>   Pause \u0438\u043B\u0438 P\n\u041C\u0435\u043D\u044E,
+    \u0433\u0440\u043E\u043C\u043A\u043E\u0441\u0442\u044C \u043C\u0443\u0437\u044B\u043A\u0438.
+    \u0412\u0441\u0435 \u043A\u043B\u0430\u0432\u0438\u0448\u0438 \u2014 F1."
 --- !u!1 &1492640964
 GameObject:
   m_ObjectHideFlags: 0
@@ -17739,6 +18110,7 @@ GameObject:
   - component: {fileID: 1492640968}
   - component: {fileID: 1492640967}
   - component: {fileID: 1492640966}
+  - component: {fileID: 1492640970}
   m_Layer: 0
   m_Name: "\u0424\u0443\u0437\u0438\u043B\u0451\u0440\u044B"
   m_TagString: Untagged
@@ -17878,6 +18250,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1492640964}
   m_CullTransparentMesh: 1
+--- !u!114 &1492640970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1492640964}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0424\u0443\u0437\u0438\u043B\u0451\u0440\u044B</b>\n\u0412\u043A\u043B\u044E\u0447\u0438\u0442\u044C
+    \u0438\u043B\u0438 \u0432\u044B\u043A\u043B\u044E\u0447\u0438\u0442\u044C \u043D\u0430\u0439\u043C.
+    \u041E\u0441\u043D\u043E\u0432\u043D\u0430\u044F \u043B\u0438\u043D\u0435\u0439\u043D\u0430\u044F
+    \u043F\u0435\u0445\u043E\u0442\u0430: \u0434\u0451\u0448\u0435\u0432\u044B \u0438
+    \u0431\u044B\u0441\u0442\u0440\u043E \u043D\u0430\u0431\u0438\u0440\u0430\u044E\u0442\u0441\u044F."
 --- !u!1 &1500802122
 GameObject:
   m_ObjectHideFlags: 0
@@ -19648,6 +20037,7 @@ GameObject:
   - component: {fileID: 1744773658}
   - component: {fileID: 1744773657}
   - component: {fileID: 1744773656}
+  - component: {fileID: 1744773660}
   m_Layer: 0
   m_Name: "\u041F\u0443\u0448\u043A\u0438"
   m_TagString: Untagged
@@ -19787,6 +20177,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1744773654}
   m_CullTransparentMesh: 1
+--- !u!114 &1744773660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1744773654}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u041F\u0443\u0448\u043A\u0438</b>\n\u0417\u0430\u043A\u0430\u0437\u0430\u0442\u044C
+    \u043F\u0443\u0448\u043A\u0443 \u0441 \u0440\u0430\u0441\u0447\u0451\u0442\u043E\u043C.
+    \u041A\u0430\u0436\u0434\u0430\u044F \u0441\u043B\u0435\u0434\u0443\u044E\u0449\u0430\u044F
+    \u0434\u043E\u0440\u043E\u0436\u0435, \u043F\u043E\u043A\u0430 \u043F\u0440\u0435\u0436\u043D\u0438\u0435
+    \u0432 \u0441\u0442\u0440\u043E\u044E."
 --- !u!1 &1785236192
 GameObject:
   m_ObjectHideFlags: 0
@@ -20402,6 +20809,7 @@ GameObject:
   - component: {fileID: 1830020303}
   - component: {fileID: 1830020304}
   - component: {fileID: 1830020305}
+  - component: {fileID: 1830020306}
   m_Layer: 0
   m_Name: Gold
   m_TagString: Untagged
@@ -20451,7 +20859,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -20485,6 +20893,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.UI::Marchlands.UI.SafeAreaInset
   cornerPadding: {x: 16, y: 0}
   followSafeArea: 0
+--- !u!114 &1830020306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1830020301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f2e9e6308a3b804786c61fee9e14c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.UI::Marchlands.UI.HoverTip
+  text: "<b>\u0417\u043E\u043B\u043E\u0442\u043E</b>\n\u0414\u043E\u0445\u043E\u0434
+    \u0438\u0434\u0451\u0442 \u043E\u0442 \u0448\u0442\u0430\u0431\u0430 \u0438 \u0437\u0430\u0445\u0432\u0430\u0447\u0435\u043D\u043D\u044B\u0445
+    \u0434\u0435\u0440\u0435\u0432\u0435\u043D\u044C."
 --- !u!1 &1837611519
 GameObject:
   m_ObjectHideFlags: 0

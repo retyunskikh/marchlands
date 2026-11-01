@@ -55,6 +55,22 @@ namespace Marchlands.UI
         [SerializeField] private string networkInfoFormat = "Пинг {0} мс · приказ через {1:0.0} с";
         [SerializeField] private Color networkInfoColor = new Color(0.96f, 0.9f, 0.75f, 0.7f);
 
+        [Header("Справка по клавишам (ПК)")]
+        [SerializeField, TextArea(8, 16)] private string hotkeysText =
+            "<b>Клавиши и мышь</b>\n\n" +
+            "ЛКМ — выбрать отряд или здание; Shift + рамка — выделить несколько; Ctrl + щелчок — добавить или убрать\n" +
+            "Двойной щелчок по отряду — все такие же на экране\n" +
+            "ПКМ — идти или атаковать; ПКМ с протяжкой — встать фронтом в сторону протяжки\n" +
+            "Потянуть ЛКМ за кольцо вокруг отряда — развернуть на месте\n\n" +
+            "Пробел — залп   ·   C — в штыки   ·   R — линия / марш   ·   X — стоп\n" +
+            "H — штаб   ·   B — казарма   ·   Tab — следующий отряд\n" +
+            "Ctrl + 1…9 — запомнить группу; 1…9 — выбрать её; дважды — показать\n" +
+            "WASD или стрелки, край экрана, средняя кнопка — двигать карту; колесо — масштаб\n\n" +
+            "Pause или P — пауза   ·   Esc — отменить   ·   F1 — эта справка\n" +
+            "Наведите курсор на кнопку — появится подсказка.";
+        [SerializeField] private Color helpBackground = new Color(0.12f, 0.1f, 0.08f, 0.92f);
+
+        private GameObject helpPanel;
         private bool isNetwork;
         private Text waitingLabel;
         private Text networkInfoLabel;
@@ -149,6 +165,46 @@ namespace Marchlands.UI
         }
 
         public bool IsOver => resultShown;
+
+        /// <summary>F1: показать или скрыть справку по клавишам.</summary>
+        public void ToggleHelp()
+        {
+            if (helpPanel == null)
+            {
+                helpPanel = new GameObject("Справка по клавишам", typeof(RectTransform), typeof(Image), typeof(Button));
+                var rect = (RectTransform)helpPanel.transform;
+                rect.SetParent(resultOverlay.transform.parent, false);
+                rect.sizeDelta = new Vector2(1500f, 760f);
+                var background = helpPanel.GetComponent<Image>();
+                background.color = helpBackground;
+                var sample = pauseButton.GetComponent<Image>();
+                background.sprite = sample != null ? sample.sprite : null;
+                background.type = Image.Type.Sliced;
+                // Щелчок по справке закрывает её.
+                helpPanel.GetComponent<Button>().onClick.AddListener(() => helpPanel.SetActive(false));
+
+                var textObject = new GameObject("Текст", typeof(RectTransform), typeof(Text));
+                var textRect = (RectTransform)textObject.transform;
+                textRect.SetParent(rect, false);
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.offsetMin = new Vector2(60f, 40f);
+                textRect.offsetMax = new Vector2(-60f, -40f);
+                var text = textObject.GetComponent<Text>();
+                text.font = resultTitle.font;
+                text.fontSize = 34;
+                text.lineSpacing = 1.15f;
+                text.color = new Color(0.96f, 0.92f, 0.82f);
+                text.alignment = TextAnchor.MiddleLeft;
+                text.supportRichText = true;
+                text.raycastTarget = false;
+                text.text = hotkeysText;
+                helpPanel.SetActive(false);
+            }
+
+            helpPanel.transform.SetAsLastSibling();
+            helpPanel.SetActive(!helpPanel.activeSelf);
+        }
 
         /// <summary>Пинг и задержка приказа в сетевом бою — мелко в правом нижнем углу.</summary>
         public void SetNetworkInfo(int pingMs, float delaySeconds)

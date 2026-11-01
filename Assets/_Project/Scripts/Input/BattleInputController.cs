@@ -745,6 +745,18 @@ namespace Marchlands.Input
             CampSelectionChanged?.Invoke(type);
         }
 
+        /// <summary>Выделить здание и навести на него камеру (клавиши штаба и казармы на ПК).</summary>
+        public void ShowBuilding(Building building)
+        {
+            if (building == null)
+            {
+                return;
+            }
+
+            SelectBuilding(building);
+            cameraController.CenterOn(new Vector2(building.Position.x, building.Position.y));
+        }
+
         private void SelectBuilding(Building building)
         {
             if (building == selectedBuilding)

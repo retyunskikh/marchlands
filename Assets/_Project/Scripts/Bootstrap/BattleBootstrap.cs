@@ -233,6 +233,7 @@ namespace Marchlands.Bootstrap
                 desktopControls.FormationPressed += orderPanel.ToggleFormation;
                 desktopControls.StopPressed += orderPanel.Stop;
                 desktopControls.PausePressed += gameMenu.TogglePause;
+                desktopControls.HelpPressed += gameMenu.ToggleHelp;
             }
         }
 

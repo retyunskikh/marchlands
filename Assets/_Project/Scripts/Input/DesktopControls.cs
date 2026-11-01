@@ -74,6 +74,9 @@ namespace Marchlands.Input
 
         public event Action PausePressed;
 
+        /// <summary>Справка по клавишам (F1).</summary>
+        public event Action HelpPressed;
+
         private void Update()
         {
             if (!BattleInputController.UsesMouse || battleInput == null || battleInput.Match == null)
@@ -116,9 +119,29 @@ namespace Marchlands.Input
                 battleInput.CancelOrDeselect();
             }
 
-            if (keyboard[config.PauseKey].wasPressedThisFrame)
+            if (keyboard[config.PauseKey].wasPressedThisFrame || keyboard[config.PauseAltKey].wasPressedThisFrame)
             {
                 PausePressed?.Invoke();
+            }
+
+            if (keyboard[config.HelpKey].wasPressedThisFrame)
+            {
+                HelpPressed?.Invoke();
+            }
+
+            if (keyboard[config.HeadquartersKey].wasPressedThisFrame)
+            {
+                battleInput.ShowBuilding(FindOwnBuilding(BuildingType.Headquarters));
+            }
+
+            if (keyboard[config.BarracksKey].wasPressedThisFrame)
+            {
+                battleInput.ShowBuilding(FindOwnBuilding(BuildingType.Barracks));
+            }
+
+            if (keyboard[config.NextSquadKey].wasPressedThisFrame)
+            {
+                SelectNextSquad();
             }
 
             if (battleInput.Selected != null)
@@ -145,6 +168,49 @@ namespace Marchlands.Input
             }
 
             UpdateGroups(keyboard);
+        }
+
+        private Building FindOwnBuilding(BuildingType type)
+        {
+            foreach (Building building in battleInput.Match.Buildings)
+            {
+                if (building.Owner == battleInput.PlayerSide && building.Type == type && !building.IsDestroyed)
+                {
+                    return building;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>Tab — следующий свой отряд (по порядку появления), камера — на него.</summary>
+        private void SelectNextSquad()
+        {
+            Squad current = battleInput.Selected;
+            Squad first = null;
+            Squad next = null;
+            foreach (Squad squad in battleInput.Match.Squads)
+            {
+                if (squad.Side != battleInput.PlayerSide || squad.IsCamp || squad.IsRouting || squad.Alive <= 0)
+                {
+                    continue;
+                }
+
+                first ??= squad;
+                if (current != null && squad.Id > current.Id && (next == null || squad.Id < next.Id))
+                {
+                    next = squad;
+                }
+            }
+
+            Squad target = next ?? first;
+            if (target == null)
+            {
+                return;
+            }
+
+            battleInput.SelectSquad(target);
+            battleInput.CameraRig.CenterOn(new Vector2(target.Position.x, target.Position.y));
         }
 
         /// <summary>Ctrl+цифра — запомнить выделение; цифра — выбрать; цифра дважды — навести камеру.</summary>

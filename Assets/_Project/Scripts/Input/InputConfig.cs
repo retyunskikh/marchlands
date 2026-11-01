@@ -39,12 +39,19 @@ namespace Marchlands.Input
         [SerializeField] private float edgePanBorder = 12f;
         [Tooltip("Насколько сдвинуть правую кнопку, чтобы это была протяжка (фронт), а не клик, dp.")]
         [SerializeField] private float rightDragMinMove = 12f;
-        [SerializeField] private Key volleyKey = Key.F;
+        [SerializeField] private Key volleyKey = Key.Space;
         [SerializeField] private Key chargeKey = Key.C;
         [SerializeField] private Key formationKey = Key.R;
         [SerializeField] private Key stopKey = Key.X;
-        [SerializeField] private Key pauseKey = Key.Space;
+        [Tooltip("Пауза — Pause; запасная клавиша — на ноутбуках Pause часто нет.")]
+        [SerializeField] private Key pauseKey = Key.Pause;
+        [SerializeField] private Key pauseAltKey = Key.P;
         [SerializeField] private Key cancelKey = Key.Escape;
+        [Tooltip("Выделить и показать свой штаб, свою казарму; следующий свой отряд; справка по клавишам.")]
+        [SerializeField] private Key headquartersKey = Key.H;
+        [SerializeField] private Key barracksKey = Key.B;
+        [SerializeField] private Key nextSquadKey = Key.Tab;
+        [SerializeField] private Key helpKey = Key.F1;
 
         public float KeyPanSpeed => keyPanSpeed;
 
@@ -61,6 +68,16 @@ namespace Marchlands.Input
         public Key StopKey => stopKey;
 
         public Key PauseKey => pauseKey;
+
+        public Key PauseAltKey => pauseAltKey;
+
+        public Key HeadquartersKey => headquartersKey;
+
+        public Key BarracksKey => barracksKey;
+
+        public Key NextSquadKey => nextSquadKey;
+
+        public Key HelpKey => helpKey;
 
         public Key CancelKey => cancelKey;
 
